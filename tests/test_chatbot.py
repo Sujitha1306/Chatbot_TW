@@ -19,12 +19,12 @@ warnings.filterwarnings('ignore')
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import enhanced components
-from app.db.clickhouse import ClickHouseConnection
-from app.core.nlp_converter import EnhancedNLPToSQLConverter
-from app.core.formatter import EnhancedResultFormatter
-from app.core.chatbot import TrackerWaveChatbot
-from config.settings import Config
-from config.schema import DatabaseSchema, ConversationState
+from backend.app.db.clickhouse import ClickHouseConnection
+from backend.app.core.nlp_converter import EnhancedNLPToSQLConverter
+from backend.app.core.formatter import EnhancedResultFormatter
+from backend.app.core.chatbot import TrackerWaveChatbot
+from backend.config.settings import Config
+from backend.config.schema import DatabaseSchema, ConversationState
 
 class TestTrackerWaveConfig(unittest.TestCase):
     """Test TrackerWave configuration and asset management support."""
@@ -157,8 +157,8 @@ class TestEnhancedNLPConverter(unittest.TestCase):
         self.mock_openai_client = Mock()
         self.mock_db = Mock()
         
-    @patch('app.core.nlp_converter.openai.AzureOpenAI')
-    @patch('app.core.nlp_converter.ClickHouseConnection')
+    @patch('backend.app.core.nlp_converter.openai.AzureOpenAI')
+    @patch('backend.app.core.nlp_converter.ClickHouseConnection')
     def test_domain_detection_in_intent_analysis(self, mock_db_class, mock_openai):
         """Test AI-driven domain detection in intent analysis."""
         mock_openai.return_value = self.mock_openai_client
@@ -188,8 +188,8 @@ class TestEnhancedNLPConverter(unittest.TestCase):
         self.assertEqual(intent['primary_table'], 'mysql_asset')
         self.assertIn('department', intent['key_entities'])
     
-    @patch('app.core.nlp_converter.openai.AzureOpenAI')
-    @patch('app.core.nlp_converter.ClickHouseConnection')
+    @patch('backend.app.core.nlp_converter.openai.AzureOpenAI')
+    @patch('backend.app.core.nlp_converter.ClickHouseConnection')
     def test_porter_domain_detection(self, mock_db_class, mock_openai):
         """Test porter domain detection."""
         mock_openai.return_value = self.mock_openai_client
@@ -219,8 +219,8 @@ class TestEnhancedNLPConverter(unittest.TestCase):
         self.assertEqual(intent['primary_table'], 'fact_porter_request')
         self.assertIn('porter', intent['key_entities'])
     
-    @patch('app.core.nlp_converter.openai.AzureOpenAI')
-    @patch('app.core.nlp_converter.ClickHouseConnection')
+    @patch('backend.app.core.nlp_converter.openai.AzureOpenAI')
+    @patch('backend.app.core.nlp_converter.ClickHouseConnection')
     def test_chart_axis_suggestions(self, mock_db_class, mock_openai):
         """Test that intent analysis includes chart axis suggestions."""
         mock_openai.return_value = self.mock_openai_client
@@ -245,8 +245,8 @@ class TestEnhancedNLPConverter(unittest.TestCase):
         self.assertEqual(intent['x_axis_suggestion'], 'asset_cost')
         self.assertEqual(intent['y_axis_suggestion'], 'current_book_value')
     
-    @patch('app.core.nlp_converter.openai.AzureOpenAI')
-    @patch('app.core.nlp_converter.ClickHouseConnection')
+    @patch('backend.app.core.nlp_converter.openai.AzureOpenAI')
+    @patch('backend.app.core.nlp_converter.ClickHouseConnection')
     def test_fallback_domain_detection(self, mock_db_class, mock_openai):
         """Test fallback domain detection when AI fails."""
         mock_openai.return_value = self.mock_openai_client
@@ -351,7 +351,7 @@ class TestEnhancedResultFormatter(unittest.TestCase):
             'semantic_intent': 'Analyze asset costs by department'
         }
         
-        with patch('app.core.nlp_converter.openai.AzureOpenAI') as mock_openai:
+        with patch('backend.app.core.nlp_converter.openai.AzureOpenAI') as mock_openai:
             mock_client = Mock()
             mock_openai.return_value = mock_client
             
@@ -380,8 +380,8 @@ class TestTrackerWaveChatbot(unittest.TestCase):
         self.mock_nlp = Mock()
         self.mock_formatter = Mock()
     
-    @patch('app.core.chatbot.EnhancedNLPToSQLConverter')
-    @patch('app.core.chatbot.ClickHouseConnection')
+    @patch('backend.app.core.chatbot.EnhancedNLPToSQLConverter')
+    @patch('backend.app.core.chatbot.ClickHouseConnection')
     def test_unified_domain_processing(self, mock_db_class, mock_nlp_class):
         """Test that chatbot can handle both porter and asset queries."""
         # Setup mocks
@@ -410,7 +410,7 @@ class TestTrackerWaveChatbot(unittest.TestCase):
         mock_session_state.user_preferences = {'date_format': 'ISO'}
         
         with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test-key', 'AZURE_OPENAI_ENDPOINT': 'test-endpoint'}):
-            with patch('app.core.chatbot.st.session_state', mock_session_state):
+            if True:
                 chatbot = TrackerWaveChatbot()
                 
                 # Mock the formatter methods
@@ -423,8 +423,8 @@ class TestTrackerWaveChatbot(unittest.TestCase):
                 self.assertTrue(result['success'])
                 self.assertEqual(result['data_domain'], 'asset')
     
-    @patch('app.core.chatbot.EnhancedNLPToSQLConverter')
-    @patch('app.core.chatbot.ClickHouseConnection')
+    @patch('backend.app.core.chatbot.EnhancedNLPToSQLConverter')
+    @patch('backend.app.core.chatbot.ClickHouseConnection')
     def test_chart_type_and_axis_overrides(self, mock_db_class, mock_nlp_class):
         """Test chart type and axis override functionality."""
         mock_db_class.return_value = self.mock_db
@@ -439,7 +439,7 @@ class TestTrackerWaveChatbot(unittest.TestCase):
         mock_session_state.user_preferences = {'date_format': 'ISO'}
         
         with patch.dict(os.environ, {'AZURE_OPENAI_API_KEY': 'test-key', 'AZURE_OPENAI_ENDPOINT': 'test-endpoint'}):
-            with patch('app.core.chatbot.st.session_state', mock_session_state):
+            if True:
                 chatbot = TrackerWaveChatbot()
                 
                 # Mock formatter methods
