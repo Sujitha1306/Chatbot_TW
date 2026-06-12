@@ -395,22 +395,22 @@ def _is_dimension_column(col_name: str, series: "pd.Series") -> bool:
     return series.dtype.kind not in "iuf"  # not int/uint/float
 
 
-def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
+def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFrame"]:
     import pandas as pd
 
     if df.empty:
-        return _table_only_spec(0)
+        return _table_only_spec(0), df
 
     if len(df) == 1:
         # Single row — no meaningful bar/line/pie/scatter. Show as a
         # stat-card-style table only.
-        return _table_only_spec(1)
+        return _table_only_spec(1), df
 
     dimension_cols = [c for c in df.columns if _is_dimension_column(c, df[c]) and df[c].notna().any()]
     measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any() and df[c].nunique() > 1]
 
     if not measure_cols:
-        return _table_only_spec(len(df))
+        return _table_only_spec(len(df)), df
 
     # Pick the best dimension (prefer time-based, then facility/category)
     time_dims = [c for c in dimension_cols if any(p in c.lower() for p in ["year", "month", "day", "week", "date", "period"])]
@@ -499,7 +499,7 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
 
     if not recommendations or recommendations[0]["type"] == "table":
         # Nothing meaningful to chart — table only
-        return _table_only_spec(len(df))
+        return _table_only_spec(len(df)), df
 
     # Honor requested chart type if valid, else use first recommendation
     intent_chart = intent.get("chart_type", "auto")
@@ -527,7 +527,7 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
             "date":        [c for c in dimension_cols if "date" in c.lower() or df[c].dtype.kind == "M"],
         },
         "row_count": len(df),
-    }
+    }, df
 
 
 def _table_only_spec(row_count: int) -> dict:

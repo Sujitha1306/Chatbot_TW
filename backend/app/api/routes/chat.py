@@ -114,6 +114,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 return
 
             # ── Event 4: Data ready ──
+            # Build chart spec BEFORE data payload so synthetic columns (_period) are sent
+            chart_spec, df = build_chart_spec(df, intent)
+            
             import numpy as np
             import pandas as pd
             data_payload = df.head(500).replace({np.nan: None, pd.NaT: None}).to_dict("records")
@@ -156,7 +159,6 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                         await asyncio.sleep(0)   # yield control to event loop
 
             # ── Event 6: Chart spec ──
-            chart_spec = build_chart_spec(df, intent)
             yield _sse({"event": "chart", "spec": chart_spec})
 
             # ── Event 7: Follow-up suggestions ──
