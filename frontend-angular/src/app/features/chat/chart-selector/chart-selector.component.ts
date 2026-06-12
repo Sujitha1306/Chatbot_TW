@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChartSpec, ChartType } from '../../../shared/models/chat.model';
 import { ChartRendererComponent } from '../chart-renderer/chart-renderer.component';
+import { DataTableComponent } from '../data-table/data-table.component';
 import { LucideAngularModule, BarChart2, PieChart, LineChart, ScatterChart } from 'lucide-angular';
 
 @Component({
@@ -12,6 +13,7 @@ import { LucideAngularModule, BarChart2, PieChart, LineChart, ScatterChart } fro
     CommonModule, 
     FormsModule, 
     ChartRendererComponent,
+    DataTableComponent,
     LucideAngularModule
   ],
   templateUrl: './chart-selector.component.html',

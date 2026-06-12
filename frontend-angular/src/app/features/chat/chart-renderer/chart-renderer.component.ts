@@ -46,10 +46,20 @@ export class ChartRendererComponent implements OnChanges {
         title: { text: `${this.formatLabel(this.yCol)} by ${this.formatLabel(this.xCol)}`, font: { size: 13 } },
       };
     } else {
+      const horizontal = this.type === 'bar' && new Set(this.data.map(d => d[this.xCol])).size > 12;
+
       this.layout = {
         ...BASE_LAYOUT,
-        xaxis: { title: { text: this.formatLabel(this.xCol) }, automargin: true },
-        yaxis: { title: { text: this.formatLabel(this.yCol) }, automargin: true },
+        xaxis: { 
+          title: { text: this.formatLabel(horizontal ? this.yCol : this.xCol) }, 
+          type: horizontal ? undefined : 'category',
+          automargin: true 
+        },
+        yaxis: { 
+          title: { text: this.formatLabel(horizontal ? this.xCol : this.yCol) }, 
+          type: horizontal ? 'category' : undefined,
+          automargin: true 
+        },
         title: undefined,
       };
     }
@@ -81,10 +91,12 @@ export class ChartRendererComponent implements OnChanges {
     switch (this.type) {
       case 'bar': {
         const horizontal = new Set(x).size > 12;
+        const xLabels = x.map(v => String(v));
+
         return [{
           type: 'bar',
-          x: horizontal ? y : x,
-          y: horizontal ? x : y,
+          x: horizontal ? y : xLabels,
+          y: horizontal ? xLabels : y,
           orientation: horizontal ? 'h' : 'v',
           marker: { color: BRAND_COLORS[0] },
         }];

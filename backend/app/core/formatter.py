@@ -401,6 +401,11 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
     if df.empty:
         return _table_only_spec(0)
 
+    if len(df) == 1:
+        # Single row — no meaningful bar/line/pie/scatter. Show as a
+        # stat-card-style table only.
+        return _table_only_spec(1)
+
     dimension_cols = [c for c in df.columns if _is_dimension_column(c, df[c]) and df[c].notna().any()]
     measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any() and df[c].nunique() > 1]
 
@@ -409,7 +414,27 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
 
     # Pick the best dimension (prefer time-based, then facility/category)
     time_dims = [c for c in dimension_cols if any(p in c.lower() for p in ["year", "month", "day", "week", "date", "period"])]
-    primary_dim = time_dims[0] if time_dims else (dimension_cols[0] if dimension_cols else None)
+    if time_dims:
+        # Among time dimensions, prefer the one with MORE distinct values
+        # AND prefer finer granularity (month > year, day > month) when
+        # cardinality is similar — this ensures "by month" questions chart
+        # by month even if "year" also exists as a column
+        GRANULARITY_RANK = {"day": 4, "week": 3, "month": 2, "quarter": 2, "year": 1, "date": 3, "period": 2}
+
+        def time_dim_score(col):
+            rank = max((v for k, v in GRANULARITY_RANK.items() if k in col.lower()), default=0)
+            return (df[col].nunique(), rank)
+
+        primary_dim = max(time_dims, key=time_dim_score)
+    else:
+        primary_dim = dimension_cols[0] if dimension_cols else None
+
+    if primary_dim == "month" and "year" in dimension_cols and df["year"].nunique() > 1:
+        # Create a combined period column for display
+        df = df.copy()
+        df["_period"] = df["year"].astype(str) + "-" + df["month"].astype(str).str.zfill(2)
+        dimension_cols = dimension_cols + ["_period"]
+        primary_dim = "_period"
 
     # Pick the best measure (highest variance = most informative)
     primary_measure = _best_numeric_col(df, measure_cols)
