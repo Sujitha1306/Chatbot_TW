@@ -8,6 +8,7 @@ export interface ChartSpec {
   active: ChartType;
   columns: { numeric: string[]; categorical: string[]; date: string[] };
   row_count: number;
+  single_value?: boolean;
 }
 
 export interface ChatMessage {
