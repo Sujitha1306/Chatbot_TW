@@ -143,7 +143,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     {"role": "user",   "content": summary_prompt},
                 ],
                 stream=True,
-                temperature=0.3,
+                temperature=0.0,
                 max_tokens=300,
             )
             full_summary = ""

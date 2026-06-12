@@ -167,12 +167,25 @@ This question asks for a COMPARISON across multiple time periods
   asks for a comparison — that means no comparison is possible
 """
 
+        temporal_clarity_rule = """
+TEMPORAL PHRASE INTERPRETATION — BE CONSISTENT:
+- "over the past year" / "in the past year" → compare CALENDAR YEARS:
+  current year (toYear(today())) vs previous year (toYear(today())-1)
+- "last 12 months" → rolling window: scheduled_time >= today() - INTERVAL 12 MONTH
+- These are DIFFERENT and produce different results. Default to the
+  CALENDAR YEAR interpretation unless the question explicitly says
+  "last 12 months" or "rolling".
+- Whichever interpretation you choose, GROUP BY toYear(scheduled_time)
+  so the result is auditable (shows which years are being compared).
+"""
+
         prompt = f"""Generate a ClickHouse SQL query to answer this question.
 
 SCHEMA:
 {self.schema}
 {facility_constraint}
 {comparison_rule}
+{temporal_clarity_rule}
 
 QUESTION: {question}
 INTENT: domain={intent.get('data_domain')}, needs_tat={intent.get('needs_tat')}, time_scope={intent.get('time_scope')}, group_by_hint={intent.get('group_by_hint')}
@@ -285,7 +298,7 @@ Write a 2–3 sentence plain-language summary of these results for a hospital ma
                 {"role": "system", "content": self.SUMMARY_SYSTEM},
                 {"role": "user",   "content": prompt},
             ],
-            temperature=0.3,
+            temperature=0.0,
             max_tokens=300,
         )
         return resp.choices[0].message.content.strip()
