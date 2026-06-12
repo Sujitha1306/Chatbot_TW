@@ -101,8 +101,8 @@ class DatabaseSchema:
         'location_id': 'Current location of the asset',
         'home_location_id': 'Home/default location of the asset',
         'status': 'Asset status (0=inactive, 1=active)',
-        'asset_status': 'Descriptive asset status',
-        'criticality': 'Asset criticality level (Critical, High, Medium, Low)',
+        'asset_status': "Current status of the asset. Common values: 'ATS-MAIN' (maintenance), 'ATS-INU' (in-use), 'ATS-ONB' (onboard), 'Active', 'ATS-REC', 'ATS-RTUS', etc. NOTE: Do NOT use 'UNDER_MAINTENANCE', use 'ATS-MAIN' instead.",
+        'criticality': "Criticality level of the asset. Values: 'CRT-CT' (critical), 'CRT-NCT' (non-critical).",
         'warranty_due': 'Warranty expiration date',
         'next_amc_due': 'Next Annual Maintenance Contract due date',
         'pms_due': 'Preventive Maintenance Schedule due date',
@@ -206,8 +206,8 @@ Purpose: Hospital equipment inventory
 Columns:
 - id (Int64): asset ID
 - name (String): equipment name
-- asset_status (String): AVAILABLE | IN_USE | UNDER_MAINTENANCE | DAMAGED
-- criticality (String): Critical | High | Medium | Low
+- asset_status (String): 'ATS-MAIN' (maintenance) | 'ATS-INU' (in-use) | 'ATS-ONB' | 'Active' | 'ATS-REC' | 'ATS-RTUS' (DO NOT USE 'UNDER_MAINTENANCE', use 'ATS-MAIN')
+- criticality (String): 'CRT-CT' (critical) | 'CRT-NCT' (non-critical)
 - facility_id (String): same string format as porter table
 - assigned_department_id (Int64, nullable)
 - owner_department_id (Int64, nullable)
@@ -229,6 +229,8 @@ Columns:
 7. Always include LIMIT (default 500) unless user explicitly asks for all data
 8. Percentage: (count_filtered * 100.0 / count_total) — no PERCENT function. Do NOT use window functions like OVER () for percentages. Use subqueries or cross joins to get totals.
 9. GROUP BY must list all non-aggregate SELECT columns exactly
+10. NO CORRELATED SUBQUERIES: ClickHouse does not support correlated subqueries referencing the outer query. To compare periods (e.g., YoY comparison per facility), use conditional aggregation: `countIf(toYear(scheduled_time) = toYear(today()))` vs `countIf(toYear(scheduled_time) = toYear(today()) - 1)`, OR use a standard `GROUP BY facility_id, toYear(scheduled_time)`.
+11. SANITY BOUND ON DATES: This database may contain a small number of corrupted rows with scheduled_time/completed_time values far in the future (e.g. year 2084) due to a known data ingestion issue. For ANY query involving date ranges, MAX(), MIN(), or "most recent data" questions, ALWAYS add: AND scheduled_time <= now() + INTERVAL 1 DAY (and the same for completed_time where relevant). This excludes corrupted future-dated rows from results without needing to identify them individually.
 """
 
 # Enhanced conversation state management

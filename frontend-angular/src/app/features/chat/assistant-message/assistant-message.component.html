@@ -33,7 +33,7 @@
 
     <!-- Panel toggle buttons -->
     <div *ngIf="message.status === 'complete' && (message.chartSpec || message.data || message.sql)" class="flex flex-wrap gap-2 mb-3">
-      <button *ngIf="message.chartSpec"
+      <button *ngIf="message.chartSpec && !message.chartSpec.single_value"
               (click)="showChart = !showChart"
               class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
                      hover:border-brand-primary hover:text-brand-primary transition">
@@ -54,7 +54,12 @@
     </div>
 
     <!-- Visualization panels -->
-    <app-chart-selector *ngIf="showChart && message.chartSpec && message.data"
+    <div *ngIf="message.chartSpec?.single_value" class="text-center py-6 border border-gray-100 bg-white rounded-xl shadow-sm mb-3">
+      <div class="text-4xl font-bold text-brand-navy">{{ message.data?.[0]?.[message.chartSpec.columns.numeric[0]] }}</div>
+      <div class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ message.chartSpec.columns.numeric[0] | titlecase }}</div>
+    </div>
+
+    <app-chart-selector *ngIf="showChart && message.chartSpec && !message.chartSpec.single_value && message.data"
       [spec]="message.chartSpec" [data]="message.data"></app-chart-selector>
       
     <app-data-table *ngIf="showData && message.data"

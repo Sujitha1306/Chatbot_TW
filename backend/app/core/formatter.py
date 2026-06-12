@@ -79,6 +79,7 @@ class EnhancedResultFormatter:
             categorical_cols = df.select_dtypes(include=['object', 'string']).columns.tolist()
             
             # Auto-select axes if not provided
+
             if not x_axis or x_axis not in df.columns:
                 x_axis = categorical_cols[0] if categorical_cols else df.columns[0]
             if not y_axis or y_axis not in df.columns:
@@ -388,6 +389,18 @@ def build_chart_spec(df: pd.DataFrame, intent: dict) -> dict:
     intent_chart = intent.get("chart_type", "auto")
     if intent_chart == "auto":
         intent_chart = _auto_chart(df, categorical_cols, numeric_cols, date_cols)
+
+    # If there's only one numeric column and no categorical columns,
+    # a bar/line/scatter chart doesn't make sense — single value, use
+    # a "stat card" style table instead
+    if len(numeric_cols) <= 1 and not categorical_cols:
+        return {
+            "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "Table2"}],
+            "active": "table",
+            "columns": {"numeric": numeric_cols, "categorical": [], "date": []},
+            "row_count": len(df),
+            "single_value": True,  # frontend can render this as a big number/stat card
+        }
 
     recommendations = []
 

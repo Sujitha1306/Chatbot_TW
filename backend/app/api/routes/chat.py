@@ -113,7 +113,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 return
 
             # ── Event 4: Data ready ──
-            data_payload = df.head(500).to_dict("records")
+            import numpy as np
+            import pandas as pd
+            data_payload = df.head(500).replace({np.nan: None, pd.NaT: None}).to_dict("records")
             yield _sse({
                 "event": "data",
                 "rows": data_payload,
@@ -123,7 +125,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             # ── Event 5: Summary streamed token by token ──
             yield _sse({"event": "summary_start"})
-            summary_prompt = _build_summary_prompt(req.question, df, intent)
+            coverage = pipeline.check_data_coverage(df, intent)
+            summary_prompt = _build_summary_prompt(req.question, df, intent, coverage)
 
             stream = pipeline.client.chat.completions.create(
                 model=pipeline.model,
@@ -169,7 +172,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
         except Exception as e:
             import traceback
             logging.error("Stream error: %s\n%s", e, traceback.format_exc())
-            yield _sse({"event": "error", "message": "An unexpected error occurred."})
+            yield _sse({"event": "error", "message": "An unexpected error occurred while generating the summary."})
 
     return StreamingResponse(
         event_generator(),
@@ -183,15 +186,89 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, default=str)}\n\n"
 
 
-def _build_summary_prompt(question: str, df, intent: dict) -> str:
-    sample = df.head(10).to_dict("records")
-    return (
-        f"QUESTION: {question}\n"
-        f"DOMAIN: {intent.get('data_domain', 'porter')}\n"
-        f"TOTAL ROWS: {len(df)}\n"
-        f"SAMPLE DATA: {json.dumps(sample, default=str)}\n\n"
-        "Write a 2–3 sentence plain-language summary for a hospital manager."
-    )
+def _build_summary_prompt(question: str, df, intent: dict, coverage: dict = None) -> str:
+    import pandas as pd
+    
+    coverage = coverage or {}
+
+    if df.empty or (len(df) == 1 and not df.select_dtypes(include="number").empty and df.select_dtypes(include="number").fillna(0).sum(axis=1).iloc[0] == 0):
+        if coverage.get("has_data_gap"):
+            return f"""QUESTION: {question}
+
+The query returned no results. IMPORTANT CONTEXT: {coverage['note']}
+
+Write a 2-3 sentence response that:
+1. States clearly that NO DATA was found for the requested time period
+2. Notes the data gap explained above — do NOT say "everything is fine"
+   or "no issues" — instead say something like "there's no recorded
+   data for this period yet, so this can't be confirmed either way"
+3. Suggests the user try a different time range or check with their
+   data team if this is unexpected
+
+Do NOT interpret this as a positive result (e.g. "no problems!").
+An absence of data is NOT the same as a confirmed zero."""
+        else:
+            return f"""QUESTION: {question}
+
+The query returned a genuine zero/empty result — there IS data for this
+period, but the specific thing asked about (e.g. assets under
+maintenance, cancelled requests) has a count of zero.
+
+Write a 2-3 sentence response confirming this is a real zero (e.g.
+"Currently, zero assets are under maintenance — all equipment is
+available."). This IS good news and can be stated positively, since
+we've confirmed data exists for this period and the count is genuinely 0."""
+
+    stats_lines = []
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+
+    # Pre-compute aggregates so the LLM doesn't do unreliable math
+    for col in numeric_cols[:5]:  # cap to avoid prompt bloat
+        total = df[col].sum()
+        mean  = df[col].mean()
+        stats_lines.append(f"  {col}: sum={total:,.1f}, avg={mean:,.2f}, min={df[col].min():,.1f}, max={df[col].max():,.1f}")
+
+    # If there's a categorical column with a numeric column, compute
+    # percentage breakdowns — this is what lets the LLM say "97%"
+    categorical_cols = df.select_dtypes(include="object").columns.tolist()
+    pct_breakdown = ""
+    if categorical_cols and numeric_cols:
+        cat_col, num_col = categorical_cols[0], numeric_cols[0]
+        if df[num_col].sum() > 0:
+            grouped = df.groupby(cat_col)[num_col].sum().sort_values(ascending=False)
+            total = grouped.sum()
+            top5 = grouped.head(5)
+            pct_lines = [f"  {idx}: {val:,.0f} ({val/total*100:.1f}% of total)" for idx, val in top5.items()]
+            pct_breakdown = "PERCENTAGE BREAKDOWN (top 5 by " + num_col + "):\n" + "\n".join(pct_lines)
+
+    import numpy as np
+    import pandas as pd
+    sample = df.head(5).replace({np.nan: None, pd.NaT: None}).to_dict("records")
+
+    comparison_hint = ""
+    if intent.get("comparison") or intent.get("time_scope") in ("year_over_year", "comparison") or \
+       any(w in question.lower() for w in ["compare", "comparison", "vs", "versus", "year over year", "month over month"]):
+        comparison_hint = """
+THIS IS A COMPARISON QUESTION. Your response MUST:
+- State which period/group is higher or lower
+- Express the difference as a percentage change ("increased by 15%", "dropped by about a fifth")
+- Explain what this means operationally (better/worse performance, growth, concern)
+"""
+
+    return f"""QUESTION: {question}
+DOMAIN: {intent.get('data_domain', 'porter')}
+TOTAL ROWS: {len(df)}
+
+PRE-COMPUTED STATISTICS (use these for accuracy — do not recalculate):
+{chr(10).join(stats_lines) if stats_lines else "  (no numeric columns)"}
+
+{pct_breakdown}
+
+SAMPLE ROWS (for context only, first 5):
+{json.dumps(sample, default=str)}
+
+{comparison_hint}
+Please provide the 2-3 sentence summary now."""
 
 
 _pipeline = None
