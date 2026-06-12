@@ -5,12 +5,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ChatService } from '../../../core/services/chat.service';
 import { UserMessageComponent } from '../user-message/user-message.component';
 import { AssistantMessageComponent } from '../assistant-message/assistant-message.component';
+import { FacilityFilterComponent } from '../facility-filter/facility-filter.component';
+import { FacilityService } from '../../../core/services/facility.service';
 import { ChatMessage } from '../../../shared/models/chat.model';
 
 @Component({
   selector: 'app-chat-thread',
   standalone: true,
-  imports: [CommonModule, FormsModule, UserMessageComponent, AssistantMessageComponent],
+  imports: [CommonModule, FormsModule, UserMessageComponent, AssistantMessageComponent, FacilityFilterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-thread.component.html',
 })
@@ -26,7 +28,8 @@ export class ChatThreadComponent implements OnInit {
     private chat: ChatService, 
     private route: ActivatedRoute, 
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public facilitySvc: FacilityService
   ) {
     this.messages$ = this.chat.messages$;
     this.isStreaming$ = this.chat.isStreaming$;

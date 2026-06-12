@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from backend.config.settings import settings
-from backend.app.api.routes import chat, auth, health, history, export
+from backend.app.api.routes import chat, auth, health, history, export, facilities
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +45,4 @@ app.include_router(chat.router)
 app.include_router(auth.router)
 app.include_router(history.router)
 app.include_router(export.router)
+app.include_router(facilities.router)

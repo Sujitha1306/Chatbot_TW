@@ -139,7 +139,17 @@ Return this JSON exactly:
             }
 
     # ── Call 2: SQL generation ────────────────────────────────────────────
-    def generate_sql(self, question: str, intent: dict, history: str = "") -> str:
+    def generate_sql(self, question: str, intent: dict, history: str = "", facility_id: str | None = None) -> str:
+        facility_constraint = ""
+        if facility_id:
+            facility_constraint = f"""
+MANDATORY FILTER: This query MUST include a WHERE clause filtering
+facility_id = '{facility_id}' (as a string, with quotes). This applies
+to BOTH fact_porter_request and mysql_asset tables — whichever is used.
+If the query already has a WHERE clause, add this as an additional
+AND condition. If using GROUP BY across facilities, this filter still
+applies — the result will only ever show data for THIS facility."""
+
         comparison_rule = ""
         if intent.get("comparison") or intent.get("time_scope") in ("year_over_year", "comparison", "all_time"):
             comparison_rule = """
@@ -161,6 +171,7 @@ This question asks for a COMPARISON across multiple time periods
 
 SCHEMA:
 {self.schema}
+{facility_constraint}
 {comparison_rule}
 
 QUESTION: {question}
@@ -306,18 +317,18 @@ Return ONLY a JSON array of 3 strings."""
         except Exception:
             return ["Show breakdown by facility", "Compare to last month", "Export this data"]
 
-    # ── Main pipeline ─────────────────────────────────────────────────────
-    def run(
-        self,
-        question: str,
-        history: str = "",
-    ) -> tuple[str, dict, pd.DataFrame, bool, str]:
+    # ── Orchestration ─────────────────────────────────────────────────────
+    def run(self, question: str, history: str = "", facility_id: str | None = None) -> tuple:
         """
-        Returns: (sql, intent, dataframe, success, error_message)
-        Never raises — always returns a tuple.
+        Runs the full pipeline.
+        Returns: (sql, intent_dict, dataframe, success_bool, error_string)
         """
+        logger.info("Pipeline started for question: %s", question)
+
         intent = self.classify_intent(question, history)
-        sql    = self.generate_sql(question, intent, history)
+        logger.info("Intent classified: %s", intent)
+
+        sql = self.generate_sql(question, intent, history, facility_id)
 
         df, success, error = self.db.execute_query_with_error(sql)
 

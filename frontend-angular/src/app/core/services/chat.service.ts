@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { ChatMessage, Conversation } from '../../shared/models/chat.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
+import { FacilityService } from './facility.service';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -22,7 +23,7 @@ export class ChatService {
   private tokenFlushTimer: ReturnType<typeof setTimeout> | null = null;
   private activeAssistantId = '';
 
-  constructor(private auth: AuthService, private zone: NgZone) {}
+  constructor(private auth: AuthService, private zone: NgZone, private facilitySvc: FacilityService) {}
 
   getCurrentMessages(): ChatMessage[] {
     return this.messagesSubject.value;
@@ -127,7 +128,11 @@ export class ChatService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.auth.getToken() || ''}`,
         },
-        body: JSON.stringify({ question, session_id: this.activeConvId || 'default' }),
+        body: JSON.stringify({
+          question,
+          session_id: this.activeConvId || 'default',
+          facility_id: this.facilitySvc.getActiveFacilityId(),
+        }),
       });
 
       if (!response.ok) {

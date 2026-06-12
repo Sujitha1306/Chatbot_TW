@@ -19,6 +19,7 @@ class QueryRequest(BaseModel):
     session_id: Optional[str] = "default"
     chart_type: str = "auto"
     row_limit: int = 100
+    facility_id: Optional[str] = None
 
 
 class QueryResponse(BaseModel):
@@ -89,7 +90,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "intent", "domain": intent["data_domain"], "chart_type": intent["chart_type"]})
 
             # ── Event 2: SQL generated (~2–4s) ──
-            sql = pipeline.generate_sql(req.question, intent)
+            sql = pipeline.generate_sql(req.question, intent, facility_id=req.facility_id)
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
@@ -126,7 +127,14 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             # ── Event 5: Summary streamed token by token ──
             yield _sse({"event": "summary_start"})
             coverage = pipeline.check_data_coverage(df, intent)
-            summary_prompt = _build_summary_prompt(req.question, df, intent, coverage)
+            
+            from backend.app.core.facility_lookup import get_facility_lookup
+            facility_name = None
+            if req.facility_id:
+                fac = get_facility_lookup().get(req.facility_id)
+                facility_name = fac["facility_name"] if fac else None
+
+            summary_prompt = _build_summary_prompt(req.question, df, intent, coverage, facility_name)
 
             stream = pipeline.client.chat.completions.create(
                 model=pipeline.model,
@@ -186,14 +194,19 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, default=str)}\n\n"
 
 
-def _build_summary_prompt(question: str, df, intent: dict, coverage: dict = None) -> str:
+def _build_summary_prompt(question: str, df, intent: dict, coverage: dict = None, facility_name: str | None = None) -> str:
     import pandas as pd
     
     coverage = coverage or {}
+    
+    facility_context = ""
+    if facility_name:
+        facility_context = f"\nNOTE: This data is filtered to {facility_name} only. Frame your summary around this specific hospital, not hospitals in general.\n"
 
     if df.empty or (len(df) == 1 and not df.select_dtypes(include="number").empty and df.select_dtypes(include="number").fillna(0).sum(axis=1).iloc[0] == 0):
         if coverage.get("has_data_gap"):
             return f"""QUESTION: {question}
+{facility_context}
 
 The query returned no results. IMPORTANT CONTEXT: {coverage['note']}
 
@@ -209,6 +222,7 @@ Do NOT interpret this as a positive result (e.g. "no problems!").
 An absence of data is NOT the same as a confirmed zero."""
         else:
             return f"""QUESTION: {question}
+{facility_context}
 
 The query returned a genuine zero/empty result — there IS data for this
 period, but the specific thing asked about (e.g. assets under
@@ -247,13 +261,8 @@ we've confirmed data exists for this period and the count is genuinely 0."""
 
     comparison_hint = ""
     if intent.get("comparison") or intent.get("time_scope") in ("year_over_year", "comparison") or \
-       any(w in question.lower() for w in ["compare", "comparison", "vs", "versus", "year over year", "month over month"]):
-        comparison_hint = """
-THIS IS A COMPARISON QUESTION. Your response MUST:
-- State which period/group is higher or lower
-- Express the difference as a percentage change ("increased by 15%", "dropped by about a fifth")
-- Explain what this means operationally (better/worse performance, growth, concern)
-"""
+       intent.get("group_by_hint"):
+        comparison_hint = "\nIMPORTANT: The user asked for a COMPARISON or BREAKDOWN. Do NOT just summarize the overall total. Make sure to point out the differences, top categories, or trends across the grouped periods/items."
 
     return f"""QUESTION: {question}
 DOMAIN: {intent.get('data_domain', 'porter')}
