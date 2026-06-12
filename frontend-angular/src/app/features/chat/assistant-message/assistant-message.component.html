@@ -1,0 +1,86 @@
+<div class="flex gap-3">
+  <!-- TW Avatar -->
+  <div class="w-8 h-8 rounded-xl bg-brand-navy text-white flex items-center
+              justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+    TW
+  </div>
+
+  <div class="flex-1 max-w-2xl min-w-0">
+
+    <!-- Typing indicator -->
+    <div *ngIf="message.status === 'pending'" class="flex gap-1 py-2 items-center">
+      <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></span>
+      <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:100ms]"></span>
+      <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:200ms]"></span>
+    </div>
+
+    <!-- Status badge -->
+    <div *ngIf="message.domain"
+         class="inline-flex items-center gap-1.5 bg-brand-surface text-brand-navy
+                text-xs px-3 py-1 rounded-full mb-2 font-medium">
+      <lucide-icon name="activity" class="w-3 h-3"></lucide-icon>
+      <span>{{ message.domain | titlecase }} Analytics</span>
+      <span *ngIf="message.rowCount !== undefined" class="text-brand-primary">
+        · {{ message.rowCount }} rows
+      </span>
+    </div>
+
+    <!-- Streaming summary text -->
+    <p *ngIf="message.content"
+       class="text-sm text-gray-800 leading-relaxed mb-3 whitespace-pre-wrap">
+      {{ message.content }}
+    </p>
+
+    <!-- Panel toggle buttons -->
+    <div *ngIf="message.status === 'complete' && (message.chartSpec || message.data || message.sql)" class="flex flex-wrap gap-2 mb-3">
+      <button *ngIf="message.chartSpec"
+              (click)="showChart = !showChart"
+              class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
+                     hover:border-brand-primary hover:text-brand-primary transition">
+        <lucide-icon name="bar-chart-2" class="w-3.5 h-3.5"></lucide-icon> Chart {{ showChart ? '▴' : '▾' }}
+      </button>
+      <button *ngIf="message.data"
+              (click)="showData = !showData"
+              class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
+                     hover:border-brand-primary hover:text-brand-primary transition">
+        <lucide-icon name="table" class="w-3.5 h-3.5"></lucide-icon> Data {{ showData ? '▴' : '▾' }}
+      </button>
+      <button *ngIf="message.sql"
+              (click)="showSql = !showSql"
+              class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
+                     hover:border-brand-primary hover:text-brand-primary transition">
+        <lucide-icon name="database" class="w-3.5 h-3.5"></lucide-icon> SQL {{ showSql ? '▴' : '▾' }}
+      </button>
+    </div>
+
+    <!-- Visualization panels -->
+    <app-chart-selector *ngIf="showChart && message.chartSpec && message.data"
+      [spec]="message.chartSpec" [data]="message.data"></app-chart-selector>
+      
+    <app-data-table *ngIf="showData && message.data"
+      [data]="message.data" [numericColumns]="message.chartSpec?.columns?.numeric || []"></app-data-table>
+
+    <app-sql-panel *ngIf="showSql && message.sql" [sql]="message.sql"></app-sql-panel>
+
+    <!-- Follow-up chips -->
+    <div *ngIf="message.followups?.length" class="mt-4">
+      <div class="flex items-center gap-1 text-xs text-gray-400 mb-2 font-medium">
+        <lucide-icon name="lightbulb" class="w-3.5 h-3.5"></lucide-icon> Try:
+      </div>
+      <div class="flex flex-col items-start gap-2">
+        <button *ngFor="let f of message.followups"
+                (click)="followupClick.emit(f)"
+                class="text-left text-xs bg-brand-surface text-brand-navy border border-brand-primary/20
+                       rounded-full px-3 py-1.5 hover:bg-brand-primary/10 transition">
+          {{ f }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <p *ngIf="message.status === 'error'"
+       class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-2">
+      {{ message.content }}
+    </p>
+  </div>
+</div>

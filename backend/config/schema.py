@@ -1,5 +1,5 @@
 from typing import Dict, List, Any
-from config.settings import Config
+from backend.config.settings import Config
 
 class DatabaseSchema:
     """Enhanced database schema definitions for Porter and Asset management"""
@@ -167,14 +167,14 @@ CRITICAL CLICKHOUSE SQL RULES:
 - For date ranges: scheduled_time >= '2025-06-01' AND scheduled_time < '2025-07-01'
 - All timestamps stored in UTC - will be converted to user timezone in display
 - For "all columns" queries, include ALL columns from the appropriate table
-- Use proper WHERE clauses for active records: is_active = 1 for assets
+- Use proper WHERE clauses for active records: is_active = '1' for assets
 - Handle broken English by inferring semantic meaning
 - Return NUMERIC values for time calculations, not timestamp strings
 
 BUSINESS LOGIC:
 - TAT = Turnaround Time in minutes (numeric)
 - facility_id stored as STRING with leading zeros
-- Asset status: 0=inactive, 1=active
+- Asset status: '0'=inactive, '1'=active
 - All times in UTC, converted to user timezone for display
 """
         
@@ -214,7 +214,7 @@ Columns:
 - warranty_due (Date, nullable): warranty expiry date
 - asset_cost (Float64, nullable): purchase cost in INR
 - commissioned_on (Date, nullable)
-- is_active (Int8): 1 = active, 0 = inactive
+- is_active (String): '1' = active, '0' = inactive
 
 ### CLICKHOUSE SQL — MANDATORY RULES:
 1. Date functions: toDate(), toMonth(), toYear(), today(), now()

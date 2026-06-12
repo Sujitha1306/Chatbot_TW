@@ -1,0 +1,36 @@
+<div class="border border-gray-200 rounded-xl p-4 mt-2 bg-white">
+  <div class="text-sm font-medium text-gray-700 mb-3">Visualization</div>
+
+  <div class="flex flex-wrap gap-2 mb-3 border-b border-gray-100 pb-2">
+    <button *ngFor="let r of spec.recommendations"
+            (click)="selectType(r.type)"
+            [class.text-brand-primary]="activeType === r.type"
+            [class.border-brand-primary]="activeType === r.type"
+            class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-transparent hover:bg-brand-surface transition font-medium">
+      <lucide-icon [name]="r.icon" class="w-4 h-4"></lucide-icon> {{ r.label }}
+    </button>
+  </div>
+
+  <div *ngIf="activeType !== 'table'" class="flex flex-wrap gap-3 mb-3 text-xs">
+    <label class="flex items-center gap-1.5 text-gray-600">
+      X-Axis:
+      <select [(ngModel)]="xCol" class="border border-gray-200 rounded px-2 py-1 outline-none focus:border-brand-primary bg-white">
+        <option *ngFor="let c of allColumns" [value]="c">{{ c }}</option>
+      </select>
+    </label>
+    <label class="flex items-center gap-1.5 text-gray-600" *ngIf="activeType !== 'pie'">
+      Y-Axis:
+      <select [(ngModel)]="yCol" class="border border-gray-200 rounded px-2 py-1 outline-none focus:border-brand-primary bg-white">
+        <option *ngFor="let c of allColumns" [value]="c">{{ c }}</option>
+      </select>
+    </label>
+  </div>
+
+  <app-chart-renderer
+    *ngIf="activeType !== 'table'"
+    [type]="activeType"
+    [data]="data"
+    [xCol]="xCol"
+    [yCol]="yCol"
+  ></app-chart-renderer>
+</div>

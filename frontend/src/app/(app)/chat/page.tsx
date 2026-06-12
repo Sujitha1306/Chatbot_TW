@@ -99,11 +99,13 @@ export default function ChatPage() {
         // Chat Messages
         <div className="flex-1 w-full overflow-y-auto px-4 py-8">
           <div className="max-w-3xl mx-auto space-y-6 pb-20">
-            {messages.map((m) => (
-              m.role === 'user' 
-                ? <UserMessage key={m.id} message={m} />
-                : <AssistantMessage key={m.id} message={m} onFollowup={handleFollowup} />
-            ))}
+            {messages.map((m, index) => {
+              const prev = index > 0 ? messages[index - 1] : null;
+              const originalQuestion = prev?.role === 'user' ? prev.content : '';
+              return m.role === 'user' 
+                ? <UserMessage key={m.id || `msg-${index}`} message={m} />
+                : <AssistantMessage key={m.id || `msg-${index}`} message={m} originalQuestion={originalQuestion} onFollowup={handleFollowup} />
+            })}
             <div ref={messagesEndRef} />
           </div>
         </div>

@@ -1,0 +1,38 @@
+<div class="border border-gray-200 rounded-xl mt-2 overflow-hidden">
+  <div class="flex items-center justify-between p-3 border-b border-gray-100">
+    <span class="text-sm font-medium">📋 Results · {{ filtered.length }} rows</span>
+    <input [(ngModel)]="search" placeholder="🔍 Search..."
+           class="text-xs border border-gray-200 rounded px-2 py-1 w-40" />
+  </div>
+
+  <div class="overflow-x-auto max-h-80 overflow-y-auto">
+    <table class="w-full text-xs">
+      <thead class="sticky top-0 bg-white">
+        <tr>
+          <th *ngFor="let col of columns"
+              (click)="sort(col)"
+              [class.text-right]="isNumeric(col)"
+              class="px-3 py-2 font-medium text-gray-500 cursor-pointer hover:text-brand-primary border-b border-gray-100">
+            {{ col }} <span class="text-gray-300">↕</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of paged; let i = index"
+            [class.bg-brand-surface]="i % 2 === 1">
+          <td *ngFor="let col of columns"
+              [class.text-right]="isNumeric(col)"
+              class="px-3 py-1.5 border-b border-gray-50">
+            {{ row[col] }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex items-center justify-between p-2 text-xs text-gray-500 border-t border-gray-100">
+    <button (click)="page = page - 1" [disabled]="page <= 1" class="disabled:opacity-30">← Prev</button>
+    <span>Page {{ page }} of {{ totalPages }}</span>
+    <button (click)="page = page + 1" [disabled]="page >= totalPages" class="disabled:opacity-30">Next →</button>
+  </div>
+</div>

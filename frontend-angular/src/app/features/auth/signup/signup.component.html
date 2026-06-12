@@ -1,0 +1,74 @@
+<div class="min-h-screen flex flex-col bg-white">
+  <div class="bg-brand-navy text-white py-4 px-6 flex items-center gap-2">
+    <span class="font-semibold text-lg">TrackerWave Analytics</span>
+  </div>
+
+  <div class="flex-1 flex items-center justify-center py-8">
+    <div class="w-full max-w-sm">
+      <h1 class="text-2xl font-semibold text-gray-900 mb-1">Create an account</h1>
+      <p class="text-gray-500 mb-6">Sign up to get started</p>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+        <div>
+          <input
+            type="text"
+            formControlName="name"
+            placeholder="Full name"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          />
+        </div>
+
+        <div>
+          <input
+            type="email"
+            formControlName="email"
+            placeholder="Email address"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          />
+          <p *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="text-red-500 text-xs mt-1">
+            Enter a valid email
+          </p>
+        </div>
+
+        <div class="relative">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Password"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          />
+          <button type="button" (click)="showPassword = !showPassword" class="absolute right-3 top-2.5 text-gray-400">
+            👁
+          </button>
+        </div>
+
+        <div class="relative">
+          <input
+            type="password"
+            formControlName="confirmPassword"
+            placeholder="Confirm Password"
+            class="w-full border border-gray-200 rounded-lg px-4 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          />
+          <p *ngIf="form.hasError('passwordMismatch') && form.get('confirmPassword')?.touched" class="text-red-500 text-xs mt-1">
+            Passwords do not match
+          </p>
+        </div>
+
+        <p *ngIf="error" class="text-red-500 text-sm">{{ error }}</p>
+
+        <button
+          type="submit"
+          [disabled]="loading || form.invalid"
+          class="w-full bg-brand-primary text-white rounded-lg py-2.5 font-medium hover:bg-brand-primary/90 disabled:opacity-50"
+        >
+          {{ loading ? 'Creating account...' : 'Sign Up' }}
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-gray-500 mt-6">
+        Already have an account?
+        <a routerLink="/login" class="text-brand-primary font-medium">Sign in →</a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -372,5 +372,55 @@ class EnhancedResultFormatter:
         except:
             pass
             
+            
         return base_summary
 
+
+def build_chart_spec(df: pd.DataFrame, intent: dict) -> dict:
+    """
+    Returns a chart spec dict. The frontend renders and re-renders
+    this entirely client-side — no extra API calls for chart changes.
+    """
+    numeric_cols     = df.select_dtypes(include="number").columns.tolist()
+    categorical_cols = df.select_dtypes(include="object").columns.tolist()
+    date_cols        = df.select_dtypes(include=["datetime", "datetimetz"]).columns.tolist()
+
+    intent_chart = intent.get("chart_type", "auto")
+    if intent_chart == "auto":
+        intent_chart = _auto_chart(df, categorical_cols, numeric_cols, date_cols)
+
+    recommendations = []
+
+    if categorical_cols and numeric_cols:
+        recommendations += [
+            {"type": "bar",   "label": "Bar Chart",  "x": categorical_cols[0], "y": numeric_cols[0], "icon": "bar-chart-2"},
+            {"type": "pie",   "label": "Pie Chart",   "x": categorical_cols[0], "y": numeric_cols[0], "icon": "pie-chart"},
+        ]
+    if (date_cols or categorical_cols) and numeric_cols:
+        x_col = date_cols[0] if date_cols else categorical_cols[0]
+        recommendations.append(
+            {"type": "line",  "label": "Line Chart",  "x": x_col,              "y": numeric_cols[0], "icon": "line-chart"},
+        )
+    if len(numeric_cols) >= 2:
+        recommendations.append(
+            {"type": "scatter","label": "Scatter",    "x": numeric_cols[0],    "y": numeric_cols[1], "icon": "scatter-chart"},
+        )
+
+    # Put recommended type first
+    recommendations.sort(key=lambda r: r["type"] != intent_chart)
+
+    return {
+        "recommendations": recommendations,
+        "active": intent_chart,
+        "columns": {"numeric": numeric_cols, "categorical": categorical_cols, "date": date_cols},
+        "row_count": len(df),
+    }
+
+
+def _auto_chart(df, cat_cols, num_cols, date_cols) -> str:
+    if date_cols and num_cols:        return "line"
+    if cat_cols and num_cols:
+        if len(df[cat_cols[0]].unique()) <= 6: return "pie"
+        return "bar"
+    if len(num_cols) >= 2:            return "scatter"
+    return "bar"

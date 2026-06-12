@@ -8,9 +8,12 @@ import uuid
 class Message:
     role: str           # "user" | "assistant"
     content: str
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
     sql: str = ""
     row_count: int = 0
     domain: str = "porter"
+    data: list = field(default_factory=list)
+    chartSpec: dict = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass
@@ -26,8 +29,9 @@ class ConversationStore:
     """In-memory store. Phase 6 replaces with SQLite/Postgres."""
     _store: dict = defaultdict(dict)  # {user_id: {conv_id: Conversation}}
 
-    def create(self, user_id: str, first_question: str) -> Conversation:
+    def create(self, user_id: str, first_question: str, conv_id: str = None) -> Conversation:
         conv = Conversation(
+            id=conv_id or str(uuid.uuid4()),
             user_id=user_id,
             title=first_question[:60] + ("..." if len(first_question) > 60 else ""),
         )

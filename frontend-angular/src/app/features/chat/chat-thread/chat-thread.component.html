@@ -1,0 +1,45 @@
+<div class="flex flex-col h-full bg-[#FAFAFA] overflow-hidden">
+  <!-- Chat Area -->
+  <div class="flex-1 overflow-y-auto py-6 messages-container">
+    <div class="max-w-4xl mx-auto px-6 space-y-6">
+      <ng-container *ngFor="let msg of (messages$ | async); trackBy: trackById">
+        <app-user-message *ngIf="msg.role === 'user'" [message]="msg"></app-user-message>
+        <app-assistant-message
+          *ngIf="msg.role === 'assistant'"
+          [message]="msg"
+          (followupClick)="onFollowupClick($event)"
+        ></app-assistant-message>
+      </ng-container>
+      <div #scrollAnchor class="h-1"></div>
+    </div>
+  </div>
+
+  <!-- Input bar -->
+  <div class="border-t border-gray-100 bg-white px-6 py-4">
+    <div class="max-w-4xl mx-auto">
+      <div class="border border-gray-200 rounded-xl bg-white shadow-sm px-4 py-3 flex items-end gap-3
+                  focus-within:border-brand-primary/50 focus-within:ring-1 focus-within:ring-brand-primary/20 transition">
+        <textarea
+          [(ngModel)]="inputValue"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask anything about porter or assets..."
+          rows="1"
+          [disabled]="(isStreaming$ | async) ?? false"
+          class="flex-1 resize-none outline-none text-sm text-gray-700
+                 placeholder:text-gray-400 max-h-32 leading-relaxed bg-transparent
+                 disabled:opacity-50"
+        ></textarea>
+        <button
+          (click)="send()"
+          [disabled]="((isStreaming$ | async) ?? false) || !inputValue.trim()"
+          class="bg-brand-primary text-white rounded-lg px-4 py-2 text-sm font-medium
+                 hover:bg-brand-primary/90 transition disabled:opacity-40 flex-shrink-0">
+          Send ›
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 text-center mt-1.5">
+        Shift+Enter for new line · Enter to send
+      </p>
+    </div>
+  </div>
+</div>

@@ -7,13 +7,16 @@ import logging
 from backend.app.core.chatbot import TrackerWaveChatbot
 from backend.app.api.deps import require_api_key
 from backend.app.db.conversation_store import _store, Message
+from backend.app.core.formatter import build_chart_spec
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+from typing import Optional
+
 class QueryRequest(BaseModel):
     question: str
-    session_id: str = "default"
+    session_id: Optional[str] = "default"
     chart_type: str = "auto"
     row_limit: int = 100
 
@@ -67,17 +70,19 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
     # Optional auth user info from deps (if Phase 3 JWT used, req.session_id isn't strictly secure, but okay for MVP)
     user_id = getattr(req, "user_id", "default")
     
-    # Create or load conversation
-    if req.session_id == "default" or req.session_id is None:
-        conv = _store.create(user_id, req.question)
-        req.session_id = conv.id
+    # Use a local variable - don't mutate req
+    session_id = req.session_id
+    if session_id in ("default", None) or session_id not in _store._store[user_id]:
+        passed_id = session_id if session_id not in ("default", None) else None
+        conv = _store.create(user_id, req.question, passed_id)
+        session_id = conv.id
         
-    _store.add_message(user_id, req.session_id, Message(role="user", content=req.question))
+    _store.add_message(user_id, session_id, Message(role="user", content=req.question))
 
     async def event_generator():
         try:
             # ── Event 0: session id (for new conversations) ──
-            yield _sse({"event": "session", "id": req.session_id})
+            yield _sse({"event": "session", "id": session_id})
 
             # ── Event 1: intent (fast, ~0.5s) ──
             intent = pipeline.classify_intent(req.question)
@@ -97,6 +102,13 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 yield _sse({"event": "sql_corrected", "sql": sql})
 
             if not success:
+                _store.add_message(user_id, session_id, Message(
+                    role="assistant", 
+                    content=f"Query failed: {error_msg}", 
+                    sql=sql, 
+                    row_count=0, 
+                    domain=intent.get("data_domain", "porter"),
+                ))
                 yield _sse({"event": "error", "message": f"Query failed: {error_msg}", "sql": sql})
                 return
 
@@ -133,7 +145,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                         await asyncio.sleep(0)   # yield control to event loop
 
             # ── Event 6: Chart spec ──
-            chart_spec = _build_chart_spec(df, intent)
+            chart_spec = build_chart_spec(df, intent)
             yield _sse({"event": "chart", "spec": chart_spec})
 
             # ── Event 7: Follow-up suggestions ──
@@ -144,12 +156,14 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "done"})
             
             # Save assistant response to history
-            _store.add_message(user_id, req.session_id, Message(
+            _store.add_message(user_id, session_id, Message(
                 role="assistant", 
                 content=full_summary, 
                 sql=sql, 
                 row_count=len(df), 
-                domain=intent.get("data_domain", "porter")
+                domain=intent.get("data_domain", "porter"),
+                data=data_payload,
+                chartSpec=chart_spec
             ))
 
         except Exception as e:
@@ -178,38 +192,6 @@ def _build_summary_prompt(question: str, df, intent: dict) -> str:
         f"SAMPLE DATA: {json.dumps(sample, default=str)}\n\n"
         "Write a 2–3 sentence plain-language summary for a hospital manager."
     )
-
-
-def _build_chart_spec(df, intent: dict) -> dict:
-    import numpy as np
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    categorical_cols = df.select_dtypes(include=['object', 'string', 'datetime', 'datetime64']).columns.tolist()
-    
-    # Defaults
-    active_type = intent.get("chart_type", "bar")
-    if active_type == "auto":
-        active_type = "bar" if len(categorical_cols) > 0 else "line"
-        
-    x_col = categorical_cols[0] if categorical_cols else df.columns[0]
-    y_col = numeric_cols[0] if numeric_cols else (df.columns[1] if len(df.columns) > 1 else df.columns[0])
-
-    return {
-        "active": active_type,
-        "recommendations": [
-            {
-                "type": active_type,
-                "label": "Auto",
-                "x": x_col,
-                "y": y_col,
-                "icon": "bar"
-            }
-        ],
-        "columns": {
-            "numeric": numeric_cols,
-            "categorical": categorical_cols
-        },
-        "row_count": len(df)
-    }
 
 
 _pipeline = None
