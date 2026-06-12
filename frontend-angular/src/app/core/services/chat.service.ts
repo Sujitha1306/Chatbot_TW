@@ -107,6 +107,8 @@ export class ChatService {
     const assistantMsg: ChatMessage = {
       id: assistantId, role: 'assistant', content: '',
       status: 'pending', timestamp: new Date(),
+      chartSpec: undefined,
+      data: undefined,
     };
 
     this.messagesSubject.next([...current, userMsg, assistantMsg]);

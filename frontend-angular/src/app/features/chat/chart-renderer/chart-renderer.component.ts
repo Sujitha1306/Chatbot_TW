@@ -37,6 +37,30 @@ export class ChartRendererComponent implements OnChanges {
       return;
     }
     this.plotData = this.buildTrace();
+
+    if (this.type === 'pie') {
+      this.layout = {
+        ...BASE_LAYOUT,
+        xaxis: undefined,
+        yaxis: undefined,
+        title: { text: `${this.formatLabel(this.yCol)} by ${this.formatLabel(this.xCol)}`, font: { size: 13 } },
+      };
+    } else {
+      this.layout = {
+        ...BASE_LAYOUT,
+        xaxis: { title: { text: this.formatLabel(this.xCol) }, automargin: true },
+        yaxis: { title: { text: this.formatLabel(this.yCol) }, automargin: true },
+        title: undefined,
+      };
+    }
+  }
+
+  private formatLabel(col: string): string {
+    if (!col) return '';
+    return col
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
   }
 
   get hasValidData(): boolean {

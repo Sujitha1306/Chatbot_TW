@@ -6,7 +6,7 @@ export type ChartType     = 'bar' | 'line' | 'pie' | 'scatter' | 'table';
 export interface ChartSpec {
   recommendations: { type: ChartType; label: string; x: string; y: string; icon: string; sort_x_as?: string }[];
   active: ChartType;
-  columns: { numeric: string[]; categorical: string[]; date: string[] };
+  columns: { numeric: string[]; categorical: string[]; date: string[]; dimensions?: string[]; measures?: string[] };
   row_count: number;
   single_value?: boolean;
   fallback_reason?: string | null;

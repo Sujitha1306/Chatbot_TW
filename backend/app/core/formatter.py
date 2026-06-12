@@ -377,76 +377,95 @@ class EnhancedResultFormatter:
         return base_summary
 
 
+# Column names that are ALWAYS dimensions, never measures —
+# regardless of their SQL data type
+DIMENSION_NAME_PATTERNS = [
+    "year", "month", "day", "week", "quarter", "date", "period",
+    "facility_id", "facility_name", "region", "department",
+    "status", "category", "criticality", "name", "id",
+]
+
+def _is_dimension_column(col_name: str, series: "pd.Series") -> bool:
+    """A column is a dimension if its NAME matches a known dimension
+    pattern, OR if it's non-numeric. Measures are numeric AND not
+    name-matched to a dimension pattern."""
+    name_lower = col_name.lower()
+    if any(pattern in name_lower for pattern in DIMENSION_NAME_PATTERNS):
+        return True
+    return series.dtype.kind not in "iuf"  # not int/uint/float
+
+
 def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
     import pandas as pd
 
     if df.empty:
-        return {
-            "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "table"}],
-            "active": "table",
-            "columns": {"numeric": [], "categorical": [], "date": []},
-            "row_count": 0,
-        }
+        return _table_only_spec(0)
 
-    numeric_cols     = [c for c in df.select_dtypes(include="number").columns if df[c].notna().any()]
-    categorical_cols = [c for c in df.select_dtypes(include="object").columns if df[c].notna().any() and df[c].nunique() > 1]
-    date_cols        = df.select_dtypes(include=["datetime", "datetimetz"]).columns.tolist()
+    dimension_cols = [c for c in df.columns if _is_dimension_column(c, df[c]) and df[c].notna().any()]
+    measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any() and df[c].nunique() > 1]
 
-    if len(numeric_cols) <= 1 and not categorical_cols and not date_cols:
-        return {
-            "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "table"}],
-            "active": "table",
-            "columns": {"numeric": numeric_cols, "categorical": [], "date": []},
-            "row_count": len(df),
-            "single_value": True,
-        }
+    if not measure_cols:
+        return _table_only_spec(len(df))
+
+    # Pick the best dimension (prefer time-based, then facility/category)
+    time_dims = [c for c in dimension_cols if any(p in c.lower() for p in ["year", "month", "day", "week", "date", "period"])]
+    primary_dim = time_dims[0] if time_dims else (dimension_cols[0] if dimension_cols else None)
+
+    # Pick the best measure (highest variance = most informative)
+    primary_measure = _best_numeric_col(df, measure_cols)
 
     recommendations = []
 
-    # BAR: needs a categorical column with >1 unique value AND a numeric column with non-zero variance
-    if categorical_cols and numeric_cols:
-        num_col = _best_numeric_col(df, numeric_cols)
-        cat_col = categorical_cols[0]
-        if df[num_col].sum() != 0:
-            recommendations.append({"type": "bar", "label": "Bar Chart", "x": cat_col, "y": num_col, "icon": "bar-chart-2"})
+    if primary_dim:
+        n_unique = df[primary_dim].nunique()
 
-    # PIE: needs categorical with 2-15 unique values
-    if categorical_cols and numeric_cols:
-        cat_col = categorical_cols[0]
-        n_unique = df[cat_col].nunique()
-        num_col = _best_numeric_col(df, numeric_cols)
-        if 2 <= n_unique <= 15 and df[num_col].sum() != 0:
-            recommendations.append({"type": "pie", "label": "Pie Chart", "x": cat_col, "y": num_col, "icon": "pie-chart"})
-
-    # LINE: needs date column OR a categorical column that represents a sequence
-    line_x = _find_sequential_column(df, date_cols, categorical_cols)
-    if line_x and numeric_cols:
-        num_col = _best_numeric_col(df, numeric_cols)
-        if df[line_x].nunique() >= 2 and df[num_col].nunique() > 1:
-            sort_hint = "date" if line_x in date_cols else ("numeric" if df[line_x].astype(str).str.match(r'^\d+$').all() else "string")
+        # LINE: time-based dimension with 2+ points
+        if primary_dim in time_dims and n_unique >= 2:
+            sort_as = "numeric" if df[primary_dim].dtype.kind in "iuf" else "string"
             recommendations.append({
-                "type": "line", "label": "Line Chart", "x": line_x, "y": num_col,
-                "icon": "line-chart", "sort_x_as": sort_hint
+                "type": "line", "label": "Line Chart",
+                "x": primary_dim, "y": primary_measure, "icon": "LineChart",
+                "sort_x_as": sort_as,
             })
 
-    # SCATTER: needs 2 numeric columns, both with variance, at least 3 rows
-    usable_numeric = [c for c in numeric_cols if df[c].nunique() > 1]
-    if len(usable_numeric) >= 2 and len(df) >= 3:
-        recommendations.append({"type": "scatter", "label": "Scatter Plot", "x": usable_numeric[0], "y": usable_numeric[1], "icon": "scatter-chart"})
+        # BAR: any dimension with 2+ categories
+        if n_unique >= 2:
+            recommendations.append({
+                "type": "bar", "label": "Bar Chart",
+                "x": primary_dim, "y": primary_measure, "icon": "BarChart2",
+            })
 
-    # TABLE: always available as a fallback
-    recommendations.append({"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "table"})
+        # PIE: dimension with 2-15 categories
+        if 2 <= n_unique <= 15:
+            recommendations.append({
+                "type": "pie", "label": "Pie Chart",
+                "x": primary_dim, "y": primary_measure, "icon": "PieChart",
+            })
 
+    # SCATTER: only if there are 2+ DISTINCT measures (not dimension vs measure)
+    usable_measures = [c for c in measure_cols if df[c].nunique() > 1]
+    if len(usable_measures) >= 2 and len(df) >= 3:
+        recommendations.append({
+            "type": "scatter", "label": "Scatter Plot",
+            "x": usable_measures[0], "y": usable_measures[1], "icon": "ScatterChart",
+        })
+
+    recommendations.append({"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "Table2"})
+
+    if not recommendations or recommendations[0]["type"] == "table":
+        # Nothing meaningful to chart — table only
+        return _table_only_spec(len(df))
+
+    # Honor requested chart type if valid, else use first recommendation
     intent_chart = intent.get("chart_type", "auto")
     valid_types = [r["type"] for r in recommendations]
-    if intent_chart == "auto" or intent_chart not in valid_types:
-        primary = recommendations[0]["type"]
-    else:
-        primary = intent_chart
-        
     fallback_reason = None
-    if intent_chart != "auto" and intent_chart not in valid_types:
-        fallback_reason = f"A {intent_chart} chart wasn't suitable for this data (showing {primary} instead)"
+    if intent_chart != "auto" and intent_chart in valid_types:
+        primary = intent_chart
+    else:
+        if intent_chart != "auto" and intent_chart != "table":
+            fallback_reason = f"A {intent_chart} chart wasn't suitable for this data (showing {recommendations[0]['type']} instead)"
+        primary = recommendations[0]["type"]
 
     recommendations.sort(key=lambda r: r["type"] != primary)
 
@@ -454,32 +473,30 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
         "recommendations": recommendations,
         "active": primary,
         "fallback_reason": fallback_reason,
-        "columns": {"numeric": numeric_cols, "categorical": categorical_cols, "date": date_cols},
+        "columns": {
+            "dimensions": dimension_cols,
+            "measures":   measure_cols,
+            # Keep old keys for backward compat with any existing frontend code
+            "numeric":     measure_cols,
+            "categorical": [c for c in dimension_cols if df[c].dtype.kind not in "iuf"],
+            "date":        [c for c in dimension_cols if "date" in c.lower() or df[c].dtype.kind == "M"],
+        },
         "row_count": len(df),
-        "single_value": len(numeric_cols) <= 1 and not categorical_cols and not date_cols and len(df) == 1
     }
+
+
+def _table_only_spec(row_count: int) -> dict:
+    return {
+        "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "Table2"}],
+        "active": "table",
+        "fallback_reason": None,
+        "columns": {"dimensions": [], "measures": [], "numeric": [], "categorical": [], "date": []},
+        "row_count": row_count,
+    }
+
 
 def _best_numeric_col(df, numeric_cols: list) -> str:
     if len(numeric_cols) == 1:
         return numeric_cols[0]
     variances = {c: df[c].var() for c in numeric_cols if df[c].notna().any()}
     return max(variances, key=variances.get) if variances else numeric_cols[0]
-
-def _find_sequential_column(df, date_cols: list, categorical_cols: list) -> str | None:
-    if date_cols:
-        return date_cols[0]
-        
-    import re
-    TIME_PATTERNS = [
-        re.compile(r"^\d{4}-\d{2}(-\d{2})?$"),
-        re.compile(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", re.I),
-        re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)", re.I),
-        re.compile(r"^Week\s*\d+$", re.I),
-        re.compile(r"^\d{1,2}:00$"),
-    ]
-    for col in categorical_cols:
-        sample = df[col].dropna().astype(str).head(5)
-        if any(any(p.match(v) for p in TIME_PATTERNS) for v in sample):
-            return col
-
-    return None
