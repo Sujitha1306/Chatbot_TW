@@ -28,6 +28,7 @@ export class ChartRendererComponent implements OnChanges {
   @Input() xCol!: string;
   @Input() yCol!: string;
   @Input() sortXAs?: string;
+  @Input() spec?: any;
 
   plotData: any[] = [];
   layout = BASE_LAYOUT;
@@ -84,9 +85,16 @@ export class ChartRendererComponent implements OnChanges {
     return true;
   }
 
+  private getSortedData(): Record<string, unknown>[] {
+    const sortBy = this.spec?.recommendations?.find((r: any) => r.type === this.type)?.sort_x_by;
+    if (!sortBy) return this.data;
+    return [...this.data].sort((a, b) => Number(a[sortBy]) - Number(b[sortBy]));
+  }
+
   private buildTrace(): any[] {
-    const x = this.data.map(d => d[this.xCol]);
-    const y = this.data.map(d => d[this.yCol]);
+    const sortedData = (this.type === 'bar' || this.type === 'line') ? this.getSortedData() : this.data;
+    const x = sortedData.map(d => d[this.xCol]);
+    const y = sortedData.map(d => d[this.yCol]);
 
     switch (this.type) {
       case 'bar': {
@@ -107,13 +115,14 @@ export class ChartRendererComponent implements OnChanges {
       }
       case 'line': {
         const sortAs = this.sortXAs || 'string';
-        let sorted = [...this.data];
+        let sorted = [...sortedData];
 
         if (sortAs === 'date') {
           sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
         } else if (sortAs === 'numeric') {
           sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
-        } else {
+        } else if (!this.spec?.recommendations?.find((r: any) => r.type === 'line')?.sort_x_by) {
+          // Only use fallback string sort if no sort_x_by was applied
           sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
         }
 
@@ -133,6 +142,10 @@ export class ChartRendererComponent implements OnChanges {
   }
 
   private topNWithOther(n: number): { labels: any[]; values: any[] } {
+    if (!this.data.length || !(this.xCol in this.data[0])) {
+      return { labels: [], values: [] };
+    }
+
     // If yCol is not defined for pie, fallback or return empty
     if (!this.yCol) {
       // In pie charts, sometimes only xCol (category) is needed if we just count them

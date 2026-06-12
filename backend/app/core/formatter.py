@@ -429,12 +429,23 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
     else:
         primary_dim = dimension_cols[0] if dimension_cols else None
 
+    MONTH_NAMES = {
+        1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
+        7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
+    }
+
     if primary_dim == "month" and "year" in dimension_cols and df["year"].nunique() > 1:
         # Create a combined period column for display
         df = df.copy()
-        df["_period"] = df["year"].astype(str) + "-" + df["month"].astype(str).str.zfill(2)
+        df["_period"] = df.apply(
+            lambda row: f"{MONTH_NAMES.get(int(row['month']), row['month'])} {int(row['year'])}",
+            axis=1
+        )
         dimension_cols = dimension_cols + ["_period"]
         primary_dim = "_period"
+        
+        # Add sort key
+        df["_period_sort"] = df["year"].astype(int) * 12 + df["month"].astype(int)
 
     # Pick the best measure (highest variance = most informative)
     primary_measure = _best_numeric_col(df, measure_cols)
@@ -443,25 +454,34 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
 
     if primary_dim:
         n_unique = df[primary_dim].nunique()
+        sort_by_col = "_period_sort" if primary_dim == "_period" else None
 
         # LINE: time-based dimension with 2+ points
-        if primary_dim in time_dims and n_unique >= 2:
-            sort_as = "numeric" if df[primary_dim].dtype.kind in "iuf" else "string"
-            recommendations.append({
-                "type": "line", "label": "Line Chart",
-                "x": primary_dim, "y": primary_measure, "icon": "LineChart",
-                "sort_x_as": sort_as,
-            })
+        if primary_dim in time_dims or primary_dim == "_period":
+            if n_unique >= 2:
+                sort_as = "numeric" if df[primary_dim].dtype.kind in "iuf" else "string"
+                rec = {
+                    "type": "line", "label": "Line Chart",
+                    "x": primary_dim, "y": primary_measure, "icon": "LineChart",
+                    "sort_x_as": sort_as,
+                }
+                if sort_by_col:
+                    rec["sort_x_by"] = sort_by_col
+                recommendations.append(rec)
 
         # BAR: any dimension with 2+ categories
         if n_unique >= 2:
-            recommendations.append({
+            rec = {
                 "type": "bar", "label": "Bar Chart",
                 "x": primary_dim, "y": primary_measure, "icon": "BarChart2",
-            })
+            }
+            if sort_by_col:
+                rec["sort_x_by"] = sort_by_col
+            recommendations.append(rec)
 
-        # PIE: dimension with 2-15 categories
-        if 2 <= n_unique <= 15:
+        # PIE: dimension with 2-15 categories, but NOT for time-series dimensions
+        is_time_dimension = primary_dim in time_dims or primary_dim == "_period"
+        if 2 <= n_unique <= 15 and not is_time_dimension:
             recommendations.append({
                 "type": "pie", "label": "Pie Chart",
                 "x": primary_dim, "y": primary_measure, "icon": "PieChart",

@@ -4,7 +4,7 @@ export type Domain        = 'porter' | 'asset' | 'both';
 export type ChartType     = 'bar' | 'line' | 'pie' | 'scatter' | 'table';
 
 export interface ChartSpec {
-  recommendations: { type: ChartType; label: string; x: string; y: string; icon: string; sort_x_as?: string }[];
+  recommendations: { type: ChartType; label: string; x: string; y: string; icon: string; sort_x_as?: string; sort_x_by?: string }[];
   active: ChartType;
   columns: { numeric: string[]; categorical: string[]; date: string[]; dimensions?: string[]; measures?: string[] };
   row_count: number;
