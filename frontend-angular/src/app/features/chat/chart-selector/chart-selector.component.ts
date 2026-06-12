@@ -23,6 +23,7 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
   activeType!: ChartType;
   xCol = '';
   yCol = '';
+  sortXAs?: string;
 
   ngOnInit() {
     this.initSelections();
@@ -40,6 +41,7 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
     const rec = this.spec.recommendations.find(r => r.type === this.activeType);
     this.xCol = rec?.x || this.spec.columns.categorical?.[0] || '';
     this.yCol = rec?.y || this.spec.columns.numeric?.[0] || '';
+    this.sortXAs = rec?.sort_x_as;
   }
 
   selectType(type: ChartType) {
@@ -48,6 +50,7 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
     if (rec) { 
       this.xCol = rec.x || this.xCol; 
       this.yCol = rec.y || this.yCol; 
+      this.sortXAs = rec.sort_x_as;
     }
   }
 

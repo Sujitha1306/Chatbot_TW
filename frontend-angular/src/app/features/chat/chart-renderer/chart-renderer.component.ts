@@ -20,22 +20,34 @@ const BASE_LAYOUT: any = {
   selector: 'app-chart-renderer',
   standalone: true,
   imports: [CommonModule, PlotlyModule],
-  template: `<plotly-plot [data]="plotData" [layout]="layout" [config]="{responsive: true, displaylogo: false}"></plotly-plot>`,
+  templateUrl: './chart-renderer.component.html',
 })
 export class ChartRendererComponent implements OnChanges {
   @Input() type!: ChartType;
   @Input() data!: Record<string, unknown>[];
   @Input() xCol!: string;
   @Input() yCol!: string;
+  @Input() sortXAs?: string;
 
   plotData: any[] = [];
   layout = BASE_LAYOUT;
 
   ngOnChanges() {
-    if (!this.data || !this.data.length || !this.xCol || (!this.yCol && this.type !== 'pie')) {
+    if (!this.hasValidData || !this.xCol || (!this.yCol && this.type !== 'pie')) {
       return;
     }
     this.plotData = this.buildTrace();
+  }
+
+  get hasValidData(): boolean {
+    if (!this.data || this.data.length === 0) return false;
+    if (this.type === 'table') return true;
+
+    const yValues = this.data.map(d => Number(d[this.yCol])).filter(v => !isNaN(v));
+    if (yValues.length === 0) return false;
+    if (this.type !== 'pie' && new Set(yValues).size === 1 && yValues[0] === 0) return false; // all-zero
+
+    return true;
   }
 
   private buildTrace(): any[] {
@@ -58,13 +70,23 @@ export class ChartRendererComponent implements OnChanges {
         return [{ type: 'pie', labels: top10.labels, values: top10.values, hole: 0.4 }];
       }
       case 'line': {
-        const sorted = [...this.data].sort((a, b) =>
-          String(a[this.xCol]).localeCompare(String(b[this.xCol])));
+        const sortAs = this.sortXAs || 'string';
+        let sorted = [...this.data];
+
+        if (sortAs === 'date') {
+          sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
+        } else if (sortAs === 'numeric') {
+          sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
+        } else {
+          sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
+        }
+
         return [{
           type: 'scatter', mode: 'lines+markers',
           x: sorted.map(d => d[this.xCol]),
           y: sorted.map(d => d[this.yCol]),
           line: { color: BRAND_COLORS[0] },
+          connectgaps: false,
         }];
       }
       case 'scatter':

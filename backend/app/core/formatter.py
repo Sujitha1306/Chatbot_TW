@@ -377,63 +377,109 @@ class EnhancedResultFormatter:
         return base_summary
 
 
-def build_chart_spec(df: pd.DataFrame, intent: dict) -> dict:
-    """
-    Returns a chart spec dict. The frontend renders and re-renders
-    this entirely client-side — no extra API calls for chart changes.
-    """
-    numeric_cols     = df.select_dtypes(include="number").columns.tolist()
-    categorical_cols = df.select_dtypes(include="object").columns.tolist()
+def build_chart_spec(df: "pd.DataFrame", intent: dict) -> dict:
+    import pandas as pd
+
+    if df.empty:
+        return {
+            "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "table"}],
+            "active": "table",
+            "columns": {"numeric": [], "categorical": [], "date": []},
+            "row_count": 0,
+        }
+
+    numeric_cols     = [c for c in df.select_dtypes(include="number").columns if df[c].notna().any()]
+    categorical_cols = [c for c in df.select_dtypes(include="object").columns if df[c].notna().any() and df[c].nunique() > 1]
     date_cols        = df.select_dtypes(include=["datetime", "datetimetz"]).columns.tolist()
 
-    intent_chart = intent.get("chart_type", "auto")
-    if intent_chart == "auto":
-        intent_chart = _auto_chart(df, categorical_cols, numeric_cols, date_cols)
-
-    # If there's only one numeric column and no categorical columns,
-    # a bar/line/scatter chart doesn't make sense — single value, use
-    # a "stat card" style table instead
-    if len(numeric_cols) <= 1 and not categorical_cols:
+    if len(numeric_cols) <= 1 and not categorical_cols and not date_cols:
         return {
-            "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "Table2"}],
+            "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "table"}],
             "active": "table",
             "columns": {"numeric": numeric_cols, "categorical": [], "date": []},
             "row_count": len(df),
-            "single_value": True,  # frontend can render this as a big number/stat card
+            "single_value": True,
         }
 
     recommendations = []
 
+    # BAR: needs a categorical column with >1 unique value AND a numeric column with non-zero variance
     if categorical_cols and numeric_cols:
-        recommendations += [
-            {"type": "bar",   "label": "Bar Chart",  "x": categorical_cols[0], "y": numeric_cols[0], "icon": "bar-chart-2"},
-            {"type": "pie",   "label": "Pie Chart",   "x": categorical_cols[0], "y": numeric_cols[0], "icon": "pie-chart"},
-        ]
-    if (date_cols or categorical_cols) and numeric_cols:
-        x_col = date_cols[0] if date_cols else categorical_cols[0]
-        recommendations.append(
-            {"type": "line",  "label": "Line Chart",  "x": x_col,              "y": numeric_cols[0], "icon": "line-chart"},
-        )
-    if len(numeric_cols) >= 2:
-        recommendations.append(
-            {"type": "scatter","label": "Scatter",    "x": numeric_cols[0],    "y": numeric_cols[1], "icon": "scatter-chart"},
-        )
+        num_col = _best_numeric_col(df, numeric_cols)
+        cat_col = categorical_cols[0]
+        if df[num_col].sum() != 0:
+            recommendations.append({"type": "bar", "label": "Bar Chart", "x": cat_col, "y": num_col, "icon": "bar-chart-2"})
 
-    # Put recommended type first
-    recommendations.sort(key=lambda r: r["type"] != intent_chart)
+    # PIE: needs categorical with 2-15 unique values
+    if categorical_cols and numeric_cols:
+        cat_col = categorical_cols[0]
+        n_unique = df[cat_col].nunique()
+        num_col = _best_numeric_col(df, numeric_cols)
+        if 2 <= n_unique <= 15 and df[num_col].sum() != 0:
+            recommendations.append({"type": "pie", "label": "Pie Chart", "x": cat_col, "y": num_col, "icon": "pie-chart"})
+
+    # LINE: needs date column OR a categorical column that represents a sequence
+    line_x = _find_sequential_column(df, date_cols, categorical_cols)
+    if line_x and numeric_cols:
+        num_col = _best_numeric_col(df, numeric_cols)
+        if df[line_x].nunique() >= 2 and df[num_col].nunique() > 1:
+            sort_hint = "date" if line_x in date_cols else ("numeric" if df[line_x].astype(str).str.match(r'^\d+$').all() else "string")
+            recommendations.append({
+                "type": "line", "label": "Line Chart", "x": line_x, "y": num_col,
+                "icon": "line-chart", "sort_x_as": sort_hint
+            })
+
+    # SCATTER: needs 2 numeric columns, both with variance, at least 3 rows
+    usable_numeric = [c for c in numeric_cols if df[c].nunique() > 1]
+    if len(usable_numeric) >= 2 and len(df) >= 3:
+        recommendations.append({"type": "scatter", "label": "Scatter Plot", "x": usable_numeric[0], "y": usable_numeric[1], "icon": "scatter-chart"})
+
+    # TABLE: always available as a fallback
+    recommendations.append({"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "table"})
+
+    intent_chart = intent.get("chart_type", "auto")
+    valid_types = [r["type"] for r in recommendations]
+    if intent_chart == "auto" or intent_chart not in valid_types:
+        primary = recommendations[0]["type"]
+    else:
+        primary = intent_chart
+        
+    fallback_reason = None
+    if intent_chart != "auto" and intent_chart not in valid_types:
+        fallback_reason = f"A {intent_chart} chart wasn't suitable for this data (showing {primary} instead)"
+
+    recommendations.sort(key=lambda r: r["type"] != primary)
 
     return {
         "recommendations": recommendations,
-        "active": intent_chart,
+        "active": primary,
+        "fallback_reason": fallback_reason,
         "columns": {"numeric": numeric_cols, "categorical": categorical_cols, "date": date_cols},
         "row_count": len(df),
+        "single_value": len(numeric_cols) <= 1 and not categorical_cols and not date_cols and len(df) == 1
     }
 
+def _best_numeric_col(df, numeric_cols: list) -> str:
+    if len(numeric_cols) == 1:
+        return numeric_cols[0]
+    variances = {c: df[c].var() for c in numeric_cols if df[c].notna().any()}
+    return max(variances, key=variances.get) if variances else numeric_cols[0]
 
-def _auto_chart(df, cat_cols, num_cols, date_cols) -> str:
-    if date_cols and num_cols:        return "line"
-    if cat_cols and num_cols:
-        if len(df[cat_cols[0]].unique()) <= 6: return "pie"
-        return "bar"
-    if len(num_cols) >= 2:            return "scatter"
-    return "bar"
+def _find_sequential_column(df, date_cols: list, categorical_cols: list) -> str | None:
+    if date_cols:
+        return date_cols[0]
+        
+    import re
+    TIME_PATTERNS = [
+        re.compile(r"^\d{4}-\d{2}(-\d{2})?$"),
+        re.compile(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", re.I),
+        re.compile(r"^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)", re.I),
+        re.compile(r"^Week\s*\d+$", re.I),
+        re.compile(r"^\d{1,2}:00$"),
+    ]
+    for col in categorical_cols:
+        sample = df[col].dropna().astype(str).head(5)
+        if any(any(p.match(v) for p in TIME_PATTERNS) for v in sample):
+            return col
+
+    return None
