@@ -563,7 +563,7 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
             "x": usable_measures[0], "y": usable_measures[1], "icon": "ScatterChart",
         })
 
-    recommendations.append({"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "Table2"})
+    # Data Table option in Visualization tab is removed per user request
 
     if not recommendations or recommendations[0]["type"] == "table":
         # Nothing meaningful to chart — table only
