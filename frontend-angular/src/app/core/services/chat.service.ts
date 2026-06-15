@@ -71,7 +71,12 @@ export class ChatService {
       });
       if (!res.ok) return;
       const data = await res.json();
-      this.messagesSubject.next(data.messages || []);
+      const loadedMessages = (data.messages || []).map((m: any) => ({
+        ...m,
+        status: 'complete',
+        rowCount: m.row_count || m.rowCount
+      }));
+      this.messagesSubject.next(loadedMessages);
       this.activeConvId = convId;
     } catch (e) {
       console.error('Failed to load messages', e);
