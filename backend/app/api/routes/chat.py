@@ -196,6 +196,119 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, default=str)}\n\n"
 
 
+def _describe_actual_range(df, intent: dict) -> str:
+    """Compute the ACTUAL date/period range covered by the result,
+    independent of what the user's question implied."""
+    import pandas as pd
+
+    # Look for period-like columns
+    period_cols = [c for c in df.columns if c in ("_period", "month", "year", "request_year", "period")]
+    if not period_cols:
+        return ""
+
+    if "_period" in df.columns:
+        periods = df["_period"].tolist()
+        if len(periods) >= 2:
+            return f"ACTUAL DATA RANGE: This result covers {periods[0]} through {periods[-1]} ({len(periods)} periods)."
+    elif "year" in df.columns and "month" in df.columns:
+        MONTH_NAMES = {1:"Jan",2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov",12:"Dec"}
+        first = df.iloc[0]
+        last = df.iloc[-1]
+        return (f"ACTUAL DATA RANGE: This result covers "
+                f"{MONTH_NAMES.get(int(first['month']), first['month'])} {int(first['year'])} through "
+                f"{MONTH_NAMES.get(int(last['month']), last['month'])} {int(last['year'])} "
+                f"({len(df)} periods).")
+    elif "request_year" in df.columns or "year" in df.columns:
+        col = "request_year" if "request_year" in df.columns else "year"
+        years = sorted(df[col].unique())
+        return f"ACTUAL DATA RANGE: This result covers {len(years)} year(s): {', '.join(str(int(y)) for y in years)}."
+
+    return ""
+
+
+def _compute_period_trends(df, measure_cols: list) -> str:
+    """For time-series results with 3+ rows, compute period-over-period
+    % change for each measure and highlight the largest swings."""
+    if len(df) < 3:
+        return ""
+
+    period_cols = [c for c in df.columns if c in ("_period", "month", "year", "request_year")]
+    if not period_cols:
+        return ""
+
+    lines = []
+    for col in measure_cols[:3]:  # cap to avoid prompt bloat
+        values = df[col].tolist()
+        changes = []
+        for i in range(1, len(values)):
+            prev, curr = values[i-1], values[i]
+            if prev == 0:
+                continue
+            pct_change = (curr - prev) / prev * 100
+            changes.append((i, pct_change))
+
+        if not changes:
+            continue
+
+        # Find the largest absolute change
+        largest = max(changes, key=lambda x: abs(x[1]))
+        idx, pct = largest
+        period_label = df.iloc[idx].get("_period", f"period {idx+1}")
+        prev_label = df.iloc[idx-1].get("_period", f"period {idx}")
+        direction = "increased" if pct > 0 else "decreased"
+
+        lines.append(
+            f"  {col}: largest change is {direction} by {abs(pct):.1f}% "
+            f"from {prev_label} to {period_label} "
+            f"({values[idx-1]:,.1f} → {values[idx]:,.1f})"
+        )
+
+        # Also flag if this single change is much bigger than others
+        # (signals a potential anomaly, feeds into 9.2.3)
+        other_changes = [abs(c[1]) for c in changes if c[0] != idx]
+        if other_changes and abs(pct) > 2 * (sum(other_changes) / len(other_changes)):
+            lines.append(f"    ⚠ This change is unusually large compared to other period-to-period changes — worth flagging as a possible anomaly.")
+
+    if not lines:
+        return ""
+    return "PERIOD-OVER-PERIOD TRENDS (pre-computed):\n" + "\n".join(lines)
+
+
+def _detect_outliers(df, measure_cols: list) -> str:
+    """Flag rows where a measure is >1.5x IQR from the rest — classic
+    box-plot outlier detection, applied per measure column."""
+    if len(df) < 4:  # need enough rows for meaningful IQR
+        return ""
+
+    period_col = "_period" if "_period" in df.columns else None
+    lines = []
+
+    for col in measure_cols[:3]:
+        values = df[col]
+        q1, q3 = values.quantile(0.25), values.quantile(0.75)
+        iqr = q3 - q1
+        if iqr == 0:
+            continue
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+
+        outlier_mask = (values < lower_bound) | (values > upper_bound)
+        if outlier_mask.any():
+            for idx in df[outlier_mask].index:
+                label = df.loc[idx, period_col] if period_col else f"row {idx}"
+                direction = "lower" if values[idx] < lower_bound else "higher"
+                lines.append(
+                    f"  {label}: {col} = {values[idx]:,.1f} is notably {direction} "
+                    f"than the typical range ({lower_bound:,.1f} to {upper_bound:,.1f})"
+                )
+
+    if not lines:
+        return ""
+    return ("POTENTIAL ANOMALIES (statistical outliers detected):\n" + "\n".join(lines) +
+            "\n\nNote: an unusually low value in the MOST RECENT period may indicate "
+            "incomplete/partial data for that period rather than an operational issue.")
+
+
 def _build_summary_prompt(question: str, df, intent: dict, coverage: dict = None, facility_name: str | None = None) -> str:
     import pandas as pd
     
@@ -266,9 +379,21 @@ we've confirmed data exists for this period and the count is genuinely 0."""
        intent.get("group_by_hint"):
         comparison_hint = "\nIMPORTANT: The user asked for a COMPARISON or BREAKDOWN. Do NOT just summarize the overall total. Make sure to point out the differences, top categories, or trends across the grouped periods/items."
 
+    measure_cols = [c for c in df.select_dtypes(include="number").columns
+                     if c not in ("year", "month", "_period_sort")]
+
+    actual_range = _describe_actual_range(df, intent)
+    trends       = _compute_period_trends(df, measure_cols)
+    anomalies    = _detect_outliers(df, measure_cols)
+
+    extra_context = "\n\n".join(filter(None, [actual_range, trends, anomalies]))
+
     return f"""QUESTION: {question}
 DOMAIN: {intent.get('data_domain', 'porter')}
 TOTAL ROWS: {len(df)}
+{facility_context}
+
+{extra_context}
 
 PRE-COMPUTED STATISTICS (use these for accuracy — do not recalculate):
 {chr(10).join(stats_lines) if stats_lines else "  (no numeric columns)"}
@@ -279,7 +404,8 @@ SAMPLE ROWS (for context only, first 5):
 {json.dumps(sample, default=str)}
 
 {comparison_hint}
-Please provide the 2-3 sentence summary now."""
+Write your response following ALL the COMMUNICATION RULES in your system prompt,
+including DATA RANGE HONESTY, TREND AWARENESS, and ANOMALY AWARENESS where applicable."""
 
 
 _pipeline = None
