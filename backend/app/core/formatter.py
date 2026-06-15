@@ -455,7 +455,8 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
         primary_dim = "_period"
 
     # Pick the best measure (highest variance = most informative, or prioritize KPIs if performance_focus)
-    primary_measure = _best_numeric_col(df, measure_cols, prefer_performance=intent.get("performance_focus", False))
+    selected_measures = _select_chart_measures(df, measure_cols, intent)
+    primary_measure = selected_measures[0] if selected_measures else ""
 
     recommendations = []
 
@@ -477,54 +478,74 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
 
     # 1. Bar chart (Good for categorical + 1 measure, or time + 1 measure)
     if dimension_cols:
-        added_bar = False
-        for group in series_groups:
-            if primary_measure in group or not series_groups:
-                rec = {
-                    "type": "bar",
-                    "label": f"Bar Chart ({len(group)} series)" if len(group) > 1 else "Bar Chart",
-                    "x": primary_dim,
-                    "y": primary_measure,
-                    "icon": "BarChart2",
-                    "series": group if len(group) > 1 else None
-                }
-                if sort_by_col:
-                    rec["sort_x_by"] = sort_by_col
-                recommendations.append(rec)
-                added_bar = True
-                break
-        if not added_bar:
-             rec = {"type": "bar", "label": "Bar Chart", "x": primary_dim, "y": primary_measure, "icon": "BarChart2"}
-             if sort_by_col:
-                 rec["sort_x_by"] = sort_by_col
-             recommendations.append(rec)
+        if len(selected_measures) > 1:
+            rec = {
+                "type": "bar", "label": f"Bar Chart ({len(selected_measures)} series)",
+                "x": primary_dim, "y": primary_measure, "icon": "BarChart2",
+                "series": selected_measures
+            }
+            if sort_by_col:
+                rec["sort_x_by"] = sort_by_col
+            recommendations.append(rec)
+        else:
+            added_bar = False
+            for group in series_groups:
+                if primary_measure in group or not series_groups:
+                    rec = {
+                        "type": "bar",
+                        "label": f"Bar Chart ({len(group)} series)" if len(group) > 1 else "Bar Chart",
+                        "x": primary_dim,
+                        "y": primary_measure,
+                        "icon": "BarChart2",
+                        "series": group if len(group) > 1 else None
+                    }
+                    if sort_by_col:
+                        rec["sort_x_by"] = sort_by_col
+                    recommendations.append(rec)
+                    added_bar = True
+                    break
+            if not added_bar:
+                 rec = {"type": "bar", "label": "Bar Chart", "x": primary_dim, "y": primary_measure, "icon": "BarChart2"}
+                 if sort_by_col:
+                     rec["sort_x_by"] = sort_by_col
+                 recommendations.append(rec)
 
     # 2. Line chart (Only makes sense if x is time/period)
     has_time = primary_dim in time_dims or primary_dim == "_period"
     if has_time:
-        added_line = False
         sort_as = "numeric" if primary_dim in df.columns and df[primary_dim].dtype.kind in "iuf" else "string"
-        for group in series_groups:
-            if primary_measure in group or not series_groups:
-                rec = {
-                    "type": "line",
-                    "label": f"Line Chart ({len(group)} series)" if len(group) > 1 else "Line Chart",
-                    "x": primary_dim,
-                    "y": primary_measure,
-                    "icon": "LineChart",
-                    "series": group if len(group) > 1 else None,
-                    "sort_x_as": sort_as
-                }
-                if sort_by_col:
-                    rec["sort_x_by"] = sort_by_col
-                recommendations.append(rec)
-                added_line = True
-                break
-        if not added_line:
-             rec = {"type": "line", "label": "Line Chart", "x": primary_dim, "y": primary_measure, "icon": "LineChart", "sort_x_as": sort_as}
-             if sort_by_col:
-                 rec["sort_x_by"] = sort_by_col
-             recommendations.append(rec)
+        if len(selected_measures) > 1:
+            rec = {
+                "type": "line", "label": f"Line Chart ({len(selected_measures)} series)",
+                "x": primary_dim, "y": primary_measure, "icon": "LineChart",
+                "series": selected_measures, "sort_x_as": sort_as
+            }
+            if sort_by_col:
+                rec["sort_x_by"] = sort_by_col
+            recommendations.append(rec)
+        else:
+            added_line = False
+            for group in series_groups:
+                if primary_measure in group or not series_groups:
+                    rec = {
+                        "type": "line",
+                        "label": f"Line Chart ({len(group)} series)" if len(group) > 1 else "Line Chart",
+                        "x": primary_dim,
+                        "y": primary_measure,
+                        "icon": "LineChart",
+                        "series": group if len(group) > 1 else None,
+                        "sort_x_as": sort_as
+                    }
+                    if sort_by_col:
+                        rec["sort_x_by"] = sort_by_col
+                    recommendations.append(rec)
+                    added_line = True
+                    break
+            if not added_line:
+                 rec = {"type": "line", "label": "Line Chart", "x": primary_dim, "y": primary_measure, "icon": "LineChart", "sort_x_as": sort_as}
+                 if sort_by_col:
+                     rec["sort_x_by"] = sort_by_col
+                 recommendations.append(rec)
 
     # PIE: dimension with 2-15 categories, but NOT for time-series dimensions
     is_time_dimension = primary_dim in time_dims or primary_dim == "_period"
@@ -588,6 +609,29 @@ def _table_only_spec(row_count: int) -> dict:
 
 
 PERFORMANCE_MEASURE_PRIORITY = ["completion_rate", "avg_tat_minutes", "cancellation_rate", "active_rate", "maintenance_rate"]
+
+def _select_chart_measures(df, measure_cols: list, intent: dict) -> list[str]:
+    """
+    Determine which measure column(s) to chart, in priority order:
+    1. EXPLICITLY REQUESTED metrics from the question
+    2. If performance_focus=true AND nothing explicitly requested,
+       fall back to performance KPIs
+    3. Otherwise, highest-variance numeric column
+    """
+    if not measure_cols:
+        return []
+
+    requested = intent.get("requested_metrics", [])
+    matched = [m for m in requested if m in measure_cols]
+    if matched:
+        return matched[:3]
+
+    if intent.get("performance_focus"):
+        for col in PERFORMANCE_MEASURE_PRIORITY:
+            if col in measure_cols:
+                return [col]
+
+    return [_best_numeric_col(df, measure_cols)]
 
 def _best_numeric_col(df, numeric_cols: list, prefer_performance: bool = False) -> str:
     """Pick the 'best' numeric column to chart by default."""

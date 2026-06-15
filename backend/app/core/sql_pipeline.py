@@ -133,23 +133,33 @@ Return this JSON exactly:
   "aggregation": "count|sum|avg|min|max|none",
   "group_by_hint": "column name or empty string",
   "comparison": true|false,
-  "performance_focus": true|false
+  "performance_focus": true|false,
+  "requested_metrics": ["list", "of", "column-name-like", "strings"]
 }}
 
-PERFORMANCE FOCUS DETECTION:
-Set "performance_focus": true if the question asks about QUALITY,
-EFFICIENCY, SPEED, RELIABILITY, or "HOW WELL" something is being done —
-as opposed to just asking "how many" / "how much" (volume).
+PERFORMANCE FOCUS:
+Set performance_focus=true ONLY IF the question asks about operational quality, speed, or efficiency (e.g. "performance", "completion rate", "cancellations", "TAT", "turnaround time"). 
+If the question is purely about volume/counts (e.g. "how many total requests", "show asset costs"), set performance_focus=false.
+
+REQUESTED METRICS EXTRACTION:
+Identify which SPECIFIC metric(s) the question explicitly names or clearly implies, mapped to likely column names. Return an empty list if the question is generic (e.g. "show porter performance" with no specific metric named).
+
+Mapping guide (question phrase -> column name):
+- "total requests" / "requests raised" -> "total_requests"
+- "completed" / "completed requests" -> "completed_requests"
+- "cancelled" / "cancellations" -> "cancelled_requests"
+- "TAT" / "turnaround time" / "average TAT" -> "avg_tat_minutes"
+- "completion rate" / "% completed" -> "completion_rate"
+- "cancellation rate" / "% cancelled" -> "cancellation_rate"
 
 Examples:
-- "porter performance by facility" → true (asks how well, not how many)
-- "how efficient are porters" → true
-- "are porters keeping up with demand" → true
-- "porter performance year wise comparison" → true
-- "how many requests today" → false (pure volume)
-- "show all assets" → false (pure listing)
-- "what's the completion rate" → true (explicitly a rate/quality metric)
-- "total requests by facility" → false (explicitly volume)
+- "Total requests raised vs completed" -> ["total_requests", "completed_requests"]
+- "Average TAT and comparison with previous month" -> ["avg_tat_minutes"]
+- "Show porter performance by facility" -> []  (generic - no specific metric named)
+- "What's the completion rate by department" -> ["completion_rate"]
+- "Show cancelled and in-progress requests" -> ["cancelled_requests", "in_progress_requests"]
+
+If 2+ metrics are named (as in the first example), include ALL of them - this signals a multi-series chart is wanted.
 
 When performance_focus=true, the SQL MUST include rate-based columns
 (completion_rate, cancellation_rate, avg_tat_minutes), not just counts."""
