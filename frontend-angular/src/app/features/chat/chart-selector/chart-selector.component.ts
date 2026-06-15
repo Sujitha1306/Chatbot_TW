@@ -45,10 +45,6 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
     this.yCol = rec?.y || this.spec.columns.measures?.[0] || this.spec.columns.numeric?.[0] || '';
   }
 
-  get sortXAs(): string | undefined {
-    return this.spec.recommendations.find(r => r.type === this.activeType)?.sort_x_as;
-  }
-
   get activeSeriesGroup(): string[] | undefined {
     const rec = this.spec.recommendations.find(r => r.type === this.activeType);
     return (rec as any)?.series;

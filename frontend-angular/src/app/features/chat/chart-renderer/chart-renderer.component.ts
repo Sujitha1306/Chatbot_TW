@@ -28,6 +28,7 @@ export class ChartRendererComponent implements OnChanges {
   @Input() xCol: string = '';
   @Input() yCol: string = '';
   @Input() series?: string[]; // Multiple Y columns to plot
+  @Input() sortXAs?: string;
   @Input() sortXBy?: string;
   @Input() spec?: any;
 
@@ -93,8 +94,22 @@ export class ChartRendererComponent implements OnChanges {
 
   private getSortedData(): Record<string, unknown>[] {
     const sortBy = this.sortXBy || this.spec?.recommendations?.find((r: any) => r.type === this.type)?.sort_x_by;
-    if (!sortBy) return this.data;
-    return [...this.data].sort((a, b) => Number(a[sortBy]) - Number(b[sortBy]));
+    let sorted = [...this.data];
+
+    if (sortBy) {
+      sorted.sort((a, b) => Number(a[sortBy]) - Number(b[sortBy]));
+    } else if (this.type === 'line') {
+      const sortAs = this.sortXAs || 'string';
+      if (sortAs === 'date') {
+        sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
+      } else if (sortAs === 'numeric') {
+        sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
+      } else {
+        sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
+      }
+    }
+    
+    return sorted;
   }
 
   private buildTrace(): any[] {
