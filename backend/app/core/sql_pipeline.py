@@ -19,6 +19,10 @@ class SQLGenerationPipeline:
     Call 3: Self-correction (only on SQL execution error, 800 tokens)
     """
 
+    ROUTER_SYSTEM = """You are a message router for a hospital operations
+analytics chatbot. Classify the user's message into ONE category.
+Return ONLY valid JSON, no markdown."""
+
     INTENT_SYSTEM = "Classify database query intent. Return ONLY valid JSON. No preamble, no markdown."
 
     SQL_SYSTEM = """You are a ClickHouse SQL expert for a hospital analytics platform.
@@ -102,6 +106,81 @@ GOOD: "Your porter team is about 20% smaller than last year, but they're
         self.model = settings.azure_openai_deployment
         self.schema = DatabaseSchema.get_llm_schema_prompt()
         self.db = ClickHouseConnection()
+
+    # ── Call 0: Route Message ─────────────────────────────────────────────
+    def route_message(self, message: str, history: str = "") -> dict:
+        """
+        Returns: {"needs_data": bool, "response": str | None, "reason": str}
+
+        If needs_data=False, "response" contains a ready-to-send reply.
+        If needs_data=True, "response" is None — proceed to plan_analysis().
+        """
+        prompt = f"""USER MESSAGE: {message}
+RECENT CONTEXT: {history or "none"}
+
+Classify this message:
+
+CATEGORY "data_question": The user is asking about hospital operations
+data — porter requests, assets, facilities, performance, trends,
+comparisons, counts, etc. ANYTHING that would require querying a
+database. This includes vague/broad questions like "how are we doing"
+or "show me an overview" — these still need data.
+
+CATEGORY "conversational": Greetings (hi, hello, hey), thanks/closings
+(thanks, bye, that's helpful), or meta-questions about the ASSISTANT
+ITSELF ("what can you do", "what data do you have access to", "how does
+this work", "who are you").
+
+Return JSON:
+{{
+  "category": "data_question" | "conversational",
+  "reply": "If category is conversational, a brief friendly response
+            (1-2 sentences). If data_question, this can be empty string."
+}}
+
+GUIDANCE FOR CONVERSATIONAL REPLIES:
+- Greetings → warm, brief, mention you can help with porter/asset
+  analytics. E.g. "Hi! I can help you explore porter requests, asset
+  status, facility performance, and more — what would you like to know?"
+- Thanks/closing → brief acknowledgment, no need to re-offer help every time
+- "What can you do" → 2-3 sentence overview: porter request analytics
+  (volumes, completion rates, TAT), asset management (status, warranty,
+  maintenance), facility-level breakdowns and comparisons
+- Keep ALL replies SHORT (1-3 sentences) — this is a chat interface,
+  not a place for long explanations
+
+EXAMPLES:
+- "thanks, can you also show this by month" -> data_question (the
+  "thanks" is incidental; "show this by month" is the actual request)
+- "thanks!" (standalone, after a data response) -> conversational"""
+
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": self.ROUTER_SYSTEM},
+                {"role": "user",   "content": prompt},
+            ],
+            temperature=0.0,
+            max_tokens=150,
+        )
+        raw = resp.choices[0].message.content.strip()
+        raw = re.sub(r"^```json\s*", "", raw, flags=re.IGNORECASE)
+        raw = re.sub(r"\s*```$", "", raw)
+
+        try:
+            result = json.loads(raw)
+        except json.JSONDecodeError:
+            # Fail-safe: if routing itself fails, assume it's a data question
+            # (safer to attempt SQL and let downstream error-handling deal
+            # with it, than to silently swallow a real question)
+            return {"needs_data": True, "response": None, "reason": "router_parse_failed"}
+
+        needs_data = result.get("category") != "conversational"
+        return {
+            "needs_data": needs_data,
+            "response": None if needs_data else result.get("reply", "Hello! How can I help with your operations data today?"),
+            "reason": result.get("category", "unknown"),
+        }
 
     # ── Call 1: Intent ────────────────────────────────────────────────────
     def classify_intent(self, question: str, history: str = "") -> dict:

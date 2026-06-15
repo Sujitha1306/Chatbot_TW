@@ -82,6 +82,27 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
     async def event_generator():
         try:
+            # ── Stage 0: Routing — does this need data? ──
+            routing = pipeline.route_message(req.question, history=_store.get_recent_context(user_id, session_id))
+
+            if not routing["needs_data"]:
+                # Short-circuit — respond directly, skip the entire SQL pipeline
+                yield _sse({"event": "session", "id": session_id})
+                yield _sse({"event": "conversational"})  # NEW event type — frontend shows this differently (no chart/table panels)
+                yield _sse({"event": "summary_start"})
+
+                # Stream the conversational reply token-by-token for consistency
+                # with the normal flow (or just send it as one token — simpler)
+                yield _sse({"event": "token", "text": routing["response"]})
+                yield _sse({"event": "done"})
+
+                _store.add_message(user_id, session_id, Message(
+                    role="assistant",
+                    content=routing["response"],
+                    sql="", row_count=0, domain="conversational",
+                ))
+                return  # ← STOP HERE, do not proceed to intent/SQL/etc.
+
             # ── Event 0: session id (for new conversations) ──
             yield _sse({"event": "session", "id": session_id})
 

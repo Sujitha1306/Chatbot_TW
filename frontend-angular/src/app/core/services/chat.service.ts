@@ -191,6 +191,9 @@ export class ChatService {
             case 'intent':
               update({ domain: ev.domain, status: 'streaming' });
               break;
+            case 'conversational':
+              update({ domain: undefined, status: 'streaming' });
+              break;
             case 'sql':
             case 'sql_corrected':
               update({ sql: ev.sql });

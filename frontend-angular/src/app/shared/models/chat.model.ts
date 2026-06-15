@@ -1,6 +1,6 @@
 export type MessageRole   = 'user' | 'assistant';
 export type MessageStatus = 'pending' | 'streaming' | 'complete' | 'error';
-export type Domain        = 'porter' | 'asset' | 'both';
+export type Domain        = 'porter' | 'asset' | 'both' | 'conversational';
 export type ChartType     = 'bar' | 'line' | 'pie' | 'scatter' | 'table';
 
 export interface ChartSpec {
