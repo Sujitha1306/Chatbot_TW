@@ -113,8 +113,27 @@ Return this JSON exactly:
   "time_scope": "specific_date|last_month|last_week|this_year|all_time|comparison|none",
   "aggregation": "count|sum|avg|min|max|none",
   "group_by_hint": "column name or empty string",
-  "comparison": true|false
-}}"""
+  "comparison": true|false,
+  "performance_focus": true|false
+}}
+
+PERFORMANCE FOCUS DETECTION:
+Set "performance_focus": true if the question asks about QUALITY,
+EFFICIENCY, SPEED, RELIABILITY, or "HOW WELL" something is being done —
+as opposed to just asking "how many" / "how much" (volume).
+
+Examples:
+- "porter performance by facility" → true (asks how well, not how many)
+- "how efficient are porters" → true
+- "are porters keeping up with demand" → true
+- "porter performance year wise comparison" → true
+- "how many requests today" → false (pure volume)
+- "show all assets" → false (pure listing)
+- "what's the completion rate" → true (explicitly a rate/quality metric)
+- "total requests by facility" → false (explicitly volume)
+
+When performance_focus=true, the SQL MUST include rate-based columns
+(completion_rate, cancellation_rate, avg_tat_minutes), not just counts."""
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -135,7 +154,7 @@ Return this JSON exactly:
                 "data_domain": "porter", "chart_type": "bar",
                 "needs_tat": False, "time_scope": "none",
                 "aggregation": "count", "group_by_hint": "",
-                "comparison": False,
+                "comparison": False, "performance_focus": False,
             }
 
     # ── Call 2: SQL generation ────────────────────────────────────────────
@@ -179,6 +198,30 @@ TEMPORAL PHRASE INTERPRETATION — BE CONSISTENT:
   so the result is auditable (shows which years are being compared).
 """
 
+        performance_kpi_rule = ""
+        if intent.get("performance_focus"):
+            performance_kpi_rule = """
+PERFORMANCE FOCUS — REQUIRED DERIVED COLUMNS:
+This question is about QUALITY/EFFICIENCY, not just volume. In addition
+to any raw counts, your SELECT MUST include these computed columns
+(using conditional aggregation, NOT window functions):
+
+- completion_rate: round(countIf(status = 'RQ-CO') * 100.0 / count(), 1) AS completion_rate
+- cancellation_rate: round(countIf(status = 'RQ-CA') * 100.0 / count(), 1) AS cancellation_rate
+
+If the question relates to SPEED/TAT (or needs_tat=true), ALSO include:
+- avg_tat_minutes: round(avgIf(dateDiff('second', scheduled_time, completed_time)/60.0, isNotNull(completed_time)), 1) AS avg_tat_minutes
+  (compute this as an aggregate over the SAME grouped rows as completion_rate,
+  not a separate query)
+
+For ASSET performance questions, instead include:
+- active_rate: round(countIf(is_active = '1') * 100.0 / count(), 1) AS active_rate
+- maintenance_rate: round(countIf(asset_status = 'ATS-MAIN') * 100.0 / count(), 1) AS maintenance_rate
+
+These derived columns should be ADDITIONAL to (not replacing) any raw
+counts already required by other rules (e.g. total_requests,
+completed_requests for context)."""
+
         prompt = f"""Generate a ClickHouse SQL query to answer this question.
 
 SCHEMA:
@@ -186,6 +229,7 @@ SCHEMA:
 {facility_constraint}
 {comparison_rule}
 {temporal_clarity_rule}
+{performance_kpi_rule}
 
 QUESTION: {question}
 INTENT: domain={intent.get('data_domain')}, needs_tat={intent.get('needs_tat')}, time_scope={intent.get('time_scope')}, group_by_hint={intent.get('group_by_hint')}

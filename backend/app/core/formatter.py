@@ -454,8 +454,8 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
         dimension_cols = dimension_cols + ["_period"]
         primary_dim = "_period"
 
-    # Pick the best measure (highest variance = most informative)
-    primary_measure = _best_numeric_col(df, measure_cols)
+    # Pick the best measure (highest variance = most informative, or prioritize KPIs if performance_focus)
+    primary_measure = _best_numeric_col(df, measure_cols, prefer_performance=intent.get("performance_focus", False))
 
     recommendations = []
 
@@ -547,8 +547,20 @@ def _table_only_spec(row_count: int) -> dict:
     }
 
 
-def _best_numeric_col(df, numeric_cols: list) -> str:
+PERFORMANCE_MEASURE_PRIORITY = ["completion_rate", "avg_tat_minutes", "cancellation_rate", "active_rate", "maintenance_rate"]
+
+def _best_numeric_col(df, numeric_cols: list, prefer_performance: bool = False) -> str:
+    """Pick the 'best' numeric column to chart by default."""
+    if not numeric_cols:
+        return ""
     if len(numeric_cols) == 1:
         return numeric_cols[0]
+
+    if prefer_performance:
+        for col in PERFORMANCE_MEASURE_PRIORITY:
+            if col in numeric_cols:
+                return col
+
+    # Fall back to highest variance in numeric_cols
     variances = {c: df[c].var() for c in numeric_cols if df[c].notna().any()}
     return max(variances, key=variances.get) if variances else numeric_cols[0]
