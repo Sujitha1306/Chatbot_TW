@@ -432,20 +432,27 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
     MONTH_NAMES = {
         1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
         7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
+        "1": "Jan", "2": "Feb", "3": "Mar", "4": "Apr", "5": "May", "6": "Jun",
+        "7": "Jul", "8": "Aug", "9": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
     }
 
-    if primary_dim == "month" and "year" in dimension_cols and df["year"].nunique() > 1:
-        # Create a combined period column for display
+    if primary_dim == "month":
         df = df.copy()
-        df["_period"] = df.apply(
-            lambda row: f"{MONTH_NAMES.get(int(row['month']), row['month'])} {int(row['year'])}",
-            axis=1
-        )
+        if "year" in dimension_cols:
+            df["_period"] = df.apply(
+                lambda row: f"{MONTH_NAMES.get(str(row['month']).split('.')[0], row['month'])} {int(row['year']) if pd.notna(row['year']) else ''}".strip(),
+                axis=1
+            )
+            df["_period_sort"] = df["year"].astype(float).fillna(0) * 12 + df["month"].astype(float).fillna(0)
+        else:
+            df["_period"] = df.apply(
+                lambda row: f"{MONTH_NAMES.get(str(row['month']).split('.')[0], row['month'])}",
+                axis=1
+            )
+            df["_period_sort"] = df["month"].astype(float).fillna(0)
+            
         dimension_cols = dimension_cols + ["_period"]
         primary_dim = "_period"
-        
-        # Add sort key
-        df["_period_sort"] = df["year"].astype(int) * 12 + df["month"].astype(int)
 
     # Pick the best measure (highest variance = most informative)
     primary_measure = _best_numeric_col(df, measure_cols)
