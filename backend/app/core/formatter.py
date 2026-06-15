@@ -459,40 +459,80 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
 
     recommendations = []
 
-    if primary_dim:
-        n_unique = df[primary_dim].nunique()
-        sort_by_col = "_period_sort" if primary_dim == "_period" else None
+    def _group_measures_by_scale(m_cols: list) -> list:
+        rate_cols  = [c for c in m_cols if "rate" in c.lower() or "percent" in c.lower()]
+        tat_cols   = [c for c in m_cols if "tat" in c.lower() or "minute" in c.lower() or "duration" in c.lower()]
+        count_cols = [c for c in m_cols if c not in rate_cols and c not in tat_cols]
 
-        # LINE: time-based dimension with 2+ points
-        if primary_dim in time_dims or primary_dim == "_period":
-            if n_unique >= 2:
-                sort_as = "numeric" if df[primary_dim].dtype.kind in "iuf" else "string"
+        groups = []
+        if len(count_cols) >= 2:
+            groups.append(count_cols[:3])
+        if len(rate_cols) >= 2:
+            groups.append(rate_cols[:3])
+        return groups
+
+    series_groups = _group_measures_by_scale(measure_cols)
+
+    sort_by_col = "_period_sort" if primary_dim == "_period" else None
+
+    # 1. Bar chart (Good for categorical + 1 measure, or time + 1 measure)
+    if dimension_cols:
+        added_bar = False
+        for group in series_groups:
+            if primary_measure in group or not series_groups:
                 rec = {
-                    "type": "line", "label": "Line Chart",
-                    "x": primary_dim, "y": primary_measure, "icon": "LineChart",
-                    "sort_x_as": sort_as,
+                    "type": "bar",
+                    "label": f"Bar Chart ({len(group)} series)" if len(group) > 1 else "Bar Chart",
+                    "x": primary_dim,
+                    "y": primary_measure,
+                    "icon": "BarChart2",
+                    "series": group if len(group) > 1 else None
                 }
                 if sort_by_col:
                     rec["sort_x_by"] = sort_by_col
                 recommendations.append(rec)
+                added_bar = True
+                break
+        if not added_bar:
+             rec = {"type": "bar", "label": "Bar Chart", "x": primary_dim, "y": primary_measure, "icon": "BarChart2"}
+             if sort_by_col:
+                 rec["sort_x_by"] = sort_by_col
+             recommendations.append(rec)
 
-        # BAR: any dimension with 2+ categories
-        if n_unique >= 2:
-            rec = {
-                "type": "bar", "label": "Bar Chart",
-                "x": primary_dim, "y": primary_measure, "icon": "BarChart2",
-            }
-            if sort_by_col:
-                rec["sort_x_by"] = sort_by_col
-            recommendations.append(rec)
+    # 2. Line chart (Only makes sense if x is time/period)
+    has_time = primary_dim in time_dims or primary_dim == "_period"
+    if has_time:
+        added_line = False
+        sort_as = "numeric" if primary_dim in df.columns and df[primary_dim].dtype.kind in "iuf" else "string"
+        for group in series_groups:
+            if primary_measure in group or not series_groups:
+                rec = {
+                    "type": "line",
+                    "label": f"Line Chart ({len(group)} series)" if len(group) > 1 else "Line Chart",
+                    "x": primary_dim,
+                    "y": primary_measure,
+                    "icon": "LineChart",
+                    "series": group if len(group) > 1 else None,
+                    "sort_x_as": sort_as
+                }
+                if sort_by_col:
+                    rec["sort_x_by"] = sort_by_col
+                recommendations.append(rec)
+                added_line = True
+                break
+        if not added_line:
+             rec = {"type": "line", "label": "Line Chart", "x": primary_dim, "y": primary_measure, "icon": "LineChart", "sort_x_as": sort_as}
+             if sort_by_col:
+                 rec["sort_x_by"] = sort_by_col
+             recommendations.append(rec)
 
-        # PIE: dimension with 2-15 categories, but NOT for time-series dimensions
-        is_time_dimension = primary_dim in time_dims or primary_dim == "_period"
-        if 2 <= n_unique <= 15 and not is_time_dimension:
-            recommendations.append({
-                "type": "pie", "label": "Pie Chart",
-                "x": primary_dim, "y": primary_measure, "icon": "PieChart",
-            })
+    # PIE: dimension with 2-15 categories, but NOT for time-series dimensions
+    is_time_dimension = primary_dim in time_dims or primary_dim == "_period"
+    if primary_dim and 2 <= df[primary_dim].nunique() <= 15 and not is_time_dimension:
+        recommendations.append({
+            "type": "pie", "label": "Pie Chart",
+            "x": primary_dim, "y": primary_measure, "icon": "PieChart",
+        })
 
     # SCATTER: only if there are 2+ DISTINCT measures (not dimension vs measure)
     usable_measures = [c for c in measure_cols if df[c].nunique() > 1]

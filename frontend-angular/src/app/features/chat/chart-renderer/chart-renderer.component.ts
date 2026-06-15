@@ -23,18 +23,19 @@ const BASE_LAYOUT: any = {
   templateUrl: './chart-renderer.component.html',
 })
 export class ChartRendererComponent implements OnChanges {
-  @Input() type!: ChartType;
-  @Input() data!: Record<string, unknown>[];
-  @Input() xCol!: string;
-  @Input() yCol!: string;
-  @Input() sortXAs?: string;
+  @Input() type: string = 'bar';
+  @Input() data: any[] = [];
+  @Input() xCol: string = '';
+  @Input() yCol: string = '';
+  @Input() series?: string[]; // Multiple Y columns to plot
+  @Input() sortXBy?: string;
   @Input() spec?: any;
 
   plotData: any[] = [];
   layout = BASE_LAYOUT;
 
   ngOnChanges() {
-    if (!this.hasValidData || !this.xCol || (!this.yCol && this.type !== 'pie')) {
+    if (!this.hasValidData || !this.xCol || (!this.yCol && !this.series && this.type !== 'pie')) {
       return;
     }
     this.plotData = this.buildTrace();
@@ -47,22 +48,32 @@ export class ChartRendererComponent implements OnChanges {
         title: { text: `${this.formatLabel(this.yCol)} by ${this.formatLabel(this.xCol)}`, font: { size: 13 } },
       };
     } else {
-      const horizontal = this.type === 'bar' && new Set(this.data.map(d => d[this.xCol])).size > 12;
+      const horizontal = this.type === 'bar' && this.data.length > 10 && (!this.series || this.series.length <= 1);
+    
+      // Y-axis label logic
+      let yTitle = this.formatLabel(this.yCol);
+      if (this.series && this.series.length > 1) {
+        yTitle = 'Value'; // Generic title since multiple measures share this axis
+      }
 
       this.layout = {
         ...BASE_LAYOUT,
-        xaxis: { 
-          title: { text: this.formatLabel(horizontal ? this.yCol : this.xCol) }, 
-          type: horizontal ? undefined : 'category',
-          automargin: true 
+        barmode: 'group',
+        showlegend: (this.plotData.length > 1) || (this.type === 'pie'),
+        xaxis: {
+          title: { text: horizontal ? yTitle : this.formatLabel(this.xCol) },
+          type: this.type === 'scatter' ? undefined : 'category',
+          automargin: true,
         },
-        yaxis: { 
-          title: { text: this.formatLabel(horizontal ? this.xCol : this.yCol) }, 
-          type: horizontal ? 'category' : undefined,
-          automargin: true 
+        yaxis: {
+          title: { text: horizontal ? this.formatLabel(this.xCol) : yTitle },
+          automargin: true,
         },
-        title: undefined,
       };
+
+      if (this.type === 'pie') {
+          this.layout.showlegend = true;
+      }
     }
   }
 
@@ -77,36 +88,37 @@ export class ChartRendererComponent implements OnChanges {
   get hasValidData(): boolean {
     if (!this.data || this.data.length === 0) return false;
     if (this.type === 'table') return true;
-
-    const yValues = this.data.map(d => Number(d[this.yCol])).filter(v => !isNaN(v));
-    if (yValues.length === 0) return false;
-    if (this.type !== 'pie' && new Set(yValues).size === 1 && yValues[0] === 0) return false; // all-zero
-
     return true;
   }
 
   private getSortedData(): Record<string, unknown>[] {
-    const sortBy = this.spec?.recommendations?.find((r: any) => r.type === this.type)?.sort_x_by;
+    const sortBy = this.sortXBy || this.spec?.recommendations?.find((r: any) => r.type === this.type)?.sort_x_by;
     if (!sortBy) return this.data;
     return [...this.data].sort((a, b) => Number(a[sortBy]) - Number(b[sortBy]));
   }
 
   private buildTrace(): any[] {
-    const sortedData = (this.type === 'bar' || this.type === 'line') ? this.getSortedData() : this.data;
-    const x = sortedData.map(d => d[this.xCol]);
-    const y = sortedData.map(d => d[this.yCol]);
+    if (this.series && this.series.length > 1) {
+      return this.buildMultiSeriesTrace();
+    }
+
+    const sorted = this.getSortedData();
+
+    // Map labels, but for scatter we keep raw values (so plotly scales numeric axes)
+    const xLabels = this.type === 'scatter' ? sorted.map((d: any) => d[this.xCol]) : sorted.map((d: any) => String(d[this.xCol]));
+    const y = sorted.map((d: any) => Number(d[this.yCol]));
+    const x = this.type === 'scatter' ? sorted.map((d: any) => d[this.xCol]) : xLabels;
 
     switch (this.type) {
       case 'bar': {
-        const horizontal = new Set(x).size > 12;
-        const xLabels = x.map(v => String(v));
-
+        const horizontal = xLabels.length > 10;
         return [{
           type: 'bar',
           x: horizontal ? y : xLabels,
           y: horizontal ? xLabels : y,
           orientation: horizontal ? 'h' : 'v',
           marker: { color: BRAND_COLORS[0] },
+          name: this.formatLabel(this.yCol),
         }];
       }
       case 'pie': {
@@ -114,31 +126,35 @@ export class ChartRendererComponent implements OnChanges {
         return [{ type: 'pie', labels: top10.labels, values: top10.values, hole: 0.4 }];
       }
       case 'line': {
-        const sortAs = this.sortXAs || 'string';
-        let sorted = [...sortedData];
-
-        if (sortAs === 'date') {
-          sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
-        } else if (sortAs === 'numeric') {
-          sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
-        } else if (!this.spec?.recommendations?.find((r: any) => r.type === 'line')?.sort_x_by) {
-          // Only use fallback string sort if no sort_x_by was applied
-          sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
-        }
-
         return [{
           type: 'scatter', mode: 'lines+markers',
           x: sorted.map(d => d[this.xCol]),
           y: sorted.map(d => d[this.yCol]),
           line: { color: BRAND_COLORS[0] },
           connectgaps: false,
+          name: this.formatLabel(this.yCol),
         }];
       }
       case 'scatter':
-        return [{ type: 'scatter', mode: 'markers', x, y, marker: { color: BRAND_COLORS[1] } }];
+        return [{ type: 'scatter', mode: 'markers', x, y, marker: { color: BRAND_COLORS[1] }, name: `${this.formatLabel(this.xCol)} vs ${this.formatLabel(this.yCol)}` }];
       default:
         return [];
     }
+  }
+
+  private buildMultiSeriesTrace(): any[] {
+    const sorted = this.getSortedData();
+    const x = sorted.map((d: any) => String(d[this.xCol]));
+
+    return this.series!.map((col, i) => ({
+      type: this.type === 'line' ? 'scatter' : 'bar',
+      mode: this.type === 'line' ? 'lines+markers' : undefined,
+      x,
+      y: sorted.map((d: any) => Number(d[col])),
+      name: this.formatLabel(col),
+      marker: { color: BRAND_COLORS[i % BRAND_COLORS.length] },
+      line: this.type === 'line' ? { color: BRAND_COLORS[i % BRAND_COLORS.length] } : undefined,
+    }));
   }
 
   private topNWithOther(n: number): { labels: any[]; values: any[] } {

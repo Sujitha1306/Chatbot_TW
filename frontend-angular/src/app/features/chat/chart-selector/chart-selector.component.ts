@@ -43,7 +43,24 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
     const rec = this.spec.recommendations.find(r => r.type === this.activeType);
     this.xCol = rec?.x || this.spec.columns.dimensions?.[0] || this.spec.columns.categorical?.[0] || '';
     this.yCol = rec?.y || this.spec.columns.measures?.[0] || this.spec.columns.numeric?.[0] || '';
-    this.sortXAs = rec?.sort_x_as;
+  }
+
+  get sortXAs(): string | undefined {
+    return this.spec.recommendations.find(r => r.type === this.activeType)?.sort_x_as;
+  }
+
+  get activeSeriesGroup(): string[] | undefined {
+    const rec = this.spec.recommendations.find(r => r.type === this.activeType);
+    return (rec as any)?.series;
+  }
+
+  formatSeriesLabels(series: string[]): string {
+    if (!series) return '';
+    return series.map(s => this.formatLabel(s)).join(', ');
+  }
+
+  formatLabel(col: string): string {
+    return col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
   selectType(type: ChartType) {
