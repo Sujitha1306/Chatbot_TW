@@ -395,7 +395,7 @@ def _is_dimension_column(col_name: str, series: "pd.Series") -> bool:
     return series.dtype.kind not in "iuf"  # not int/uint/float
 
 
-def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFrame"]:
+def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFrame"]:
     import pandas as pd
 
     if df.empty:
@@ -455,7 +455,7 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
         primary_dim = "_period"
 
     # Pick the best measure (highest variance = most informative, or prioritize KPIs if performance_focus)
-    selected_measures = _select_chart_measures(df, measure_cols, intent)
+    selected_measures = _select_chart_measures(df, measure_cols, plan)
     primary_measure = selected_measures[0] if selected_measures else ""
 
     recommendations = []
@@ -570,7 +570,7 @@ def build_chart_spec(df: "pd.DataFrame", intent: dict) -> Tuple[dict, "pd.DataFr
         return _table_only_spec(len(df)), df
 
     # Honor requested chart type if valid, else use first recommendation
-    intent_chart = intent.get("chart_type", "auto")
+    intent_chart = plan.get("chart_type_hint", "auto")
     valid_types = [r["type"] for r in recommendations]
     fallback_reason = None
     if intent_chart != "auto" and intent_chart in valid_types:
@@ -610,23 +610,24 @@ def _table_only_spec(row_count: int) -> dict:
 
 PERFORMANCE_MEASURE_PRIORITY = ["completion_rate", "avg_tat_minutes", "cancellation_rate", "active_rate", "maintenance_rate"]
 
-def _select_chart_measures(df, measure_cols: list, intent: dict) -> list[str]:
+def _select_chart_measures(df, measure_cols: list, plan: dict) -> list[str]:
     """
     Determine which measure column(s) to chart, in priority order:
     1. EXPLICITLY REQUESTED metrics from the question
-    2. If performance_focus=true AND nothing explicitly requested,
+    2. If calculation_plan implies performance focus AND nothing explicitly requested,
        fall back to performance KPIs
     3. Otherwise, highest-variance numeric column
     """
     if not measure_cols:
         return []
 
-    requested = intent.get("requested_metrics", [])
+    requested = plan.get("requested_metrics", [])
     matched = [m for m in requested if m in measure_cols]
     if matched:
         return matched[:3]
 
-    if intent.get("performance_focus"):
+    if any(kw in plan.get("calculation_plan", "").lower() for kw in
+           ["rate", "percentage", "efficiency", "completion", "cancellation"]):
         for col in PERFORMANCE_MEASURE_PRIORITY:
             if col in measure_cols:
                 return [col]

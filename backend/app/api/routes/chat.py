@@ -106,16 +106,27 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             # ── Event 0: session id (for new conversations) ──
             yield _sse({"event": "session", "id": session_id})
 
-            # ── Event 1: intent (fast, ~0.5s) ──
-            intent = pipeline.classify_intent(req.question)
-            yield _sse({"event": "intent", "domain": intent["data_domain"], "chart_type": intent["chart_type"]})
+            # ── Event 1: plan analysis (fast, ~0.5s) ──
+            plan = pipeline.plan_analysis(req.question, history=_store.get_recent_context(user_id, session_id), facility_id=req.facility_id)
+            yield _sse({"event": "intent", "domain": plan.get("data_domain", "porter"), "chart_type": plan.get("chart_type_hint", "auto")})
 
             # ── Event 2: SQL generated (~2–4s) ──
-            sql = pipeline.generate_sql(req.question, intent, facility_id=req.facility_id)
+            sql = pipeline.generate_sql(req.question, plan, facility_id=req.facility_id, history=_store.get_recent_context(user_id, session_id))
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
             df, success, error_msg = pipeline.db.execute_query_with_error(sql)
+
+            if success and plan.get("comparison_needed") and len(df) <= 1:
+                sql = pipeline.fix_sql(
+                    sql,
+                    "This was planned as a comparison "
+                    f"({plan.get('comparison_basis', '')}) but returned only 1 row. "
+                    "Adjust GROUP BY / remove over-restrictive WHERE filters so "
+                    "multiple rows are returned, one per item being compared."
+                )
+                df, success, error_msg = pipeline.db.execute_query_with_error(sql)
+                yield _sse({"event": "sql_corrected", "sql": sql})
 
             if not success:
                 # Self-correct once
@@ -129,14 +140,14 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     content=f"Query failed: {error_msg}", 
                     sql=sql, 
                     row_count=0, 
-                    domain=intent.get("data_domain", "porter"),
+                    domain=plan.get("data_domain", "porter"),
                 ))
                 yield _sse({"event": "error", "message": f"Query failed: {error_msg}", "sql": sql})
                 return
 
             # ── Event 4: Data ready ──
             # Build chart spec BEFORE data payload so synthetic columns (_period) are sent
-            chart_spec, df = build_chart_spec(df, intent)
+            chart_spec, df = build_chart_spec(df, plan)
             
             import numpy as np
             import pandas as pd
@@ -150,7 +161,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             # ── Event 5: Summary streamed token by token ──
             yield _sse({"event": "summary_start"})
-            coverage = pipeline.check_data_coverage(df, intent)
+            coverage = pipeline.check_data_coverage(df, plan)
             
             from backend.app.core.facility_lookup import get_facility_lookup
             facility_name = None
@@ -158,7 +169,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 fac = get_facility_lookup().get(req.facility_id)
                 facility_name = fac["facility_name"] if fac else None
 
-            summary_prompt = _build_summary_prompt(req.question, df, intent, coverage, facility_name)
+            summary_prompt = _build_summary_prompt(req.question, df, plan, coverage, facility_name)
 
             stream = pipeline.client.chat.completions.create(
                 model=pipeline.model,
@@ -183,7 +194,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "chart", "spec": chart_spec})
 
             # ── Event 7: Follow-up suggestions ──
-            followups = pipeline.generate_followups(req.question, intent)
+            followups = pipeline.generate_followups(req.question, plan)
             yield _sse({"event": "followups", "suggestions": followups})
 
             # ── Event 8: Done ──
@@ -195,7 +206,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 content=full_summary, 
                 sql=sql, 
                 row_count=len(df), 
-                domain=intent.get("data_domain", "porter"),
+                domain=plan.get("data_domain", "porter"),
                 data=data_payload,
                 chartSpec=chart_spec
             ))
@@ -217,7 +228,7 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload, default=str)}\n\n"
 
 
-def _describe_actual_range(df, intent: dict) -> str:
+def _describe_actual_range(df, plan: dict) -> str:
     """Compute the ACTUAL date/period range covered by the result,
     independent of what the user's question implied."""
     import pandas as pd
@@ -330,7 +341,7 @@ def _detect_outliers(df, measure_cols: list) -> str:
             "incomplete/partial data for that period rather than an operational issue.")
 
 
-def _build_summary_prompt(question: str, df, intent: dict, coverage: dict = None, facility_name: str | None = None) -> str:
+def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, facility_name: str | None = None) -> str:
     import pandas as pd
     
     coverage = coverage or {}
@@ -396,25 +407,32 @@ we've confirmed data exists for this period and the count is genuinely 0."""
     sample = df.head(5).replace({np.nan: None, pd.NaT: None}).to_dict("records")
 
     comparison_hint = ""
-    if intent.get("comparison") or intent.get("time_scope") in ("year_over_year", "comparison") or \
-       intent.get("group_by_hint"):
+    if plan.get("comparison_needed") or plan.get("grouping") not in ["unspecified", "", "none", "no grouping - single summary row"]:
         comparison_hint = "\nIMPORTANT: The user asked for a COMPARISON or BREAKDOWN. Do NOT just summarize the overall total. Make sure to point out the differences, top categories, or trends across the grouped periods/items."
+
+    plan_context = f"""
+ANALYTICAL CONTEXT: This query was planned to answer: {plan.get('calculation_plan', '')}
+Make sure your summary directly addresses this — if the plan was about
+identifying PEAK values or BEST/WORST performers, your summary's main
+point should be WHICH value is peak/best/worst, not just a general
+description of the data."""
 
     measure_cols = [c for c in df.select_dtypes(include="number").columns
                      if c not in ("year", "month", "_period_sort")]
 
-    actual_range = _describe_actual_range(df, intent)
+    actual_range = _describe_actual_range(df, plan)
     trends       = _compute_period_trends(df, measure_cols)
     anomalies    = _detect_outliers(df, measure_cols)
 
     extra_context = "\n\n".join(filter(None, [actual_range, trends, anomalies]))
 
     return f"""QUESTION: {question}
-DOMAIN: {intent.get('data_domain', 'porter')}
+DOMAIN: {plan.get('data_domain', 'porter')}
 TOTAL ROWS: {len(df)}
 {facility_context}
 
 {extra_context}
+{plan_context}
 
 PRE-COMPUTED STATISTICS (use these for accuracy — do not recalculate):
 {chr(10).join(stats_lines) if stats_lines else "  (no numeric columns)"}

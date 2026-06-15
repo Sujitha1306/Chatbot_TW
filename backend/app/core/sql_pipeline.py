@@ -16,14 +16,21 @@ class SQLGenerationPipeline:
     Two-call LLM pipeline for schema-grounded SQL generation.
     Call 1: Intent classification (fast, cheap, 200 tokens)
     Call 2: SQL generation (schema-grounded, accurate, 800 tokens)
-    Call 3: Self-correction (only on SQL execution error, 800 tokens)
     """
 
     ROUTER_SYSTEM = """You are a message router for a hospital operations
 analytics chatbot. Classify the user's message into ONE category.
 Return ONLY valid JSON, no markdown."""
 
-    INTENT_SYSTEM = "Classify database query intent. Return ONLY valid JSON. No preamble, no markdown."
+    PLANNER_SYSTEM = """You are a senior data analyst planning how to answer
+a hospital operations question. You will be given the database schema
+and a question. Think through HOW to answer it, then output your plan
+as JSON.
+
+Your plan should be SPECIFIC to THIS question — do not force it into
+generic categories. If the question requires a calculation or grouping
+that isn't a standard "total/average/percentage", DESCRIBE that
+calculation explicitly in your plan so the SQL writer can implement it."""
 
     SQL_SYSTEM = """You are a ClickHouse SQL expert for a hospital analytics platform.
 Generate ONLY the SQL query. No explanation. No markdown fences. No preamble.
@@ -182,91 +189,99 @@ EXAMPLES:
             "reason": result.get("category", "unknown"),
         }
 
-    # ── Call 1: Intent ────────────────────────────────────────────────────
-    def classify_intent(self, question: str, history: str = "") -> dict:
-        prompt = f"""Classify this hospital analytics query.
+    # ── Call 1: Plan Analysis ─────────────────────────────────────────────
+    def plan_analysis(self, question: str, history: str = "", facility_id: str | None = None) -> dict:
+        facility_note = f"\nNOTE: Results will be filtered to facility_id='{facility_id}'." if facility_id else ""
+
+        prompt = f"""SCHEMA:
+{self.schema}
 
 QUESTION: {question}
-RECENT CONTEXT: {history or "none"}
+CONVERSATION CONTEXT: {history or "none"}
+{facility_note}
 
-COMPARISON DETECTION:
-Set "comparison": true if the question asks to compare across MULTIPLE
-time periods, groups, or categories — including implicitly. Examples:
-- "year wise comparison" → true
-- "compare this month to last month" → true
-- "how has performance changed" → true
-- "porter trends over time" → true
-- "year on year" / "month on month" / "vs last year" → true
-- "show porter performance" (single period, no comparison word) → false
-- "total requests today" → false
+Think through this step by step and return JSON with these fields:
 
-If comparison=true, set "time_scope" to "comparison" regardless of
-whether a specific period was mentioned.
-
-Return this JSON exactly:
 {{
+  "relevant_tables": ["table names this question needs"],
+
+  "relevant_columns": ["specific columns needed, with brief reason for each"],
+
+  "calculation_plan": "Plain-English description of EXACTLY what to
+    compute. Be specific about any non-obvious derived values. Examples:
+    - 'Extract hour-of-day from scheduled_time using toHour(). For each
+      hour (0-23), count total requests and compute completion rate
+      (completed/total). Identify the hour with highest request count
+      (peak load) and the hour with highest completion rate among
+      high-volume hours (best allocation efficiency).'
+    - 'Group by facility_id. For each facility compute total requests,
+      completed requests, and completion_rate = completed/total * 100.'
+    - 'No calculation needed — this is a simple greeting.'",
+
+  "grouping": "What the result should be grouped BY (e.g. 'hour of day
+    (0-23)', 'facility_id', 'month', 'no grouping - single summary row',
+    'department AND month')",
+
+  "expected_row_shape": "Describe what each row of the result represents
+    and roughly how many rows to expect. E.g. '24 rows, one per hour of
+    day' or '1 row, overall summary' or '6 rows, one per month' or
+    '~10 rows, one per department'",
+
+  "comparison_needed": true|false,
+  "comparison_basis": "If comparison_needed, what's being compared
+    (e.g. 'this month vs last month', 'across facilities', 'across
+    hours of the day to find peak vs off-peak')",
+
+  "visualization_suggestion": "What chart type and axes would best show
+    this result, and WHY. E.g. 'Bar chart with hour-of-day (0-23) on
+    X-axis and request_count on Y-axis, to visually identify peak hours
+    at a glance. A second series for completion_rate would show
+    allocation efficiency alongside volume.'",
+
+  "potential_pitfalls": "Any ClickHouse-specific concerns for THIS
+    query — e.g. 'must use toHour() not HOUR()', 'avoid correlated
+    subquery for the efficiency comparison, use conditional aggregation
+    instead', or 'none'",
+
   "data_domain": "porter|asset|both",
-  "chart_type": "bar|line|pie|scatter|table|auto",
-  "needs_tat": true|false,
-  "time_scope": "specific_date|last_month|last_week|this_year|all_time|comparison|none",
-  "aggregation": "count|sum|avg|min|max|none",
-  "group_by_hint": "column name or empty string",
-  "comparison": true|false,
-  "performance_focus": true|false,
-  "requested_metrics": ["list", "of", "column-name-like", "strings"]
+  "chart_type_hint": "bar|line|pie|scatter|table|auto",
+  "requested_metrics": ["column-name-like strings explicitly named in the question, or empty list"]
 }}
 
-PERFORMANCE FOCUS:
-Set performance_focus=true ONLY IF the question asks about operational quality, speed, or efficiency (e.g. "performance", "completion rate", "cancellations", "TAT", "turnaround time"). 
-If the question is purely about volume/counts (e.g. "how many total requests", "show asset costs"), set performance_focus=false.
+Think carefully — this plan will be used DIRECTLY to write SQL. A vague
+or generic plan produces a vague or generic (and likely wrong) query."""
 
-REQUESTED METRICS EXTRACTION:
-Identify which SPECIFIC metric(s) the question explicitly names or clearly implies, mapped to likely column names. Return an empty list if the question is generic (e.g. "show porter performance" with no specific metric named).
-
-Mapping guide (question phrase -> column name):
-- "total requests" / "requests raised" -> "total_requests"
-- "completed" / "completed requests" -> "completed_requests"
-- "cancelled" / "cancellations" -> "cancelled_requests"
-- "TAT" / "turnaround time" / "average TAT" -> "avg_tat_minutes"
-- "completion rate" / "% completed" -> "completion_rate"
-- "cancellation rate" / "% cancelled" -> "cancellation_rate"
-
-Examples:
-- "Total requests raised vs completed" -> ["total_requests", "completed_requests"]
-- "Average TAT and comparison with previous month" -> ["avg_tat_minutes"]
-- "Show porter performance by facility" -> []  (generic - no specific metric named)
-- "What's the completion rate by department" -> ["completion_rate"]
-- "Show cancelled and in-progress requests" -> ["cancelled_requests", "in_progress_requests"]
-
-If 2+ metrics are named (as in the first example), include ALL of them - this signals a multi-series chart is wanted.
-
-When performance_focus=true, the SQL MUST include rate-based columns
-(completion_rate, cancellation_rate, avg_tat_minutes), not just counts."""
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": self.INTENT_SYSTEM},
+                {"role": "system", "content": self.PLANNER_SYSTEM},
                 {"role": "user",   "content": prompt},
             ],
             temperature=0.0,
-            max_tokens=200,
+            max_tokens=600,
         )
         raw = resp.choices[0].message.content.strip()
         raw = re.sub(r"^```json\s*", "", raw, flags=re.IGNORECASE)
         raw = re.sub(r"\s*```$", "", raw)
+
         try:
             return json.loads(raw)
         except json.JSONDecodeError:
-            logger.warning("Intent parse failed, using defaults. Raw: %s", raw)
+            logger.warning("Plan parse failed, raw: %s", raw[:300])
             return {
-                "data_domain": "porter", "chart_type": "bar",
-                "needs_tat": False, "time_scope": "none",
-                "aggregation": "count", "group_by_hint": "",
-                "comparison": False, "performance_focus": False,
+                "relevant_tables": [], "relevant_columns": [],
+                "calculation_plan": f"Answer the question directly: {question}",
+                "grouping": "unspecified", "expected_row_shape": "unspecified",
+                "comparison_needed": False, "comparison_basis": "",
+                "visualization_suggestion": "table",
+                "potential_pitfalls": "none",
+                "data_domain": "porter",
+                "chart_type_hint": "auto",
+                "requested_metrics": []
             }
 
     # ── Call 2: SQL generation ────────────────────────────────────────────
-    def generate_sql(self, question: str, intent: dict, history: str = "", facility_id: str | None = None) -> str:
+    def generate_sql(self, question: str, plan: dict, history: str = "", facility_id: str | None = None) -> str:
         facility_constraint = ""
         if facility_id:
             facility_constraint = f"""
@@ -277,78 +292,42 @@ If the query already has a WHERE clause, add this as an additional
 AND condition. If using GROUP BY across facilities, this filter still
 applies — the result will only ever show data for THIS facility."""
 
-        comparison_rule = ""
-        if intent.get("comparison") or intent.get("time_scope") in ("year_over_year", "comparison", "all_time"):
-            comparison_rule = """
-COMPARISON QUERY — CRITICAL RULE:
-This question asks for a COMPARISON across multiple time periods
-(years, months, etc.). Your SQL MUST:
-- NOT filter WHERE to a single year/month/period
-- GROUP BY the period column (e.g. toYear(scheduled_time)) so the
-  result contains ONE ROW PER PERIOD
-- If no date range is specified, default to the last 2-3 periods:
-  e.g. WHERE toYear(scheduled_time) >= toYear(today()) - 2
-  (this still allows 3 rows in the result, one per year)
-- ORDER BY the period column so periods appear chronologically
-- NEVER produce a query that returns only 1 row when the question
-  asks for a comparison — that means no comparison is possible
-"""
-
-        temporal_clarity_rule = """
-TEMPORAL PHRASE INTERPRETATION — BE CONSISTENT:
-- "over the past year" / "in the past year" → compare CALENDAR YEARS:
-  current year (toYear(today())) vs previous year (toYear(today())-1)
-- "last 12 months" → rolling window: scheduled_time >= today() - INTERVAL 12 MONTH
-- These are DIFFERENT and produce different results. Default to the
-  CALENDAR YEAR interpretation unless the question explicitly says
-  "last 12 months" or "rolling".
-- Whichever interpretation you choose, GROUP BY toYear(scheduled_time)
-  so the result is auditable (shows which years are being compared).
-"""
-
-        performance_kpi_rule = ""
-        if intent.get("performance_focus"):
-            performance_kpi_rule = """
-PERFORMANCE FOCUS — REQUIRED DERIVED COLUMNS:
-This question is about QUALITY/EFFICIENCY, not just volume. In addition
-to any raw counts, your SELECT MUST include these computed columns
-(using conditional aggregation, NOT window functions):
-
-- completion_rate: round(countIf(status = 'RQ-CO') * 100.0 / count(), 1) AS completion_rate
-- cancellation_rate: round(countIf(status = 'RQ-CA') * 100.0 / count(), 1) AS cancellation_rate
-
-If the question relates to SPEED/TAT (or needs_tat=true), ALSO include:
-- avg_tat_minutes: round(avgIf(dateDiff('second', scheduled_time, completed_time)/60.0, isNotNull(completed_time)), 1) AS avg_tat_minutes
-  (compute this as an aggregate over the SAME grouped rows as completion_rate,
-  not a separate query)
-
-For ASSET performance questions, instead include:
-- active_rate: round(countIf(is_active = '1') * 100.0 / count(), 1) AS active_rate
-- maintenance_rate: round(countIf(asset_status = 'ATS-MAIN') * 100.0 / count(), 1) AS maintenance_rate
-
-These derived columns should be ADDITIONAL to (not replacing) any raw
-counts already required by other rules (e.g. total_requests,
-completed_requests for context)."""
+        comparison_note = ""
+        if plan.get("comparison_needed"):
+            comparison_note = f"""
+THIS IS A COMPARISON: {plan.get('comparison_basis', '')}
+Ensure your GROUP BY produces MULTIPLE rows (one per thing being
+compared) — do NOT filter to a single period/group if the comparison
+requires multiple."""
 
         prompt = f"""Generate a ClickHouse SQL query to answer this question.
 
 SCHEMA:
 {self.schema}
 {facility_constraint}
-{comparison_rule}
-{temporal_clarity_rule}
-{performance_kpi_rule}
 
 QUESTION: {question}
-INTENT: domain={intent.get('data_domain')}, needs_tat={intent.get('needs_tat')}, time_scope={intent.get('time_scope')}, group_by_hint={intent.get('group_by_hint')}
+
+ANALYTICAL PLAN (follow this closely):
+- Relevant tables: {', '.join(plan.get('relevant_tables', []))}
+- Relevant columns: {'; '.join(plan.get('relevant_columns', []))}
+- Calculation: {plan.get('calculation_plan', '')}
+- Grouping: {plan.get('grouping', '')}
+- Expected result shape: {plan.get('expected_row_shape', '')}
+{comparison_note}
+- Known pitfalls for this query: {plan.get('potential_pitfalls', 'none')}
+
 CONVERSATION CONTEXT: {history or "none"}
 
 Requirements:
-- Use ONLY tables and columns defined in the schema
-- Apply ALL ClickHouse SQL rules from the schema
-- Default LIMIT 500 unless question asks for all records
-- If TAT needed: round(dateDiff('second',scheduled_time,completed_time)/60.0,2) AS tat_minutes
-  with WHERE isNotNull(completed_time)
+- Implement the CALCULATION exactly as described in the plan
+- The GROUP BY should match the plan's grouping description
+- Use ONLY tables/columns from the schema
+- Apply ALL ClickHouse SQL rules from the schema (including rules #1-12:
+  date functions, conditional aggregates, sanity bounds on dates, etc.)
+- Default LIMIT 500 unless the expected row shape implies fewer
+  (e.g. "24 rows" or "1 row" — in those cases LIMIT 500 is harmless but
+  the GROUP BY should naturally produce that row count)
 - Return ONLY the SQL, nothing else"""
 
         resp = self.client.chat.completions.create(
@@ -394,7 +373,7 @@ Return ONLY the corrected SQL, nothing else."""
         return fixed.strip()
 
     # ── Data Gap Detection ────────────────────────────────────────────────
-    def check_data_coverage(self, df: pd.DataFrame, intent: dict) -> dict:
+    def check_data_coverage(self, df: pd.DataFrame, plan: dict) -> dict:
         """
         Returns metadata about whether the result's emptiness/zero-ness is
         due to a genuine zero or a lack of data for the requested period.
@@ -414,7 +393,7 @@ Return ONLY the corrected SQL, nothing else."""
             return coverage  # data exists, no gap concern
 
         # Result is empty or all-zero — always check max date since intent time_scope can be unreliable
-        table = "fact_porter_request" if intent.get("data_domain") != "asset" else "mysql_asset"
+        table = "fact_porter_request" if plan.get("data_domain") != "asset" else "mysql_asset"
         date_col = "scheduled_time" if table == "fact_porter_request" else "commissioned_on"
 
         try:
@@ -432,13 +411,13 @@ Return ONLY the corrected SQL, nothing else."""
         return coverage
 
     # ── Summary generation ────────────────────────────────────────────────
-    def generate_summary(self, question: str, df: pd.DataFrame, intent: dict) -> str:
+    def generate_summary(self, question: str, df: pd.DataFrame, plan: dict) -> str:
         if df is None or df.empty:
             return "The query returned no results for the specified criteria."
 
         sample = df.head(10).to_dict("records")
         prompt = f"""QUESTION: {question}
-DOMAIN: {intent.get('data_domain', 'porter')}
+DOMAIN: {plan.get('data_domain', 'porter')}
 TOTAL ROWS: {len(df)}
 SAMPLE DATA (first 10 rows): {json.dumps(sample, default=str)}
 
@@ -456,9 +435,9 @@ Write a 2–3 sentence plain-language summary of these results for a hospital ma
         return resp.choices[0].message.content.strip()
 
     # ── Follow-up suggestions ─────────────────────────────────────────────
-    def generate_followups(self, question: str, intent: dict) -> list[str]:
+    def generate_followups(self, question: str, plan: dict) -> list[str]:
         prompt = f"""Question: "{question}"
-Domain: {intent.get('data_domain')}
+Domain: {plan.get('data_domain')}
 
 Suggest 3 natural follow-up questions a hospital administrator would
 ask next, in their own words (not technical/SQL phrasing).
@@ -486,26 +465,26 @@ Return ONLY a JSON array of 3 strings."""
     def run(self, question: str, history: str = "", facility_id: str | None = None) -> tuple:
         """
         Runs the full pipeline.
-        Returns: (sql, intent_dict, dataframe, success_bool, error_string)
+        Returns: (sql, plan_dict, dataframe, success_bool, error_string)
         """
         logger.info("Pipeline started for question: %s", question)
 
-        intent = self.classify_intent(question, history)
-        logger.info("Intent classified: %s", intent)
+        plan = self.plan_analysis(question, history, facility_id)
+        logger.info("Plan generated: %s", plan)
 
-        sql = self.generate_sql(question, intent, history, facility_id)
+        sql = self.generate_sql(question, plan, history, facility_id)
 
         df, success, error = self.db.execute_query_with_error(sql)
 
-        # Safety net: comparison queries that return 1 row are wrong
-        if success and intent.get("comparison") and len(df) <= 1:
+        # Safety net: comparison plans returning 1 row (from 8.1 Addendum #1)
+        if success and plan.get("comparison_needed") and len(df) <= 1:
             logger.warning("Comparison query returned %d row(s), regenerating: %s", len(df), question)
             sql = self.fix_sql(
                 sql,
-                "This query was supposed to compare multiple time periods but "
-                "returned only 1 row. Remove any WHERE filter that restricts to "
-                "a single year/month/period, and ensure GROUP BY produces one "
-                "row per period (e.g. multiple years)."
+                "This was planned as a comparison "
+                f"({plan.get('comparison_basis', '')}) but returned only 1 row. "
+                "Adjust GROUP BY / remove over-restrictive WHERE filters so "
+                "multiple rows are returned, one per item being compared."
             )
             df, success, error = self.db.execute_query_with_error(sql)
 
@@ -516,4 +495,4 @@ Return ONLY a JSON array of 3 strings."""
             if not success:
                 logger.error("Self-correction also failed. Error: %s", error)
 
-        return sql, intent, df, success, (error or "")
+        return sql, plan, df, success, (error or "")
