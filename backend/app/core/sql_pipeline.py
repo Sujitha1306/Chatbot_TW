@@ -342,6 +342,7 @@ Requirements:
         sql = resp.choices[0].message.content.strip()
         sql = re.sub(r"^```sql\s*", "", sql, flags=re.IGNORECASE)
         sql = re.sub(r"\s*```$", "", sql)
+        sql = sql.replace("INTERIAL", "INTERVAL")  # Prevent common LLM hallucination
         return sql.strip()
 
     # ── Call 3: Self-correction (on error only) ───────────────────────────
@@ -370,6 +371,7 @@ Return ONLY the corrected SQL, nothing else."""
         fixed = resp.choices[0].message.content.strip()
         fixed = re.sub(r"^```sql\s*", "", fixed, flags=re.IGNORECASE)
         fixed = re.sub(r"\s*```$", "", fixed)
+        fixed = fixed.replace("INTERIAL", "INTERVAL")  # Prevent common LLM hallucination
         return fixed.strip()
 
     # ── Data Gap Detection ────────────────────────────────────────────────

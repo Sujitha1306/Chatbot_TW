@@ -380,7 +380,7 @@ class EnhancedResultFormatter:
 # Column names that are ALWAYS dimensions, never measures —
 # regardless of their SQL data type
 DIMENSION_NAME_PATTERNS = [
-    "year", "month", "day", "week", "quarter", "date", "period",
+    "year", "month", "day", "week", "quarter", "date", "period", "hour",
     "facility_id", "facility_name", "region", "department",
     "status", "category", "criticality", "name", "id",
 ]
@@ -419,7 +419,7 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
         # AND prefer finer granularity (month > year, day > month) when
         # cardinality is similar — this ensures "by month" questions chart
         # by month even if "year" also exists as a column
-        GRANULARITY_RANK = {"day": 4, "week": 3, "month": 2, "quarter": 2, "year": 1, "date": 3, "period": 2}
+        GRANULARITY_RANK = {"hour": 5, "day": 4, "week": 3, "month": 2, "quarter": 2, "year": 1, "date": 3, "period": 2}
 
         def time_dim_score(col):
             rank = max((v for k, v in GRANULARITY_RANK.items() if k in col.lower()), default=0)
@@ -548,8 +548,11 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
                  recommendations.append(rec)
 
     # PIE: dimension with 2-15 categories, but NOT for time-series dimensions
+    # UNLESS the plan explicitly requested a pie chart
     is_time_dimension = primary_dim in time_dims or primary_dim == "_period"
-    if primary_dim and 2 <= df[primary_dim].nunique() <= 15 and not is_time_dimension:
+    plan_wants_pie = plan.get("chart_type_hint") == "pie"
+    
+    if primary_dim and 2 <= df[primary_dim].nunique() <= 15 and (not is_time_dimension or plan_wants_pie):
         recommendations.append({
             "type": "pie", "label": "Pie Chart",
             "x": primary_dim, "y": primary_measure, "icon": "PieChart",
@@ -625,6 +628,12 @@ def _select_chart_measures(df, measure_cols: list, plan: dict) -> list[str]:
     matched = [m for m in requested if m in measure_cols]
     if matched:
         return matched[:3]
+
+    # NEW Priority 2: scan visualization_suggestion for column-like mentions
+    viz_text = plan.get("visualization_suggestion", "").lower()
+    viz_matched = [c for c in measure_cols if c.lower().replace("_", " ") in viz_text or c.lower() in viz_text]
+    if len(viz_matched) >= 1:
+        return viz_matched[:3]
 
     if any(kw in plan.get("calculation_plan", "").lower() for kw in
            ["rate", "percentage", "efficiency", "completion", "cancellation"]):
