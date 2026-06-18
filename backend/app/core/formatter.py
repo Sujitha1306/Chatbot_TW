@@ -407,7 +407,7 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
         return _table_only_spec(1), df
 
     dimension_cols = [c for c in df.columns if _is_dimension_column(c, df[c]) and df[c].notna().any()]
-    measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any() and df[c].nunique() > 1]
+    measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any()]
 
     if not measure_cols:
         return _table_only_spec(len(df)), df
@@ -640,6 +640,11 @@ def _select_chart_measures(df, measure_cols: list, plan: dict) -> list[str]:
         for col in PERFORMANCE_MEASURE_PRIORITY:
             if col in measure_cols:
                 return [col]
+
+    if len(measure_cols) > 1:
+        # If the query specifically returned multiple measures, chart up to 3 of them!
+        # Especially important for cross-domain comparisons (B11, B15).
+        return measure_cols[:3]
 
     return [_best_numeric_col(df, measure_cols)]
 

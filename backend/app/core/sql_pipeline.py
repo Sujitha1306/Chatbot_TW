@@ -263,12 +263,13 @@ would cause incorrect duplication or require an artificial join key).
 Examples:
 - "Productivity and cost optimization insights" → true. Sub-query 1
   (porter domain): completion rate, avg TAT. Sub-query 2 (asset
-  domain): active asset costs, maintenance costs.
+  domain): active asset costs, maintenance costs. (No shared dimension)
 - "Compare porter and asset performance" → true. Sub-query 1: porter
   completion/TAT metrics. Sub-query 2: asset active/maintenance rates.
 - "Show porter performance by facility" → false (single domain, single query)
 - "Show assets and their warranty status" → false (single domain — both
   parts are about mysql_asset, no porter/asset split needed)
+- "Compare the number of active critical assets with the number of completed porter requests by facility" → false. They share a natural aggregation dimension (facility_id), so they CAN and SHOULD be combined in ONE query using a FULL OUTER JOIN or UNION ALL with aggregation.
 - "How many requests use which assets" → false IF there's a genuine
   row-level relationship via asset_category in fact_porter_request
   matching mysql_asset's category — only set true when NO valid join
