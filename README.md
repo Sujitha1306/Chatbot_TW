@@ -1,38 +1,20 @@
 # 📊 TrackerWave Analytics Platform
 
-A unified AI-powered analytics platform that seamlessly handles **Porter Request Management** and **Asset Management** with advanced natural language processing, semantic understanding, and intelligent insights.
+## 📑 Summary
+The TrackerWave Analytics Platform is a unified, AI-powered conversational chatbot built to seamlessly query, analyze, and visualize data for **Porter Request Management** and **Asset Management**. By leveraging advanced Natural Language Processing (Azure OpenAI) and a blazing-fast columnar database (ClickHouse), users can ask plain English questions about hospital operations, and instantly receive accurate data tables, dynamic charts, and intelligent narrative summaries.
 
-## ✨ Key Features
+---
 
-### 🚚 **Porter Request Management**
-- **Performance Analytics**: Porter TAT analysis, efficiency metrics, workload distribution
-- **Request Tracking**: Complete request lifecycle monitoring and status tracking
-- **Facility Analytics**: Cross-facility performance comparisons and optimization insights
-- **Operational Intelligence**: Peak hour analysis, bottleneck identification, trend forecasting
+## ✨ Features
+- **Conversational Interface**: Ask questions naturally in a chat-like interface. Supports follow-up questions and conversational memory.
+- **Smart Routing & Domain Detection**: Automatically routes questions to the appropriate domain (Porter operations vs. Asset tracking) or answers general conversational greetings instantly.
+- **Automated SQL Generation**: Translates natural language into optimized ClickHouse SQL queries.
+- **Dynamic Visualizations**: Automatically recommends the best chart type (Bar, Line, Pie, Scatter) and renders interactive Plotly charts in Angular.
+- **Cross-Conversation Context**: "Found in" folder links easily navigate users back to related queries previously asked.
+- **Actionable AI Insights**: Beyond raw data, the chatbot provides a human-readable summary of the metrics with actionable insights.
+- **Export Functionality**: Easily export data to CSV, Excel, or PDF.
 
-### 🏭 **Asset Management**
-- **Asset Inventory**: Comprehensive asset tracking across departments and facilities
-- **Warranty Management**: Expiration tracking, maintenance scheduling, compliance monitoring
-- **Department Analytics**: Asset distribution, ownership analysis, cost center reporting
-- **Lifecycle Management**: Commissioning trends, depreciation tracking, utilization metrics
-
-### 🧠 **Unified AI Analytics**
-- **Semantic Understanding**: Natural language query processing that understands business context
-- **Domain Detection**: Automatic classification between Porter and Asset management queries
-- **Smart Insights**: AI-generated summaries with actionable business recommendations
-- **Query Validation**: Intelligent verification of generated SQL with confidence scoring
-
-### 📊 **Advanced Visualizations**
-- **Chart Control**: Full control over visualization types (bar, line, pie, scatter, heatmap, table)
-- **Axis Selection**: Custom X/Y axis configuration for optimal data presentation
-- **Interactive Charts**: Hover data, zoom capabilities, and export functionality
-- **Multi-Domain Charts**: Seamless visualization across Porter and Asset data
-
-### 💬 **Enhanced User Experience**
-- **Multi-Turn Conversations**: Context-aware follow-up questions with domain memory
-- **Broken English Support**: Flexible query interpretation ("show requests on june 1")
-- **Intelligent Suggestions**: AI-powered follow-up question recommendations
-- **Simplified Interface**: Clean, focused UI without unnecessary controls
+---
 
 ## 🏗️ Architecture
 
@@ -45,315 +27,126 @@ A unified AI-powered analytics platform that seamlessly handles **Porter Request
                                       ▼                         ▼
 ┌─────────────────────┐    ┌──────────────────────┐    ┌─────────────────┐
 │   TrackerWave UI    │◀───│  Enhanced Results &  │◀───│   ClickHouse    │
-│   or REST API       │    │   AI Insights        │    │    Database     │
+│   (Angular & D3)    │    │   AI Insights        │    │    Database     │
 └─────────────────────┘    └──────────────────────┘    └─────────────────┘
 ```
 
-## 🚀 Quick Start
+The platform follows a modern separated backend/frontend architecture with real-time streaming capabilities:
 
-### Option 1: Interactive Setup (Recommended)
-```bash
-# Clone repository
-git clone <repository-url>
-cd trackerwave-analytics
+1. **Frontend (Angular)**: 
+   - A reactive, component-based UI built with Angular and TailwindCSS.
+   - Manages state using RxJS and handles Server-Sent Events (SSE) for real-time typewriter-style chat responses.
+   - Dynamically renders interactive charts using Plotly.js.
 
-# Run interactive setup
-chmod +x deploy.sh
-./deploy.sh quickstart
-```
+2. **Backend (Python / FastAPI)**:
+   - Serves as the core orchestrator. 
+   - Exposes REST and SSE endpoints for streaming data.
+   - Uses `sql_pipeline.py` to route intents, construct Azure OpenAI prompts, and safely query the database.
+   - Stores user session history locally in a JSON store to maintain conversational memory.
 
-### Option 2: Manual Setup
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
-cp .env.template .env
-# Edit .env with your Azure OpenAI credentials
-
-# Start application
-./deploy.sh streamlit  # Web interface
-# OR
-./deploy.sh api        # REST API
-```
-
-### Option 3: Docker Deployment
-```bash
-# Build and run with Docker
-./deploy.sh docker
-
-# Access points:
-# - TrackerWave UI: http://localhost:8501
-# - REST API: http://localhost:5000
-```
-
-## 🎯 Usage Examples
-
-### Porter Request Management
-
-#### Performance Analytics
-```
-"Show porter performance by facility"
-"Which porter had the minimum TAT overall?"
-"Create a heatmap of requests by hour and day"
-"Show cancelled requests for facility 184"
-```
-
-#### Operational Intelligence
-```
-"What are the peak hours for requests?"
-"Show request trends over the past month"
-"Compare facility efficiency metrics"
-"Predict request volume for next week"
-```
-
-### Asset Management
-
-#### Inventory & Distribution
-```
-"Count assets by department"
-"Show asset distribution by facility"
-"Which department owns the most assets?"
-"Display assets by criticality level"
-```
-
-#### Warranty & Maintenance
-```
-"Which assets have warranty expiring next month?"
-"Show monthly warranty expiration trends"
-"List assets with expired AMC"
-"Department-based asset maintenance schedule"
-```
-
-#### Cost & Value Analysis
-```
-"Show asset costs by department"
-"Compare asset values across facilities"
-"Which assets have highest depreciation?"
-"Show commissioning trends by year"
-```
-
-### Multi-Domain Conversations
-```
-User: "Show asset distribution by facility"
-AI: [Shows asset data across facilities]
-User: "How many porter requests were made in those facilities?"
-AI: [Shows porter request data for same facilities with context]
-User: "Which facility has the best asset utilization and porter efficiency?"
-AI: [Provides comparative analysis across both domains]
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-```bash
-# Azure OpenAI Configuration (Required)
-AZURE_OPENAI_ENDPOINT=https://your-endpoint.cognitiveservices.azure.com/
-AZURE_OPENAI_API_KEY=your_api_key_here
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_OPENAI_API_VERSION=2025-01-01-preview
-
-# ClickHouse Database
-CLICKHOUSE_HOST=172.188.240.120
-CLICKHOUSE_PORT=8123
-CLICKHOUSE_USERNAME=default
-CLICKHOUSE_PASSWORD=your-password-here
-CLICKHOUSE_DATABASE=ovitag_dw
-
-# Application Configuration
-LOG_LEVEL=INFO
-MAX_QUERY_TIMEOUT=30
-DEFAULT_ROW_LIMIT=100
-
-# Flask API Configuration
-FLASK_DEBUG=False
-FLASK_HOST=127.0.0.1
-FLASK_PORT=5000
-```
-
-## 📊 Data Schema
-
-### Porter Management: `fact_porter_request`
-| Column | Description | Example |
-|--------|-------------|---------|
-| `facility_id` | Facility identifier (4-digit string) | "0184", "0206" |
-| `requester_user_id` | User who made request | 12345 |
-| `porter_user_id` | Assigned porter | 67890 |
-| `scheduled_time` | When scheduled (UTC) | 2025-06-25 14:30:00 |
-| `completed_time` | When completed (UTC) | 2025-06-25 15:15:00 |
-| `request_performer_status` | Status code | "RQ-CO", "RQ-CA" |
-
-### Asset Management: `mysql_asset`
-| Column | Description | Example |
-|--------|-------------|---------|
-| `id` | Unique asset identifier | 1001 |
-| `name` | Asset name/description | "MRI Machine" |
-| `asset_type_id` | Asset type classification | "AT-MD" |
-| `owner_department_id` | Owning department | 101 |
-| `warranty_due` | Warranty expiration date | 2025-12-31 |
-| `asset_cost` | Original purchase cost | 250000.00 |
-| `criticality` | Asset criticality level | "Critical" |
-
-### Business Logic
-```sql
--- TAT (Turnaround Time) in minutes - FIXED
-round(dateDiff('second', scheduled_time, completed_time)/60.0, 2) AS tat_minutes
-
--- Asset warranty status
-CASE WHEN warranty_due < now() THEN 'Expired' 
-     WHEN warranty_due < now() + INTERVAL 30 DAY THEN 'Expiring Soon'
-     ELSE 'Active' END AS warranty_status
-```
-
-## 🔌 API Endpoints
-
-### Core Endpoints
-
-#### `POST /query` - Unified Analytics Query
-Process natural language queries for both Porter and Asset management.
-
-**Request:**
-```json
-{
-  "question": "Count assets by department and show as pie chart",
-  "chart_type": "pie",
-  "x_axis": "department",
-  "y_axis": "asset_count",
-  "date_format": "US",
-  "limit": 1000,
-  "session_id": "user123"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "summary": "✅ Asset Analysis: Found 15 departments with 2,847 assets...",
-    "data_domain": "asset",
-    "results": {
-      "columns": ["department", "asset_count"],
-      "data": [...],
-      "row_count": 15
-    },
-    "chart_data": {...},
-    "suggestions": [
-      "Show asset trends by warranty expiration",
-      "Which departments have the most critical assets"
-    ]
-  }
-}
-```
-
-#### `POST /analyze-intent` - Query Intent Analysis
-Analyze query intent and determine data domain (porter vs asset).
-
-#### `GET /schema` - Database Schema
-Get comprehensive schema information for both Porter and Asset tables.
-
-## 🎨 Key Improvements
-
-### ✅ **Fixed Issues**
-- **Date Formatting**: Dates now display in user-selected format (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)
-- **TAT Calculations**: Returns numeric minutes instead of timestamp strings
-- **Chart Controls**: Full chart type selection and X/Y axis control
-- **Broken English**: Improved semantic understanding for natural queries
-- **UI Cleanup**: Removed unnecessary sidebars and controls for cleaner interface
-- **ID Precision**: No more rounding of IDs or request numbers
-
-### 🆕 **New Features**
-- **Asset Management**: Complete asset tracking and analytics capabilities
-- **Domain Detection**: Automatic classification between Porter and Asset queries
-- **Unified Interface**: Single platform for both management domains
-- **Enhanced Charts**: Better visualization controls and chart type selection
-- **Improved AI**: Better semantic understanding and context retention
-
-## 🧪 Testing
-
-### Run Comprehensive Tests
-```bash
-# Run all tests
-python test_chatbot.py
-
-# Run specific test categories
-python -m pytest test_chatbot.py::TestAssetManagementFeatures -v
-python -m pytest test_chatbot.py::TestTrackerWaveChatbot -v
-```
-
-### Sample Test Queries
-
-#### Porter Management
-- "Show porter performance by facility"
-- "Which porter had the best TAT last month?"
-- "Create a bar chart of requests by priority level"
-
-#### Asset Management
-- "Count assets by department and show as pie chart"
-- "Which assets have warranty expiring next month?"
-- "Show asset cost distribution by criticality level"
-
-#### Multi-Domain
-- "Compare facility utilization for both assets and porter requests"
-- "Show trends in both asset acquisitions and porter request volume"
-
-## 🚀 Deployment Options
-
-### Development
-```bash
-./deploy.sh streamlit  # Start web interface
-./deploy.sh api        # Start REST API
-./deploy.sh both       # Start both services
-```
-
-### Production
-```bash
-./deploy.sh docker     # Containerized deployment
-docker-compose up -d   # Full stack deployment
-```
-
-### Performance
-- **Response Time**: < 2 seconds for 95% of queries
-- **Concurrent Users**: Supports 50+ simultaneous users
-- **Data Capacity**: Handles 10M+ records efficiently
-- **AI Processing**: < 1 second for intent analysis
-
-## 🔒 Security & Compliance
-
-- **Data Encryption**: All database connections encrypted
-- **API Security**: Rate limiting and input validation
-- **Audit Logging**: Comprehensive query and access logging
-- **Role-Based Access**: Department-level data access controls
-
-## 📈 Analytics Capabilities
-
-### Porter Request Analytics
-- Performance dashboards and KPI tracking
-- Operational efficiency optimization
-- Resource allocation insights
-- Predictive workload forecasting
-
-### Asset Management Analytics
-- Inventory optimization and tracking
-- Maintenance scheduling and compliance
-- Cost analysis and ROI measurement
-- Risk assessment and criticality analysis
-
-### Cross-Domain Intelligence
-- Facility-wide operational insights
-- Resource correlation analysis
-- Integrated performance metrics
-- Holistic business intelligence
+3. **Database (ClickHouse)**:
+   - High-performance analytical database containing massive volumes of IoT telemetry, Porter Requests, and Asset Tracking data.
 
 ---
 
-**TrackerWave Analytics Platform** - Unifying Porter Request Management and Asset Management through AI-powered insights and intelligent analytics.
+## 🔄 Workflow
 
-For detailed API documentation, visit: `http://localhost:5000` after starting the API service.
+1. **User Query**: The user types a natural language question in the Angular frontend.
+2. **Streaming Connection**: Angular establishes an SSE connection to the FastAPI backend.
+3. **Memory Retrieval**: The backend looks up the `session_id` to retrieve chat history for context.
+4. **AI Pipeline**: 
+   - **Router**: Classifies the intent (Conversational vs. Data).
+   - **Planner**: Maps the question to the correct database tables.
+   - **SQL Generator**: Writes the ClickHouse SQL.
+5. **Execution & Analysis**: The backend executes the SQL, gets the rows, and asks the AI to summarize the results.
+6. **Streaming Response**: The AI's text, along with the raw data and chart configuration (`chartSpec`), are streamed back to the frontend.
+7. **Rendering**: Angular renders the text, data table, and charts in real-time!
 
-For technical support or feature requests, please refer to the comprehensive test suite and deployment documentation.
+---
+
+## 🚀 Getting Started
+
+Follow these steps to clone the repository and get the application running locally.
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Sujitha1306/Chatbot_TW.git
+cd Chatbot_TW
+```
+
+### 2. Setup and Run the Backend (FastAPI)
+The backend is built with Python. We recommend using a virtual environment.
+
+```bash
+# Ensure you are in the project root directory
+# 1. Create a Python virtual environment
+python3 -m venv .venv
+
+# 2. Activate the virtual environment
+# On macOS/Linux:
+source .venv/bin/activate
+# On Windows:
+# .venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements/base.txt
+
+# 4. Set up environment variables
+cp .env.example .env
+# Edit .env with your Azure OpenAI keys and ClickHouse credentials
+
+# 5. Start the backend server
+./.venv/bin/uvicorn backend.app.main:app --port 8000 --reload
+```
+The backend API will now be running at `http://localhost:8000`.
+
+### 3. Setup and Run the Frontend (Angular)
+The frontend requires Node.js and npm.
+
+```bash
+# 1. Open a new terminal window/tab
+# 2. Navigate to the frontend directory
+cd frontend-angular
+
+# 3. Install NPM dependencies
+npm install
+
+# 4. Start the Angular development server
+npm start
+```
+The frontend UI will now be running at `http://localhost:4200`. Open this URL in your browser to start chatting!
+
+---
+
+## 💡 Example Questions & Expected Results
+
+Here are some example prompts you can ask the chatbot to test the system:
+
+### Question 1: Porter Workload
+**You ask:** *"What is our porter completion rate by facility?"*
+**Expected Result:** 
+- The AI will generate a Bar chart showing completed vs. total requests per facility.
+- A summary explaining which facilities are performing well and which are falling behind (e.g., "Facility 0009 has a 97% completion rate, but Facility 0039 is struggling at 52%").
+
+### Question 2: Asset Inventory Breakdown
+**You ask:** *"Show me the asset status breakdown."*
+**Expected Result:** 
+- A Pie Chart or Bar Chart showing counts of `ATS-INU`, `ATS-ONB`, `Active`, etc.
+- A summary noting that a large percentage of assets might be missing an explicit status.
+
+### Question 3: Time Series Analysis
+**You ask:** *"Show porter requests trend over time."*
+**Expected Result:** 
+- A Line Chart displaying the volume of requests grouped by Month and Year.
+- A data table with the exact monthly counts.
+
+### Question 4: Conversational Greeting
+**You ask:** *"Hi, what can you do?"*
+**Expected Result:** 
+- The AI responds instantly without generating a chart or executing SQL. It greets you and explains that it can help analyze Porter and Asset Management data.
+
+### Question 5: Cross-Domain Correlation
+**You ask:** *"Compare the number of active critical assets with the number of completed porter requests by facility."*
+**Expected Result:** 
+- A multi-series Bar Chart with two measures plotted side-by-side per facility.
+- A combined summary explaining both the asset count and the porter workload.
