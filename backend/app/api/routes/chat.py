@@ -128,7 +128,12 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 yield _sse({"event": "done"})
 
                 _store.add_message(user_id, session_id, Message(
-                    role="assistant", content=response_text, domain="cross_conversation",
+                    role="assistant", 
+                    content=response_text, 
+                    domain="cross_conversation",
+                    crossConversationRefs=[
+                        {"conversation_id": m["conversation_id"], "title": m["title"]} for m in past_matches
+                    ]
                 ))
                 return  # ← stop here, do not proceed to plan_analysis/SQL
 

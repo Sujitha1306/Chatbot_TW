@@ -18,6 +18,7 @@ class Message:
     data: list = field(default_factory=list)
     chartSpec: dict = field(default_factory=dict)
     displaySections: list = field(default_factory=list)
+    crossConversationRefs: list = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def to_dict(self):
@@ -32,6 +33,7 @@ class Message:
             "data": self.data,
             "chartSpec": self.chartSpec,
             "displaySections": self.displaySections,
+            "crossConversationRefs": self.crossConversationRefs,
             "timestamp": self.timestamp.isoformat()
         }
 
@@ -48,6 +50,7 @@ class Message:
             data=d.get("data", []),
             chartSpec=d.get("chartSpec", {}),
             displaySections=d.get("displaySections", []),
+            crossConversationRefs=d.get("crossConversationRefs", []),
         )
         if "timestamp" in d:
             try:
