@@ -31,15 +31,25 @@
       {{ message.content }}
     </p>
 
+    <!-- Cross conversation references -->
+    <div *ngIf="message.crossConversationRefs?.length" class="flex flex-wrap gap-2 mb-3">
+      <span class="text-xs text-gray-400 mt-0.5">📂 Found in:</span>
+      <a *ngFor="let ref of message.crossConversationRefs"
+         (click)="chat.selectConversation(ref.conversation_id)"
+         class="text-xs text-brand-primary underline cursor-pointer hover:text-brand-navy transition-colors">
+        {{ ref.title }}
+      </a>
+    </div>
+
     <!-- Panel toggle buttons -->
-    <div *ngIf="message.status === 'complete' && (message.chartSpec || message.data || message.sql)" class="flex flex-wrap gap-2 mb-3">
+    <div *ngIf="message.status === 'complete' && (message.chartSpec || message.data || message.sql || message.displaySections)" class="flex flex-wrap gap-2 mb-3">
       <button *ngIf="message.chartSpec && !message.chartSpec.single_value"
               (click)="showChart = !showChart"
               class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
                      hover:border-brand-primary hover:text-brand-primary transition">
         <lucide-icon name="bar-chart-2" class="w-3.5 h-3.5"></lucide-icon> Chart {{ showChart ? '▴' : '▾' }}
       </button>
-      <button *ngIf="message.data"
+      <button *ngIf="message.data || message.displaySections"
               (click)="showData = !showData"
               class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
                      hover:border-brand-primary hover:text-brand-primary transition">
@@ -66,6 +76,14 @@
       
     <app-data-table *ngIf="showData && message.data"
       [data]="message.data" [numericColumns]="message.chartSpec?.columns?.numeric || []"></app-data-table>
+
+    <!-- Multi-query display sections -->
+    <ng-container *ngIf="showData && message.displaySections">
+      <div *ngFor="let section of message.displaySections" class="mt-3">
+        <div class="text-xs font-medium text-gray-500 mb-1">{{ section.label }}</div>
+        <app-data-table [data]="section.data" [numericColumns]="[]"></app-data-table>
+      </div>
+    </ng-container>
 
     <app-sql-panel *ngIf="showSql && message.sql" [sql]="message.sql"></app-sql-panel>
 

@@ -47,30 +47,41 @@ export class ChatService {
     this.loadConversationMessages(id);
   }
 
+  private currentLoadRequestId = 0;
+  private currentConvListRequestId = 0;
+
   async loadConversations(): Promise<void> {
     const token = this.auth.getToken();
     if (!token) return;
+    const requestId = ++this.currentConvListRequestId;
     try {
       const res = await fetch(`${environment.apiUrl}/chat/conversations`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (requestId !== this.currentConvListRequestId) return;
       if (!res.ok) return;
       const data = await res.json();
+      if (requestId !== this.currentConvListRequestId) return;
       this.conversationsSubject.next(data.conversations || []);
     } catch (e) {
-      console.error('Failed to load conversations', e);
+      if (requestId === this.currentConvListRequestId) {
+        console.error('Failed to load conversations', e);
+      }
     }
   }
 
   async loadConversationMessages(convId: string): Promise<void> {
     const token = this.auth.getToken();
     if (!token) return;
+    const requestId = ++this.currentLoadRequestId;
     try {
       const res = await fetch(`${environment.apiUrl}/chat/conversations/${convId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      if (requestId !== this.currentLoadRequestId) return;
       if (!res.ok) return;
       const data = await res.json();
+      if (requestId !== this.currentLoadRequestId) return;
       const loadedMessages = (data.messages || []).map((m: any) => ({
         ...m,
         status: 'complete',
@@ -79,7 +90,9 @@ export class ChatService {
       this.messagesSubject.next(loadedMessages);
       this.activeConvId = convId;
     } catch (e) {
-      console.error('Failed to load messages', e);
+      if (requestId === this.currentLoadRequestId) {
+        console.error('Failed to load messages', e);
+      }
     }
   }
 
@@ -129,6 +142,7 @@ export class ChatService {
     };
 
     try {
+      const user = this.auth.getUser();
       const response = await fetch(`${environment.apiUrl}/chat/stream`, {
         method: 'POST',
         headers: {
@@ -137,6 +151,7 @@ export class ChatService {
         },
         body: JSON.stringify({
           question,
+          user_id: user?.id || 'TW', 
           session_id: this.activeConvId || 'default',
           facility_id: this.facilitySvc.getActiveFacilityId(),
         }),
@@ -200,6 +215,12 @@ export class ChatService {
               break;
             case 'data':
               update({ data: ev.rows, rowCount: ev.row_count });
+              break;
+            case 'multi_data':
+              update({ displaySections: ev.sections, rowCount: ev.row_count });
+              break;
+            case 'cross_conversation_results':
+              update({ crossConversationRefs: ev.matches });
               break;
             case 'token':
               this.tokenBuffer += ev.text;

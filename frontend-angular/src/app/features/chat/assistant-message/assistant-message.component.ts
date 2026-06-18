@@ -5,6 +5,7 @@ import { SqlPanelComponent } from '../sql-panel/sql-panel.component';
 import { DataTableComponent } from '../data-table/data-table.component';
 import { ChartSelectorComponent } from '../chart-selector/chart-selector.component';
 import { ExportService } from '../../../core/services/export.service';
+import { ChatService } from '../../../core/services/chat.service';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
@@ -24,7 +25,7 @@ export class AssistantMessageComponent {
   showSql = false;
   showExportMenu = false;
 
-  constructor(private exportSvc: ExportService) {}
+  constructor(private exportSvc: ExportService, public chat: ChatService) {}
 
   doExport(format: 'csv' | 'excel' | 'pdf') {
     if (this.originalQuestion) {

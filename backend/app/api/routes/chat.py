@@ -16,6 +16,7 @@ from typing import Optional
 
 class QueryRequest(BaseModel):
     question: str
+    user_id: str = "default"
     session_id: Optional[str] = "default"
     chart_type: str = "auto"
     row_limit: int = 100
@@ -82,8 +83,62 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
     async def event_generator():
         try:
+            messages = _store.get_messages(user_id, session_id)
+            # Exclude the message we just added to get the true prior history
+            prior_messages = messages[:-1] if messages else []
+            has_history = len(prior_messages) > 0
+            
+            current_history = _store.get_recent_context(user_id, session_id)
+
+            # ── NEW: Resolve memory scope ──
+            # Pass only the prior history to the memory resolver, otherwise it thinks the current question is prior context
+            prior_history_text = "\n".join([f"{m.role.upper()}: {m.content[:200]}" for m in prior_messages[-(3 * 2):]])
+            try:
+                memory_scope = pipeline.resolve_memory_scope(req.question, prior_history_text, has_history)
+            except Exception as e:
+                import logging
+                logging.warning(f"resolve_memory_scope failed, defaulting to current_conversation: {e}")
+                memory_scope = {"scope": "current_conversation", "reasoning": "exception_fallback"}
+
+            if memory_scope.get("scope") == "other_conversation":
+                search_terms = memory_scope.get("search_terms", [])
+                past_matches = _store.search_past_conversations(
+                    user_id=user_id,
+                    search_terms=search_terms,
+                    exclude_conv_id=session_id,
+                )
+
+                yield _sse({"event": "session", "id": session_id})
+
+                if not past_matches:
+                    response_text = "I checked your past conversations but didn't find anything matching that — could you tell me more about what you're looking for?"
+                else:
+                    response_text = pipeline.generate_cross_conversation_summary(req.question, past_matches)
+
+                if past_matches:
+                    yield _sse({"event": "cross_conversation_results", "matches": [
+                        {"conversation_id": m["conversation_id"], "title": m["title"]} for m in past_matches
+                    ]})
+                
+                # Stream the response
+                for word in response_text.split(" "):
+                    yield _sse({"event": "token", "text": word + " "})
+                    await asyncio.sleep(0.01)
+                
+                yield _sse({"event": "done"})
+
+                _store.add_message(user_id, session_id, Message(
+                    role="assistant", content=response_text, domain="cross_conversation",
+                ))
+                return  # ← stop here, do not proceed to plan_analysis/SQL
+
             # ── Stage 0: Routing — does this need data? ──
-            routing = pipeline.route_message(req.question, history=_store.get_recent_context(user_id, session_id))
+            try:
+                routing = pipeline.route_message(req.question, history=current_history)
+            except Exception as e:
+                import logging
+                logging.warning(f"route_message failed, defaulting to data_question: {e}")
+                routing = {"needs_data": True, "response": None, "reason": "router_exception_fallback"}
 
             if not routing["needs_data"]:
                 # Short-circuit — respond directly, skip the entire SQL pipeline
@@ -107,15 +162,59 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "session", "id": session_id})
 
             # ── Event 1: plan analysis (fast, ~0.5s) ──
-            plan = pipeline.plan_analysis(req.question, history=_store.get_recent_context(user_id, session_id), facility_id=req.facility_id)
+            plan = pipeline.plan_analysis(req.question, history=current_history, facility_id=req.facility_id)
             yield _sse({"event": "intent", "domain": plan.get("data_domain", "porter"), "chart_type": plan.get("chart_type_hint", "auto")})
 
+            if plan.get("had_implicit_reference") and not current_history.strip():
+                yield _sse({"event": "token", "text": "I want to make sure I understand — could you clarify what you're referring to? For example, are you asking about individual porters, a specific facility, or something else?"})
+                yield _sse({"event": "done"})
+                return
+
+            effective_question = plan.get("resolved_question", req.question)
+
+            if plan.get("requires_multiple_queries") and plan.get("sub_queries"):
+                multi_result = pipeline.run_multi(effective_question, plan, history=current_history, facility_id=req.facility_id)
+                packaged = pipeline._package_multi_result(effective_question, plan, multi_result)
+
+                yield _sse({"event": "sql", "sql": packaged["combined_sql"]})
+                yield _sse({
+                    "event": "multi_data",
+                    "sections": packaged["display_sections"],
+                    "row_count": sum(len(s["data"]) for s in packaged["sub_results"])
+                })
+
+                yield _sse({"event": "summary_start"})
+                summary = pipeline.generate_synthesis_summary(effective_question, packaged, plan)
+                # Stream the summary quickly to the user
+                for word in summary.split(" "):
+                    yield _sse({"event": "token", "text": word + " "})
+                    await asyncio.sleep(0.01)
+
+                yield _sse({"event": "done"})
+
+                _store.add_message(user_id, session_id, Message(
+                    role="assistant",
+                    content=summary,
+                    sql=packaged["combined_sql"],
+                    row_count=sum(len(s["data"]) for s in packaged["sub_results"]),
+                    domain="both",
+                    facility_id=req.facility_id,
+                    displaySections=packaged["display_sections"]
+                ))
+                return
+
             # ── Event 2: SQL generated (~2–4s) ──
-            sql = pipeline.generate_sql(req.question, plan, facility_id=req.facility_id, history=_store.get_recent_context(user_id, session_id))
+            sql = pipeline.generate_sql(effective_question, plan, facility_id=req.facility_id, history=_store.get_recent_context(user_id, session_id))
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
-            df, success, error_msg = pipeline.db.execute_query_with_error(sql)
+            if not sql.strip() or sql.strip().startswith("--"):
+                import pandas as pd
+                df = pd.DataFrame([{"Result": "No relevant data for this question."}])
+                success = True
+                error_msg = ""
+            else:
+                df, success, error_msg = pipeline.db.execute_query_with_error(sql)
 
             if success and plan.get("comparison_needed") and len(df) <= 1:
                 sql = pipeline.fix_sql(
@@ -169,7 +268,11 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 fac = get_facility_lookup().get(req.facility_id)
                 facility_name = fac["facility_name"] if fac else None
 
-            summary_prompt = _build_summary_prompt(req.question, df, plan, coverage, facility_name)
+            summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
+            import logging
+            prompt_logger = logging.getLogger("prompt_debugger")
+            prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
+            prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
 
             stream = pipeline.client.chat.completions.create(
                 model=pipeline.model,
@@ -194,7 +297,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "chart", "spec": chart_spec})
 
             # ── Event 7: Follow-up suggestions ──
-            followups = pipeline.generate_followups(req.question, plan)
+            followups = pipeline.generate_followups(effective_question, plan)
             yield _sse({"event": "followups", "suggestions": followups})
 
             # ── Event 8: Done ──
@@ -207,6 +310,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 sql=sql, 
                 row_count=len(df), 
                 domain=plan.get("data_domain", "porter"),
+                facility_id=req.facility_id,
                 data=data_payload,
                 chartSpec=chart_spec
             ))
@@ -299,7 +403,7 @@ def _compute_period_trends(df, measure_cols: list) -> str:
         # (signals a potential anomaly, feeds into 9.2.3)
         other_changes = [abs(c[1]) for c in changes if c[0] != idx]
         if other_changes and abs(pct) > 2 * (sum(other_changes) / len(other_changes)):
-            lines.append(f"    ⚠ This change is unusually large compared to other period-to-period changes — worth flagging as a possible anomaly.")
+            lines.append(f"    ⚠ This change is unusually large compared to other period-to-period changes — please flag as a possible anomaly.")
 
     if not lines:
         return ""
@@ -358,15 +462,11 @@ def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, 
 The query returned no results. IMPORTANT CONTEXT: {coverage['note']}
 
 Write a 2-3 sentence response that:
-1. States clearly that NO DATA was found for the requested time period
-2. Notes the data gap explained above — do NOT say "everything is fine"
-   or "no issues" — instead say something like "there's no recorded
-   data for this period yet, so this can't be confirmed either way"
-3. Suggests the user try a different time range or check with their
-   data team if this is unexpected
+1. Explains that no data is currently available for the requested time period.
+2. Mentions the data gap explained above. Frame this objectively: the lack of data means the status is unknown, rather than assuming the system is problem-free.
+3. Suggests the user try a different time range or consult their data team.
 
-Do NOT interpret this as a positive result (e.g. "no problems!").
-An absence of data is NOT the same as a confirmed zero."""
+Please maintain a neutral, analytical tone. Since data is missing, we cannot confirm whether the underlying count is actually zero or just unrecorded."""
         else:
             return f"""QUESTION: {question}
 {facility_context}
@@ -408,14 +508,13 @@ we've confirmed data exists for this period and the count is genuinely 0."""
 
     comparison_hint = ""
     if plan.get("comparison_needed") or plan.get("grouping") not in ["unspecified", "", "none", "no grouping - single summary row"]:
-        comparison_hint = "\nIMPORTANT: The user asked for a COMPARISON or BREAKDOWN. Do NOT just summarize the overall total. Make sure to point out the differences, top categories, or trends across the grouped periods/items."
+        comparison_hint = "\nIMPORTANT: The user asked for a COMPARISON or BREAKDOWN. Please focus on pointing out differences, top categories, or trends across the grouped periods/items, rather than just stating the overall total."
 
     plan_context = f"""
 ANALYTICAL CONTEXT: This query was planned to answer: {plan.get('calculation_plan', '')}
-Make sure your summary directly addresses this — if the plan was about
-identifying PEAK values or BEST/WORST performers, your summary's main
-point should be WHICH value is peak/best/worst, not just a general
-description of the data."""
+Please ensure your summary directly addresses this context. For example, if the plan involves
+identifying peak values or top/bottom performers, please highlight which values meet those criteria
+rather than just providing a general description of the data."""
 
     measure_cols = [c for c in df.select_dtypes(include="number").columns
                      if c not in ("year", "month", "_period_sort")]
@@ -434,7 +533,7 @@ TOTAL ROWS: {len(df)}
 {extra_context}
 {plan_context}
 
-PRE-COMPUTED STATISTICS (use these for accuracy — do not recalculate):
+PRE-COMPUTED STATISTICS (please use these figures for accuracy without recalculating):
 {chr(10).join(stats_lines) if stats_lines else "  (no numeric columns)"}
 
 {pct_breakdown}
@@ -443,8 +542,7 @@ SAMPLE ROWS (for context only, first 5):
 {json.dumps(sample, default=str)}
 
 {comparison_hint}
-Write your response following ALL the COMMUNICATION RULES in your system prompt,
-including DATA RANGE HONESTY, TREND AWARENESS, and ANOMALY AWARENESS where applicable."""
+Please review the context above and write your response."""
 
 
 _pipeline = None

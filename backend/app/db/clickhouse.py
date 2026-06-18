@@ -87,7 +87,6 @@ class ClickHouseConnection:
         query = re.sub(r'INTERVAL (\d+) DAY', r'INTERVAL \1 day', query)
         query = re.sub(r'INTERVAL (\d+) MONTH', r'INTERVAL \1 month', query)
         
-        # Fix GROUP BY with aliases
         if 'GROUP BY' in query.upper():
             # ClickHouse prefers column numbers in GROUP BY
             lines = query.split('\n')
@@ -102,6 +101,11 @@ class ClickHouseConnection:
                 aliases = re.findall(r'AS (\w+)', select_line, re.IGNORECASE)
                 for i, alias in enumerate(aliases, 1):
                     query = re.sub(f'GROUP BY {alias}', f'GROUP BY {i}', query, flags=re.IGNORECASE)
+                    
+        # Remove trailing semicolons as clickhouse_connect appends ' FORMAT Native'
+        query = query.strip()
+        if query.endswith(';'):
+            query = query[:-1]
         
         return query
     

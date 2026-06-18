@@ -39,13 +39,14 @@ export class AuthService {
     this.userSubject.next(res.user);
   }
 
-  logout(): void {
+  logout(expired: boolean = false): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tw_token');
       localStorage.removeItem('tw_user');
     }
     this.userSubject.next(null);
-    this.router.navigate(['/login']);
+    const queryParams = expired ? { expired: 'true' } : {};
+    this.router.navigate(['/login'], { queryParams });
   }
 
   getToken(): string | null {
@@ -55,5 +56,9 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  getUser(): User | null {
+    return this.getStoredUser();
   }
 }

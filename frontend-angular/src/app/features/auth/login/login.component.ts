@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
 
@@ -21,11 +21,19 @@ export class LoginComponent {
     private fb: FormBuilder, 
     private auth: AuthService, 
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
+    });
+
+    this.route.queryParams.subscribe(params => {
+      if (params['expired'] === 'true') {
+        this.error = 'Your session has expired. Please log in again.';
+        this.cdr.markForCheck();
+      }
     });
   }
 

@@ -216,6 +216,16 @@ Columns:
 - commissioned_on (Date, nullable)
 - is_active (String): '1' = active, '0' = inactive
 
+## COLUMN-TO-TABLE OWNERSHIP — COMMON MISTAKES TO AVOID
+Each column belongs to EXACTLY ONE of the two tables. Do NOT use a column in a query against the wrong table:
+
+- assigned_department_id, owner_department_id → belong to mysql_asset ONLY. fact_porter_request has NO department column directly (porter requests are linked to facilities, not departments, in this schema).
+- criticality, asset_status, warranty_due, asset_cost → mysql_asset ONLY
+- status, request_category, scheduled_time, completed_time, porter_user_id → fact_porter_request ONLY
+- facility_id → exists in BOTH tables (this is the only shared column, used for filtering both, never for joining row-for-row — see JOIN RULES below)
+
+If a question asks about "department" in the context of PORTER requests, and no direct department column exists on fact_porter_request, either: (a) state in your SQL comments that this isn't directly available, or (b) if facility-to-department mapping is needed, this requires a query against mysql_asset's department columns filtered by facility, NOT a column lookup on fact_porter_request.
+
 ### CLICKHOUSE SQL — MANDATORY RULES:
 1. Date functions: toDate(), toMonth(), toYear(), today(), now()
    INVALID: CURRENT_DATE, DATE_SUB, DATE_FORMAT, DATEDIFF (MySQL syntax)
@@ -233,6 +243,13 @@ Columns:
 11. AGGREGATIONS OVER TIME: When asked for "requests per day/month/year", always use appropriate GROUP BY along with the date function.
 12. CONDITIONAL AGGREGATES: Use `countIf(condition)` for conditional counts, `avgIf(expr, condition)` for conditional averages, and `sumIf(expr, condition)` for conditional sums. These compute the aggregate ONLY over rows matching `condition`, within a single GROUP BY — more efficient than separate queries or subqueries.
 13. SANITY BOUND ON DATES: This database may contain a small number of corrupted rows with scheduled_time/completed_time values far in the future (e.g. year 2084) due to a known data ingestion issue. For ANY query involving date ranges, MAX(), MIN(), or "most recent data" questions, ALWAYS add: AND scheduled_time <= now() + INTERVAL 1 DAY (and the same for completed_time where relevant). This excludes corrupted future-dated rows from results without needing to identify them individually.
+24. CONSTRUCTING A DATE FROM YEAR/MONTH/DAY PARTS: Do NOT use makeDate (it does not exist in this version). Instead, construct dates using string literals like toDate('2025-02-01'). If it must be dynamic relative to the current year, use concat: toDate(concat(toString(toYear(today())), '-02-01')). For end-of-month calculations, prefer: (toStartOfMonth(date_expr) + INTERVAL 1 MONTH - INTERVAL 1 DAY). Do NOT use toLastDayOfMonth or toEndOfMonth as they do not exist in this version.
+25. DATE MATH: Do NOT use dateAdd('unit', number, date). In this ClickHouse version it throws a NUMBER_OF_ARGUMENTS_DOESNT_MATCH error. Use the native INTERVAL operator instead: date_expr + INTERVAL number HOUR (or DAY, MONTH, etc). Example: `toStartOfDay(today()) + INTERVAL number HOUR`.
+
+## DATE CONSTRUCTION EXAMPLES
+- "by end of February this year": (toStartOfMonth(toDate(concat(toString(toYear(today())), '-02-01'))) + INTERVAL 1 MONTH - INTERVAL 1 DAY)
+- "first day of last month": toStartOfMonth(today() - INTERVAL 1 MONTH)
+- "a specific date like March 15, 2025": toDate('2025-03-15')  -- string literal, NOT toDate(2025,3,15)
 """
 
 # Enhanced conversation state management

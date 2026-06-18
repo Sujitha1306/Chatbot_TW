@@ -21,6 +21,8 @@ export interface ChatMessage {
   rowCount?: number;
   domain?: Domain;
   chartSpec?: ChartSpec;
+  displaySections?: { label: string; data: Record<string, unknown>[] }[];
+  crossConversationRefs?: { conversation_id: string; title: string }[];
   followups?: string[];
   status: MessageStatus;
   timestamp: Date;

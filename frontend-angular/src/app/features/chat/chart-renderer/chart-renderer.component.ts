@@ -42,40 +42,37 @@ export class ChartRendererComponent implements OnChanges {
     this.plotData = this.buildTrace();
 
     if (this.type === 'pie') {
+      const { xaxis, yaxis, ...pieLayout } = BASE_LAYOUT as any;
       this.layout = {
-        ...BASE_LAYOUT,
-        xaxis: undefined,
-        yaxis: undefined,
+        ...pieLayout,
         title: { text: `${this.formatLabel(this.yCol)} by ${this.formatLabel(this.xCol)}`, font: { size: 13 } },
+        showlegend: true,
       };
-    } else {
-      const horizontal = this.type === 'bar' && this.data.length > 10 && (!this.series || this.series.length <= 1);
-    
-      // Y-axis label logic
-      let yTitle = this.formatLabel(this.yCol);
-      if (this.series && this.series.length > 1) {
-        yTitle = 'Value'; // Generic title since multiple measures share this axis
-      }
-
-      this.layout = {
-        ...BASE_LAYOUT,
-        barmode: 'group',
-        showlegend: (this.plotData.length > 1) || (this.type === 'pie'),
-        xaxis: {
-          title: { text: horizontal ? yTitle : this.formatLabel(this.xCol) },
-          type: this.type === 'scatter' ? undefined : 'category',
-          automargin: true,
-        },
-        yaxis: {
-          title: { text: horizontal ? this.formatLabel(this.xCol) : yTitle },
-          automargin: true,
-        },
-      };
-
-      if (this.type === 'pie') {
-          this.layout.showlegend = true;
-      }
+      return;
     }
+
+    const horizontal = this.type === 'bar' && this.data.length > 10 && (!this.series || this.series.length <= 1);
+  
+    // Y-axis label logic
+    let yTitle = this.formatLabel(this.yCol);
+    if (this.series && this.series.length > 1) {
+      yTitle = 'Value'; // Generic title since multiple measures share this axis
+    }
+
+    this.layout = {
+      ...BASE_LAYOUT,
+      barmode: 'group',
+      showlegend: this.plotData.length > 1,
+      xaxis: {
+        title: { text: horizontal ? yTitle : this.formatLabel(this.xCol) },
+        type: this.type === 'scatter' ? undefined : 'category',
+        automargin: true,
+      },
+      yaxis: {
+        title: { text: horizontal ? this.formatLabel(this.xCol) : yTitle },
+        automargin: true,
+      },
+    };
   }
 
   private formatLabel(col: string): string {
@@ -173,7 +170,11 @@ export class ChartRendererComponent implements OnChanges {
   }
 
   private topNWithOther(n: number): { labels: any[]; values: any[] } {
-    if (!this.data.length || !(this.xCol in this.data[0])) {
+    if (!this.data?.length || !this.xCol || !this.yCol) {
+      return { labels: [], values: [] };
+    }
+    if (!(this.xCol in this.data[0]) || !(this.yCol in this.data[0])) {
+      console.warn(`Pie chart: xCol=${this.xCol} or yCol=${this.yCol} not found in data`, this.data[0]);
       return { labels: [], values: [] };
     }
 

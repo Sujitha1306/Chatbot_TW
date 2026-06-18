@@ -5,17 +5,39 @@ from backend.app.api.deps import require_api_key
 
 router = APIRouter(prefix="/chat", tags=["history"])
 
+import math
+import numpy as np
+from dataclasses import is_dataclass, asdict
+from datetime import datetime
+
+def clean_for_json(obj):
+    if is_dataclass(obj):
+        obj = asdict(obj)
+    if isinstance(obj, dict):
+        return {k: clean_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple, set)):
+        return [clean_for_json(v) for v in obj]
+    elif isinstance(obj, float) and math.isnan(obj):
+        return None
+    elif isinstance(obj, (np.integer, np.floating)):
+        if math.isnan(obj):
+            return None
+        return obj.item()
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    return obj
+
 @router.get("/conversations")
-def list_conversations(_=Depends(require_api_key)):
-    convs = _store.list_conversations("default")
-    return {"conversations": jsonable_encoder(convs)}
+def list_conversations(user_id: str = "demo-user-001", _=Depends(require_api_key)):
+    convs = _store.list_conversations(user_id)
+    return {"conversations": clean_for_json(convs)}
 
 @router.get("/conversations/{conv_id}")
-def get_conversation(conv_id: str, _=Depends(require_api_key)):
-    msgs = _store.get_messages("default", conv_id)
-    return {"messages": jsonable_encoder(msgs)}
+def get_conversation(conv_id: str, user_id: str = "demo-user-001", _=Depends(require_api_key)):
+    msgs = _store.get_messages(user_id, conv_id)
+    return {"messages": clean_for_json(msgs)}
 
 @router.delete("/conversations/{conv_id}")
-def delete_conversation(conv_id: str, _=Depends(require_api_key)):
-    ok = _store.delete("default", conv_id)
+def delete_conversation(conv_id: str, user_id: str = "demo-user-001", _=Depends(require_api_key)):
+    ok = _store.delete(user_id, conv_id)
     return {"deleted": ok}
