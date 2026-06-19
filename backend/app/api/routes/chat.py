@@ -255,12 +255,15 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             
             import numpy as np
             import pandas as pd
-            data_payload = df.head(500).replace({np.nan: None, pd.NaT: None}).to_dict("records")
+            from backend.app.core.display_resolution import _resolve_display_names
+            
+            display_payload_df = _resolve_display_names(df.head(500))
+            data_payload = display_payload_df.replace({np.nan: None, pd.NaT: None}).to_dict("records")
             yield _sse({
                 "event": "data",
                 "rows": data_payload,
                 "row_count": len(df),
-                "columns": list(df.columns),
+                "columns": list(display_payload_df.columns),
             })
 
             # ── Event 5: Summary streamed token by token ──
@@ -452,6 +455,9 @@ def _detect_outliers(df, measure_cols: list) -> str:
 
 def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, facility_name: str | None = None) -> str:
     import pandas as pd
+    from backend.app.core.display_resolution import _resolve_display_names
+    
+    df = _resolve_display_names(df)
     
     coverage = coverage or {}
     
@@ -557,3 +563,12 @@ def get_pipeline():
         from backend.app.core.sql_pipeline import SQLGenerationPipeline
         _pipeline = SQLGenerationPipeline()
     return _pipeline
+
+@router.post("/admin/refresh-lookups")
+def refresh_lookups(_=Depends(require_api_key)):
+    from backend.app.core.facility_lookup import get_facility_lookup
+    from backend.app.core.term_lookup import get_term_lookup
+    
+    get_facility_lookup().refresh()
+    get_term_lookup().refresh()
+    return {"status": "refreshed"}

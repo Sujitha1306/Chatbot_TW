@@ -397,6 +397,9 @@ def _is_dimension_column(col_name: str, series: "pd.Series") -> bool:
 
 def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFrame"]:
     import pandas as pd
+    from backend.app.core.display_resolution import _resolve_display_names
+
+    df = _resolve_display_names(df)
 
     if df.empty:
         return _table_only_spec(0), df

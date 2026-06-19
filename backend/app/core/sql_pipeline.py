@@ -553,6 +553,11 @@ COMMON ROOT CAUSES AND CORRECT FIXES:
   You included a non-aggregated column in the SELECT clause but forgot
   to add it to the GROUP BY clause. Add all non-aggregated SELECT columns
   to the GROUP BY clause.
+- "Different number of columns in UNION ALL elements" →
+  You must ensure every SELECT in a UNION ALL returns the EXACT SAME number 
+  of columns, in the EXACT SAME order, with compatible types. If one SELECT 
+  has a column that the other doesn't need, use `NULL AS column_name` in 
+  the other SELECT. Make absolutely sure the column counts and aliases match perfectly.
 
 Return ONLY the corrected SQL — but make sure the fix addresses the
 ACTUAL cause, producing a query that will give a MEANINGFUL, CORRECT
@@ -708,13 +713,16 @@ Return ONLY a JSON array of 3 strings."""
 
         for sub in sub_results:
             if sub["success"] and not sub["data"].empty:
+                from backend.app.core.display_resolution import _resolve_display_names
+                display_data = _resolve_display_names(sub["data"])
+                
                 # Replace NaNs to avoid JSON serialization errors
                 import numpy as np
-                cleaned_df = sub["data"].replace({np.nan: None, pd.NaT: None, pd.NA: None})
+                cleaned_df = display_data.replace({np.nan: None, pd.NaT: None, pd.NA: None})
                 display_sections.append({"label": sub["purpose"], "data": cleaned_df.to_dict("records")})
                 synthesis_context_parts.append(
                     f"--- {sub['purpose']} ({sub['domain']} domain) ---\n"
-                    f"{sub['data'].head(10).to_json(orient='records')}"
+                    f"{display_data.head(10).to_json(orient='records')}"
                 )
             else:
                 synthesis_context_parts.append(f"--- {sub['purpose']} ---\nNo data available: {sub.get('error', 'empty result')}")

@@ -31,6 +31,7 @@ def require_api_key(
             
     # For local development where frontend might be passing a dummy token
     if auth and auth.credentials and auth.credentials.startswith("test_"):
-        return {"role": "admin"}
+        uid = auth.credentials[5:] if len(auth.credentials) > 5 else "test_user"
+        return {"role": "admin", "sub": uid}
             
     raise HTTPException(status_code=401, detail="Invalid credentials")

@@ -35,6 +35,12 @@ export class ChartRendererComponent implements OnChanges {
   plotData: any[] = [];
   layout = BASE_LAYOUT;
 
+  private get isHorizontalBar(): boolean {
+    if (this.type !== 'bar') return false;
+    if (this.series && this.series.length > 1) return false;
+    return new Set(this.data.map(d => d[this.xCol])).size > 12;
+  }
+
   ngOnChanges() {
     if (!this.hasValidData || !this.xCol || (!this.yCol && !this.series && this.type !== 'pie')) {
       return;
@@ -51,12 +57,34 @@ export class ChartRendererComponent implements OnChanges {
       return;
     }
 
-    const horizontal = this.type === 'bar' && this.data.length > 10 && (!this.series || this.series.length <= 1);
-  
-    // Y-axis label logic
     let yTitle = this.formatLabel(this.yCol);
     if (this.series && this.series.length > 1) {
       yTitle = 'Value'; // Generic title since multiple measures share this axis
+    }
+
+    if (this.type === 'bar') {
+      const horizontal = this.isHorizontalBar;
+      
+      const dimensionAxisKey = horizontal ? 'yaxis' : 'xaxis';
+      const measureAxisKey   = horizontal ? 'xaxis' : 'yaxis';
+
+      this.layout = {
+        ...BASE_LAYOUT,
+        barmode: 'group',
+        [dimensionAxisKey]: {
+          title: { text: this.formatLabel(this.xCol) },
+          type: 'category',     // ALWAYS category — this is the true dimension
+          automargin: true,
+        },
+        [measureAxisKey]: {
+          title: { text: yTitle },
+          type: undefined,       // ALWAYS left as a continuous numeric scale —
+                                 // NEVER category, regardless of orientation
+          automargin: true,
+        },
+        showlegend: this.plotData.length > 1,
+      };
+      return;
     }
 
     this.layout = {
@@ -64,12 +92,12 @@ export class ChartRendererComponent implements OnChanges {
       barmode: 'group',
       showlegend: this.plotData.length > 1,
       xaxis: {
-        title: { text: horizontal ? yTitle : this.formatLabel(this.xCol) },
+        title: { text: this.formatLabel(this.xCol) },
         type: this.type === 'scatter' ? undefined : 'category',
         automargin: true,
       },
       yaxis: {
-        title: { text: horizontal ? this.formatLabel(this.xCol) : yTitle },
+        title: { text: yTitle },
         automargin: true,
       },
     };
@@ -123,7 +151,7 @@ export class ChartRendererComponent implements OnChanges {
 
     switch (this.type) {
       case 'bar': {
-        const horizontal = xLabels.length > 10;
+        const horizontal = this.isHorizontalBar;
         return [{
           type: 'bar',
           x: horizontal ? y : xLabels,

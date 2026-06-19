@@ -28,16 +28,19 @@ def clean_for_json(obj):
     return obj
 
 @router.get("/conversations")
-def list_conversations(user_id: str = "demo-user-001", _=Depends(require_api_key)):
+def list_conversations(auth_data: dict = Depends(require_api_key)):
+    user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
     convs = _store.list_conversations(user_id)
     return {"conversations": clean_for_json(convs)}
 
 @router.get("/conversations/{conv_id}")
-def get_conversation(conv_id: str, user_id: str = "demo-user-001", _=Depends(require_api_key)):
+def get_conversation(conv_id: str, auth_data: dict = Depends(require_api_key)):
+    user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
     msgs = _store.get_messages(user_id, conv_id)
     return {"messages": clean_for_json(msgs)}
 
 @router.delete("/conversations/{conv_id}")
-def delete_conversation(conv_id: str, user_id: str = "demo-user-001", _=Depends(require_api_key)):
+def delete_conversation(conv_id: str, auth_data: dict = Depends(require_api_key)):
+    user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
     ok = _store.delete(user_id, conv_id)
     return {"deleted": ok}
