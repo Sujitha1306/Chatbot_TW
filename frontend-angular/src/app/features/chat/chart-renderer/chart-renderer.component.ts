@@ -9,10 +9,10 @@ const BASE_LAYOUT: any = {
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor:  'rgba(0,0,0,0)',
   font: { family: 'Inter, sans-serif', color: '#1A1A2E', size: 12 },
-  margin: { t: 40, r: 20, b: 60, l: 60 },
+  margin: { t: 60, r: 20, b: 60, l: 60 },
   height: 380,
   showlegend: true,
-  legend: { orientation: 'h', y: -0.25 },
+  legend: { orientation: 'h', y: 1.15, x: 0, xanchor: 'left', yanchor: 'bottom' },
   colorway: BRAND_COLORS,
 };
 
@@ -105,7 +105,8 @@ export class ChartRendererComponent implements OnChanges {
 
   private formatLabel(col: string): string {
     if (!col) return '';
-    return col
+    const cleanCol = col.endsWith('_id') && col !== '_id' ? col.slice(0, -3) : col;
+    return cleanCol
       .split('_')
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ');
@@ -123,18 +124,37 @@ export class ChartRendererComponent implements OnChanges {
 
     if (sortBy) {
       sorted.sort((a, b) => Number(a[sortBy]) - Number(b[sortBy]));
-    } else if (this.type === 'line') {
-      const sortAs = this.sortXAs || 'string';
-      if (sortAs === 'date') {
-        sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
-      } else if (sortAs === 'numeric') {
-        sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
-      } else {
-        sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
-      }
+      return sorted;
+    } 
+
+    if (this.type === 'pie') return sorted;
+
+    const sortAs = this.sortXAs || this.guessDataType(sorted, this.xCol);
+    if (sortAs === 'date') {
+      sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
+    } else if (sortAs === 'numeric') {
+      sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
+    } else {
+      sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
     }
     
     return sorted;
+  }
+
+  private guessDataType(data: any[], col: string): 'numeric' | 'date' | 'string' {
+    if (!data || data.length === 0) return 'string';
+    for (let i = 0; i < Math.min(5, data.length); i++) {
+      const val = data[i][col];
+      if (val === null || val === undefined) continue;
+      if (typeof val === 'number') return 'numeric';
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        if (trimmed !== '' && !isNaN(Number(trimmed))) {
+          return 'numeric';
+        }
+      }
+    }
+    return 'string';
   }
 
   private buildTrace(): any[] {
