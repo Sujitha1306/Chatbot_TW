@@ -153,7 +153,7 @@ export class ChatService {
           question,
           user_id: user?.id || 'TW', 
           session_id: this.activeConvId || 'default',
-          facility_id: this.facilitySvc.getActiveFacilityId(),
+          filters: this.facilitySvc.getActiveFilters(),
         }),
       });
 

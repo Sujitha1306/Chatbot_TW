@@ -33,8 +33,9 @@ that isn't a standard "total/average/percentage", DESCRIBE that
 calculation explicitly in your plan so the SQL writer can implement it."""
 
     SQL_SYSTEM = """You are a ClickHouse SQL expert for a hospital analytics platform.
-Generate ONLY the SQL query. No explanation. No markdown fences. No preamble.
-The SQL must be syntactically valid ClickHouse SQL."""
+Generate ONLY ONE SINGLE SQL query. No explanation. No markdown fences. No preamble.
+The SQL must be syntactically valid ClickHouse SQL.
+CRITICAL: NEVER generate multiple queries separated by a semicolon (;). The driver only supports ONE statement at a time. If you need to combine unrelated data, use UNION ALL with EXACTLY matching column names and types (pad missing columns with NULL AS column_name)."""
 
     CROSS_CONV_SYSTEM = """You detect whether a message references a PAST,
 DIFFERENT conversation (not the current one). Return ONLY valid JSON."""
@@ -54,6 +55,7 @@ Guidelines:
 10. Ensure any mentioned time periods align exactly with the provided actual data range.
 11. Mention significant trends if they exceed typical fluctuations.
 12. If an anomaly is noted, especially in the most recent period, gently suggest it might be due to incomplete recent reporting.
+13. TIE-AWARE RANKING: If the prompt includes a "TIE DETECTED" note, your summary MUST do more than state that the primary metric doesn't differentiate — proactively surface the secondary standout mentioned in that note. Example: instead of "all porters are tied at 100% completion, so no differentiation is possible," say "All porters maintain a perfect 100% completion rate, so volume handled is the more useful differentiator — porter 2882 stands out significantly, completing 53,162 requests, far more than any other porter." This anticipates the user's natural follow-up instead of requiring them to ask a second question for information already available in the same result set.
 
 Please follow these guidelines to provide a natural, analytical summary."""
 
@@ -152,9 +154,66 @@ Return JSON:
             "reason": result.get("category", "unknown"),
         }
 
+    def _build_facility_filter_note(self, filters: dict | None) -> str:
+        if not filters:
+            return ""
+        
+        if filters.get("facility_id"):
+            return f"\nNOTE: Results will be filtered to facility_id='{filters['facility_id']}'."
+        
+        from backend.app.core.facility_lookup import get_facility_lookup
+        lookup = get_facility_lookup()
+        all_facs = lookup.list_all()
+        
+        valid_ids = []
+        if filters.get("region_id"):
+            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"]]
+        elif filters.get("customer_id"):
+            valid_ids = [f["facility_id"] for f in all_facs if f["customer_id"] == filters["customer_id"]]
+            
+        if valid_ids:
+            id_list = ", ".join([f"'{fid}'" for fid in valid_ids])
+            return f"\nNOTE: Results will be filtered to facility_id IN ({id_list})."
+        
+        return ""
+
+    def _build_facility_mandatory_filter(self, filters: dict | None) -> str:
+        if not filters:
+            return ""
+        
+        if filters.get("facility_id"):
+            return f"""
+MANDATORY FILTER: This query MUST include a WHERE clause filtering
+facility_id = '{filters["facility_id"]}' (as a string, with quotes). This applies
+to BOTH fact_porter_request and mysql_asset tables — whichever is used.
+If the query already has a WHERE clause, add this as an additional
+AND condition. If using GROUP BY across facilities, this filter still
+applies — the result will only ever show data for THIS facility."""
+
+        from backend.app.core.facility_lookup import get_facility_lookup
+        lookup = get_facility_lookup()
+        all_facs = lookup.list_all()
+        
+        valid_ids = []
+        if filters.get("region_id"):
+            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"]]
+        elif filters.get("customer_id"):
+            valid_ids = [f["facility_id"] for f in all_facs if f["customer_id"] == filters["customer_id"]]
+            
+        if valid_ids:
+            id_list = ", ".join([f"'{fid}'" for fid in valid_ids])
+            return f"""
+MANDATORY FILTER: This query MUST include a WHERE clause filtering
+facility_id IN ({id_list}). This applies
+to BOTH fact_porter_request and mysql_asset tables — whichever is used.
+If the query already has a WHERE clause, add this as an additional
+AND condition."""
+
+        return ""
+
     # ── Call 1: Plan Analysis ─────────────────────────────────────────────
-    def plan_analysis(self, question: str, history: str = "", facility_id: str | None = None) -> dict:
-        facility_note = f"\nNOTE: Results will be filtered to facility_id='{facility_id}'." if facility_id else ""
+    def plan_analysis(self, question: str, history: str = "", filters: dict | None = None) -> dict:
+        facility_note = self._build_facility_filter_note(filters)
 
         prompt = f"""SCHEMA:
 {self.schema}
@@ -288,6 +347,7 @@ IMPORTANT: Output VALID JSON ONLY. Do NOT include // or /* */ comments anywhere 
                 {"role": "user",   "content": prompt},
             ],
             temperature=0.0,
+            seed=42,
             max_tokens=1500,
         )
         raw = resp.choices[0].message.content.strip()
@@ -454,16 +514,8 @@ what was discussed."""
         return resp.choices[0].message.content.strip()
 
     # ── Call 2: SQL generation ────────────────────────────────────────────
-    def generate_sql(self, question: str, plan: dict, history: str = "", facility_id: str | None = None) -> str:
-        facility_constraint = ""
-        if facility_id:
-            facility_constraint = f"""
-MANDATORY FILTER: This query MUST include a WHERE clause filtering
-facility_id = '{facility_id}' (as a string, with quotes). This applies
-to BOTH fact_porter_request and mysql_asset tables — whichever is used.
-If the query already has a WHERE clause, add this as an additional
-AND condition. If using GROUP BY across facilities, this filter still
-applies — the result will only ever show data for THIS facility."""
+    def generate_sql(self, question: str, plan: dict, history: str = "", filters: dict | None = None) -> str:
+        facility_constraint = self._build_facility_mandatory_filter(filters)
 
         comparison_note = ""
         if plan.get("comparison_needed"):
@@ -510,6 +562,7 @@ Requirements:
                 {"role": "user",   "content": prompt},
             ],
             temperature=0.0,
+            seed=42,
             max_tokens=800,
         )
         sql = resp.choices[0].message.content.strip()
@@ -569,6 +622,7 @@ result, not just one that merely avoids the error."""
                 {"role": "user",   "content": prompt},
             ],
             temperature=0.0,
+            seed=42,
             max_tokens=800,
         )
         fixed = resp.choices[0].message.content.strip()
@@ -636,6 +690,7 @@ Write a 2–3 sentence plain-language summary of these results for a hospital ma
                 {"role": "user",   "content": prompt},
             ],
             temperature=0.0,
+            seed=42,
             max_tokens=300,
         )
         return resp.choices[0].message.content.strip()
@@ -667,7 +722,7 @@ Return ONLY a JSON array of 3 strings."""
         except Exception:
             return ["Show breakdown by facility", "Compare to last month", "Export this data"]
 
-    def run_multi(self, question: str, plan: dict, history: str = "", facility_id: str | None = None) -> dict:
+    def run_multi(self, question: str, plan: dict, history: str = "", filters: dict | None = None) -> dict:
         """
         Executes each sub-query independently (NO cross-domain JOIN).
         Returns a dict with results keyed by sub-query purpose, for the
@@ -680,7 +735,7 @@ Return ONLY a JSON array of 3 strings."""
                 "calculation_plan": sub["calculation_plan"],
                 "relevant_tables": [sub["domain"] == "porter" and "fact_porter_request" or "mysql_asset"],
             }
-            sql = self.generate_sql(question, sub_plan, history, facility_id)
+            sql = self.generate_sql(question, sub_plan, history, filters)
             df, success, error = self.db.execute_query_with_error(sql)
 
             if not success and error:
@@ -773,21 +828,21 @@ correlation."""
         return resp.choices[0].message.content.strip()
 
     # ── Orchestration ─────────────────────────────────────────────────────
-    def run(self, question: str, history: str = "", facility_id: str | None = None):
+    def run(self, question: str, history: str = "", filters: dict | None = None):
         """
         Runs the full pipeline.
         Returns: (sql, plan_dict, dataframe, success_bool, error_string)
         """
         logger.info("Pipeline started for question: %s", question)
 
-        plan = self.plan_analysis(question, history, facility_id)
+        plan = self.plan_analysis(question, history, filters)
         logger.info("Plan generated: %s", plan)
 
         if plan.get("requires_multiple_queries") and plan.get("sub_queries"):
-            multi_result = self.run_multi(question, plan, history, facility_id)
+            multi_result = self.run_multi(question, plan, history, filters)
             return self._package_multi_result(question, plan, multi_result)
 
-        sql = self.generate_sql(question, plan, history, facility_id)
+        sql = self.generate_sql(question, plan, history, filters)
 
         df, success, error = self.db.execute_query_with_error(sql)
 

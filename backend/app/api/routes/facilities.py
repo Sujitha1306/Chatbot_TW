@@ -15,7 +15,9 @@ def list_facilities(_=Depends(require_api_key)):
             {
                 "facility_id":   f["facility_id"],
                 "facility_name": f["facility_name"],
+                "region_id":     f["region_id"],
                 "region_name":   f["region_name"],
+                "customer_id":   f["customer_id"],
                 "customer_name": f["customer_name"],
                 # Display label matches your example: "Aster CMI Hospital, Bangalore, Aster"
                 "label": f"{f['facility_name']}, {f['region_name']}, {f['customer_name']}",

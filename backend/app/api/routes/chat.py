@@ -20,7 +20,7 @@ class QueryRequest(BaseModel):
     session_id: Optional[str] = "default"
     chart_type: str = "auto"
     row_limit: int = 100
-    facility_id: Optional[str] = None
+    filters: Optional[dict] = None
 
 
 class QueryResponse(BaseModel):
@@ -167,7 +167,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "session", "id": session_id})
 
             # ── Event 1: plan analysis (fast, ~0.5s) ──
-            plan = pipeline.plan_analysis(req.question, history=current_history, facility_id=req.facility_id)
+            plan = pipeline.plan_analysis(req.question, history=current_history, filters=req.filters)
             yield _sse({"event": "intent", "domain": plan.get("data_domain", "porter"), "chart_type": plan.get("chart_type_hint", "auto")})
 
             if plan.get("had_implicit_reference") and not current_history.strip():
@@ -178,7 +178,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             effective_question = plan.get("resolved_question", req.question)
 
             if plan.get("requires_multiple_queries") and plan.get("sub_queries"):
-                multi_result = pipeline.run_multi(effective_question, plan, history=current_history, facility_id=req.facility_id)
+                multi_result = pipeline.run_multi(effective_question, plan, history=current_history, filters=req.filters)
                 packaged = pipeline._package_multi_result(effective_question, plan, multi_result)
 
                 yield _sse({"event": "sql", "sql": packaged["combined_sql"]})
@@ -203,13 +203,13 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     sql=packaged["combined_sql"],
                     row_count=sum(len(s["data"]) for s in packaged["sub_results"]),
                     domain="both",
-                    facility_id=req.facility_id,
+                    filters=req.filters,
                     displaySections=packaged["display_sections"]
                 ))
                 return
 
             # ── Event 2: SQL generated (~2–4s) ──
-            sql = pipeline.generate_sql(effective_question, plan, facility_id=req.facility_id, history=_store.get_recent_context(user_id, session_id))
+            sql = pipeline.generate_sql(effective_question, plan, filters=req.filters, history=_store.get_recent_context(user_id, session_id))
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
@@ -272,9 +272,12 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             
             from backend.app.core.facility_lookup import get_facility_lookup
             facility_name = None
-            if req.facility_id:
-                fac = get_facility_lookup().get(req.facility_id)
+            if req.filters and req.filters.get("facility_id"):
+                fac = get_facility_lookup().get(req.filters.get("facility_id"))
                 facility_name = fac["facility_name"] if fac else None
+            elif req.filters and req.filters.get("customer_id"):
+                # Rough fallback to just name the customer if specific facility isn't selected
+                facility_name = f"Customer ID {req.filters.get('customer_id')}"
 
             summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
             import logging
@@ -318,7 +321,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 sql=sql, 
                 row_count=len(df), 
                 domain=plan.get("data_domain", "porter"),
-                facility_id=req.facility_id,
+                filters=req.filters,
                 data=data_payload,
                 chartSpec=chart_spec
             ))
@@ -427,6 +430,8 @@ def _detect_outliers(df, measure_cols: list) -> str:
     period_col = "_period" if "_period" in df.columns else None
     lines = []
 
+    id_cols = [c for c in df.columns if c.endswith("_id") or c in ("name", "category", "porter_name", "facility_name")]
+
     for col in measure_cols[:3]:
         values = df[col]
         q1, q3 = values.quantile(0.25), values.quantile(0.75)
@@ -439,7 +444,13 @@ def _detect_outliers(df, measure_cols: list) -> str:
         outlier_mask = (values < lower_bound) | (values > upper_bound)
         if outlier_mask.any():
             for idx in df[outlier_mask].index:
-                label = df.loc[idx, period_col] if period_col else f"row {idx}"
+                if period_col:
+                    label = f"period {df.loc[idx, period_col]}"
+                elif id_cols:
+                    label = f"entity ({id_cols[0]} = {df.loc[idx, id_cols[0]]})"
+                else:
+                    label = f"row {idx}"
+                    
                 direction = "lower" if values[idx] < lower_bound else "higher"
                 lines.append(
                     f"  {label}: {col} = {values[idx]:,.1f} is notably {direction} "
@@ -451,6 +462,66 @@ def _detect_outliers(df, measure_cols: list) -> str:
     return ("POTENTIAL ANOMALIES (statistical outliers detected):\n" + "\n".join(lines) +
             "\n\nNote: an unusually low value in the MOST RECENT period may indicate "
             "incomplete/partial data for that period rather than an operational issue.")
+
+
+def _detect_tie_and_secondary_signal(df, plan: dict) -> str:
+    """
+    If the question implies ranking/finding a 'best' or 'top' entity,
+    and the PRIMARY requested metric is tied (or nearly tied) across
+    most rows, look for a natural secondary differentiator already
+    present in the result set and surface the standout.
+    """
+    requested = plan.get("requested_metrics", [])
+    primary_metric = requested[0] if requested else None
+    if not primary_metric or primary_metric not in df.columns:
+        return ""
+
+    # Is this a "find the best/top" type question? Check the plan's
+    # own calculation_plan text for ranking language — same technique
+    # used elsewhere in this project to detect intent semantically
+    # rather than via keyword-matching the raw question.
+    calc_text = plan.get("calculation_plan", "").lower()
+    is_ranking_question = any(kw in calc_text for kw in ["best", "top", "highest", "rank", "perform"])
+    if not is_ranking_question or len(df) < 5:
+        return ""
+
+    # Tie detection: does the primary metric have very low variance,
+    # or is one value shared by most/all rows?
+    value_counts = df[primary_metric].value_counts()
+    most_common_value = value_counts.index[0]
+    most_common_share = value_counts.iloc[0] / len(df)
+
+    if most_common_share < 0.5:
+        return ""  # not a meaningful tie — primary metric already differentiates fine
+
+    # A tie exists. Look for a secondary numeric column already in the
+    # result set to use as a natural tiebreaker.
+    numeric_cols = [c for c in df.select_dtypes(include="number").columns if c != primary_metric]
+    if not numeric_cols:
+        return ""
+
+    # Prefer a volume/count-like column as the tiebreaker if present
+    tiebreaker_col = next((c for c in numeric_cols if "completed" in c.lower() or "total" in c.lower() or "count" in c.lower()), numeric_cols[0])
+
+    top_row = df.loc[df[tiebreaker_col].idxmax()]
+    
+    # Extract identity explicitly so the LLM doesn't hallucinate "TOTAL ROWS" as the ID
+    id_cols = [c for c in df.columns if c.endswith("_id") or c in ("name", "category", "porter_name", "facility_name")]
+    identity_str = "The standout entity"
+    if id_cols:
+        identity_str = f"The standout entity ({id_cols[0]} = {top_row[id_cols[0]]})"
+
+    return (
+        f"TIE DETECTED: {most_common_share*100:.0f}% of rows share the same "
+        f"{primary_metric} value ({most_common_value}), so this metric alone "
+        f"does not differentiate most entities. A natural secondary signal "
+        f"already in this data is '{tiebreaker_col}'. {identity_str} has the maximum "
+        f"value of {top_row[tiebreaker_col]} for this secondary metric. "
+        f"(Full row data for context: {top_row.to_dict()}). "
+        f"Your summary MUST mention this specific standout explicitly using its ID/name — do not "
+        f"confuse row counts (like TOTAL ROWS) with entity IDs. Surface the most useful "
+        f"secondary finding the user would naturally ask about next."
+    )
 
 
 def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, facility_name: str | None = None) -> str:
@@ -533,8 +604,9 @@ rather than just providing a general description of the data."""
     actual_range = _describe_actual_range(df, plan)
     trends       = _compute_period_trends(df, measure_cols)
     anomalies    = _detect_outliers(df, measure_cols)
+    tie_signal   = _detect_tie_and_secondary_signal(df, plan)
 
-    extra_context = "\n\n".join(filter(None, [actual_range, trends, anomalies]))
+    extra_context = "\n\n".join(filter(None, [actual_range, trends, anomalies, tie_signal]))
 
     return f"""QUESTION: {question}
 DOMAIN: {plan.get('data_domain', 'porter')}

@@ -15,6 +15,7 @@ class Message:
     row_count: int = 0
     domain: str = "porter"
     facility_id: str | None = None
+    filters: dict | None = None
     data: list = field(default_factory=list)
     chartSpec: dict = field(default_factory=dict)
     displaySections: list = field(default_factory=list)
@@ -30,6 +31,7 @@ class Message:
             "row_count": self.row_count,
             "domain": self.domain,
             "facility_id": self.facility_id,
+            "filters": self.filters,
             "data": self.data,
             "chartSpec": self.chartSpec,
             "displaySections": self.displaySections,
@@ -47,6 +49,7 @@ class Message:
             row_count=d.get("row_count", 0),
             domain=d.get("domain", "porter"),
             facility_id=d.get("facility_id"),
+            filters=d.get("filters"),
             data=d.get("data", []),
             chartSpec=d.get("chartSpec", {}),
             displaySections=d.get("displaySections", []),
@@ -118,7 +121,7 @@ class ConversationStore:
             data[user_id] = {conv_id: conv.to_dict() for conv_id, conv in convs.items()}
             
         with open(self.file_path, 'w') as f:
-            json.dump(data, f)
+            json.dump(data, f, default=str)
 
     def create(self, user_id: str, first_question: str, conv_id: str = None) -> Conversation:
         conv = Conversation(

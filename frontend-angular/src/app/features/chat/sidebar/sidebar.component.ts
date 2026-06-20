@@ -23,6 +23,10 @@ const isYesterday = (d: Date) => {
     d.getFullYear() === yesterday.getFullYear();
 };
 
+const isOlder = (d: Date) => {
+  return !isToday(d) && !isYesterday(d);
+};
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
@@ -37,6 +41,7 @@ export class SidebarComponent implements OnInit {
   conversations$: Observable<Conversation[]>;
   todayConvs$: Observable<Conversation[]>;
   yesterdayConvs$: Observable<Conversation[]>;
+  olderConvs$: Observable<Conversation[]>;
   user$: Observable<User | null>;
   searchQuery = '';
 
@@ -52,6 +57,9 @@ export class SidebarComponent implements OnInit {
     );
     this.yesterdayConvs$ = this.conversations$.pipe(
       map(convs => convs.filter(c => isYesterday(new Date(c.created_at))))
+    );
+    this.olderConvs$ = this.conversations$.pipe(
+      map(convs => convs.filter(c => isOlder(new Date(c.created_at))))
     );
     this.user$ = this.auth.user$;
   }

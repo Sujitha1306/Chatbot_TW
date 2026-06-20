@@ -616,6 +616,14 @@ def _table_only_spec(row_count: int) -> dict:
 
 PERFORMANCE_MEASURE_PRIORITY = ["completion_rate", "avg_tat_minutes", "cancellation_rate", "active_rate", "maintenance_rate"]
 
+def _is_low_variance(df, col: str) -> bool:
+    """A column where >80% of values are identical provides little
+    visual information as a chart measure."""
+    if col not in df.columns or df[col].empty:
+        return False
+    value_counts = df[col].value_counts()
+    return (value_counts.iloc[0] / len(df)) > 0.8
+
 def _select_chart_measures(df, measure_cols: list, plan: dict) -> list[str]:
     """
     Determine which measure column(s) to chart, in priority order:
@@ -627,29 +635,43 @@ def _select_chart_measures(df, measure_cols: list, plan: dict) -> list[str]:
     if not measure_cols:
         return []
 
+    selected_measures = []
+
     requested = plan.get("requested_metrics", [])
     matched = [m for m in requested if m in measure_cols]
     if matched:
-        return matched[:3]
+        selected_measures = matched[:3]
 
     # NEW Priority 2: scan visualization_suggestion for column-like mentions
-    viz_text = plan.get("visualization_suggestion", "").lower()
-    viz_matched = [c for c in measure_cols if c.lower().replace("_", " ") in viz_text or c.lower() in viz_text]
-    if len(viz_matched) >= 1:
-        return viz_matched[:3]
+    if not selected_measures:
+        viz_text = plan.get("visualization_suggestion", "").lower()
+        viz_matched = [c for c in measure_cols if c.lower().replace("_", " ") in viz_text or c.lower() in viz_text]
+        if len(viz_matched) >= 1:
+            selected_measures = viz_matched[:3]
 
-    if any(kw in plan.get("calculation_plan", "").lower() for kw in
-           ["rate", "percentage", "efficiency", "completion", "cancellation"]):
-        for col in PERFORMANCE_MEASURE_PRIORITY:
-            if col in measure_cols:
-                return [col]
+    if not selected_measures:
+        if any(kw in plan.get("calculation_plan", "").lower() for kw in
+               ["rate", "percentage", "efficiency", "completion", "cancellation"]):
+            for col in PERFORMANCE_MEASURE_PRIORITY:
+                if col in measure_cols:
+                    selected_measures = [col]
+                    break
 
-    if len(measure_cols) > 1:
-        # If the query specifically returned multiple measures, chart up to 3 of them!
-        # Especially important for cross-domain comparisons (B11, B15).
-        return measure_cols[:3]
+    if not selected_measures:
+        if len(measure_cols) > 1:
+            # If the query specifically returned multiple measures, chart up to 3 of them!
+            # Especially important for cross-domain comparisons (B11, B15).
+            selected_measures = measure_cols[:3]
+        else:
+            selected_measures = [_best_numeric_col(df, measure_cols)]
 
-    return [_best_numeric_col(df, measure_cols)]
+    # If the chosen measure is flat, pick a better one so the chart isn't useless
+    if len(selected_measures) == 1 and _is_low_variance(df, selected_measures[0]):
+        alternative = _best_numeric_col(df, [c for c in measure_cols if c != selected_measures[0]])
+        if alternative and not _is_low_variance(df, alternative):
+            selected_measures = [alternative]
+
+    return selected_measures
 
 def _best_numeric_col(df, numeric_cols: list, prefer_performance: bool = False) -> str:
     """Pick the 'best' numeric column to chart by default."""

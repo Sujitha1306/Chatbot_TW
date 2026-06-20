@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Facility } from '../../shared/models/facility.model';
+import { Facility, FacilityFilters } from '../../shared/models/facility.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 
@@ -9,8 +9,8 @@ export class FacilityService {
   private facilitiesSubject = new BehaviorSubject<Facility[]>([]);
   facilities$ = this.facilitiesSubject.asObservable();
 
-  private activeFacilitySubject = new BehaviorSubject<Facility | null>(null);
-  activeFacility$ = this.activeFacilitySubject.asObservable();
+  private activeFiltersSubject = new BehaviorSubject<FacilityFilters>({ customer_id: null, region_id: null, facility_id: null });
+  activeFilters$ = this.activeFiltersSubject.asObservable();
 
   constructor(private auth: AuthService) {}
 
@@ -26,15 +26,48 @@ export class FacilityService {
     }
   }
 
-  setActiveFacility(facility: Facility | null): void {
-    this.activeFacilitySubject.next(facility);
+  setActiveFilters(filters: FacilityFilters): void {
+    this.activeFiltersSubject.next(filters);
   }
 
-  getActiveFacilityId(): string | null {
-    return this.activeFacilitySubject.value?.facility_id || null;
+  getActiveFilters(): FacilityFilters {
+    return this.activeFiltersSubject.value;
   }
 
   clearFilter(): void {
-    this.activeFacilitySubject.next(null);
+    this.activeFiltersSubject.next({ customer_id: null, region_id: null, facility_id: null });
+  }
+
+  getUniqueCustomers(): { id: string, name: string }[] {
+    const facilities = this.facilitiesSubject.value;
+    const map = new Map<string, string>();
+    for (const f of facilities) {
+      if (f.customer_id) map.set(f.customer_id, f.customer_name);
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }
+
+  getUniqueRegions(customerId: string | null): { id: string, name: string }[] {
+    const facilities = this.facilitiesSubject.value;
+    const map = new Map<string, string>();
+    for (const f of facilities) {
+      if (!customerId || f.customer_id === customerId) {
+        if (f.region_id) map.set(f.region_id, f.region_name);
+      }
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }
+
+  getUniqueFacilities(customerId: string | null, regionId: string | null): { id: string, name: string }[] {
+    const facilities = this.facilitiesSubject.value;
+    const map = new Map<string, string>();
+    for (const f of facilities) {
+      const matchCustomer = !customerId || f.customer_id === customerId;
+      const matchRegion = !regionId || f.region_id === regionId;
+      if (matchCustomer && matchRegion) {
+        if (f.facility_id) map.set(f.facility_id, f.facility_name);
+      }
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }
 }
