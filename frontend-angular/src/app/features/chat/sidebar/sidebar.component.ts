@@ -8,41 +8,6 @@ import { Conversation } from '../../../shared/models/chat.model';
 import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-const parseDate = (d: string | Date) => {
-  if (d instanceof Date) return d;
-  if (!d) return new Date();
-  
-  let ds = typeof d === 'string' ? d.replace(' ', 'T') : String(d);
-  
-  if (!ds.endsWith('Z') && !ds.includes('+') && !ds.match(/-\d\d:\d\d$/)) {
-    ds += 'Z';
-  }
-  
-  const parsed = new Date(ds);
-  return isNaN(parsed.getTime()) ? new Date() : parsed;
-};
-
-const isToday = (dateStr: string | Date) => {
-  const d = parseDate(dateStr);
-  const today = new Date();
-  return d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear();
-};
-
-const isYesterday = (dateStr: string | Date) => {
-  const d = parseDate(dateStr);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return d.getDate() === yesterday.getDate() &&
-    d.getMonth() === yesterday.getMonth() &&
-    d.getFullYear() === yesterday.getFullYear();
-};
-
-const isOlder = (dateStr: string | Date) => {
-  return !isToday(dateStr) && !isYesterday(dateStr);
-};
-
 @Component({
   selector: 'app-sidebar',
   standalone: true,
@@ -57,9 +22,7 @@ export class SidebarComponent implements OnInit {
   conversations$: Observable<Conversation[]>;
   filteredConvs$: Observable<Conversation[]>;
   recommendations$: Observable<string[]>;
-  todayConvs$: Observable<Conversation[]>;
-  yesterdayConvs$: Observable<Conversation[]>;
-  olderConvs$: Observable<Conversation[]>;
+
   user$: Observable<User | null>;
   searchQuery$ = new BehaviorSubject<string>('');
   
@@ -87,15 +50,6 @@ export class SidebarComponent implements OnInit {
       })
     );
 
-    this.todayConvs$ = this.filteredConvs$.pipe(
-      map(convs => convs.filter(c => isToday(c.created_at)))
-    );
-    this.yesterdayConvs$ = this.filteredConvs$.pipe(
-      map(convs => convs.filter(c => isYesterday(c.created_at)))
-    );
-    this.olderConvs$ = this.filteredConvs$.pipe(
-      map(convs => convs.filter(c => isOlder(c.created_at)))
-    );
     this.user$ = this.auth.user$;
   }
 
