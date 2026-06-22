@@ -158,6 +158,29 @@ class MySQLConversationStore:
         finally:
             conn.close()
 
+    def get_user_recommendations(self, user_id: str) -> List[str]:
+        conn = get_mysql_connection()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            # Group by lower-case, trimmed content to avoid minor variations
+            cursor.execute(
+                """
+                SELECT MIN(m.content) as original_content, COUNT(*) as frequency
+                FROM messages m
+                JOIN conversations c ON m.conversation_id = c.id
+                WHERE c.user_id = %s AND m.role = 'user'
+                GROUP BY LOWER(TRIM(REPLACE(REPLACE(m.content, '?', ''), '.', '')))
+                HAVING COUNT(*) >= 3
+                ORDER BY frequency DESC
+                LIMIT 5
+                """,
+                (user_id,)
+            )
+            rows = cursor.fetchall()
+            return [row['original_content'] for row in rows]
+        finally:
+            conn.close()
+
     def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3) -> str:
         messages = self.get_messages(user_id, conv_id)
         recent = messages[-(max_turns * 2):]

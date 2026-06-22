@@ -1,10 +1,11 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChatService } from '../../../core/services/chat.service';
 import { LucideAngularModule } from 'lucide-angular';
 import { FacilityFilterComponent } from '../facility-filter/facility-filter.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat-welcome',
@@ -13,7 +14,7 @@ import { FacilityFilterComponent } from '../facility-filter/facility-filter.comp
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-welcome.component.html',
 })
-export class ChatWelcomeComponent {
+export class ChatWelcomeComponent implements OnInit, OnDestroy {
   suggestions = [
     { icon: 'bar-chart-2', title: 'Porter Performance',  subtitle: 'Show porter performance by facility',          query: 'Show porter performance by facility' },
     { icon: 'line-chart',  title: 'Assets Dashboard',    subtitle: 'Display active assets by department',         query: 'Display active assets by department' },
@@ -21,8 +22,22 @@ export class ChatWelcomeComponent {
     { icon: 'shield',      title: 'Warranty Status',     subtitle: 'Which assets have warranty expiring next 30 days?', query: 'Which assets have warranty expiring in next 30 days?' },
   ];
   inputValue = '';
+  private sub?: Subscription;
 
-  constructor(private chat: ChatService, private router: Router) {}
+  constructor(private chat: ChatService, private router: Router, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    this.sub = this.chat.fillInput$.subscribe(val => {
+      if (val) {
+        this.inputValue = val;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
 
   selectSuggestion(query: string) { 
     this.inputValue = query; 

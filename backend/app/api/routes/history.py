@@ -33,6 +33,13 @@ def list_conversations(auth_data: dict = Depends(require_api_key)):
     convs = _store.list_conversations(user_id)
     return {"conversations": clean_for_json(convs)}
 
+@router.get("/recommendations")
+def list_recommendations(auth_data: dict = Depends(require_api_key)):
+    user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
+    # Fallback to empty list if _store doesn't support it yet
+    recs = getattr(_store, "get_user_recommendations", lambda uid: [])(user_id)
+    return {"recommendations": recs}
+
 @router.get("/conversations/{conv_id}")
 def get_conversation(conv_id: str, auth_data: dict = Depends(require_api_key)):
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"

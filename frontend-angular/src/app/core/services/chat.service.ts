@@ -16,6 +16,12 @@ export class ChatService {
   private conversationsSubject = new BehaviorSubject<Conversation[]>([]);
   conversations$ = this.conversationsSubject.asObservable();
 
+  private recommendationsSubject = new BehaviorSubject<string[]>([]);
+  recommendations$ = this.recommendationsSubject.asObservable();
+
+  private fillInputSubject = new BehaviorSubject<string>('');
+  fillInput$ = this.fillInputSubject.asObservable();
+
   activeConvId: string | null = null;
 
   // Token buffering (Fix 5)
@@ -52,7 +58,6 @@ export class ChatService {
 
   async loadConversations(): Promise<void> {
     const token = this.auth.getToken();
-    if (!token) return;
     const requestId = ++this.currentConvListRequestId;
     try {
       const res = await fetch(`${environment.apiUrl}/chat/conversations`, {
@@ -63,10 +68,26 @@ export class ChatService {
       const data = await res.json();
       if (requestId !== this.currentConvListRequestId) return;
       this.conversationsSubject.next(data.conversations || []);
+      
+      // Also load recommendations whenever conversations load
+      this.loadRecommendations(token);
     } catch (e) {
       if (requestId === this.currentConvListRequestId) {
         console.error('Failed to load conversations', e);
       }
+    }
+  }
+
+  private async loadRecommendations(token: string | null): Promise<void> {
+    try {
+      const res = await fetch(`${environment.apiUrl}/chat/recommendations`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      this.recommendationsSubject.next(data.recommendations || []);
+    } catch (e) {
+      console.error('Failed to load recommendations', e);
     }
   }
 
@@ -112,6 +133,10 @@ export class ChatService {
     } catch (e) {
       console.error('Failed to delete conversation', e);
     }
+  }
+
+  fillInput(text: string): void {
+    this.fillInputSubject.next(text);
   }
 
   async sendMessage(question: string): Promise<void> {

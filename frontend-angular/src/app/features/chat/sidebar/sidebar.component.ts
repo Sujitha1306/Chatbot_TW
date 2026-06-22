@@ -56,6 +56,7 @@ export class SidebarComponent implements OnInit {
 
   conversations$: Observable<Conversation[]>;
   filteredConvs$: Observable<Conversation[]>;
+  recommendations$: Observable<string[]>;
   todayConvs$: Observable<Conversation[]>;
   yesterdayConvs$: Observable<Conversation[]>;
   olderConvs$: Observable<Conversation[]>;
@@ -76,6 +77,7 @@ export class SidebarComponent implements OnInit {
     private cdr: ChangeDetectorRef,
   ) {
     this.conversations$ = this.chat.conversations$;
+    this.recommendations$ = this.chat.recommendations$;
     
     this.filteredConvs$ = combineLatest([this.conversations$, this.searchQuery$]).pipe(
       map(([convs, query]) => {
@@ -109,6 +111,10 @@ export class SidebarComponent implements OnInit {
   newChat() {
     this.chat.newConversation();
     this.router.navigate(['/chat']);
+  }
+
+  fillRecommendation(rec: string) {
+    this.chat.fillInput(rec);
   }
 
   selectConv(id: string) {

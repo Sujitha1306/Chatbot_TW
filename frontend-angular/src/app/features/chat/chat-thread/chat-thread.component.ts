@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { AssistantMessageComponent } from '../assistant-message/assistant-messag
 import { FacilityFilterComponent } from '../facility-filter/facility-filter.component';
 import { FacilityService } from '../../../core/services/facility.service';
 import { ChatMessage } from '../../../shared/models/chat.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat-thread',
@@ -16,13 +17,14 @@ import { ChatMessage } from '../../../shared/models/chat.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-thread.component.html',
 })
-export class ChatThreadComponent implements OnInit {
+export class ChatThreadComponent implements OnInit, OnDestroy {
   @ViewChild('scrollAnchor') scrollAnchor!: ElementRef;
   private scrollScheduled = false;
 
   messages$: any;
   isStreaming$: any;
   inputValue = '';
+  private sub?: Subscription;
 
   constructor(
     private chat: ChatService, 
@@ -42,6 +44,17 @@ export class ChatThreadComponent implements OnInit {
         this.chat.selectConversation(id);
       }
     });
+
+    this.sub = this.chat.fillInput$.subscribe(val => {
+      if (val) {
+        this.inputValue = val;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
   }
 
   private scheduleScroll(): void {
