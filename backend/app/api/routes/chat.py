@@ -74,7 +74,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
     
     # Use a local variable - don't mutate req
     session_id = req.session_id
-    if session_id in ("default", None) or session_id not in _store._store[user_id]:
+    if session_id in ("default", None) or not _store.session_exists(user_id, session_id):
         passed_id = session_id if session_id not in ("default", None) else None
         conv = _store.create(user_id, req.question, passed_id)
         session_id = conv.id

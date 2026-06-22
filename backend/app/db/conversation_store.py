@@ -142,6 +142,9 @@ class ConversationStore:
         conv = self._store[user_id].get(conv_id)
         return conv.messages if conv else []
 
+    def session_exists(self, user_id: str, conv_id: str) -> bool:
+        return conv_id in self._store[user_id]
+
     def list_conversations(self, user_id: str) -> List[Conversation]:
         convs = list(self._store[user_id].values())
         return sorted(convs, key=lambda c: c.created_at, reverse=True)
@@ -214,5 +217,15 @@ class ConversationStore:
 
         return "\n".join(lines)
 
+import os
 
-_store = ConversationStore()
+backend = os.environ.get("STORAGE_BACKEND", "json")
+
+if backend == "hybrid":
+    from backend.app.db.conversation_store_hybrid import HybridConversationStore
+    _store = HybridConversationStore()
+elif backend == "mysql":
+    from backend.app.db.conversation_store_mysql import MySQLConversationStore
+    _store = MySQLConversationStore()
+else:
+    _store = ConversationStore()  # original JSON
