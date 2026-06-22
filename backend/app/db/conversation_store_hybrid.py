@@ -88,6 +88,14 @@ class HybridConversationStore:
 
         return messages
 
+    def cleanup_old_conversations(self, user_id: str, days: int = 30):
+        # We only really do this in MySQL, Redis is ephemeral/LRU anyway
+        self._mysql.cleanup_old_conversations(user_id, days)
+
+    def get_user_recommendations(self, user_id: str) -> list[str]:
+        # Pass-through to MySQL store where the complex SQL grouping lives
+        return self._mysql.get_user_recommendations(user_id)
+
     def list_conversations(self, user_id: str) -> List[Conversation]:
         return self._mysql.list_conversations(user_id)
 
