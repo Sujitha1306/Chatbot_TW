@@ -52,10 +52,10 @@ export class FacilityService {
     const map = new Map<string, string>();
     for (const f of facilities) {
       if (!customerId || f.customer_id === customerId) {
-        if (f.region_id) map.set(f.region_id, f.region_name);
+        if (f.region_name) map.set(f.region_name, f.region_name);
       }
     }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+    return Array.from(map.entries()).map(([name]) => ({ id: name, name }));
   }
 
   getUniqueFacilities(customerId: string | null, regionId: string | null): { id: string, name: string }[] {
@@ -63,11 +63,11 @@ export class FacilityService {
     const map = new Map<string, string>();
     for (const f of facilities) {
       const matchCustomer = !customerId || f.customer_id === customerId;
-      const matchRegion = !regionId || f.region_id === regionId;
+      const matchRegion = !regionId || f.region_id === regionId || f.region_name === regionId;
       if (matchCustomer && matchRegion) {
-        if (f.facility_id) map.set(f.facility_id, f.facility_name);
+        if (f.facility_name) map.set(f.facility_name, f.facility_name);
       }
     }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+    return Array.from(map.entries()).map(([name]) => ({ id: name, name }));
   }
 }

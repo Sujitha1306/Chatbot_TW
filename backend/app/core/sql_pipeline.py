@@ -158,16 +158,23 @@ Return JSON:
         if not filters:
             return ""
         
-        if filters.get("facility_id"):
-            return f"\nNOTE: Results will be filtered to facility_id='{filters['facility_id']}'."
-        
         from backend.app.core.facility_lookup import get_facility_lookup
         lookup = get_facility_lookup()
         all_facs = lookup.list_all()
+
+        if filters.get("facility_id"):
+            valid_ids = [f["facility_id"] for f in all_facs if f["facility_id"] == filters["facility_id"] or f["facility_name"] == filters["facility_id"]]
+            if valid_ids:
+                if len(valid_ids) == 1:
+                    return f"\nNOTE: Results will be filtered to facility_id='{valid_ids[0]}'."
+                id_list = ", ".join([f"'{fid}'" for fid in valid_ids])
+                return f"\nNOTE: Results will be filtered to facility_id IN ({id_list})."
+        
+
         
         valid_ids = []
         if filters.get("region_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"]]
+            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"] or f["region_name"] == filters["region_id"]]
         elif filters.get("customer_id"):
             valid_ids = [f["facility_id"] for f in all_facs if f["customer_id"] == filters["customer_id"]]
             
@@ -181,22 +188,35 @@ Return JSON:
         if not filters:
             return ""
         
+        from backend.app.core.facility_lookup import get_facility_lookup
+        lookup = get_facility_lookup()
+        all_facs = lookup.list_all()
+
         if filters.get("facility_id"):
-            return f"""
+            valid_ids = [f["facility_id"] for f in all_facs if f["facility_id"] == filters["facility_id"] or f["facility_name"] == filters["facility_id"]]
+            if valid_ids:
+                if len(valid_ids) == 1:
+                    return f"""
 MANDATORY FILTER: This query MUST include a WHERE clause filtering
-facility_id = '{filters["facility_id"]}' (as a string, with quotes). This applies
+facility_id = '{valid_ids[0]}' (as a string, with quotes). This applies
 to BOTH fact_porter_request and mysql_asset tables — whichever is used.
 If the query already has a WHERE clause, add this as an additional
 AND condition. If using GROUP BY across facilities, this filter still
 applies — the result will only ever show data for THIS facility."""
+                
+                id_list = ", ".join([f"'{fid}'" for fid in valid_ids])
+                return f"""
+MANDATORY FILTER: This query MUST include a WHERE clause filtering
+facility_id IN ({id_list}). This applies
+to BOTH fact_porter_request and mysql_asset tables — whichever is used.
+If the query already has a WHERE clause, add this as an additional
+AND condition."""
 
-        from backend.app.core.facility_lookup import get_facility_lookup
-        lookup = get_facility_lookup()
-        all_facs = lookup.list_all()
+
         
         valid_ids = []
         if filters.get("region_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"]]
+            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"] or f["region_name"] == filters["region_id"]]
         elif filters.get("customer_id"):
             valid_ids = [f["facility_id"] for f in all_facs if f["customer_id"] == filters["customer_id"]]
             

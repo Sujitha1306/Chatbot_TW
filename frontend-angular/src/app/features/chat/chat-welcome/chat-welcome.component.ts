@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChatService } from '../../../core/services/chat.service';
 import { LucideAngularModule } from 'lucide-angular';
+import { FacilityFilterComponent } from '../facility-filter/facility-filter.component';
 
 @Component({
   selector: 'app-chat-welcome',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, FacilityFilterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-welcome.component.html',
 })

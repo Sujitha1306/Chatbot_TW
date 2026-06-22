@@ -12,30 +12,69 @@
     <span class="text-gray-400">▾</span>
   </button>
 
-  <div *ngIf="open" class="absolute bottom-full mb-2 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-20 flex flex-col p-3 gap-3">
+  <div *ngIf="open" (click)="closeInnerDropdowns()" class="absolute bottom-full mb-2 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-20 flex flex-col p-3 gap-3">
     
-    <div>
+    <div class="relative" (click)="$event.stopPropagation()">
       <label class="block text-xs font-medium text-gray-700 mb-1">Customer</label>
-      <select [(ngModel)]="filters.customer_id" (change)="onCustomerChange()" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary">
-        <option [ngValue]="null">All Customers</option>
-        <option *ngFor="let c of customers" [ngValue]="c.id">{{ c.name }}</option>
-      </select>
+      <input 
+        type="text" 
+        [(ngModel)]="customerSearch" 
+        (focus)="customerOpen = true; regionOpen = false; facilityOpen = false"
+        (click)="customerOpen = true; regionOpen = false; facilityOpen = false"
+        placeholder="All Customers"
+        [disabled]="!customers.length" 
+        class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400"
+      >
+      
+      <div *ngIf="customerOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-30">
+        <div class="max-h-40 overflow-y-auto py-1">
+          <div class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer" (click)="selectCustomer(null, '')">All Customers</div>
+          <div *ngFor="let c of filteredCustomers" class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer truncate" (click)="selectCustomer(c.id, c.name)">{{ c.name }}</div>
+          <div *ngIf="filteredCustomers.length === 0" class="px-3 py-1.5 text-xs text-gray-400">No matches found</div>
+        </div>
+      </div>
     </div>
     
-    <div>
+    <div class="relative" (click)="$event.stopPropagation()">
       <label class="block text-xs font-medium text-gray-700 mb-1">Region</label>
-      <select [(ngModel)]="filters.region_id" (change)="onRegionChange()" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400" [disabled]="!regions.length">
-        <option [ngValue]="null">All Regions</option>
-        <option *ngFor="let r of regions" [ngValue]="r.id">{{ r.name }}</option>
-      </select>
+      <input 
+        type="text" 
+        [(ngModel)]="regionSearch" 
+        (focus)="regionOpen = true; customerOpen = false; facilityOpen = false"
+        (click)="regionOpen = true; customerOpen = false; facilityOpen = false"
+        placeholder="All Regions"
+        [disabled]="!regions.length" 
+        class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400"
+      >
+      
+      <div *ngIf="regionOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-30">
+        <div class="max-h-40 overflow-y-auto py-1">
+          <div class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer" (click)="selectRegion(null, '')">All Regions</div>
+          <div *ngFor="let r of filteredRegions" class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer truncate" (click)="selectRegion(r.id, r.name)">{{ r.name }}</div>
+          <div *ngIf="filteredRegions.length === 0" class="px-3 py-1.5 text-xs text-gray-400">No matches found</div>
+        </div>
+      </div>
     </div>
     
-    <div>
+    <div class="relative" (click)="$event.stopPropagation()">
       <label class="block text-xs font-medium text-gray-700 mb-1">Facility</label>
-      <select [(ngModel)]="filters.facility_id" (change)="onFacilityChange()" class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400" [disabled]="!facilities.length">
-        <option [ngValue]="null">All Facilities</option>
-        <option *ngFor="let f of facilities" [ngValue]="f.id">{{ f.name }}</option>
-      </select>
+      <input 
+        type="text" 
+        [(ngModel)]="facilitySearch" 
+        (focus)="facilityOpen = true; customerOpen = false; regionOpen = false"
+        (click)="facilityOpen = true; customerOpen = false; regionOpen = false"
+        placeholder="All Facilities"
+        [disabled]="!facilities.length" 
+        class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400"
+      >
+      
+      <div *ngIf="facilityOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-30">
+        <div class="max-h-40 overflow-y-auto py-1">
+          <div class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer" (click)="selectFacility(null, '')">All Facilities</div>
+          <div *ngFor="let f of filteredFacilities" class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer truncate" (click)="selectFacility(f.id, f.name)">{{ f.name }}</div>
+          <div *ngIf="filteredFacilities.length === 0" class="px-3 py-1.5 text-xs text-gray-400">No matches found</div>
+        </div>
+      </div>
     </div>
     
     <button (click)="clear()" *ngIf="hasAnyFilter" class="mt-1 w-full text-center px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 border border-red-100 rounded transition">

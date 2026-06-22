@@ -13,7 +13,12 @@ import { Subscription } from 'rxjs';
 })
 export class FacilityFilterComponent implements OnInit, OnDestroy {
   open = false;
-  
+  customerOpen = false;
+  regionOpen = false;
+  facilityOpen = false;
+  customerSearch = '';
+  regionSearch = '';
+  facilitySearch = '';
   filters: FacilityFilters = { customer_id: null, region_id: null, facility_id: null };
   
   customers: { id: string, name: string }[] = [];
@@ -28,7 +33,17 @@ export class FacilityFilterComponent implements OnInit, OnDestroy {
   clickout(event: Event) {
     if (this.open && !this.eRef.nativeElement.contains(event.target)) {
       this.open = false;
+      this.closeInnerDropdowns();
     }
+  }
+
+  closeInnerDropdowns() {
+    this.customerOpen = false;
+    this.regionOpen = false;
+    this.facilityOpen = false;
+    this.customerSearch = this.getCustomerName() === 'All Customers' ? '' : this.getCustomerName();
+    this.regionSearch = this.getRegionName() === 'All Regions' ? '' : this.getRegionName();
+    this.facilitySearch = this.getFacilityName() === 'All Facilities' ? '' : this.getFacilityName();
   }
 
   ngOnInit() {
@@ -41,6 +56,7 @@ export class FacilityFilterComponent implements OnInit, OnDestroy {
     this.sub.add(this.facilitySvc.activeFilters$.subscribe(f => {
       this.filters = { ...f };
       this.refreshOptions();
+      this.closeInnerDropdowns();
     }));
   }
 
@@ -81,29 +97,89 @@ export class FacilityFilterComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCustomerChange() {
+  get filteredCustomers() {
+    if (!this.customerSearch) return this.customers;
+    const term = this.customerSearch.toLowerCase();
+    return this.customers.filter(c => c.name.toLowerCase().includes(term));
+  }
+
+  get filteredRegions() {
+    if (!this.regionSearch) return this.regions;
+    const term = this.regionSearch.toLowerCase();
+    return this.regions.filter(r => r.name.toLowerCase().includes(term));
+  }
+
+  get filteredFacilities() {
+    if (!this.facilitySearch) return this.facilities;
+    const term = this.facilitySearch.toLowerCase();
+    return this.facilities.filter(f => f.name.toLowerCase().includes(term));
+  }
+
+  getCustomerName() {
+    if (!this.filters.customer_id) return 'All Customers';
+    const c = this.customers.find(x => x.id === this.filters.customer_id);
+    return c ? c.name : 'All Customers';
+  }
+
+  getRegionName() {
+    if (!this.filters.region_id) return 'All Regions';
+    const r = this.regions.find(x => x.id === this.filters.region_id);
+    return r ? r.name : 'All Regions';
+  }
+
+  getFacilityName() {
+    if (!this.filters.facility_id) return 'All Facilities';
+    const f = this.facilities.find(x => x.id === this.filters.facility_id);
+    return f ? f.name : 'All Facilities';
+  }
+
+  toggleCustomer() {
+    this.customerOpen = !this.customerOpen;
+    this.regionOpen = false;
+    this.facilityOpen = false;
+  }
+
+  toggleRegion() {
+    this.regionOpen = !this.regionOpen;
+    this.customerOpen = false;
+    this.facilityOpen = false;
+  }
+
+  toggleFacility() {
+    this.facilityOpen = !this.facilityOpen;
+    this.customerOpen = false;
+    this.regionOpen = false;
+  }
+
+  selectCustomer(id: string | null, name: string = '') {
+    this.filters.customer_id = id;
     this.filters.region_id = null;
     this.filters.facility_id = null;
-    this.refreshOptions();
-    this.applyFilters();
+    this.customerSearch = id ? name : '';
+    this.customerOpen = false;
+    this.facilitySvc.setActiveFilters(this.filters);
   }
 
-  onRegionChange() {
+  selectRegion(id: string | null, name: string = '') {
+    this.filters.region_id = id;
     this.filters.facility_id = null;
-    this.refreshOptions();
-    this.applyFilters();
+    this.regionSearch = id ? name : '';
+    this.regionOpen = false;
+    this.facilitySvc.setActiveFilters(this.filters);
   }
 
-  onFacilityChange() {
-    this.applyFilters();
-  }
-
-  applyFilters() {
+  selectFacility(id: string | null, name: string = '') {
+    this.filters.facility_id = id;
+    this.facilitySearch = id ? name : '';
+    this.facilityOpen = false;
     this.facilitySvc.setActiveFilters(this.filters);
   }
 
   clear() {
+    this.filters = { customer_id: null, region_id: null, facility_id: null };
+    this.customerSearch = '';
+    this.regionSearch = '';
+    this.facilitySearch = '';
     this.facilitySvc.clearFilter();
-    this.open = false;
   }
 }
