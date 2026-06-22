@@ -170,6 +170,25 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             plan = pipeline.plan_analysis(req.question, history=current_history, filters=req.filters)
             yield _sse({"event": "intent", "domain": plan.get("data_domain", "porter"), "chart_type": plan.get("chart_type_hint", "auto")})
 
+            # ── Event 1.5: Limitation Detection ──
+            if plan.get("response_format") == "limitation":
+                limitation_response = pipeline.generate_limitation_response(req.question, plan)
+                yield _sse({"event": "summary_start"})
+                yield _sse({"event": "token", "text": limitation_response})
+                
+                # We can also generate followups here
+                followups = pipeline.generate_followups(req.question, plan)
+                if followups:
+                    yield _sse({"event": "followups", "suggestions": followups})
+                    
+                yield _sse({"event": "done"})
+                _store.add_message(user_id, session_id, Message(
+                    role="assistant", content=limitation_response,
+                    domain="conversational", sql="", row_count=0,
+                ))
+                return
+
+
             if plan.get("had_implicit_reference") and not current_history.strip():
                 yield _sse({"event": "token", "text": "I want to make sure I understand — could you clarify what you're referring to? For example, are you asking about individual porters, a specific facility, or something else?"})
                 yield _sse({"event": "done"})
@@ -310,6 +329,19 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             # ── Event 7: Follow-up suggestions ──
             followups = pipeline.generate_followups(effective_question, plan)
             yield _sse({"event": "followups", "suggestions": followups})
+
+            # ── Event 7.5: Suggestions ──
+            suggestions = pipeline.generate_suggestions(effective_question, full_summary, plan)
+            if suggestions:
+                suggestion_text = "\n\n💡 **AI-Generated Suggestions:**\n"
+                for s in suggestions:
+                    suggestion_text += f"• {s}\n"
+                
+                full_summary += suggestion_text
+                
+                for word in suggestion_text.split(" "):
+                    yield _sse({"event": "token", "text": word + " "})
+                    await asyncio.sleep(0.01)
 
             # ── Event 8: Done ──
             yield _sse({"event": "done"})
@@ -524,6 +556,46 @@ def _detect_tie_and_secondary_signal(df, plan: dict) -> str:
     )
 
 
+FORMAT_INSTRUCTIONS = {
+    "ranking": """
+FORMAT — RANKING: Present findings in plain, flowing sentences describing the ranking.
+Describe the top 3-5 entities and their values. Do not use numbered lists.
+Then 1-2 sentences stating any reasonable inferences about what the ranking pattern means.""",
+
+    "comparison": """
+FORMAT — COMPARISON: Present findings in plain sentences clearly stating the before/after or group-A/group-B comparison.
+State the exact change and direction (e.g., increased by X%).
+Then 1-2 sentences stating any reasonable inferences about what the change direction suggests
+(without attributing a cause — see HARD RULE 2).""",
+
+    "trend": """
+FORMAT — TREND: Narrate the change chronologically in plain sentences.
+Start with the earliest period and end with the most recent.
+Explicitly state: the direction of change, the magnitude as a percentage,
+and whether the most recent period appears to be continuing or reversing
+the trend. Keep it to 3-4 sentences maximum.""",
+
+    "overview": """
+FORMAT — OVERVIEW: Use short bullet points, one insight per bullet.
+Each bullet should be one sentence. Cover:
+- The single most notable number in the result
+- Any significant outlier (highest, lowest, or furthest from median)
+- The overall pattern in 1 sentence
+Maximum 5 bullets.""",
+
+    "single_stat": """
+FORMAT — SINGLE STAT: Lead with the number itself, prominently.
+Then one sentence of context (e.g. what time period, what scope).
+Total response: 2-3 sentences maximum. No bullet points needed.""",
+
+    "limitation": """
+FORMAT — LIMITATION: Be direct and brief.
+First sentence: state clearly what data is NOT available for this question.
+Second sentence: state what related data IS available and can be shown.
+Then proceed with whatever data IS available using the OVERVIEW format.""",
+}
+
+
 def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, facility_name: str | None = None) -> str:
     import pandas as pd
     from backend.app.core.display_resolution import _resolve_display_names
@@ -531,6 +603,9 @@ def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, 
     df = _resolve_display_names(df)
     
     coverage = coverage or {}
+    
+    response_format = plan.get("response_format", "overview")
+    format_instruction = FORMAT_INSTRUCTIONS.get(response_format, FORMAT_INSTRUCTIONS["overview"])
     
     facility_context = ""
     if facility_name:
@@ -625,7 +700,11 @@ SAMPLE ROWS (for context only, first 5):
 {json.dumps(sample, default=str)}
 
 {comparison_hint}
-Please review the context above and write your response."""
+Please review the context above and write your response.
+
+{format_instruction}
+
+REMINDER: Only mention numbers from the PRE-COMPUTED STATS block above. Do not invent metrics, causes, or comparisons not present in that data. Use flowing sentences as requested."""
 
 
 _pipeline = None

@@ -24,6 +24,7 @@ export interface ChatMessage {
   displaySections?: { label: string; data: Record<string, unknown>[] }[];
   crossConversationRefs?: { conversation_id: string; title: string }[];
   followups?: string[];
+  suggestions?: string[];
   status: MessageStatus;
   timestamp: Date;
 }

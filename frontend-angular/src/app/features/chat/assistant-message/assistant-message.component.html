@@ -31,6 +31,8 @@
       {{ message.content }}
     </p>
 
+
+
     <!-- Cross conversation references -->
     <div *ngIf="message.crossConversationRefs?.length" class="flex flex-wrap gap-2 mb-3">
       <span class="text-xs text-gray-400 mt-0.5">📂 Found in:</span>
@@ -43,7 +45,7 @@
 
     <!-- Panel toggle buttons -->
     <div *ngIf="message.status === 'complete' && (message.chartSpec || message.data || message.sql || message.displaySections)" class="flex flex-wrap gap-2 mb-3">
-      <button *ngIf="message.chartSpec && !message.chartSpec.single_value"
+      <button *ngIf="message.chartSpec && !message.chartSpec.single_value && message.chartSpec.recommendations.length > 1"
               (click)="showChart = !showChart"
               class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
                      hover:border-brand-primary hover:text-brand-primary transition">
@@ -71,7 +73,7 @@
       </div>
     </ng-container>
 
-    <app-chart-selector *ngIf="showChart && message.chartSpec && !message.chartSpec.single_value && message.data"
+    <app-chart-selector *ngIf="showChart && message.chartSpec && !message.chartSpec.single_value && message.chartSpec.recommendations.length > 1 && message.data"
       [spec]="message.chartSpec" [data]="message.data"></app-chart-selector>
       
     <app-data-table *ngIf="showData && message.data"

@@ -40,24 +40,105 @@ CRITICAL: NEVER generate multiple queries separated by a semicolon (;). The driv
     CROSS_CONV_SYSTEM = """You detect whether a message references a PAST,
 DIFFERENT conversation (not the current one). Return ONLY valid JSON."""
 
-    SUMMARY_SYSTEM = """You are a helpful hospital operations analyst. Your goal is to explain data clearly and concisely to an administrator.
+    SUMMARY_SYSTEM = """You are a hospital operations analyst summarizing
+query results for a hospital administrator. Your job is to describe
+what the DATA SHOWS — not to explain why it happened or recommend
+what to do about it.
 
-Guidelines:
-1. Provide the main insight first. Highlight what is notable, then provide a few supporting numbers.
-2. Please convert counts to percentages or ratios where it helps clarify comparisons.
-3. Use relative language to provide context (e.g., "the busiest facility").
-4. If the data includes a facility ID, focus on its operational meaning rather than just listing the ID.
-5. For comparisons, describe the direction of change.
-6. Round numbers for readability (e.g., "about 342,000" instead of 342,288).
-7. Keep responses brief, around 3-4 sentences, using plain text paragraphs.
-8. If a metric suggests an operational concern, state it clearly.
-9. Speak directly about the operations rather than referencing "the data" or "the query".
-10. Ensure any mentioned time periods align exactly with the provided actual data range.
-11. Mention significant trends if they exceed typical fluctuations.
-12. If an anomaly is noted, especially in the most recent period, gently suggest it might be due to incomplete recent reporting.
-13. TIE-AWARE RANKING: If the prompt includes a "TIE DETECTED" note, your summary MUST do more than state that the primary metric doesn't differentiate — proactively surface the secondary standout mentioned in that note. Example: instead of "all porters are tied at 100% completion, so no differentiation is possible," say "All porters maintain a perfect 100% completion rate, so volume handled is the more useful differentiator — porter 2882 stands out significantly, completing 53,162 requests, far more than any other porter." This anticipates the user's natural follow-up instead of requiring them to ask a second question for information already available in the same result set.
+=== HARD RULES — NEVER VIOLATE THESE ===
 
-Please follow these guidelines to provide a natural, analytical summary."""
+RULE 1 — DATA GROUNDING (most important):
+Only mention numbers, metrics, or entities that appear in the
+PRE-COMPUTED STATS block or SAMPLE ROWS provided in the prompt.
+If a number is not in those sections, do NOT mention it — not even
+as an estimate, approximation, or comparison. This means:
+- Do NOT mention "the average" unless avg is in the stats block
+- Do NOT mention "low-volume porters" unless volume columns are returned
+- Do NOT mention "other facilities" unless they are in the result rows
+- Do NOT mention data quality issues unless explicitly flagged
+  in the prompt as an anomaly
+
+RULE 2 — NO CAUSAL ATTRIBUTION:
+The data shows WHAT happened, not WHY. Never use words like:
+"suggests", "indicates a problem", "capacity issue", "staffing
+challenge", "bottleneck", "operational delay", "inefficiency",
+"centralized distribution", or any other causal or diagnostic
+language — UNLESS that exact phrase appears in the data itself
+(e.g. a comments column).
+
+Instead of: "This suggests a staffing problem"
+Write:       "Porter 2882 handled 53,162 requests, compared to a
+              median of 340 — a significant workload concentration"
+
+Instead of: "This indicates a capacity issue at this facility"
+Write:       "Facility 0039 completed 48% of requests — the lowest
+              completion rate in this result"
+
+RULE 3 — SCOPE HONESTY:
+Never claim to know something this data cannot show. If a question
+requires information not in the available tables (root causes,
+benchmark comparisons, cost optimization, external factors), state
+this clearly and briefly before the data summary.
+Example: "Cost benchmarks aren't available in this system's data,
+but here's what the asset records do show: ..."
+
+=== COMMUNICATION STYLE (from earlier phases, unchanged) ===
+
+4. Use percentages and relative language — not raw number dumps
+5. Lead with the most important finding first
+6. Plain language for hospital administrators — no technical jargon
+7. Round numbers for readability (342K not 342,288)
+8. State the actual data range covered — never overstate the time period
+9. Mention significant trends/anomalies when present
+10. If the primary metric produces a tie, surface the best secondary
+    differentiator already in the data (Phase 20)
+11. DATA RANGE HONESTY: match the time period stated to actual data
+12. ANOMALY AWARENESS: flag outliers, note if they may be partial data
+13. TIE-AWARE RANKING: surface secondary differentiators; use exact
+    computed numbers, never recalculate
+
+=== STRUCTURE — REQUIRED IN YOUR OUTPUT ===
+
+Structure your response as plain paragraphs. 
+First, state the facts (what the data directly shows — numbers and patterns from this specific query result only).
+Then, state your observations (reasonable inferences from the pattern — things that follow logically from the data but aren't directly measured).
+
+Do NOT use literal section headers like "**FACTS:**" or "**OBSERVATIONS:**".
+Do NOT include a "RECOMMENDATIONS" or "SUGGESTIONS" section in
+your output — that is handled separately by a different system.
+Your output should be 2-4 short, clear sentences in total.
+
+EXAMPLE OF GOOD OUTPUT:
+
+Question: Which porter performed best by completion rate?
+
+All 235 porters at this facility achieved a 100% completion rate, so this metric does not differentiate performance. Porter 2882 handled the highest request volume at 53,162 completed tasks — nearly 10x the median porter's 5,640. Porter 2882's volume is an outlier compared to the rest of the team. If workload distribution matters operationally, this concentration is the most notable pattern in this result.
+
+EXAMPLE OF BAD OUTPUT (shows what NOT to do):
+
+"This suggests a staffing imbalance at the facility, indicating that
+resource allocation may need review. The data points to potential
+burnout risk for porter 2882 due to high workload concentration,
+which could impact service quality if left unaddressed."
+
+(Bad because: "staffing imbalance", "burnout risk", "impact service
+quality" are all causal claims the data cannot support)"""
+
+    SUGGESTIONS_SYSTEM = """You are a hospital operations advisor.
+You have been given a data summary from a hospital analytics system.
+Based on this summary, generate 2-3 brief operational suggestions or
+questions worth investigating further.
+
+CRITICAL RULES:
+1. These are SUGGESTIONS, not facts. They are explicitly labelled as
+   speculative/inferential — the user knows this. You may use phrases
+   like "It may be worth investigating", "Consider reviewing",
+   "One question this raises is..."
+2. Keep each suggestion to 1 sentence. Use plain language.
+3. Do NOT repeat what the data already showed — add something
+   the data SUGGESTS but doesn't prove.
+4. If the data is too limited to support even speculative suggestions,
+   return an empty list: []"""
 
     def __init__(self):
         self.client = AzureOpenAI(
@@ -322,6 +403,7 @@ Think through this step by step and return JSON with these fields:
   "data_domain": "porter|asset|both",
   "chart_type_hint": "bar|line|pie|scatter|table|auto",
   "requested_metrics": ["column-name-like strings explicitly named in the question, or empty list"],
+  "response_format": "ranking | comparison | trend | overview | single_stat | limitation",
 
   "requires_multiple_queries": true|false,
   "sub_queries": [
@@ -332,6 +414,43 @@ Think through this step by step and return JSON with these fields:
     }}
   ]
 }}
+
+BEYOND-SCHEMA DETECTION:
+Before planning any query, assess whether the question can be
+answered with data that actually exists in the schema. The available
+schema has:
+- Porter request records: counts, timing (TAT), status, facility,
+  porter ID, request category, scheduled/completed timestamps
+- Asset records: name, status, criticality, cost, warranty dates,
+  facility
+- Facility dimension: name, region, customer
+
+If the question primarily requires data NOT in this schema, set
+"response_format": "limitation" and describe what IS available.
+
+Questions that CANNOT be answered from this schema (examples — not exhaustive):
+- "Cost optimization insights" → financial analysis, budgets, and ROI
+  data don't exist; only raw asset_cost values per asset are available
+- "Root cause analysis" → causes of delays/failures aren't logged;
+  only the outcomes (status codes, TAT) are available
+- "Benchmark comparisons" → industry benchmarks don't exist in the
+  data; only internal comparative data between facilities/periods
+- "Productivity improvement indicators" → subjective productivity
+  metrics don't exist; only request counts and TAT are proxies
+- "Patient satisfaction" → no patient feedback data in the schema
+- "Staff performance reviews" → no qualitative performance data
+
+If the question CAN be PARTIALLY answered, set response_format:
+"limitation" AND describe what partial data IS available and will be
+queried, so the user gets something useful rather than a refusal.
+
+RESPONSE FORMAT DETECTION:
+- "ranking": question asks who/what is best/worst/top/bottom/highest/lowest
+- "comparison": question compares two or more periods, groups, or entities
+- "trend": question asks about change over time (month-over-month, year-over-year, how has X changed)
+- "overview": broad summary question with no specific ranking/comparison intent ("show porter performance", "give me an overview", "how are we doing")
+- "single_stat": question asks for exactly one number ("what is the TAT", "how many requests today", "total assets")
+- "limitation": question requires data not available in the schema (cost optimization, root cause, benchmark, external factors)
 
 MULTI-QUERY DETECTION:
 Set "requires_multiple_queries": true when the question asks about
@@ -570,9 +689,9 @@ Requirements:
 - Use ONLY tables/columns from the schema
 - Apply ALL ClickHouse SQL rules from the schema (including rules #1-12:
   date functions, conditional aggregates, sanity bounds on dates, etc.)
-- Default LIMIT 500 unless the expected row shape implies fewer
-  (e.g. "24 rows" or "1 row" — in those cases LIMIT 500 is harmless but
-  the GROUP BY should naturally produce that row count)
+- For ranking or "who is highest/lowest" questions, ALWAYS use LIMIT 5 or LIMIT 10, NEVER LIMIT 1, so the user can see comparative context.
+- If the question asks about specific entities (e.g. "which porter", "which asset"), ALWAYS filter out NULLs and empty strings for that entity ID (e.g. WHERE porter_user_id IS NOT NULL AND porter_user_id != '').
+- Default LIMIT 500 for general queries unless specified otherwise.
 - Return ONLY the SQL, nothing else"""
 
         resp = self.client.chat.completions.create(
@@ -709,9 +828,80 @@ Write a 2–3 sentence plain-language summary of these results for a hospital ma
                 {"role": "system", "content": self.SUMMARY_SYSTEM},
                 {"role": "user",   "content": prompt},
             ],
-            temperature=0.0,
+            temperature=0.1,
             seed=42,
-            max_tokens=300,
+            max_tokens=400,
+        )
+        return resp.choices[0].message.content.strip()
+
+    # ── Suggestions generation ─────────────────────────────────────────────
+    def generate_suggestions(self, question: str, facts_summary: str, plan: dict) -> list[str]:
+        """
+        Generates 2-3 brief, clearly-speculative suggestions based on the
+        grounded summary. These are shown in a SEPARATE, COLLAPSIBLE UI
+        panel, NEVER in the main summary text.
+        """
+        if plan.get("response_format") == "limitation":
+            return []
+
+        prompt = f"""ORIGINAL QUESTION: {question}
+
+DATA SUMMARY (what the data actually showed):
+{facts_summary}
+
+Generate 2-3 brief suggestions worth investigating further, given
+this data. Return ONLY a JSON array of strings, no other text:
+["suggestion 1", "suggestion 2", "suggestion 3"]"""
+
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": self.SUGGESTIONS_SYSTEM},
+                {"role": "user",   "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=200,
+        )
+        raw = resp.choices[0].message.content.strip()
+        import re
+        import json
+        raw = re.sub(r"^```json\s*", "", raw, flags=re.IGNORECASE)
+        raw = re.sub(r"\s*```$", "", raw)
+        try:
+            result = json.loads(raw)
+            return result if isinstance(result, list) else []
+        except json.JSONDecodeError:
+            return []
+
+    # ── Limitation Response ───────────────────────────────────────────────
+    def generate_limitation_response(self, question: str, plan: dict) -> str:
+        """
+        Generates an honest, helpful response for questions that require
+        data not available in the schema. Explains the gap and redirects
+        to what IS available.
+        """
+        what_is_available = plan.get("calculation_plan", "")
+        prompt = f"""QUESTION: {question}
+
+This question requires data not available in this system's schema.
+Write a very brief, punchy response (MAXIMUM 2 sentences) that:
+1. Acknowledges what data IS NOT available (no apologies)
+2. States what related data IS available and suggests a follow-up query
+
+WHAT IS AVAILABLE (from the analytical plan):
+{what_is_available or "general porter request counts and asset details"}
+
+Keep it under 30 words total. Be direct.
+Suggest a specific follow-up question the user could ask that WOULD be answerable."""
+
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "You explain data limitations honestly and helpfully."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+            max_tokens=200,
         )
         return resp.choices[0].message.content.strip()
 

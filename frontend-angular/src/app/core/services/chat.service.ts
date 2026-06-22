@@ -242,6 +242,9 @@ export class ChatService {
             case 'followups':
               update({ followups: ev.suggestions });
               break;
+            case 'suggestions':
+              update({ suggestions: ev.items });
+              break;
             case 'done':
               // Flush remaining tokens
               if (this.tokenBuffer) {

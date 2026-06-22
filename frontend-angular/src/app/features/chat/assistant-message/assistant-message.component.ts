@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatMessage } from '../../../shared/models/chat.model';
 import { SqlPanelComponent } from '../sql-panel/sql-panel.component';
@@ -15,7 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './assistant-message.component.html',
 })
-export class AssistantMessageComponent {
+export class AssistantMessageComponent implements OnChanges {
   @Input() message!: ChatMessage;
   @Input() originalQuestion: string = '';
   @Output() followupClick = new EventEmitter<string>();
@@ -26,6 +26,17 @@ export class AssistantMessageComponent {
   showExportMenu = false;
 
   constructor(private exportSvc: ExportService, public chat: ChatService) {}
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['message'] && this.message?.chartSpec) {
+      // If there are 1 or fewer chart recommendations (meaning only 'table' or nothing),
+      // default to showing the data table and hiding the chart view.
+      if (this.message.chartSpec.recommendations && this.message.chartSpec.recommendations.length <= 1) {
+        this.showChart = false;
+        this.showData = true;
+      }
+    }
+  }
 
   doExport(format: 'csv' | 'excel' | 'pdf') {
     if (this.originalQuestion) {
