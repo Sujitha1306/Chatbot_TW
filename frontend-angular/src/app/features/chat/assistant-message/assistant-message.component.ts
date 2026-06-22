@@ -24,16 +24,15 @@ export class AssistantMessageComponent implements OnChanges {
   showData = false;
   showSql = false;
   showExportMenu = false;
+  showMenu = false;
 
   constructor(private exportSvc: ExportService, public chat: ChatService) {}
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['message'] && this.message?.chartSpec) {
-      // If there are 1 or fewer chart recommendations (meaning only 'table' or nothing),
-      // default to showing the data table and hiding the chart view.
       if (this.message.chartSpec.recommendations && this.message.chartSpec.recommendations.length <= 1) {
         this.showChart = false;
-        this.showData = true;
+        // Data stays hidden by default since it is for testing purposes only
       }
     }
   }

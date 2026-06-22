@@ -24,10 +24,7 @@ export class ChatService {
 
   activeConvId: string | null = null;
 
-  // Token buffering (Fix 5)
-  private tokenBuffer = '';
-  private tokenFlushTimer: ReturnType<typeof setTimeout> | null = null;
-  private activeAssistantId = '';
+  // Removed shared tokenBuffer state
 
   constructor(private auth: AuthService, private zone: NgZone, private facilitySvc: FacilityService) {}
 
@@ -209,6 +206,9 @@ export class ChatService {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      
+      let localTokenBuffer = '';
+      let localTokenFlushTimer: ReturnType<typeof setTimeout> | null = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -248,11 +248,11 @@ export class ChatService {
               update({ crossConversationRefs: ev.matches });
               break;
             case 'token':
-              this.tokenBuffer += ev.text;
-              if (this.tokenFlushTimer) clearTimeout(this.tokenFlushTimer);
-              this.tokenFlushTimer = setTimeout(() => {
-                const batch = this.tokenBuffer;
-                this.tokenBuffer = '';
+              localTokenBuffer += ev.text;
+              if (localTokenFlushTimer) clearTimeout(localTokenFlushTimer);
+              localTokenFlushTimer = setTimeout(() => {
+                const batch = localTokenBuffer;
+                localTokenBuffer = '';
                 this.zone.run(() => {
                   const msgs = this.messagesSubject.value.map(m =>
                     m.id === assistantId ? { ...m, content: m.content + batch } : m
@@ -272,9 +272,9 @@ export class ChatService {
               break;
             case 'done':
               // Flush remaining tokens
-              if (this.tokenBuffer) {
-                const batch = this.tokenBuffer;
-                this.tokenBuffer = '';
+              if (localTokenBuffer) {
+                const batch = localTokenBuffer;
+                localTokenBuffer = '';
                 this.zone.run(() => {
                   const msgs = this.messagesSubject.value.map(m =>
                     m.id === assistantId ? { ...m, content: m.content + batch, status: 'complete' as const } : m

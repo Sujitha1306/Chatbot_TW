@@ -11,7 +11,7 @@ import { routes } from './app.routes';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { 
   LucideAngularModule, BarChart2, PieChart, LineChart, ScatterChart,
-  Activity, Table, Database, Lightbulb, Clock, Shield
+  Activity, Table, Database, Lightbulb, Clock, Shield, MoreVertical, Check, ChevronDown
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -26,7 +26,7 @@ export const appConfig: ApplicationConfig = {
       PlotlyModule.forRoot(PlotlyJS),
       LucideAngularModule.pick({ 
         BarChart2, PieChart, LineChart, ScatterChart,
-        Activity, Table, Database, Lightbulb, Clock, Shield
+        Activity, Table, Database, Lightbulb, Clock, Shield, MoreVertical, Check, ChevronDown
       })
     )
   ]

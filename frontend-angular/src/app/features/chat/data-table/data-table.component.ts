@@ -49,6 +49,18 @@ export class DataTableComponent implements OnInit {
     return Math.max(1, Math.ceil(this.filtered.length / this.pageSize));
   }
 
+  formatLabel(col: string): string {
+    if (!col) return '';
+    if (col === 'porter_user_id') return 'Porter';
+    
+    return col
+      .replace(/_id$/i, '')
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+      .trim();
+  }
+
   sort(col: string) {
     if (this.sortCol === col) {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';

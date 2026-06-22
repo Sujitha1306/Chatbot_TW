@@ -45,18 +45,16 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
     this.yCol = rec?.y || this.spec.columns.measures?.[0] || this.spec.columns.numeric?.[0] || '';
   }
 
-  get activeSeriesGroup(): string[] | undefined {
-    const rec = this.spec.recommendations.find(r => r.type === this.activeType);
-    return (rec as any)?.series;
-  }
-
-  formatSeriesLabels(series: string[]): string {
-    if (!series) return '';
-    return series.map(s => this.formatLabel(s)).join(', ');
-  }
-
   formatLabel(col: string): string {
-    return col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    if (!col) return '';
+    if (col === 'porter_user_id') return 'Porter';
+    
+    return col
+      .replace(/_id$/i, '')
+      .split('_')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+      .trim();
   }
 
   selectType(type: ChartType) {

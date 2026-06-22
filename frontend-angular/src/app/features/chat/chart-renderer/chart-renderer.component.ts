@@ -72,12 +72,12 @@ export class ChartRendererComponent implements OnChanges {
         ...BASE_LAYOUT,
         barmode: 'group',
         [dimensionAxisKey]: {
-          title: { text: this.formatLabel(this.xCol) },
+          title: { text: this.formatLabel(this.xCol), standoff: 20 },
           type: 'category',     // ALWAYS category — this is the true dimension
           automargin: true,
         },
         [measureAxisKey]: {
-          title: { text: yTitle },
+          title: { text: yTitle, standoff: 20 },
           type: undefined,       // ALWAYS left as a continuous numeric scale —
                                  // NEVER category, regardless of orientation
           automargin: true,
@@ -92,12 +92,12 @@ export class ChartRendererComponent implements OnChanges {
       barmode: 'group',
       showlegend: this.plotData.length > 1,
       xaxis: {
-        title: { text: this.formatLabel(this.xCol) },
+        title: { text: this.formatLabel(this.xCol), standoff: 20 },
         type: this.type === 'scatter' ? undefined : 'category',
         automargin: true,
       },
       yaxis: {
-        title: { text: yTitle },
+        title: { text: yTitle, standoff: 20 },
         automargin: true,
       },
     };
@@ -105,11 +105,14 @@ export class ChartRendererComponent implements OnChanges {
 
   private formatLabel(col: string): string {
     if (!col) return '';
-    const cleanCol = col.endsWith('_id') && col !== '_id' ? col.slice(0, -3) : col;
-    return cleanCol
+    if (col === 'porter_user_id') return 'Porter';
+    
+    return col
+      .replace(/_id$/i, '')
       .split('_')
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
+      .join(' ')
+      .trim();
   }
 
   get hasValidData(): boolean {

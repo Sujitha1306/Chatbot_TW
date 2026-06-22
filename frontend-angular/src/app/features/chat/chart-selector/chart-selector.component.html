@@ -15,19 +15,19 @@
   <div *ngIf="activeType !== 'table'" class="flex flex-wrap gap-3 mb-3 text-xs">
     <label class="flex items-center gap-1.5 text-gray-600">
       X-Axis:
-      <select [(ngModel)]="xCol" class="border border-gray-200 rounded px-2 py-1 outline-none focus:border-brand-primary bg-white">
-        <option *ngFor="let c of xAxisOptions" [value]="c">{{ c }}</option>
+      <select *ngIf="xAxisOptions.length > 1" [(ngModel)]="xCol" class="border border-gray-200 rounded px-2 py-1 outline-none focus:border-brand-primary bg-white">
+        <option *ngFor="let c of xAxisOptions" [value]="c">{{ formatLabel(c) }}</option>
       </select>
+      <span *ngIf="xAxisOptions.length <= 1" class="font-medium text-gray-800">{{ formatLabel(xCol || xAxisOptions[0]) }}</span>
     </label>
-    <label class="flex items-center gap-1.5 text-gray-600" *ngIf="activeType !== 'pie' && !activeSeriesGroup">
+    <label class="flex items-center gap-1.5 text-gray-600" *ngIf="activeType !== 'pie'">
       Y-Axis:
-      <select [(ngModel)]="yCol" class="border border-gray-200 rounded px-2 py-1 outline-none focus:border-brand-primary bg-white">
-        <option *ngFor="let c of yAxisOptions" [value]="c">{{ c }}</option>
+      <select *ngIf="yAxisOptions.length > 1" [(ngModel)]="yCol" class="border border-gray-200 rounded px-2 py-1 outline-none focus:border-brand-primary bg-white">
+        <option *ngFor="let c of yAxisOptions" [value]="c">{{ formatLabel(c) }}</option>
       </select>
+      <span *ngIf="yAxisOptions.length <= 1" class="font-medium text-gray-800">{{ formatLabel(yCol || yAxisOptions[0]) }}</span>
     </label>
-    <div *ngIf="activeSeriesGroup" class="flex items-center gap-1.5 text-gray-600">
-      Y-Axis: <span class="font-medium text-gray-800">{{ formatSeriesLabels(activeSeriesGroup) }}</span>
-    </div>
+
   </div>
 
   <app-chart-renderer
@@ -36,7 +36,6 @@
     [data]="data"
     [xCol]="xCol"
     [yCol]="yCol"
-    [series]="activeSeriesGroup"
     [sortXAs]="sortXAs"
     [spec]="spec"
   ></app-chart-renderer>

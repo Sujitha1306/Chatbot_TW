@@ -232,7 +232,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
-            if not sql.strip() or sql.strip().startswith("--"):
+            if not sql.strip():
                 import pandas as pd
                 df = pd.DataFrame([{"Result": "No relevant data for this question."}])
                 success = True
@@ -333,7 +333,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             # ── Event 7.5: Suggestions ──
             suggestions = pipeline.generate_suggestions(effective_question, full_summary, plan)
             if suggestions:
-                suggestion_text = "\n\n💡 **AI-Generated Suggestions:**\n"
+                suggestion_text = "\n\n💡 Suggestions:\n"
                 for s in suggestions:
                     suggestion_text += f"• {s}\n"
                 
