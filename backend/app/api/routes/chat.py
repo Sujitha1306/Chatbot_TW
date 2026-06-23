@@ -728,7 +728,10 @@ def get_pipeline():
 def refresh_lookups(_=Depends(require_api_key)):
     from backend.app.core.facility_lookup import get_facility_lookup
     from backend.app.core.term_lookup import get_term_lookup
+    from backend.app.core.entity_lookups import get_user_lookup, get_location_lookup
     
     get_facility_lookup().refresh()
     get_term_lookup().refresh()
+    get_user_lookup().refresh()
+    get_location_lookup().refresh()
     return {"status": "refreshed"}

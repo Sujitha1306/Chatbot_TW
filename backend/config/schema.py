@@ -69,8 +69,8 @@ class DatabaseSchema:
         'priority': 'Priority level (0, 1, etc.)',
         'comments': 'Optional comments field',
         'remarks': 'Additional remarks',
-        'pool_name_id': 'Pool name identifier (join with dim_app_terms)',
-        'pool_location_id': 'Pool location ID',
+        'pool_name_id': 'Pool name identifier (do NOT join; just select this column and UI will translate)',
+        'pool_location_id': 'Pool location ID (do NOT join; just select this column)',
         'is_round_trip': 'Y for round trip, N for one-way',
         'status': 'Request status',
         'scheduled_time': 'When request was scheduled (UTC timestamp)',
@@ -182,7 +182,7 @@ BUSINESS LOGIC:
 
     @classmethod
     def get_llm_schema_prompt(cls) -> str:
-        return """## DATABASE: ovitag_dw (ClickHouse)
+        return """## DATABASE: ClickHouse
 
 ### TABLE: fact_porter_request
 Purpose: Hospital porter transport requests
@@ -196,14 +196,19 @@ Columns:
     RQ-AS = Assigned   |  RQ-AC = Accepted   |  RQ-AR = Arrived
     RQ-OH = On Hold    |  RQ-RJ = Rejected
 - request_category (String): PR-PA = Patient transport, PR-SE = Service
+- pool_name_id (String): Pool name identifier
+- pool_location_id (String): Pool location identifier
+- requester_user_id (String): Requesting user identifier
+- source_id (String): Source location identifier
+- destination_id (String): Destination location identifier
 - scheduled_time (DateTime UTC): request creation time
 - completed_time (DateTime UTC, nullable): completion time
 - TAT formula: round(dateDiff('second', scheduled_time, completed_time)/60.0, 2) AS tat_minutes
 - Average TAT formula: round(avg(dateDiff('second', scheduled_time, completed_time)/60.0), 2) AS avg_tat_minutes (DO NOT use avgIf with NULL checks, standard avg() already ignores NULLs natively)
 - Filter NULL TAT: WHERE completed_time IS NOT NULL
 
-### TABLE: mysql_asset
-Purpose: Hospital equipment inventory
+### TABLE: ovitag_dw.mysql_asset
+Purpose: Hospital equipment inventory (NOTE: You MUST use the full ovitag_dw.mysql_asset table name since it lives in a different database)
 Columns:
 - id (Int64): asset ID
 - name (String): equipment name
@@ -243,6 +248,7 @@ If a question asks about "department" in the context of PORTER requests, and no 
 10. NO CORRELATED SUBQUERIES: ClickHouse does not support correlated subqueries referencing the outer query. To compare periods (e.g., YoY comparison per facility), use conditional aggregation: `countIf(toYear(scheduled_time) = toYear(today()))` vs `countIf(toYear(scheduled_time) = toYear(today()) - 1)`, OR use a standard `GROUP BY facility_id, toYear(scheduled_time)`.
 11. AGGREGATIONS OVER TIME: When asked for "requests per day/month/year", always use appropriate GROUP BY along with the date function.
 12. CONDITIONAL AGGREGATES: Use `countIf(condition)` for conditional counts, `avgIf(expr, condition)` for conditional averages, and `sumIf(expr, condition)` for conditional sums. Make sure conditions use `IS NOT NULL` instead of `isNotNull()` to avoid type Nothing errors. These compute the aggregate ONLY over rows matching `condition`.
+13. NO DIMENSION TABLE JOINS: Do NOT attempt to join dimension tables (like dim_app_terms, dim_user, dim_location) to get human-readable names. Simply SELECT the raw ID columns (e.g. facility_id, pool_name_id, requester_user_id, source_id, status, request_category). The UI presentation layer will automatically translate these raw IDs into human-readable names for the user. If the user asks for a NAME (like "pool name", "facility name", "porter name"), do NOT respond with a limitation — just select the ID column!
 23. SANITY BOUND ON DATES: This database may contain a small number of corrupted rows with scheduled_time/completed_time values far in the future (e.g. year 2084) due to a known data ingestion issue. For ANY query involving date ranges, MAX(), MIN(), or "most recent data" questions, ALWAYS add: AND scheduled_time <= now() + INTERVAL 1 DAY (and the same for completed_time where relevant). This excludes corrupted future-dated rows from results without needing to identify them individually.
 14. STABLE ORDERING WITH LIMIT: Whenever a query includes both ORDER BY and LIMIT, the ORDER BY must be fully deterministic — add a tie-breaking secondary sort column. If it is an aggregate query (GROUP BY), use one of the GROUP BY columns as the tie-breaker (e.g. ORDER BY count DESC, facility_id ASC). If it is a non-aggregate query, use the primary key or ID column. Do NOT use 'id' as a tie-breaker in GROUP BY queries unless 'id' is in the GROUP BY clause. IF the query uses LIMIT but does NOT have an ORDER BY, you MUST add an ORDER BY to ensure deterministic results.
 24. CONSTRUCTING A DATE FROM YEAR/MONTH/DAY PARTS: Do NOT use makeDate (it does not exist in this version). Instead, construct dates using string literals like toDate('2025-02-01'). If it must be dynamic relative to the current year, use concat: toDate(concat(toString(toYear(today())), '-02-01')). For end-of-month calculations, prefer: (toStartOfMonth(date_expr) + INTERVAL 1 MONTH - INTERVAL 1 DAY). Do NOT use toLastDayOfMonth or toEndOfMonth as they do not exist in this version.

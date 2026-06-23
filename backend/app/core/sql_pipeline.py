@@ -84,6 +84,12 @@ but here's what the asset records do show: ..."
 
 === COMMUNICATION STYLE (from earlier phases, unchanged) ===
 
+RULE 4 — NATURAL LANGUAGE & NO DATABASE JARGON:
+- Do NOT mention database table names (like fact_porter_request or mysql_asset).
+- Do NOT mention database column names with underscores (like pool_name_id, facility_id, request_user_id).
+- Use plain, generic English terms instead: "requests", "facilities", "pool names", "locations", "departments", etc.
+- Do NOT say "in the table", "in the sample", or "in the available data". Just state the summary directly.
+
 4. Use percentages and relative language — not raw number dumps
 5. Lead with the most important finding first
 6. Plain language for hospital administrators — no technical jargon
@@ -134,7 +140,7 @@ CRITICAL RULES:
    speculative/inferential — the user knows this. You may use phrases
    like "It may be worth investigating", "Consider reviewing",
    "One question this raises is..."
-2. Keep each suggestion to 1 sentence. Use plain language.
+2. Keep each suggestion to 1 sentence. Use plain language. Do NOT use database column names with underscores (e.g., use "pool names" instead of "pool_name_id"). Do NOT mention table names like "fact_porter_request".
 3. Do NOT repeat what the data already showed — add something
    the data SUGGESTS but doesn't prove.
 4. If the data is too limited to support even speculative suggestions,
@@ -373,7 +379,11 @@ Think through this step by step and return JSON with these fields:
       high-volume hours (best allocation efficiency).'
     - 'Group by facility_id. For each facility compute total requests,
       completed requests, and completion_rate = completed/total * 100.'
-    - 'No calculation needed — this is a simple greeting.'",
+    - 'No calculation needed — this is a simple greeting.'
+    CRITICAL: If the question asks to list entities (pool names, porters,
+    facilities), ALWAYS include volume/performance metrics (e.g. COUNT(*),
+    AVG(tat_minutes)) in your SELECT clause alongside the name/id. NEVER just
+    SELECT DISTINCT name. We need metrics to see what was used most/least.",
 
   "grouping": "What the result should be grouped BY (e.g. 'hour of day
     (0-23)', 'facility_id', 'month', 'no grouping - single summary row',
@@ -450,7 +460,7 @@ RESPONSE FORMAT DETECTION:
 - "trend": question asks about change over time (month-over-month, year-over-year, how has X changed)
 - "overview": broad summary question with no specific ranking/comparison intent ("show porter performance", "give me an overview", "how are we doing")
 - "single_stat": question asks for exactly one number ("what is the TAT", "how many requests today", "total assets")
-- "limitation": question requires data not available in the schema (cost optimization, root cause, benchmark, external factors)
+- "limitation": question requires data not available in the schema (cost optimization, root cause, benchmark, external factors). NOTE: Asking for a "name" (e.g. pool name, facility name) when the schema only has the "ID" (e.g. pool_name_id, facility_id) is NOT a limitation. The UI handles ID-to-name translations.
 
 MULTI-QUERY DETECTION:
 Set "requires_multiple_queries": true when the question asks about
@@ -799,8 +809,9 @@ result, not just one that merely avoids the error."""
         date_col = "scheduled_time" if table == "fact_porter_request" else "commissioned_on"
 
         try:
+            table_ref = table if "." in table else f"{settings.clickhouse_database}.{table}"
             check_df, ok, _ = self.db.execute_query_with_error(
-                f"SELECT max({date_col}) AS latest FROM ovitag_dw.{table} "
+                f"SELECT max({date_col}) AS latest FROM {table_ref} "
                 f"WHERE {date_col} <= now() + INTERVAL 1 DAY"
             )
             if ok and not check_df.empty:

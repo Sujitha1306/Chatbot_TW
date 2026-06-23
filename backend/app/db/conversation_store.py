@@ -156,6 +156,24 @@ class ConversationStore:
             return True
         return False
 
+    def truncate(self, user_id: str, conv_id: str, message_id: str) -> bool:
+        conv = self._store[user_id].get(conv_id)
+        if not conv:
+            return False
+        
+        idx = -1
+        for i, m in enumerate(conv.messages):
+            if m.id == message_id:
+                idx = i
+                break
+                
+        if idx != -1:
+            conv.messages = conv.messages[:idx]
+            self._save()
+            return True
+            
+        return False
+
     def search_past_conversations(
         self,
         user_id: str,

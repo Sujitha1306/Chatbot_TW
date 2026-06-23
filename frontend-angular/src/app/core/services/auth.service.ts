@@ -39,6 +39,21 @@ export class AuthService {
     this.userSubject.next(res.user);
   }
 
+  updateName(newName: string): Observable<{ status: string, name: string }> {
+    return this.http.put<{ status: string, name: string }>(`${environment.apiUrl}/auth/me/name`, { name: newName }).pipe(
+      tap(res => {
+        const user = this.userSubject.value;
+        if (user && res.status === 'ok') {
+          const updatedUser = { ...user, name: res.name };
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('tw_user', JSON.stringify(updatedUser));
+          }
+          this.userSubject.next(updatedUser);
+        }
+      })
+    );
+  }
+
   logout(expired: boolean = false): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tw_token');

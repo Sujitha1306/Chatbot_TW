@@ -158,6 +158,43 @@ class MySQLConversationStore:
         finally:
             conn.close()
 
+    def truncate(self, user_id: str, conv_id: str, message_id: str) -> bool:
+        conn = get_mysql_connection()
+        try:
+            cursor = conn.cursor(dictionary=True)
+            # Verify conversation belongs to user
+            cursor.execute("SELECT 1 FROM conversations WHERE id = %s AND user_id = %s", (conv_id, user_id))
+            if not cursor.fetchone():
+                return False
+                
+            # Get created_at of the target message
+            cursor.execute("SELECT created_at FROM messages WHERE id = %s AND conversation_id = %s", (message_id, conv_id))
+            row = cursor.fetchone()
+            if not row:
+                return False
+                
+            # Delete messages created on or after this message
+            cursor.execute(
+                "DELETE FROM messages WHERE conversation_id = %s AND created_at >= %s", 
+                (conv_id, row['created_at'])
+            )
+            deleted = cursor.rowcount > 0
+            conn.commit()
+            return deleted
+        finally:
+            conn.close()
+
+    def rename(self, user_id: str, conv_id: str, new_title: str) -> bool:
+        conn = get_mysql_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE conversations SET title = %s WHERE id = %s AND user_id = %s", (new_title, conv_id, user_id))
+            renamed = cursor.rowcount > 0
+            conn.commit()
+            return renamed
+        finally:
+            conn.close()
+
     def get_user_recommendations(self, user_id: str) -> List[str]:
         conn = get_mysql_connection()
         try:

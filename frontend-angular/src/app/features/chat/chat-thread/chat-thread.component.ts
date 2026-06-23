@@ -24,6 +24,7 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
   messages$: any;
   isStreaming$: any;
   inputValue = '';
+  isStreaming = false;
   private sub?: Subscription;
 
   constructor(
@@ -45,12 +46,17 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.sub = this.chat.fillInput$.subscribe(val => {
+    this.sub = new Subscription();
+    this.sub.add(this.chat.fillInput$.subscribe(val => {
       if (val) {
         this.inputValue = val;
         this.cdr.markForCheck();
       }
-    });
+    }));
+    
+    this.sub.add(this.chat.isStreaming$.subscribe(streaming => {
+      this.isStreaming = streaming;
+    }));
   }
 
   ngOnDestroy() {
@@ -69,15 +75,26 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
   onKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      this.send();
+      if (!this.isStreaming) {
+        this.send();
+      }
     }
   }
 
   async send() {
     const q = this.inputValue.trim();
-    if (!q) return;
+    if (!q || this.isStreaming) return;
     this.inputValue = '';
     await this.chat.sendMessage(q);
+    this.scheduleScroll();
+  }
+
+  stop() {
+    this.chat.stopStream();
+  }
+
+  onUserMessageEdit(event: {id: string, text: string}) {
+    this.chat.editMessage(event.id, event.text);
     this.scheduleScroll();
   }
 

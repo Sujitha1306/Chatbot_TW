@@ -16,6 +16,16 @@ logger = logging.getLogger(__name__)
 # MySQLConversationStore so a future schema swap doesn't ripple into the
 # rest of the app.
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id            VARCHAR(36)  NOT NULL PRIMARY KEY,
+    name          VARCHAR(255) NOT NULL,
+    email         VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(50)  NOT NULL DEFAULT 'analyst',
+    created_at    DATETIME(6)  NOT NULL,
+    UNIQUE INDEX idx_users_name (name)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS conversations (
     id          VARCHAR(36)  NOT NULL PRIMARY KEY,
     user_id     VARCHAR(64)  NOT NULL,

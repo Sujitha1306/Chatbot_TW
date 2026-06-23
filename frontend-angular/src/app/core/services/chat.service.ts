@@ -23,6 +23,7 @@ export class ChatService {
   fillInput$ = this.fillInputSubject.asObservable();
 
   activeConvId: string | null = null;
+  private currentAbortController: AbortController | null = null;
 
   // Removed shared tokenBuffer state
 
@@ -132,8 +133,67 @@ export class ChatService {
     }
   }
 
+  async renameConversation(convId: string, newTitle: string): Promise<void> {
+    const token = this.auth.getToken();
+    if (!token) return;
+    try {
+      await fetch(`${environment.apiUrl}/chat/conversations/${convId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title: newTitle })
+      });
+      // Optimistically update the list
+      const updated = this.conversationsSubject.value.map(c => 
+        c.id === convId ? { ...c, title: newTitle } : c
+      );
+      this.conversationsSubject.next(updated);
+    } catch (e) {
+      console.error('Failed to rename conversation', e);
+    }
+  }
+
   fillInput(text: string): void {
     this.fillInputSubject.next(text);
+  }
+
+  async editMessage(messageId: string, newText: string): Promise<void> {
+    if (!this.activeConvId) return;
+    
+    // Stop any ongoing generation
+    this.stopStream();
+    
+    // Truncate on backend
+    try {
+      await fetch(`${environment.apiUrl}/chat/conversations/${this.activeConvId}/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.auth.getToken() || ''}`
+        }
+      });
+    } catch (e) {
+      console.error('Failed to truncate conversation history', e);
+      // Even if backend fails, let's try to proceed locally for the user
+    }
+
+    // Truncate locally
+    const current = this.messagesSubject.value;
+    const msgIndex = current.findIndex(m => m.id === messageId);
+    if (msgIndex !== -1) {
+      this.messagesSubject.next(current.slice(0, msgIndex));
+    }
+
+    // Send the new text as if it was a new question
+    return this.sendMessage(newText);
+  }
+
+  stopStream(): void {
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+    }
   }
 
   async sendMessage(question: string): Promise<void> {
@@ -163,6 +223,9 @@ export class ChatService {
       });
     };
 
+    this.stopStream();
+    this.currentAbortController = new AbortController();
+
     try {
       const user = this.auth.getUser();
       const response = await fetch(`${environment.apiUrl}/chat/stream`, {
@@ -171,6 +234,7 @@ export class ChatService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.auth.getToken() || ''}`,
         },
+        signal: this.currentAbortController.signal,
         body: JSON.stringify({
           question,
           user_id: user?.id || 'TW', 
@@ -299,9 +363,17 @@ export class ChatService {
           }
         }
       }
-    } catch {
-      update({ content: 'Network error. Please try again.', status: 'error' });
-      this.zone.run(() => this.streamingSubject.next(false));
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        // Stream was stopped by user
+        update({ status: 'complete' });
+        this.zone.run(() => this.streamingSubject.next(false));
+      } else {
+        update({ content: 'Network error. Please try again.', status: 'error' });
+        this.zone.run(() => this.streamingSubject.next(false));
+      }
+    } finally {
+      this.currentAbortController = null;
     }
   }
 }

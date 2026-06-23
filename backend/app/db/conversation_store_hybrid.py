@@ -109,6 +109,27 @@ class HybridConversationStore:
                 logger.warning(f"Redis cache cleanup on delete failed (non-fatal): {e}")
         return result
 
+    def truncate(self, user_id: str, conv_id: str, message_id: str) -> bool:
+        result = self._mysql.truncate(user_id, conv_id, message_id)
+        if self._redis is not None and result:
+            try:
+                # Easiest way to handle cache invalidation is to delete the messages list
+                # It will be repopulated from MySQL on next read
+                self._redis.delete(f"conv:{conv_id}:messages")
+            except Exception as e:
+                logger.warning(f"Redis cache cleanup on truncate failed (non-fatal): {e}")
+        return result
+
+    def rename(self, user_id: str, conv_id: str, new_title: str) -> bool:
+        result = self._mysql.rename(user_id, conv_id, new_title)
+        if self._redis is not None and result:
+            try:
+                # Update title in redis meta hash
+                self._redis.hset(f"conv:{conv_id}:meta", "title", new_title)
+            except Exception as e:
+                logger.warning(f"Redis cache update on rename failed (non-fatal): {e}")
+        return result
+
     def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3) -> str:
         if self._redis is not None:
             try:

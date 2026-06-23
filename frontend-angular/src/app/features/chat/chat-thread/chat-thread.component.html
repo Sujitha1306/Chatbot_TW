@@ -6,7 +6,7 @@
       <!-- Messages -->
       <ng-container *ngFor="let msg of (messages$ | async); trackBy: trackById">
         <div class="block">
-          <app-user-message *ngIf="msg.role === 'user'" [message]="msg"></app-user-message>
+          <app-user-message *ngIf="msg.role === 'user'" [message]="msg" (editSubmit)="onUserMessageEdit($event)"></app-user-message>
           <app-assistant-message
             *ngIf="msg.role === 'assistant'"
             [message]="msg"
@@ -29,18 +29,48 @@
           (keydown)="onKeydown($event)"
           placeholder="Ask anything about porter or assets..."
           rows="1"
-          [disabled]="(isStreaming$ | async) ?? false"
           class="flex-1 resize-none outline-none text-sm text-gray-700
-                 placeholder:text-gray-400 max-h-32 leading-relaxed bg-transparent
-                 disabled:opacity-50"
+                 placeholder:text-gray-400 max-h-32 leading-relaxed bg-transparent"
         ></textarea>
-        <button
-          (click)="send()"
-          [disabled]="((isStreaming$ | async) ?? false) || !inputValue.trim()"
-          class="bg-brand-primary text-white rounded-lg px-4 py-2 text-sm font-medium
-                 hover:bg-brand-primary/90 transition disabled:opacity-40 flex-shrink-0">
-          Send ›
-        </button>
+        <!-- Send Button -->
+        <div class="relative flex items-center group" *ngIf="!(isStreaming$ | async)">
+          <button
+            (click)="send()"
+            [disabled]="!inputValue.trim()"
+            class="bg-brand-primary text-white rounded-lg px-4 py-2 text-sm font-medium
+                   hover:bg-brand-primary/90 transition disabled:opacity-40 flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 3 3 9-3 9 19-9Z"/>
+              <path d="M6 12h16"/>
+            </svg>
+          </button>
+          
+          <!-- Custom Tooltip -->
+          <div class="absolute bottom-full right-1/2 translate-x-1/2 mb-2 hidden group-hover:flex items-center gap-1.5 bg-white text-gray-600 border border-gray-200 text-[11px] px-2.5 py-1 rounded-md whitespace-nowrap shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
+            Send prompt
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+              <path d="M9 10l-5 5 5 5"></path>
+              <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Stop Button -->
+        <div class="relative flex items-center group" *ngIf="isStreaming$ | async">
+          <button
+            (click)="stop()"
+            class="bg-brand-primary text-white rounded-lg px-4 py-2 text-sm font-medium
+                   hover:bg-brand-primary/90 transition flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="6" width="12" height="12"></rect>
+            </svg>
+          </button>
+          
+          <!-- Custom Tooltip -->
+          <div class="absolute bottom-full right-1/2 translate-x-1/2 mb-2 hidden group-hover:flex items-center gap-1.5 bg-white text-gray-600 border border-gray-200 text-[11px] px-2.5 py-1 rounded-md whitespace-nowrap shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
+            Stop generating
+          </div>
+        </div>
       </div>
       <p class="text-xs text-gray-400 text-center mt-1.5">
         Shift+Enter for new line · Enter to send

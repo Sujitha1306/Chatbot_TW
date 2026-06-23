@@ -435,6 +435,12 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
         df["_metric_group"] = "Metrics"
         primary_dim = "_metric_group"
         dimension_cols.append("_metric_group")
+    elif not primary_dim and len(df) > 1 and len(measure_cols) >= 2:
+        # Treat the first column as a dimension since we must chart something
+        primary_dim = df.columns[0]
+        dimension_cols.append(primary_dim)
+        if primary_dim in measure_cols:
+            measure_cols.remove(primary_dim)
 
     MONTH_NAMES = {
         1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
