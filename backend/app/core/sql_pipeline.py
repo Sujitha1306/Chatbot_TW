@@ -708,6 +708,8 @@ Requirements:
         sql = re.sub(r"^```sql\s*", "", sql, flags=re.IGNORECASE)
         sql = re.sub(r"\s*```$", "", sql)
         sql = sql.replace("INTERIAL", "INTERVAL")  # Prevent common LLM hallucination
+        sql = re.sub(r"isNotNull\s*\(\s*([a-zA-Z0-9_.]+)\s*\)", r"\1 IS NOT NULL", sql, flags=re.IGNORECASE)
+        sql = re.sub(r"isNull\s*\(\s*([a-zA-Z0-9_.]+)\s*\)", r"\1 IS NULL", sql, flags=re.IGNORECASE)
         return sql.strip()
 
     # ── Call 3: Self-correction (on error only) ───────────────────────────
@@ -768,6 +770,8 @@ result, not just one that merely avoids the error."""
         fixed = re.sub(r"^```sql\s*", "", fixed, flags=re.IGNORECASE)
         fixed = re.sub(r"\s*```$", "", fixed)
         fixed = fixed.replace("INTERIAL", "INTERVAL")  # Prevent common LLM hallucination
+        fixed = re.sub(r"isNotNull\s*\(\s*([a-zA-Z0-9_.]+)\s*\)", r"\1 IS NOT NULL", fixed, flags=re.IGNORECASE)
+        fixed = re.sub(r"isNull\s*\(\s*([a-zA-Z0-9_.]+)\s*\)", r"\1 IS NULL", fixed, flags=re.IGNORECASE)
         return fixed.strip()
 
     # ── Data Gap Detection ────────────────────────────────────────────────

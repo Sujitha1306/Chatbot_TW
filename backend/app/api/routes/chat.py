@@ -96,7 +96,6 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             try:
                 memory_scope = pipeline.resolve_memory_scope(req.question, prior_history_text, has_history)
             except Exception as e:
-                import logging
                 logging.warning(f"resolve_memory_scope failed, defaulting to current_conversation: {e}")
                 memory_scope = {"scope": "current_conversation", "reasoning": "exception_fallback"}
 
@@ -141,7 +140,6 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             try:
                 routing = pipeline.route_message(req.question, history=current_history)
             except Exception as e:
-                import logging
                 logging.warning(f"route_message failed, defaulting to data_question: {e}")
                 routing = {"needs_data": True, "response": None, "reason": "router_exception_fallback"}
 
@@ -213,6 +211,19 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 for word in summary.split(" "):
                     yield _sse({"event": "token", "text": word + " "})
                     await asyncio.sleep(0.01)
+
+                # ── Follow-ups and Suggestions ──
+                followups = pipeline.generate_followups(effective_question, plan)
+                yield _sse({"event": "followups", "suggestions": followups})
+                
+                suggestions = pipeline.generate_suggestions(effective_question, summary, plan)
+                if suggestions:
+                    suggestion_text = "\n\n💡 Suggestions:\n" + "\n".join(f"• {s}" for s in suggestions)
+                    
+                    summary += suggestion_text
+                    for word in suggestion_text.split(" "):
+                        yield _sse({"event": "token", "text": word + " "})
+                        await asyncio.sleep(0.01)
 
                 yield _sse({"event": "done"})
 
@@ -299,7 +310,6 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 facility_name = f"Customer ID {req.filters.get('customer_id')}"
 
             summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
-            import logging
             prompt_logger = logging.getLogger("prompt_debugger")
             prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
             prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
@@ -333,9 +343,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             # ── Event 7.5: Suggestions ──
             suggestions = pipeline.generate_suggestions(effective_question, full_summary, plan)
             if suggestions:
-                suggestion_text = "\n\n💡 Suggestions:\n"
-                for s in suggestions:
-                    suggestion_text += f"• {s}\n"
+                suggestion_text = "\n\n💡 Suggestions:\n" + "\n".join(f"• {s}" for s in suggestions)
                 
                 full_summary += suggestion_text
                 
@@ -419,9 +427,10 @@ def _compute_period_trends(df, measure_cols: list) -> str:
     for col in measure_cols[:3]:  # cap to avoid prompt bloat
         values = df[col].tolist()
         changes = []
+        import pandas as pd
         for i in range(1, len(values)):
             prev, curr = values[i-1], values[i]
-            if prev == 0:
+            if pd.isna(prev) or prev == 0 or pd.isna(curr):
                 continue
             pct_change = (curr - prev) / prev * 100
             changes.append((i, pct_change))
@@ -656,7 +665,7 @@ we've confirmed data exists for this period and the count is genuinely 0."""
             grouped = df.groupby(cat_col)[num_col].sum().sort_values(ascending=False)
             total = grouped.sum()
             top5 = grouped.head(5)
-            pct_lines = [f"  {idx}: {val:,.0f} ({val/total*100:.1f}% of total)" for idx, val in top5.items()]
+            pct_lines = [f"  {idx}: {val:,.0f} ({(val/total*100) if total else 0:.1f}% of total)" for idx, val in top5.items()]
             pct_breakdown = "PERCENTAGE BREAKDOWN (top 5 by " + num_col + "):\n" + "\n".join(pct_lines)
 
     import numpy as np

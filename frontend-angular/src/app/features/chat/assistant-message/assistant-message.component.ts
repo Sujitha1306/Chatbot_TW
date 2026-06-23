@@ -30,11 +30,15 @@ export class AssistantMessageComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['message'] && this.message?.chartSpec) {
-      if (this.message.chartSpec.recommendations && this.message.chartSpec.recommendations.length <= 1) {
+      if (!this.hasChart) {
         this.showChart = false;
-        // Data stays hidden by default since it is for testing purposes only
       }
     }
+  }
+
+  get hasChart(): boolean {
+    if (!this.message?.chartSpec?.recommendations) return false;
+    return this.message.chartSpec.recommendations.some((r: any) => r.type !== 'table');
   }
 
   doExport(format: 'csv' | 'excel' | 'pdf') {

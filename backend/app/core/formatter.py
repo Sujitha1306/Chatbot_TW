@@ -404,13 +404,12 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
     if df.empty:
         return _table_only_spec(0), df
 
-    if len(df) == 1:
-        # Single row — no meaningful bar/line/pie/scatter. Show as a
-        # stat-card-style table only.
-        return _table_only_spec(1), df
-
     dimension_cols = [c for c in df.columns if _is_dimension_column(c, df[c]) and df[c].notna().any()]
     measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any()]
+
+    if len(df) == 1 and len(measure_cols) < 2:
+        # Single row, single measure — no meaningful chart.
+        return _table_only_spec(1), df
 
     if not measure_cols:
         return _table_only_spec(len(df)), df
@@ -431,6 +430,11 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
         primary_dim = max(time_dims, key=time_dim_score)
     else:
         primary_dim = dimension_cols[0] if dimension_cols else None
+        
+    if not primary_dim and len(df) == 1 and len(measure_cols) > 1:
+        df["_metric_group"] = "Metrics"
+        primary_dim = "_metric_group"
+        dimension_cols.append("_metric_group")
 
     MONTH_NAMES = {
         1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
