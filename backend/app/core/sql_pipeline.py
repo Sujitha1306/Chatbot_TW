@@ -250,24 +250,22 @@ Return JSON:
         all_facs = lookup.list_all()
 
         if filters.get("facility_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["facility_id"] == filters["facility_id"] or f["facility_name"] == filters["facility_id"]]
-            if valid_ids:
-                if len(valid_ids) == 1:
-                    return f"\nNOTE: Results will be filtered to facility_id='{valid_ids[0]}'."
-                id_list = ", ".join([f"'{fid}'" for fid in valid_ids])
-                return f"\nNOTE: Results will be filtered to facility_id IN ({id_list})."
+            valid_facs = [f for f in all_facs if f["facility_id"] == filters["facility_id"] or f["facility_name"] == filters["facility_id"]]
+            if valid_facs:
+                if len(valid_facs) == 1:
+                    return f"\nNOTE: The user has selected the facility '{valid_facs[0]['facility_name']}' in the UI filter."
+                names_list = ", ".join([f"'{f['facility_name']}'" for f in valid_facs])
+                return f"\nNOTE: The user has selected these facilities in the UI filter: {names_list}."
         
-
-        
-        valid_ids = []
+        valid_facs = []
         if filters.get("region_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"] or f["region_name"] == filters["region_id"]]
+            valid_facs = [f for f in all_facs if f["region_id"] == filters["region_id"] or f["region_name"] == filters["region_id"]]
         elif filters.get("customer_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["customer_id"] == filters["customer_id"]]
+            valid_facs = [f for f in all_facs if f["customer_id"] == filters["customer_id"]]
             
-        if valid_ids:
-            id_list = ", ".join([f"'{fid}'" for fid in valid_ids])
-            return f"\nNOTE: Results will be filtered to facility_id IN ({id_list})."
+        if valid_facs:
+            names_list = ", ".join([f"'{f['facility_name']}'" for f in valid_facs])
+            return f"\nNOTE: The user has selected these facilities in the UI filter: {names_list}."
         
         return ""
 

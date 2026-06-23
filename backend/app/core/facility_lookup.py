@@ -31,7 +31,11 @@ class FacilityLookup:
     def get(self, facility_id: str) -> dict | None:
         if facility_id is None:
             return None
-        return self._by_id.get(str(facility_id))
+        import pandas as pd
+        if pd.isna(facility_id):
+            return None
+        fid_str = str(int(facility_id)) if isinstance(facility_id, float) else str(facility_id)
+        return self._by_id.get(fid_str)
 
     def resolve_customer(self, customer_id) -> str:
         import pandas as pd

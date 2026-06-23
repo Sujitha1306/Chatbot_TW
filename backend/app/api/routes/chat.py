@@ -306,8 +306,10 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 fac = get_facility_lookup().get(req.filters.get("facility_id"))
                 facility_name = fac["facility_name"] if fac else None
             elif req.filters and req.filters.get("customer_id"):
-                # Rough fallback to just name the customer if specific facility isn't selected
-                facility_name = f"Customer ID {req.filters.get('customer_id')}"
+                cid = req.filters.get("customer_id")
+                from backend.app.core.facility_lookup import get_facility_lookup
+                cname = get_facility_lookup().resolve_customer(cid)
+                facility_name = f"Customer {cname}"
 
             summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
             prompt_logger = logging.getLogger("prompt_debugger")
