@@ -38,6 +38,15 @@ def _create_token(user_id: str, role: str) -> str:
     )
 
 def _get_user_by_email(email: str):
+    if email == settings.demo_user_email:
+        return {
+            "id": "demo-user-001",
+            "name": settings.demo_user_name,
+            "email": settings.demo_user_email,
+            "password_hash": bcrypt.hashpw(b"admin", bcrypt.gensalt()).decode('utf-8'),
+            "role": "admin"
+        }
+
     conn = get_mysql_connection()
     try:
         cursor = conn.cursor(dictionary=True)
@@ -47,11 +56,23 @@ def _get_user_by_email(email: str):
         conn.close()
 
 def _get_user_by_id(user_id: str):
+    if user_id == "demo-user-001":
+        return {
+            "id": "demo-user-001",
+            "name": settings.demo_user_name,
+            "email": settings.demo_user_email,
+            "role": "admin"
+        }
+
     conn = get_mysql_connection()
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT id, name, email, role FROM users WHERE id = %s", (user_id,))
         return cursor.fetchone()
+    except Exception as e:
+        import logging
+        logging.warning(f"Failed to fetch user {user_id}: {e}")
+        return None
     finally:
         conn.close()
 

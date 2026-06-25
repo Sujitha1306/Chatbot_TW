@@ -94,7 +94,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             # Pass only the prior history to the memory resolver, otherwise it thinks the current question is prior context
             prior_history_text = "\n".join([f"{m.role.upper()}: {m.content[:200]}" for m in prior_messages[-(3 * 2):]])
             try:
-                memory_scope = pipeline.resolve_memory_scope(req.question, prior_history_text, has_history)
+                memory_scope = await asyncio.to_thread(
+                    pipeline.resolve_memory_scope, req.question, prior_history_text, has_history
+                )
             except Exception as e:
                 logging.warning(f"resolve_memory_scope failed, defaulting to current_conversation: {e}")
                 memory_scope = {"scope": "current_conversation", "reasoning": "exception_fallback"}
@@ -112,7 +114,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 if not past_matches:
                     response_text = "I checked your past conversations but didn't find anything matching that — could you tell me more about what you're looking for?"
                 else:
-                    response_text = pipeline.generate_cross_conversation_summary(req.question, past_matches)
+                    response_text = await asyncio.to_thread(
+                        pipeline.generate_cross_conversation_summary, req.question, past_matches
+                    )
 
                 if past_matches:
                     yield _sse({"event": "cross_conversation_results", "matches": [
@@ -138,7 +142,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             # ── Stage 0: Routing — does this need data? ──
             try:
-                routing = pipeline.route_message(req.question, history=current_history)
+                routing = await asyncio.to_thread(
+                    pipeline.route_message, req.question, history=current_history
+                )
             except Exception as e:
                 logging.warning(f"route_message failed, defaulting to data_question: {e}")
                 routing = {"needs_data": True, "response": None, "reason": "router_exception_fallback"}
@@ -165,17 +171,23 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "session", "id": session_id})
 
             # ── Event 1: plan analysis (fast, ~0.5s) ──
-            plan = pipeline.plan_analysis(req.question, history=current_history, filters=req.filters)
+            plan = await asyncio.to_thread(
+                pipeline.plan_analysis, req.question, history=current_history, filters=req.filters
+            )
             yield _sse({"event": "intent", "domain": plan.get("data_domain", "porter"), "chart_type": plan.get("chart_type_hint", "auto")})
 
             # ── Event 1.5: Limitation Detection ──
             if plan.get("response_format") == "limitation":
-                limitation_response = pipeline.generate_limitation_response(req.question, plan)
+                limitation_response = await asyncio.to_thread(
+                    pipeline.generate_limitation_response, req.question, plan
+                )
                 yield _sse({"event": "summary_start"})
                 yield _sse({"event": "token", "text": limitation_response})
                 
                 # We can also generate followups here
-                followups = pipeline.generate_followups(req.question, plan)
+                followups = await asyncio.to_thread(
+                    pipeline.generate_followups, req.question, plan
+                )
                 if followups:
                     yield _sse({"event": "followups", "suggestions": followups})
                     
@@ -206,17 +218,23 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 })
 
                 yield _sse({"event": "summary_start"})
-                summary = pipeline.generate_synthesis_summary(effective_question, packaged, plan)
+                summary = await asyncio.to_thread(
+                    pipeline.generate_synthesis_summary, effective_question, packaged, plan
+                )
                 # Stream the summary quickly to the user
                 for word in summary.split(" "):
                     yield _sse({"event": "token", "text": word + " "})
                     await asyncio.sleep(0.01)
 
                 # ── Follow-ups and Suggestions ──
-                followups = pipeline.generate_followups(effective_question, plan)
+                followups = await asyncio.to_thread(
+                    pipeline.generate_followups, effective_question, plan
+                )
                 yield _sse({"event": "followups", "suggestions": followups})
                 
-                suggestions = pipeline.generate_suggestions(effective_question, summary, plan)
+                suggestions = await asyncio.to_thread(
+                    pipeline.generate_suggestions, effective_question, summary, plan
+                )
                 if suggestions:
                     suggestion_text = "\n\n💡 Suggestions:\n" + "\n".join(f"• {s}" for s in suggestions)
                     
@@ -239,7 +257,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 return
 
             # ── Event 2: SQL generated (~2–4s) ──
-            sql = pipeline.generate_sql(effective_question, plan, filters=req.filters, history=_store.get_recent_context(user_id, session_id))
+            sql = await asyncio.to_thread(
+                pipeline.generate_sql, effective_question, plan, filters=req.filters, history=_store.get_recent_context(user_id, session_id)
+            )
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
@@ -252,20 +272,21 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 df, success, error_msg = pipeline.db.execute_query_with_error(sql)
 
             if success and plan.get("comparison_needed") and len(df) <= 1:
-                sql = pipeline.fix_sql(
+                sql = await asyncio.to_thread(
+                    pipeline.fix_sql,
                     sql,
                     "This was planned as a comparison "
                     f"({plan.get('comparison_basis', '')}) but returned only 1 row. "
                     "Adjust GROUP BY / remove over-restrictive WHERE filters so "
                     "multiple rows are returned, one per item being compared."
                 )
-                df, success, error_msg = pipeline.db.execute_query_with_error(sql)
+                df, success, error_msg = await asyncio.to_thread(pipeline.db.execute_query_with_error, sql)
                 yield _sse({"event": "sql_corrected", "sql": sql})
 
             if not success:
                 # Self-correct once
-                sql = pipeline.fix_sql(sql, error_msg)
-                df, success, error_msg = pipeline.db.execute_query_with_error(sql)
+                sql = await asyncio.to_thread(pipeline.fix_sql, sql, error_msg)
+                df, success, error_msg = await asyncio.to_thread(pipeline.db.execute_query_with_error, sql)
                 yield _sse({"event": "sql_corrected", "sql": sql})
 
             if not success:
@@ -281,13 +302,13 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             # ── Event 4: Data ready ──
             # Build chart spec BEFORE data payload so synthetic columns (_period) are sent
-            chart_spec, df = build_chart_spec(df, plan)
+            chart_spec, df = await asyncio.to_thread(build_chart_spec, df, plan)
             
             import numpy as np
             import pandas as pd
             from backend.app.core.display_resolution import _resolve_display_names
             
-            display_payload_df = _resolve_display_names(df.head(500))
+            display_payload_df = await asyncio.to_thread(_resolve_display_names, df.head(500))
             data_payload = display_payload_df.replace({np.nan: None, pd.NaT: None}).to_dict("records")
             yield _sse({
                 "event": "data",
@@ -298,7 +319,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             # ── Event 5: Summary streamed token by token ──
             yield _sse({"event": "summary_start"})
-            coverage = pipeline.check_data_coverage(df, plan)
+            coverage = await asyncio.to_thread(pipeline.check_data_coverage, df, plan)
             
             from backend.app.core.facility_lookup import get_facility_lookup
             facility_name = None
@@ -339,11 +360,11 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "chart", "spec": chart_spec})
 
             # ── Event 7: Follow-up suggestions ──
-            followups = pipeline.generate_followups(effective_question, plan)
+            followups = await asyncio.to_thread(pipeline.generate_followups, effective_question, plan)
             yield _sse({"event": "followups", "suggestions": followups})
 
             # ── Event 7.5: Suggestions ──
-            suggestions = pipeline.generate_suggestions(effective_question, full_summary, plan)
+            suggestions = await asyncio.to_thread(pipeline.generate_suggestions, effective_question, full_summary, plan)
             if suggestions:
                 suggestion_text = "\n\n💡 Suggestions:\n" + "\n".join(f"• {s}" for s in suggestions)
                 
