@@ -26,12 +26,27 @@ class HybridConversationStore:
     # ---- WRITE PATH: MySQL always, Redis best-effort ----
 
     def create(self, user_id: str, first_question: str, conv_id: Optional[str] = None) -> Conversation:
-        conv = self._mysql.create(user_id, first_question, conv_id)  # MySQL FIRST, always
+        try:
+            conv = self._mysql.create(user_id, first_question, conv_id)  # MySQL FIRST, always
+        except Exception as e:
+            logger.warning(f"Failed to create conversation in MySQL (VPN lag?), relying on Redis: {e}")
+            # Create a fake conversation object to store in Redis
+            from datetime import datetime, timezone
+            import uuid
+            conv = Conversation(
+                id=conv_id or str(uuid.uuid4()),
+                user_id=user_id,
+                title=first_question[:50],
+                created_at=datetime.now(timezone.utc)
+            )
         self._cache_write_meta(conv)                                   # Redis best-effort
         return conv
 
     def add_message(self, user_id: str, conv_id: str, msg: Message) -> None:
-        self._mysql.add_message(user_id, conv_id, msg)                # MySQL FIRST, always
+        try:
+            self._mysql.add_message(user_id, conv_id, msg)                # MySQL FIRST, always
+        except Exception as e:
+            logger.warning(f"Failed to add message to MySQL (VPN lag?), relying on Redis: {e}")
         self._cache_append_message(conv_id, msg)                       # Redis best-effort
 
     def _cache_write_meta(self, conv: Conversation) -> None:
@@ -72,7 +87,11 @@ class HybridConversationStore:
                 logger.warning(f"Redis read failed, falling back to MySQL: {e}")
 
         # Cache miss
-        messages = self._mysql.get_messages(user_id, conv_id)
+        try:
+            messages = self._mysql.get_messages(user_id, conv_id)
+        except Exception as e:
+            logger.warning(f"Failed to get messages from MySQL (VPN lag?): {e}")
+            return []
 
         # Optional: warm the cache on a miss
         if self._redis is not None and messages:
@@ -90,17 +109,53 @@ class HybridConversationStore:
 
     def cleanup_old_conversations(self, user_id: str, days: int = 30):
         # We only really do this in MySQL, Redis is ephemeral/LRU anyway
-        self._mysql.cleanup_old_conversations(user_id, days)
+        try:
+            self._mysql.cleanup_old_conversations(user_id, days)
+        except Exception as e:
+            logger.warning(f"Failed to cleanup conversations in MySQL (VPN lag?): {e}")
 
     def get_user_recommendations(self, user_id: str) -> list[str]:
         # Pass-through to MySQL store where the complex SQL grouping lives
-        return self._mysql.get_user_recommendations(user_id)
+        try:
+            return self._mysql.get_user_recommendations(user_id)
+        except Exception as e:
+            logger.warning(f"Failed to get recommendations from MySQL (VPN lag?): {e}")
+            return []
 
     def list_conversations(self, user_id: str) -> List[Conversation]:
-        return self._mysql.list_conversations(user_id)
+        try:
+            return self._mysql.list_conversations(user_id)
+        except Exception as e:
+            logger.warning(f"Failed to list conversations from MySQL (VPN lag?), falling back to Redis: {e}")
+            if self._redis is None:
+                return []
+            try:
+                # Fetch recent conversation IDs from Redis
+                conv_ids = self._redis.zrevrange(f"user:{user_id}:recent", 0, -1)
+                conversations = []
+                for cid in conv_ids:
+                    cid_str = cid.decode('utf-8') if isinstance(cid, bytes) else cid
+                    meta = self._redis.hgetall(f"conv:{cid_str}:meta")
+                    if meta:
+                        from datetime import datetime
+                        # Convert bytes to strings if necessary
+                        title = meta.get(b'title') or meta.get('title', 'New Chat')
+                        if isinstance(title, bytes): title = title.decode('utf-8')
+                        created_str = meta.get(b'created_at') or meta.get('created_at')
+                        if isinstance(created_str, bytes): created_str = created_str.decode('utf-8')
+                        created_at = datetime.fromisoformat(created_str) if created_str else datetime.utcnow()
+                        conversations.append(Conversation(id=cid_str, user_id=user_id, title=title, created_at=created_at))
+                return conversations
+            except Exception as redis_e:
+                logger.warning(f"Redis list_conversations fallback failed: {redis_e}")
+                return []
 
     def delete(self, user_id: str, conv_id: str) -> bool:
-        result = self._mysql.delete(user_id, conv_id)
+        try:
+            result = self._mysql.delete(user_id, conv_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete conversation from MySQL (VPN lag?): {e}")
+            result = True
         if self._redis is not None:
             try:
                 self._redis.delete(f"conv:{conv_id}:meta", f"conv:{conv_id}:messages")
@@ -110,7 +165,11 @@ class HybridConversationStore:
         return result
 
     def truncate(self, user_id: str, conv_id: str, message_id: str) -> bool:
-        result = self._mysql.truncate(user_id, conv_id, message_id)
+        try:
+            result = self._mysql.truncate(user_id, conv_id, message_id)
+        except Exception as e:
+            logger.warning(f"Failed to truncate conversation in MySQL (VPN lag?): {e}")
+            result = True
         if self._redis is not None and result:
             try:
                 # Easiest way to handle cache invalidation is to delete the messages list
@@ -121,7 +180,11 @@ class HybridConversationStore:
         return result
 
     def rename(self, user_id: str, conv_id: str, new_title: str) -> bool:
-        result = self._mysql.rename(user_id, conv_id, new_title)
+        try:
+            result = self._mysql.rename(user_id, conv_id, new_title)
+        except Exception as e:
+            logger.warning(f"Failed to rename conversation in MySQL (VPN lag?): {e}")
+            result = True
         if self._redis is not None and result:
             try:
                 # Update title in redis meta hash
@@ -145,7 +208,11 @@ class HybridConversationStore:
                     return "\n".join(lines)
             except Exception as e:
                 logger.warning(f"Redis recent-context read failed, falling back to MySQL: {e}")
-        return self._mysql.get_recent_context(user_id, conv_id, max_turns)
+        try:
+            return self._mysql.get_recent_context(user_id, conv_id, max_turns)
+        except Exception as e:
+            logger.warning(f"Failed to get recent context from MySQL (VPN lag?): {e}")
+            return ""
 
     def session_exists(self, user_id: str, conv_id: str) -> bool:
         if self._redis is not None:
@@ -154,10 +221,18 @@ class HybridConversationStore:
                     return True
             except Exception as e:
                 logger.warning(f"Redis exists-check failed, falling back to MySQL: {e}")
-        return self._mysql.session_exists(user_id, conv_id)
+        try:
+            return self._mysql.session_exists(user_id, conv_id)
+        except Exception as e:
+            logger.warning(f"Failed to check session existence in MySQL (VPN lag?): {e}")
+            return False
 
     def search_past_conversations(self, user_id: str, search_terms: list[str], exclude_conv_id: str | None = None, max_results: int = 3) -> list[dict]:
-        return self._mysql.search_past_conversations(user_id, search_terms, exclude_conv_id, max_results)
+        try:
+            return self._mysql.search_past_conversations(user_id, search_terms, exclude_conv_id, max_results)
+        except Exception as e:
+            logger.warning(f"Failed to search past conversations in MySQL (VPN lag?): {e}")
+            return []
 
     @staticmethod
     def _message_to_json(msg: Message) -> str:

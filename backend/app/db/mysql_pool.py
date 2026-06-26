@@ -23,7 +23,8 @@ def get_mysql_pool():
                 "password": os.environ["MYSQL_PASSWORD"],
                 "database": os.environ.get("MYSQL_DB", "trackerwave_chat"),
                 "charset": "utf8mb4",
-                "collation": "utf8mb4_unicode_ci"
+                "collation": "utf8mb4_unicode_ci",
+                "connection_timeout": 20,
             }
             
             _mysql_pool = mysql.connector.pooling.MySQLConnectionPool(

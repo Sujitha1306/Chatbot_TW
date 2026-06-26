@@ -300,6 +300,15 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 yield _sse({"event": "error", "message": f"Query failed: {error_msg}", "sql": sql})
                 return
 
+            # ── Clean up data before charting ──
+            # Identify numeric columns that are likely measures
+            from backend.app.core.formatter import _is_dimension_column
+            measure_cols = [c for c in df.columns if not _is_dimension_column(c, df[c])]
+            if measure_cols:
+                # Drop rows where ALL measures are NaN (e.g. test accounts with no completed tasks)
+                # This prevents completely empty/broken charts with [-1, 4] axes
+                df = df.dropna(subset=measure_cols, how="all")
+
             # ── Event 4: Data ready ──
             # Build chart spec BEFORE data payload so synthetic columns (_period) are sent
             chart_spec, df = await asyncio.to_thread(build_chart_spec, df, plan)
@@ -309,6 +318,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             from backend.app.core.display_resolution import _resolve_display_names
             
             display_payload_df = await asyncio.to_thread(_resolve_display_names, df.head(500))
+            
             data_payload = display_payload_df.replace({np.nan: None, pd.NaT: None}).to_dict("records")
             yield _sse({
                 "event": "data",

@@ -381,8 +381,9 @@ class EnhancedResultFormatter:
 # regardless of their SQL data type
 DIMENSION_NAME_PATTERNS = [
     "year", "month", "day", "week", "quarter", "date", "period", "hour",
-    "facility_id", "facility_name", "region", "department",
+    "facility", "region", "department", "pool",
     "status", "category", "criticality", "name", "id",
+    "porter", "requester", "source", "destination"
 ]
 
 def _is_dimension_column(col_name: str, series: "pd.Series") -> bool:
