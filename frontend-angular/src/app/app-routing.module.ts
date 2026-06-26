@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/login/login.component';
 import { SignupComponent } from './features/auth/signup/signup.component';
 import { ChatLayoutComponent } from './features/chat/chat-layout/chat-layout.component';
@@ -6,7 +7,7 @@ import { ChatWelcomeComponent } from './features/chat/chat-welcome/chat-welcome.
 import { ChatThreadComponent } from './features/chat/chat-thread/chat-thread.component';
 import { AuthGuard } from './core/guards/auth.guard';
 
-export const routes: Routes = [
+const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'signup', component: SignupComponent },
   {
@@ -20,3 +21,9 @@ export const routes: Routes = [
   },
   { path: '', redirectTo: '/chat', pathMatch: 'full' },
 ];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }

@@ -4,9 +4,8 @@ import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-data-table',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './data-table.component.html',
+  styleUrls: ['./data-table.component.scss']
 })
 export class DataTableComponent implements OnInit {
   @Input() data!: Record<string, unknown>[];

@@ -3,23 +3,21 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChatService } from '../../../core/services/chat.service';
-import { LucideAngularModule } from 'lucide-angular';
 import { FacilityFilterComponent } from '../facility-filter/facility-filter.component';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat-welcome',
-  standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, FacilityFilterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-welcome.component.html',
+  styleUrls: ['./chat-welcome.component.scss']
 })
 export class ChatWelcomeComponent implements OnInit, OnDestroy {
   suggestions = [
-    { icon: 'bar-chart-2', title: 'Porter Performance',  subtitle: 'Show porter performance by facility',          query: 'Show porter performance by facility' },
-    { icon: 'line-chart',  title: 'Assets Dashboard',    subtitle: 'Display active assets by department',         query: 'Display active assets by department' },
-    { icon: 'clock',       title: 'TAT Analysis',        subtitle: 'Which porter had the minimum TAT last month?',query: 'Which porter had the minimum TAT last month?' },
-    { icon: 'shield',      title: 'Warranty Status',     subtitle: 'Which assets have warranty expiring next 30 days?', query: 'Which assets have warranty expiring in next 30 days?' },
+    { icon: 'bar_chart', title: 'Porter Performance',  subtitle: 'Show porter performance by facility',          query: 'Show porter performance by facility' },
+    { icon: 'show_chart',  title: 'Assets Dashboard',    subtitle: 'Display active assets by department',         query: 'Display active assets by department' },
+    { icon: 'schedule',       title: 'TAT Analysis',        subtitle: 'Which porter had the minimum TAT last month?',query: 'Which porter had the minimum TAT last month?' },
+    { icon: 'security',      title: 'Warranty Status',     subtitle: 'Which assets have warranty expiring next 30 days?', query: 'Which assets have warranty expiring in next 30 days?' },
   ];
   inputValue = '';
   private sub?: Subscription;

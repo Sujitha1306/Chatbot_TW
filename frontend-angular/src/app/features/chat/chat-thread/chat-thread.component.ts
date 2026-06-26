@@ -12,10 +12,9 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat-thread',
-  standalone: true,
-  imports: [CommonModule, FormsModule, UserMessageComponent, AssistantMessageComponent, FacilityFilterComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-thread.component.html',
+  styleUrls: ['./chat-thread.component.scss']
 })
 export class ChatThreadComponent implements OnInit, OnDestroy {
   @ViewChild('scrollAnchor') scrollAnchor!: ElementRef;

@@ -47,6 +47,9 @@ export class ChatService {
   }
 
   selectConversation(id: string): void {
+    if (this.activeConvId !== id) {
+      this.messagesSubject.next([]); // Clear messages immediately for instant visual feedback
+    }
     this.activeConvId = id;
     this.loadConversationMessages(id);
   }

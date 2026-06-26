@@ -7,9 +7,8 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-facility-filter',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './facility-filter.component.html',
+  styleUrls: ['./facility-filter.component.scss']
 })
 export class FacilityFilterComponent implements OnInit, OnDestroy {
   open = false;

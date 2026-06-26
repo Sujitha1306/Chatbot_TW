@@ -4,19 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ChartSpec, ChartType } from '../../../shared/models/chat.model';
 import { ChartRendererComponent } from '../chart-renderer/chart-renderer.component';
 import { DataTableComponent } from '../data-table/data-table.component';
-import { LucideAngularModule, BarChart2, PieChart, LineChart, ScatterChart } from 'lucide-angular';
 
 @Component({
   selector: 'app-chart-selector',
-  standalone: true,
-  imports: [
-    CommonModule, 
-    FormsModule, 
-    ChartRendererComponent,
-    DataTableComponent,
-    LucideAngularModule
-  ],
   templateUrl: './chart-selector.component.html',
+  styleUrls: ['./chart-selector.component.scss']
 })
 export class ChartSelectorComponent implements OnInit, OnChanges {
   @Input() spec!: ChartSpec;
@@ -68,6 +60,22 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
       this.series = rec.series;
       this.sortXAs = rec.sort_x_as;
     }
+  }
+
+  getMaterialIcon(iconName: string): string {
+    if (!iconName) return 'bar_chart';
+    // Map common backend-generated Lucide names to Material Design icons
+    const map: Record<string, string> = {
+      'bar-chart': 'bar_chart',
+      'bar-chart-2': 'bar_chart',
+      'pie-chart': 'pie_chart',
+      'line-chart': 'show_chart',
+      'scatter-chart': 'scatter_plot',
+      'table': 'table_chart',
+      'activity': 'show_chart',
+      'trending-up': 'trending_up',
+    };
+    return map[iconName] || iconName.replace(/-/g, '_');
   }
 
   get xAxisOptions(): string[] {

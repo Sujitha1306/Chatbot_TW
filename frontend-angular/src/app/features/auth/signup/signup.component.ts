@@ -6,8 +6,6 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-signup',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './signup.component.html',
 })
 export class SignupComponent {

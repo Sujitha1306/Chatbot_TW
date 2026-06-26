@@ -1,27 +1,26 @@
-<div class="relative">
+<div class="filter-container">
   <button
     (click)="open = !open"
-    class="flex items-center gap-1.5 text-xs border border-gray-200 rounded-full px-3 py-1.5 hover:border-brand-primary transition"
-    [class.bg-brand-surface]="hasAnyFilter"
-    [class.border-brand-primary]="hasAnyFilter"
+    class="filter-toggle-btn"
+    [class.active]="hasAnyFilter"
   >
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [class.text-gray-500]="!hasAnyFilter" [class.text-brand-primary]="hasAnyFilter">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="filter-icon">
       <path d="M12 7v4"/>
       <path d="M14 21v-3a2 2 0 0 0-4 0v3"/>
       <path d="M14 9h-4"/>
       <path d="M18 11h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"/>
       <path d="M18 21V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16"/>
     </svg>
-    <span [class.text-gray-500]="!hasAnyFilter" [class.text-brand-navy]="hasAnyFilter" [class.font-medium]="hasAnyFilter" class="max-w-[180px] truncate">
+    <span class="filter-label">
       {{ filterLabel }}
     </span>
-    <span class="text-gray-400">▾</span>
+    <span class="filter-chevron">▾</span>
   </button>
 
-  <div *ngIf="open" (click)="closeInnerDropdowns()" class="absolute bottom-full mb-2 left-0 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-20 flex flex-col p-3 gap-3">
+  <div *ngIf="open" (click)="closeInnerDropdowns()" class="filter-dropdown-menu">
     
-    <div class="relative" (click)="$event.stopPropagation()">
-      <label class="block text-xs font-medium text-gray-700 mb-1">Customer</label>
+    <div class="filter-field" (click)="$event.stopPropagation()">
+      <label class="field-label">Customer</label>
       <input 
         type="text" 
         [(ngModel)]="customerSearch" 
@@ -29,20 +28,20 @@
         (click)="customerOpen = true; regionOpen = false; facilityOpen = false"
         placeholder="All Customers"
         [disabled]="!customers.length" 
-        class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400"
+        class="field-input"
       >
       
-      <div *ngIf="customerOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-30">
-        <div class="max-h-40 overflow-y-auto py-1">
-          <div class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer" (click)="selectCustomer(null, '')">All Customers</div>
-          <div *ngFor="let c of filteredCustomers" class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer truncate" (click)="selectCustomer(c.id, c.name)">{{ c.name }}</div>
-          <div *ngIf="filteredCustomers.length === 0" class="px-3 py-1.5 text-xs text-gray-400">No matches found</div>
+      <div *ngIf="customerOpen" class="autocomplete-dropdown">
+        <div class="autocomplete-list">
+          <div class="autocomplete-item" (click)="selectCustomer(null, '')">All Customers</div>
+          <div *ngFor="let c of filteredCustomers" class="autocomplete-item" (click)="selectCustomer(c.id, c.name)">{{ c.name }}</div>
+          <div *ngIf="filteredCustomers.length === 0" class="autocomplete-empty">No matches found</div>
         </div>
       </div>
     </div>
     
-    <div class="relative" (click)="$event.stopPropagation()">
-      <label class="block text-xs font-medium text-gray-700 mb-1">Region</label>
+    <div class="filter-field" (click)="$event.stopPropagation()">
+      <label class="field-label">Region</label>
       <input 
         type="text" 
         [(ngModel)]="regionSearch" 
@@ -50,20 +49,20 @@
         (click)="regionOpen = true; customerOpen = false; facilityOpen = false"
         placeholder="All Regions"
         [disabled]="!regions.length" 
-        class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400"
+        class="field-input"
       >
       
-      <div *ngIf="regionOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-30">
-        <div class="max-h-40 overflow-y-auto py-1">
-          <div class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer" (click)="selectRegion(null, '')">All Regions</div>
-          <div *ngFor="let r of filteredRegions" class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer truncate" (click)="selectRegion(r.id, r.name)">{{ r.name }}</div>
-          <div *ngIf="filteredRegions.length === 0" class="px-3 py-1.5 text-xs text-gray-400">No matches found</div>
+      <div *ngIf="regionOpen" class="autocomplete-dropdown">
+        <div class="autocomplete-list">
+          <div class="autocomplete-item" (click)="selectRegion(null, '')">All Regions</div>
+          <div *ngFor="let r of filteredRegions" class="autocomplete-item" (click)="selectRegion(r.id, r.name)">{{ r.name }}</div>
+          <div *ngIf="filteredRegions.length === 0" class="autocomplete-empty">No matches found</div>
         </div>
       </div>
     </div>
     
-    <div class="relative" (click)="$event.stopPropagation()">
-      <label class="block text-xs font-medium text-gray-700 mb-1">Facility</label>
+    <div class="filter-field" (click)="$event.stopPropagation()">
+      <label class="field-label">Facility</label>
       <input 
         type="text" 
         [(ngModel)]="facilitySearch" 
@@ -71,19 +70,19 @@
         (click)="facilityOpen = true; customerOpen = false; regionOpen = false"
         placeholder="All Facilities"
         [disabled]="!facilities.length" 
-        class="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white outline-none focus:border-brand-primary disabled:bg-gray-50 disabled:text-gray-400"
+        class="field-input"
       >
       
-      <div *ngIf="facilityOpen" class="absolute top-full left-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg z-30">
-        <div class="max-h-40 overflow-y-auto py-1">
-          <div class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer" (click)="selectFacility(null, '')">All Facilities</div>
-          <div *ngFor="let f of filteredFacilities" class="px-3 py-1.5 text-xs hover:bg-brand-surface cursor-pointer truncate" (click)="selectFacility(f.id, f.name)">{{ f.name }}</div>
-          <div *ngIf="filteredFacilities.length === 0" class="px-3 py-1.5 text-xs text-gray-400">No matches found</div>
+      <div *ngIf="facilityOpen" class="autocomplete-dropdown">
+        <div class="autocomplete-list">
+          <div class="autocomplete-item" (click)="selectFacility(null, '')">All Facilities</div>
+          <div *ngFor="let f of filteredFacilities" class="autocomplete-item" (click)="selectFacility(f.id, f.name)">{{ f.name }}</div>
+          <div *ngIf="filteredFacilities.length === 0" class="autocomplete-empty">No matches found</div>
         </div>
       </div>
     </div>
     
-    <button (click)="clear()" *ngIf="hasAnyFilter" class="mt-1 w-full text-center px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 border border-red-100 rounded transition">
+    <button (click)="clear()" *ngIf="hasAnyFilter" class="btn-clear-filters">
       Clear Filters
     </button>
   </div>

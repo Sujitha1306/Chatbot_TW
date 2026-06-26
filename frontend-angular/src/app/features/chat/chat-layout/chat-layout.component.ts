@@ -5,8 +5,6 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-chat-layout',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent],
   templateUrl: './chat-layout.component.html',
 })
 export class ChatLayoutComponent {

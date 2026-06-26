@@ -10,10 +10,9 @@ import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
+  styleUrls: ['./sidebar.component.scss']
 })
 export class SidebarComponent implements OnInit {
   @Input() collapsed = false;
@@ -148,7 +147,6 @@ export class SidebarComponent implements OnInit {
   }
 
   selectConv(id: string) {
-    this.chat.loadConversationMessages(id);
     this.router.navigate(['/chat', id]);
   }
 

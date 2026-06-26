@@ -18,8 +18,6 @@ const BASE_LAYOUT: any = {
 
 @Component({
   selector: 'app-chart-renderer',
-  standalone: true,
-  imports: [CommonModule, PlotlyModule],
   templateUrl: './chart-renderer.component.html',
 })
 export class ChartRendererComponent implements OnChanges {
@@ -38,7 +36,31 @@ export class ChartRendererComponent implements OnChanges {
   private get isHorizontalBar(): boolean {
     if (this.type !== 'bar') return false;
     if (this.series && this.series.length > 1) return false;
-    return new Set(this.data.map(d => d[this.xCol])).size > 12;
+    
+    // Use robust key extraction
+    const xKey = this.getRealKey(this.xCol);
+    if (!xKey) return false;
+    
+    return new Set(this.data.map(d => d[xKey])).size > 12;
+  }
+
+  private getRealKey(col: string): string {
+    if (!this.data || this.data.length === 0 || !col) return col;
+    const keys = Object.keys(this.data[0]);
+    if (keys.includes(col)) return col;
+    
+    // Try fuzzy match: normalize both strings
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normCol = normalize(col);
+    const match = keys.find(k => normalize(k) === normCol);
+    
+    // Also try checking if the key contains the column name or vice versa
+    if (!match) {
+      const partialMatch = keys.find(k => normalize(k).includes(normCol) || normCol.includes(normalize(k)));
+      return partialMatch || col;
+    }
+    
+    return match || col;
   }
 
   ngOnChanges() {
@@ -51,7 +73,6 @@ export class ChartRendererComponent implements OnChanges {
       const { xaxis, yaxis, ...pieLayout } = BASE_LAYOUT as any;
       this.layout = {
         ...pieLayout,
-        title: { text: `${this.formatLabel(this.yCol)} by ${this.formatLabel(this.xCol)}`, font: { size: 13 } },
         showlegend: true,
       };
       return;
@@ -122,23 +143,26 @@ export class ChartRendererComponent implements OnChanges {
   }
 
   private getSortedData(): Record<string, unknown>[] {
-    const sortBy = this.sortXBy || this.spec?.recommendations?.find((r: any) => r.type === this.type)?.sort_x_by;
+    const sortByRaw = this.sortXBy || this.spec?.recommendations?.find((r: any) => r.type === this.type)?.sort_x_by;
     let sorted = [...this.data];
+    
+    const xKey = this.getRealKey(this.xCol);
 
-    if (sortBy) {
-      sorted.sort((a, b) => Number(a[sortBy]) - Number(b[sortBy]));
+    if (sortByRaw) {
+      const sortByKey = this.getRealKey(sortByRaw);
+      sorted.sort((a, b) => Number(a[sortByKey]) - Number(b[sortByKey]));
       return sorted;
     } 
 
     if (this.type === 'pie') return sorted;
 
-    const sortAs = this.sortXAs || this.guessDataType(sorted, this.xCol);
+    const sortAs = this.sortXAs || this.guessDataType(sorted, xKey);
     if (sortAs === 'date') {
-      sorted.sort((a, b) => new Date(String(a[this.xCol])).getTime() - new Date(String(b[this.xCol])).getTime());
+      sorted.sort((a, b) => new Date(String(a[xKey])).getTime() - new Date(String(b[xKey])).getTime());
     } else if (sortAs === 'numeric') {
-      sorted.sort((a, b) => Number(a[this.xCol]) - Number(b[this.xCol]));
+      sorted.sort((a, b) => Number(a[xKey]) - Number(b[xKey]));
     } else {
-      sorted.sort((a, b) => String(a[this.xCol]).localeCompare(String(b[this.xCol])));
+      sorted.sort((a, b) => String(a[xKey]).localeCompare(String(b[xKey])));
     }
     
     return sorted;
@@ -166,11 +190,13 @@ export class ChartRendererComponent implements OnChanges {
     }
 
     const sorted = this.getSortedData();
+    const xKey = this.getRealKey(this.xCol);
+    const yKey = this.getRealKey(this.yCol);
 
     // Map labels, but for scatter we keep raw values (so plotly scales numeric axes)
-    const xLabels = this.type === 'scatter' ? sorted.map((d: any) => d[this.xCol]) : sorted.map((d: any) => String(d[this.xCol]));
-    const y = sorted.map((d: any) => Number(d[this.yCol]));
-    const x = this.type === 'scatter' ? sorted.map((d: any) => d[this.xCol]) : xLabels;
+    const xLabels = this.type === 'scatter' ? sorted.map((d: any) => d[xKey]) : sorted.map((d: any) => String(d[xKey]));
+    const y = sorted.map((d: any) => Number(d[yKey]));
+    const x = this.type === 'scatter' ? sorted.map((d: any) => d[xKey]) : xLabels;
 
     switch (this.type) {
       case 'bar': {
@@ -191,8 +217,8 @@ export class ChartRendererComponent implements OnChanges {
       case 'line': {
         return [{
           type: 'scatter', mode: 'lines+markers',
-          x: sorted.map(d => d[this.xCol]),
-          y: sorted.map(d => d[this.yCol]),
+          x: sorted.map(d => d[xKey]),
+          y: sorted.map(d => Number(d[yKey])),
           line: { color: BRAND_COLORS[0] },
           connectgaps: false,
           name: this.formatLabel(this.yCol),
@@ -207,35 +233,42 @@ export class ChartRendererComponent implements OnChanges {
 
   private buildMultiSeriesTrace(): any[] {
     const sorted = this.getSortedData();
-    const x = sorted.map((d: any) => String(d[this.xCol]));
+    const xKey = this.getRealKey(this.xCol);
+    const x = sorted.map((d: any) => String(d[xKey]));
 
-    return this.series!.map((col, i) => ({
-      type: this.type === 'line' ? 'scatter' : 'bar',
-      mode: this.type === 'line' ? 'lines+markers' : undefined,
-      x,
-      y: sorted.map((d: any) => Number(d[col])),
-      name: this.formatLabel(col),
-      marker: { color: BRAND_COLORS[i % BRAND_COLORS.length] },
-      line: this.type === 'line' ? { color: BRAND_COLORS[i % BRAND_COLORS.length] } : undefined,
-    }));
+    return this.series!.map((col, i) => {
+      const cKey = this.getRealKey(col);
+      return {
+        type: this.type === 'line' ? 'scatter' : 'bar',
+        mode: this.type === 'line' ? 'lines+markers' : undefined,
+        x,
+        y: sorted.map((d: any) => Number(d[cKey])),
+        name: this.formatLabel(col),
+        marker: { color: BRAND_COLORS[i % BRAND_COLORS.length] },
+        line: this.type === 'line' ? { color: BRAND_COLORS[i % BRAND_COLORS.length] } : undefined,
+      };
+    });
   }
 
   private topNWithOther(n: number): { labels: any[]; values: any[] } {
     if (!this.data?.length || !this.xCol || !this.yCol) {
       return { labels: [], values: [] };
     }
-    if (!(this.xCol in this.data[0]) || !(this.yCol in this.data[0])) {
-      console.warn(`Pie chart: xCol=${this.xCol} or yCol=${this.yCol} not found in data`, this.data[0]);
+    
+    const xKey = this.getRealKey(this.xCol);
+    let yKey = this.yCol ? this.getRealKey(this.yCol) : '';
+
+    if (!(xKey in this.data[0])) {
+      console.warn(`Pie chart: xCol=${this.xCol} not found in data`, this.data[0]);
       return { labels: [], values: [] };
     }
 
     // If yCol is not defined for pie, fallback or return empty
-    if (!this.yCol) {
+    if (!yKey || !(yKey in this.data[0])) {
       // In pie charts, sometimes only xCol (category) is needed if we just count them
-      // But the spec assumes yCol has the metric. If no yCol, let's just count frequencies of xCol
       const counts: Record<string, number> = {};
       for (const d of this.data) {
-        const val = String(d[this.xCol]);
+        const val = String(d[xKey]);
         counts[val] = (counts[val] || 0) + 1;
       }
       const sortedFreq = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -248,12 +281,12 @@ export class ChartRendererComponent implements OnChanges {
       return { labels: labelsFreq, values: valuesFreq };
     }
 
-    const sorted = [...this.data].sort((a, b) => Number(b[this.yCol]) - Number(a[this.yCol]));
+    const sorted = [...this.data].sort((a, b) => Number(b[yKey]) - Number(a[yKey]));
     const top = sorted.slice(0, n);
     const rest = sorted.slice(n);
-    const otherSum = rest.reduce((s, d) => s + Number(d[this.yCol] || 0), 0);
-    const labels = top.map(d => d[this.xCol]);
-    const values = top.map(d => Number(d[this.yCol]));
+    const otherSum = rest.reduce((s, d) => s + Number(d[yKey] || 0), 0);
+    const labels = top.map(d => String(d[xKey]));
+    const values = top.map(d => Number(d[yKey]));
     if (rest.length) { labels.push('Other'); values.push(otherSum); }
     return { labels, values };
   }

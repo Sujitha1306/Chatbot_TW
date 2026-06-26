@@ -1,95 +1,76 @@
-<div class="flex gap-3">
+<div class="message-row">
   <!-- TW Avatar -->
-  <div class="w-8 h-8 rounded-xl bg-brand-navy text-white flex items-center
-              justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-    TW
-  </div>
+  <div class="avatar-tw">TW</div>
 
-  <div class="flex-1 max-w-2xl min-w-0">
+  <div class="message-content">
 
     <!-- Typing indicator -->
-    <div *ngIf="message.status === 'pending'" class="flex gap-1 py-2 items-center">
-      <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce"></span>
-      <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:100ms]"></span>
-      <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce [animation-delay:200ms]"></span>
+    <div *ngIf="message.status === 'pending'" class="typing-indicator">
+      <span></span><span></span><span></span>
     </div>
 
     <!-- Status badge and Dropdown menu -->
-    <div *ngIf="message.domain && message.domain !== 'conversational'" class="flex items-center gap-2 mb-2">
-      <div class="inline-flex items-center gap-1.5 bg-brand-surface text-brand-navy
-                  text-xs px-3 py-1 rounded-full font-medium">
-        <lucide-icon name="activity" class="w-3 h-3"></lucide-icon>
+    <div *ngIf="message.domain && message.domain !== 'conversational'" class="badge-row">
+      <div class="domain-badge">
+        <mat-icon>timeline</mat-icon>
         <span>{{ message.domain | titlecase }} Analytics</span>
       </div>
 
-      <div class="relative" *ngIf="message.status === 'complete' && (message.data || message.sql || message.displaySections)">
-        <button (click)="showMenu = !showMenu"
-                class="hover:bg-gray-100 rounded-full p-1 text-gray-500 transition-colors focus:outline-none">
-          <lucide-icon name="more-vertical" class="w-4 h-4"></lucide-icon>
+      <div class="menu-container" *ngIf="message.status === 'complete' && (message.data || message.sql || message.displaySections)">
+        <button (click)="showMenu = !showMenu" class="icon-button">
+          <mat-icon>more_vert</mat-icon>
         </button>
         
-        <div *ngIf="showMenu" class="absolute left-0 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-lg py-1 z-50 min-w-[120px]">
-          <button *ngIf="message.data || message.displaySections"
-                  (click)="showData = !showData; showMenu = false"
-                  class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center justify-between">
-             View Data
-             <lucide-icon *ngIf="showData" name="check" class="w-3 h-3"></lucide-icon>
+        <div *ngIf="showMenu" class="dropdown-menu">
+          <button *ngIf="message.data || message.displaySections" (click)="showData = !showData; showMenu = false" class="menu-item">
+             View Data <mat-icon *ngIf="showData">check</mat-icon>
           </button>
-          <button *ngIf="message.sql"
-                  (click)="showSql = !showSql; showMenu = false"
-                  class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex items-center justify-between">
-             View SQL
-             <lucide-icon *ngIf="showSql" name="check" class="w-3 h-3"></lucide-icon>
+          <button *ngIf="message.sql" (click)="showSql = !showSql; showMenu = false" class="menu-item">
+             View SQL <mat-icon *ngIf="showSql">check</mat-icon>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Data and SQL Panels (moved ABOVE summary) -->
+    <!-- Data and SQL Panels -->
     <app-data-table *ngIf="showData && message.data"
       [data]="message.data" [numericColumns]="message.chartSpec?.columns?.numeric || []"></app-data-table>
 
     <ng-container *ngIf="showData && message.displaySections">
-      <div *ngFor="let section of message.displaySections" class="mb-3">
-        <div class="text-xs font-medium text-gray-500 mb-1">{{ section.label }}</div>
+      <div *ngFor="let section of message.displaySections" class="data-section">
+        <div class="section-label">{{ section.label }}</div>
         <app-data-table [data]="section.data" [numericColumns]="[]"></app-data-table>
       </div>
     </ng-container>
 
-    <app-sql-panel *ngIf="showSql && message.sql" [sql]="message.sql" class="mb-3 block"></app-sql-panel>
+    <app-sql-panel *ngIf="showSql && message.sql" [sql]="message.sql" class="sql-panel"></app-sql-panel>
 
     <!-- Streaming summary text -->
-    <p *ngIf="message.content"
-       class="text-sm text-gray-800 leading-relaxed mb-3 whitespace-pre-wrap">
+    <p *ngIf="message.content" class="message-text">
       {{ message.content }}
     </p>
 
-
-
     <!-- Cross conversation references -->
-    <div *ngIf="message.crossConversationRefs?.length" class="flex flex-wrap gap-2 mb-3">
-      <span class="text-xs text-gray-400 mt-0.5">📂 Found in:</span>
+    <div *ngIf="message.crossConversationRefs?.length" class="refs-row">
+      <span class="refs-label">📂 Found in:</span>
       <a *ngFor="let ref of message.crossConversationRefs"
-         (click)="chat.selectConversation(ref.conversation_id)"
-         class="text-xs text-brand-primary underline cursor-pointer hover:text-brand-navy transition-colors">
+         (click)="chat.selectConversation(ref.conversation_id)" class="ref-link">
         {{ ref.title }}
       </a>
     </div>
 
     <!-- Panel toggle buttons -->
-    <div *ngIf="message.status === 'complete' && message.chartSpec && !message.chartSpec.single_value && hasChart" class="flex flex-wrap gap-2 mb-3">
-      <button (click)="showChart = !showChart"
-              class="flex items-center gap-1 border border-gray-200 rounded-full px-3 py-1 text-xs
-                     hover:border-brand-primary hover:text-brand-primary transition">
-        <lucide-icon name="bar-chart-2" class="w-3.5 h-3.5"></lucide-icon> Chart {{ showChart ? '▴' : '▾' }}
+    <div *ngIf="message.status === 'complete' && message.chartSpec && !message.chartSpec.single_value && hasChart" class="chart-toggle-row">
+      <button (click)="showChart = !showChart" class="chart-toggle-btn">
+        <mat-icon>bar_chart</mat-icon> Chart {{ showChart ? '▴' : '▾' }}
       </button>
     </div>
 
     <!-- Visualization panels -->
     <ng-container *ngIf="message.chartSpec as spec">
-      <div *ngIf="spec.single_value" class="text-center py-6 border border-gray-100 bg-white rounded-xl shadow-sm mb-3">
-        <div class="text-4xl font-bold text-brand-navy">{{ message.data?.[0]?.[spec.columns.numeric[0] || ''] }}</div>
-        <div class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ spec.columns.numeric[0] || '' | titlecase }}</div>
+      <div *ngIf="spec.single_value" class="single-value-card">
+        <div class="value">{{ message.data?.[0]?.[spec.columns.numeric[0] || ''] }}</div>
+        <div class="label">{{ spec.columns.numeric[0] || '' | titlecase }}</div>
       </div>
     </ng-container>
 
@@ -97,23 +78,17 @@
       [spec]="message.chartSpec" [data]="message.data"></app-chart-selector>
 
     <!-- Follow-up chips -->
-    <div *ngIf="message.followups?.length" class="mt-4">
-      <div class="flex items-center gap-1 text-xs text-gray-400 mb-2 font-medium">
-        <lucide-icon name="lightbulb" class="w-3.5 h-3.5"></lucide-icon> Try:
-      </div>
-      <div class="flex flex-col items-start gap-2">
-        <button *ngFor="let f of message.followups"
-                (click)="followupClick.emit(f)"
-                class="text-left text-xs bg-brand-surface text-brand-navy border border-brand-primary/20
-                       rounded-full px-3 py-1.5 hover:bg-brand-primary/10 transition">
+    <div *ngIf="message.followups?.length" class="followups-container">
+      <div class="followups-label"><mat-icon>lightbulb</mat-icon> Try:</div>
+      <div class="followups-list">
+        <button *ngFor="let f of message.followups" (click)="followupClick.emit(f)" class="followup-chip">
           {{ f }}
         </button>
       </div>
     </div>
 
     <!-- Error state -->
-    <p *ngIf="message.status === 'error'"
-       class="text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-2">
+    <p *ngIf="message.status === 'error'" class="error-msg">
       {{ message.content }}
     </p>
   </div>

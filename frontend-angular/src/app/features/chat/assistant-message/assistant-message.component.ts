@@ -6,14 +6,13 @@ import { DataTableComponent } from '../data-table/data-table.component';
 import { ChartSelectorComponent } from '../chart-selector/chart-selector.component';
 import { ExportService } from '../../../core/services/export.service';
 import { ChatService } from '../../../core/services/chat.service';
-import { LucideAngularModule } from 'lucide-angular';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-assistant-message',
-  standalone: true,
-  imports: [CommonModule, SqlPanelComponent, DataTableComponent, ChartSelectorComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './assistant-message.component.html',
+  styleUrls: ['./assistant-message.component.scss']
 })
 export class AssistantMessageComponent implements OnChanges {
   @Input() message!: ChatMessage;
