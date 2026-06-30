@@ -169,41 +169,28 @@ RECENT CONTEXT: {history or "none"}
 
 Classify this message:
 
-CATEGORY "data_question": Anything that requires checking data to
-answer correctly — this now EXPLICITLY INCLUDES:
+CATEGORY "data_question": Anything that requires checking the database
+or performing a deep memory search to answer correctly:
 - Hospital operations data (porter requests, assets, facilities, performance)
 - ANYTHING asking the assistant to recall information about the USER
-  or about PRIOR CONVERSATION CONTENT — e.g. "do you remember my name",
-  "what did I tell you earlier", "have I asked about this before",
-  "what's my name", "do you know anything about me"
-  These require an ACTUAL memory check (current conversation history
-  or past conversation search) before answering — NEVER answer these
-  directly from this router with an assumption about what memory
-  contains or doesn't contain.
+  or about PRIOR CONVERSATIONS where the answer is NOT already visible
+  in the RECENT CONTEXT above. If they ask "what is my name" and it's
+  NOT in the recent context, you MUST classify as data_question so the
+  system can search past conversations.
 
-CATEGORY "conversational": ONLY true chitchat with NO checkable
-factual content (except statements sharing personal details):
-- Greetings (hi, hello, hey) with no question attached
-- Thanks/closings (thanks, bye, that's helpful)
-- STATEMENTS sharing personal information ("my name is tw", "I am a manager")
-  — you do not need to "look these up", you just acknowledge them.
-- GENERIC capability questions with NO personal/memory component:
-  "what can you do", "what data do you have access to", "how does
-  this work" — these ask about the ASSISTANT'S GENERAL CAPABILITIES,
-  not about specific remembered facts.
+CATEGORY "conversational": True chitchat, acknowledgments, OR questions
+that can be fully answered using ONLY the RECENT CONTEXT provided above:
+- Greetings, thanks, closings
+- Statements sharing personal information ("my name is tw") — just acknowledge them.
+- Questions about the user ("what is my name?", "do you remember what I just said?")
+  ONLY IF the answer is explicitly visible in the RECENT CONTEXT.
+- Generic capability questions ("what can you do").
 
-CRITICAL DISTINCTION — these look similar but are DIFFERENT categories:
-- "what can you do" → conversational (general capability question)
-- "do you remember my name" → data_question (requires an actual memory
-  check — this is NOT the same as a general capability question, even
-  though both use "do you" phrasing)
-- "how does this work" → conversational (general, about the product)
-- "do you remember what I asked before" → data_question (requires
-  checking actual conversation history)
-
-When in doubt between these two categories, choose "data_question" —
-it is ALWAYS safer to check memory and find nothing than to assume
-nothing exists and answer confidently wrong.
+CRITICAL DISTINCTION for Memory Questions:
+- If user asks "what is my name" and the RECENT CONTEXT shows they just told you,
+  classify as "conversational" and reply "Your name is [Name]!".
+- If user asks "what is my name" and the RECENT CONTEXT does NOT show it,
+  classify as "data_question" (reply=""). The system will search past chats.
 
 Return JSON:
 {{
@@ -542,27 +529,13 @@ CURRENT CONVERSATION HISTORY (if any):
 Determine where the answer to any implicit reference in this message
 should come from. Think in this STRICT priority order:
 
-PRIORITY 1 — "current_conversation": The message references something
-("that", "the same X", "their performance", "what about last month",
-"individual breakdown") that is ALREADY ESTABLISHED in the CURRENT
-CONVERSATION HISTORY shown above. This takes priority over EVERYTHING
-ELSE — if the current conversation could plausibly contain the answer,
-choose this, even if the message ALSO sounds like it could reference
-a "previous chat".
+PRIORITY 1 — "current_conversation": The message asks a follow-up question where the ACTUAL ANSWER or necessary data context is ALREADY PRESENT in the CURRENT CONVERSATION HISTORY shown above. (e.g., if they ask "what is my name", you ONLY choose this if their name is literally stated in the text above).
 
-PRIORITY 2 — "other_conversation": The message explicitly OR implicitly references
-a DIFFERENT, SEPARATE conversation or past knowledge about the user ("in my previous chat",
-"what's my name", "do you know who I am", "did we discuss this before") AND the current
-conversation's history does NOT already contain relevant context for it.
+PRIORITY 2 — "other_conversation": The message asks for information about the user or past events ("what's my name", "do you know who I am", "did we discuss this") AND the actual answer is NOT present in the current conversation history. You MUST choose this to trigger a database search.
 
 PRIORITY 3 — "none": Fresh question, no reference to resolve at all.
 
-CRITICAL: Only choose "other_conversation" when you are CONFIDENT the
-current conversation's history (shown above) does NOT already answer
-the implicit reference. If in doubt, prefer "current_conversation" —
-checking the current context first is always safe; jumping to a cross-
-conversation search when the answer was already nearby is the bug we're
-fixing.
+CRITICAL: If the user asks a memory question ("what is my name") and the current history ONLY shows a previous failed search ("I checked your past conversations..."), the answer is NOT there. You MUST choose "other_conversation" so the system can try searching again with different keywords.
 
 Return JSON:
 {{

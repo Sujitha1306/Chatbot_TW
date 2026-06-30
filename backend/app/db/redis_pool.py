@@ -21,7 +21,8 @@ def get_redis_client():
         _client = redis.from_url(
             os.environ.get("REDIS_URL", "redis://localhost:6379/0"),
             decode_responses=True,
-            socket_connect_timeout=2,  # fail fast, don't hang app startup
+            socket_connect_timeout=1,  # fail fast on connect
+            socket_timeout=0.5,        # fail fast on reads/writes to prevent UI lag
         )
         _client.ping()
         logger.info("Redis cache layer connected successfully")

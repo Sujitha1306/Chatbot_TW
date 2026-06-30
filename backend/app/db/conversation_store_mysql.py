@@ -247,7 +247,7 @@ class MySQLConversationStore:
             search_query = " ".join([f"+{t}" for t in search_terms])
             
             exclude_clause = "AND c.id != %s" if exclude_conv_id else ""
-            params = [user_id, search_query]
+            params = [user_id]
             if exclude_conv_id:
                 params.append(exclude_conv_id)
                 
@@ -265,7 +265,7 @@ class MySQLConversationStore:
                 WHERE c.user_id = %s {exclude_clause}
                 ORDER BY c.created_at DESC
                 """,
-                tuple(params if exclude_conv_id else [user_id])
+                tuple(params)
             )
             rows = cursor.fetchall()
             
