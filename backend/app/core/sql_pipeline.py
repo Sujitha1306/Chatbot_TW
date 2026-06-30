@@ -35,7 +35,8 @@ calculation explicitly in your plan so the SQL writer can implement it."""
     SQL_SYSTEM = """You are a ClickHouse SQL expert for a hospital analytics platform.
 Generate ONLY ONE SINGLE SQL query. No explanation. No markdown fences. No preamble.
 The SQL must be syntactically valid ClickHouse SQL.
-CRITICAL: NEVER generate multiple queries separated by a semicolon (;). The driver only supports ONE statement at a time. If you need to combine unrelated data, use UNION ALL with EXACTLY matching column names and types (pad missing columns with NULL AS column_name)."""
+CRITICAL: NEVER generate multiple queries separated by a semicolon (;). The driver only supports ONE statement at a time. If you need to combine unrelated data, use UNION ALL with EXACTLY matching column names and types (pad missing columns with NULL AS column_name).
+CRITICAL: ALL non-aggregated columns in the SELECT clause MUST be explicitly included in the GROUP BY clause."""
 
     CROSS_CONV_SYSTEM = """You detect whether a message references a PAST,
 DIFFERENT conversation (not the current one). Return ONLY valid JSON."""
@@ -446,6 +447,7 @@ RESPONSE FORMAT DETECTION:
 - "overview": broad summary question with no specific ranking/comparison intent ("show porter performance", "give me an overview", "how are we doing")
 - "single_stat": question asks for exactly one number ("what is the TAT", "how many requests today", "total assets")
 - "limitation": question requires data not available in the schema (cost optimization, root cause, benchmark, external factors). NOTE: Asking for a "name" (e.g. pool name, facility name) when the schema only has the "ID" (e.g. pool_name_id, facility_id) is NOT a limitation. The UI handles ID-to-name translations.
+  CRITICAL: If the user asks for a "description", "details", or qualitative information about a facility, porter, or asset, set response_format to "limitation" because we do not have textual descriptions in the database schema!
 
 MULTI-QUERY DETECTION:
 Set "requires_multiple_queries": true when the question asks about
@@ -673,6 +675,7 @@ Requirements:
 - For ranking or "who is highest/lowest" questions, ALWAYS use LIMIT 5 or LIMIT 10, NEVER LIMIT 1, so the user can see comparative context.
 - If the question asks about specific entities (e.g. "which porter", "which asset"), ALWAYS filter out NULLs and empty strings for that entity ID (e.g. WHERE porter_user_id IS NOT NULL AND porter_user_id != '').
 - Default LIMIT 500 for general queries unless specified otherwise.
+- CRITICAL: Any column in your SELECT clause that is NOT inside an aggregate function MUST be explicitly listed in your GROUP BY clause.
 - Return ONLY the SQL, nothing else"""
 
         resp = self.client.chat.completions.create(
@@ -683,7 +686,7 @@ Requirements:
             ],
             temperature=0.0,
             seed=42,
-            max_tokens=800,
+            max_tokens=2000,
         )
         sql = resp.choices[0].message.content.strip()
         sql = re.sub(r"^```sql\s*", "", sql, flags=re.IGNORECASE)
@@ -745,7 +748,7 @@ result, not just one that merely avoids the error."""
             ],
             temperature=0.0,
             seed=42,
-            max_tokens=800,
+            max_tokens=2000,
         )
         fixed = resp.choices[0].message.content.strip()
         fixed = re.sub(r"^```sql\s*", "", fixed, flags=re.IGNORECASE)
@@ -869,15 +872,16 @@ this data. Return ONLY a JSON array of strings, no other text:
         what_is_available = plan.get("calculation_plan", "")
         prompt = f"""QUESTION: {question}
 
-This question requires data not available in this system's schema.
+This question asks for information (e.g. textual descriptions, cost optimizations, root causes) that is NOT available in this system's database schema.
 Write a very brief, punchy response (MAXIMUM 2 sentences) that:
-1. Acknowledges what data IS NOT available (no apologies)
-2. States what related data IS available and suggests a follow-up query
+1. Acknowledges that the SPECIFIC requested information is not available in the schema.
+2. CRITICAL: Do NOT claim that "no data is available" for the entity. We likely have operational data (counts, metrics), just not the specific qualitative/descriptive information requested.
+3. States what related data IS available and suggests a follow-up query.
 
 WHAT IS AVAILABLE (from the analytical plan):
 {what_is_available or "general porter request counts and asset details"}
 
-Keep it under 30 words total. Be direct.
+Keep it under 30 words total. Be direct (no apologies).
 Suggest a specific follow-up question the user could ask that WOULD be answerable."""
 
         resp = self.client.chat.completions.create(
