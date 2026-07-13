@@ -1,7 +1,8 @@
 # backend/app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import json
 import logging
 
 from backend.config.settings import settings
@@ -30,6 +31,32 @@ app = FastAPI(
     docs_url="/docs" if settings.environment == "development" else None,
     redoc_url=None,
 )
+
+_REDACTED_KEYS = {"password", "token", "api_key", "secret"}
+
+
+def _redact(params: dict) -> dict:
+    return {k: ("***" if k.lower() in _REDACTED_KEYS else v) for k, v in params.items()}
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    body_params = None
+    if request.method in ("POST", "PUT", "PATCH") and "application/json" in request.headers.get("content-type", ""):
+        try:
+            raw = await request.body()
+            if raw:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    body_params = _redact(parsed)
+        except Exception:
+            body_params = None
+    logger.info(
+        "Request: %s %s query_params=%s body_params=%s",
+        request.method, request.url.path, dict(request.query_params), body_params,
+    )
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,

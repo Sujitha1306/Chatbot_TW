@@ -79,6 +79,15 @@ export class ChatService {
   private currentLoadRequestId = 0;
   private currentConvListRequestId = 0;
 
+  private buildApiUrl(path: string): string {
+    const user = this.auth.getUser();
+    let url = `${environment.chatbotApiUrl}${path}`;
+    if (user && user.id) {
+      url += `?userId=${encodeURIComponent(user.id)}`;
+    }
+    return url;
+  }
+
   private getHeaders(): Record<string, string> {
     const token = this.auth.getToken();
     const user = this.auth.getUser();
@@ -91,7 +100,7 @@ export class ChatService {
   async loadConversations(): Promise<void> {
     const requestId = ++this.currentConvListRequestId;
     try {
-      const res = await fetch(`${environment.chatbotApiUrl}chat/conversations`, {
+      const res = await fetch(this.buildApiUrl('chat/conversations'), {
         headers: this.getHeaders(),
       });
       if (requestId !== this.currentConvListRequestId) return;
@@ -111,7 +120,7 @@ export class ChatService {
 
   private async loadRecommendations(): Promise<void> {
     try {
-      const res = await fetch(`${environment.chatbotApiUrl}chat/recommendations`, {
+      const res = await fetch(this.buildApiUrl('chat/recommendations'), {
         headers: this.getHeaders(),
       });
       if (!res.ok) return;
@@ -125,7 +134,7 @@ export class ChatService {
   async loadConversationMessages(convId: string): Promise<void> {
     const requestId = ++this.currentLoadRequestId;
     try {
-      const res = await fetch(`${environment.chatbotApiUrl}chat/conversations/${convId}`, {
+      const res = await fetch(this.buildApiUrl(`chat/conversations/${convId}`), {
         headers: this.getHeaders(),
       });
       if (requestId !== this.currentLoadRequestId) return;
@@ -148,7 +157,7 @@ export class ChatService {
 
   async deleteConversation(convId: string): Promise<void> {
     try {
-      await fetch(`${environment.chatbotApiUrl}chat/conversations/${convId}`, {
+      await fetch(this.buildApiUrl(`chat/conversations/${convId}`), {
         method: 'DELETE',
         headers: this.getHeaders(),
       });
@@ -167,7 +176,7 @@ export class ChatService {
       const headers = this.getHeaders();
       headers['Content-Type'] = 'application/json';
       
-      await fetch(`${environment.chatbotApiUrl}chat/conversations/${convId}`, {
+      await fetch(this.buildApiUrl(`chat/conversations/${convId}`), {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ title: newTitle })
@@ -194,7 +203,7 @@ export class ChatService {
     
     // Truncate on backend
     try {
-      await fetch(`${environment.chatbotApiUrl}chat/conversations/${this.activeConvId}/messages/${messageId}`, {
+      await fetch(this.buildApiUrl(`chat/conversations/${this.activeConvId}/messages/${messageId}`), {
         method: 'DELETE',
         headers: this.getHeaders()
       });
@@ -267,7 +276,7 @@ export class ChatService {
       const headers = this.getHeaders();
       headers['Content-Type'] = 'application/json';
       
-      const response = await fetch(`${environment.chatbotApiUrl}chat/stream`, {
+      const response = await fetch(this.buildApiUrl('chat/stream'), {
         method: 'POST',
         headers,
         signal: this.currentAbortController.signal,

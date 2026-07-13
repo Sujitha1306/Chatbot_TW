@@ -354,8 +354,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
             prompt_logger = logging.getLogger("prompt_debugger")
-            prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
-            prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
+            # prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
+            # prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
 
             stream = pipeline.client.chat.completions.create(
                 model=pipeline.model,
