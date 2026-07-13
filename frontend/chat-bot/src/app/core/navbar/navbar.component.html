@@ -1,0 +1,214 @@
+<div style="height: 55px; border-radius: 1px solid black;" *ngIf = "false">
+  <mat-grid-list [cols]="21" rowHeight="98%" class="ovi-font-family">
+      <mat-grid-tile [colspan] = "1" [rowspan]= "1" style="background: #3b7bff;">
+        <img alt="ovitag-logo" src="/assets/Alert/common_icons/tw-icon.jpg"/>
+    </mat-grid-tile>
+      <mat-grid-tile [colspan] = "8" [rowspan]= "1" >
+      <div class="breadcrumb-menu" style="text-align : left;position: absolute;left: 2px;">
+        <span>{{ mainMenu | titlecase}} </span>
+          <span *ngIf = "subMenu"> >> {{ subMenu | titlecase}}</span>
+          <span *ngIf = "childMenu"> >> {{ childMenu | titlecase}}</span>
+        </div>
+    </mat-grid-tile>
+
+      <mat-grid-tile [colspan] = "11" [rowspan]= "1" >
+      <div class="nav-search-field">
+        <app-globalsearch-component></app-globalsearch-component>
+      </div>
+      <div class="nvbr-hd-menu">
+        Apollo Hospital, Chennai, APHC  <span></span>
+      </div>
+      <div class="nvbr-sub-menu">
+        John Abraham, Admin
+      </div>
+    </mat-grid-tile>
+      <mat-grid-tile [colspan] = "1" [rowspan]= "1" >
+        <img alt="ovitag-logo" src="/assets/Alert/common_icons/tw-icon.jpg"/>
+    </mat-grid-tile>
+  </mat-grid-list>
+</div>
+<div style="height:44px;box-sizing: border-box;display: flex;align-items: center;justify-content: space-between;padding: 6px 10px 6px 0px;border-bottom: 1px solid #e5e7eb;box-shadow: 0px 3px 6px #00000014;opacity: 1;white-space: nowrap;">
+    <div style="display: flex;align-items: center;flex: 1 1 auto;min-width: 0; ">
+      <div class="nvbr-left-box" [class.expanded]="showsidebar">
+        <mat-icon class="nvbr-menu-toggle" (click)="onMenuClick(false)" role="button" tabindex="0"
+          (keydown.enter)="onMenuClick(false)" (keydown.space)="onMenuClick(false)">menu</mat-icon>
+        <img *ngIf="customerName != 'kyn' && showsidebar" alt="ovitag-logo-full" class="nvbr-logo-full" src="/assets/Alert/common_icons/TW_Logo_Full.png">
+      </div>
+    <div style="display: flex;align-items: center;width: calc(100% - 20px);" class="ovi-font-family">
+    <img *ngIf="customerName != 'kyn' && !showsidebar" alt="ovitag-logo" class="nvbr-logo-icon" src="/assets/Alert/common_icons/1TW_Logo.svg">
+    <div class="nvbr-menu">
+      <div *ngIf="locale === 'en-US' || locale === 'en'">
+        <span *ngFor="let menu of menuArray;let i= index" style="display: flex;gap: 5px;align-items: center;">
+          {{menu| translate }}
+          <div *ngIf="(menu === 'Dashboard' || menu === 'dashboard')  && activate_btn.includes('BT-DBLAYOUT')" class=" layout-icon" style="display: flex;align-items: center;"
+                 [formGroup]="layoutForm">
+              <mat-label [ngClass]="islayout ? 'ip-label-layout' : 'ip-label-layout1'" (click)="islayout === true ? islayout = false : islayout = true"
+              role="button"  tabindex="0"  (keydown.enter)="islayout = !islayout" (keydown.space)="islayout = !islayout">
+                <mat-icon style="font-size:18px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;position:relative;top:-1px;">grid_view</mat-icon>
+              </mat-label>
+              <span>
+                <mat-select *ngIf="islayout" class="ip-select-layout" style="width: 150px;"
+                formControlName="layout" (openedChange)="openedChange($event);">
+                <mat-option *ngFor="let data of layoutList" [value]="data.id"
+                  (click)="checkLayout(data);islayout = false" (keydown.enter)="fixClick()">{{data.dashboardName}}</mat-option>
+              </mat-select>
+            </span>
+            <span>
+              <mat-select *ngIf="islayout && activate_btn.includes('BT-DBLAYDPT') && isDeptEnable" [formControl]="selectedDept" (selectionChange)="deptOnChange($event.value)"
+                appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Department'|translate" class="ip-select-layout" style="width: 165px;margin-left: 10px;">
+                <mat-option *ngIf="deptList.length > 1" value="all">All</mat-option>
+                <mat-option *ngFor="let data of deptList;" [value]="data.departmentId">
+                  {{data.departmentName|translate}}
+                </mat-option>
+              </mat-select>
+            </span>
+          </div>
+        </span>
+      </div>
+      <div *ngIf="locale === 'id'">
+        <span *ngFor="let menu of menuArray;let i= index" style="display: flex;gap: 5px;align-items: center;white-space: nowrap;">
+          {{menu}}
+          <div *ngIf="menu === 'dasbor' && activate_btn.includes('BT-DBLAYOUT')" class=" layout-icon" style="display: flex;align-items: center;" [formGroup]="layoutForm">
+              <mat-label [ngClass]="islayout ? 'ip-label-layout' : 'ip-label-layout1'" (click)="islayout === true ? islayout = false : islayout = true"
+               tabindex="0"  role="button"  (keydown.enter)="islayout = !islayout"  (keydown.space)="islayout = !islayout">
+                <mat-icon style="font-size:18px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;position:relative;top:-1px;">grid_view</mat-icon>
+              </mat-label>
+              <span>
+                <mat-select *ngIf="islayout" class="ip-select-layout" style="width: 150px;"
+                  formControlName="layout" (openedChange)="openedChange($event);">
+                  <mat-option *ngFor="let data of layoutList" [value]="data.id"
+                    (click)="checkLayout(data);islayout = false" (keydown.enter)="fixClick()">{{data.dashboardName}}</mat-option>
+                </mat-select>
+              </span>
+            <span>
+              <mat-select *ngIf="islayout && activate_btn.includes('BT-DBLAYDPT')" [formControl]="selectedDept" (selectionChange)="deptOnChange($event.value)"
+                appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Department'|translate" class="ip-select-layout" style="width: 165px;margin-left: 10px;">
+                <mat-option value="null">All</mat-option>
+                <mat-option *ngFor="let data of deptList;" [value]="data.id">
+                  {{data.name}}
+                </mat-option>
+              </mat-select>
+            </span>
+          </div>
+        </span>
+     </div>
+     <div *ngIf="locale === 'ar'">
+      <span *ngFor="let menu of menuArray;let i= index" style="display: flex;gap: 5px;align-items: center;white-space: nowrap;">
+        {{menu | titlecase}}
+        <div *ngIf="menu === 'لوحة القيادة' && activate_btn.includes('BT-DBLAYOUT')" [formGroup]="layoutForm" class=" layout-icon" style="display: flex;align-items: center;">
+            <mat-label [ngClass]="islayout ? 'ip-label-layout' : 'ip-label-layout1'" (click)="islayout === true ? islayout = false : islayout = true"
+             tabindex="0"  role="button"  (keydown.enter)="islayout = !islayout"  (keydown.space)="islayout = !islayout">
+              <mat-icon style="font-size:18px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;position:relative;top:-1px;">grid_view</mat-icon>
+            </mat-label>
+            <span>
+              <mat-select *ngIf="islayout" class="ip-select-layout" style="width: 150px;"
+                formControlName="layout" (openedChange)="openedChange($event);">
+                <mat-option *ngFor="let data of layoutList" [value]="data.id"
+                  (click)="checkLayout(data);islayout = false" (keydown.enter)="fixClick()">{{data.dashboardName}}</mat-option>
+              </mat-select>
+            </span>
+          <span>
+            <mat-select *ngIf="islayout && activate_btn.includes('BT-DBLAYDPT')" [formControl]="selectedDept" (selectionChange)="deptOnChange($event.value)"
+             appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Department'|translate" class="ip-select-layout" style="width: 165px;margin-left: 10px;">
+              <mat-option value="null">All</mat-option>
+              <mat-option *ngFor="let data of deptList;" [value]="data.id">
+                {{data.name}}
+              </mat-option>
+            </mat-select>
+          </span>
+        </div>
+      </span>
+   </div>
+   <div *ngIf="locale === 'th'">
+    <span *ngFor="let menu of menuArray;let i= index" style="display: flex;gap: 5px;align-items: center;white-space: nowrap;">
+      {{menu | titlecase}}
+      <div *ngIf="menu === 'แผงหน้าปัด' && activate_btn.includes('BT-DBLAYOUT')"  [formGroup]="layoutForm"  class=" layout-icon" style="display: flex;align-items: center;">
+          <mat-label [ngClass]="islayout ? 'ip-label-layout' : 'ip-label-layout1'" (click)="islayout === true ? islayout = false : islayout = true"
+          tabindex="0"  role="button"  (keydown.enter)="islayout = !islayout"  (keydown.space)="islayout = !islayout">
+            <mat-icon style="font-size:18px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;position:relative;top:-1px;">grid_view</mat-icon>
+          </mat-label>
+          <span>
+            <mat-select *ngIf="islayout" class="ip-select-layout" style="width: 150px;"
+              formControlName="layout" (openedChange)="openedChange($event);">
+              <mat-option *ngFor="let data of layoutList" [value]="data.id"
+                (click)="checkLayout(data);islayout = false" (keydown.enter)="fixClick()">{{data.dashboardName}}</mat-option>
+            </mat-select>
+          </span>
+        <span>
+          <mat-select *ngIf="islayout && activate_btn.includes('BT-DBLAYDPT')" [formControl]="selectedDept" (selectionChange)="deptOnChange($event.value)"
+            appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Department'|translate" class="ip-select-layout" style="width: 165px;margin-left: 10px;">
+            <mat-option value="null">All</mat-option>
+            <mat-option *ngFor="let data of deptList;" [value]="data.id">
+              {{data.name}}
+            </mat-option>
+          </mat-select>
+        </span>
+      </div>
+    </span>
+ </div>
+    </div>
+    </div>
+    </div>
+     <div style="display: flex;align-items: center; justify-content: flex-end;flex: 0 0 auto; gap: 5px;">
+      <app-globalsearch-component style="min-width: 260px;width: 300px;padding: 0 4px 0 10px;"  class="col-fr-mbl-vw" [filterOptions] = "globalSearchfilterOptions"></app-globalsearch-component>
+      <!-- // NOSONAR
+       <div style="display: flex;align-items: center;height: 40px;border-left: 1px solid #C8C7C7;opacity: 1;padding: 0px 10px;">
+        <button mat-icon-button style="height: 28px;	width: 28px;background: #dedede;display: flex;justify-content: center; align-items: center;" (click)="checkFullscreen()">
+        <mat-icon style="font-size: 16px; padding-top: 0; padding-bottom: 2px">{{isFullScreen ? 'fullscreen_exit' : 'fullscreen'}}</mat-icon>
+      </button>
+    </div> -->
+      <div style="display: flex;align-items: center;height: 32px;opacity: 1;padding: 0px 4px 0px 0px;cursor: pointer;">
+        <!-- // NOSONAR
+         <app-toolbar-notification></app-toolbar-notification> -->
+         <app-global-notification #globalNotification style="position: relative;top: 2px;"></app-global-notification>
+      </div>
+      <div *ngIf="activate_btn.includes('BT_TGAI')" class="ovi-font-family" style="display: flex;align-items: center;height: 32px;padding: 0px 0px;">
+        <span id="box" (click)="launchAI()"  tabindex="0"  role="button"
+         appTooltip tooltipText="{{'Track Gen AI'|translate}}" placement="bottom"
+         (keydown.enter)="launchAI()"  (keydown.space)="launchAI()" style="cursor: pointer;display: flex;align-items: center;height: 100%;">
+          <img height="24px" width="24px" src="../../../assets/icons/AI3.svg" alt="Track Gen AI" />
+        </span>
+      </div>
+        <div  class="cust-font-width ovi-font-family" style="display: flex; flex-direction: column;height: 32px;border-left: 1px solid #C8C7C7;opacity: 1;    justify-content: center;padding: 0px 10px;">
+          <div class="nvbr-ng-cntrl">
+            <app-manage-control (isSaveClick)="getCustomerLogo($event, globalNotification)"></app-manage-control> </div>
+            <!-- // NOSONAR
+           <div class="show-user-role">  {{userName | titlecase}} </div>
+          <div class="show-user"> {{user}}  </div> -->
+        </div>
+      <div style="width: 100px; display: flex;align-items: center; justify-content: space-around;height: 32px;opacity: 1;padding: 0px 10px;">
+        <img alt="customer-logo" src="{{customerLogo}}"
+          style="width:calc(100%);object-fit: contain;height: calc(100%);" (error)="logoNotfound($event)"/>
+      </div>
+    </div> 
+</div>
+
+<div *ngIf="false" style="height: 55px;" class="mobile-view-1">
+  <div class="wrapper-1">
+    <input #fabOpen [(ngModel)]="isOpen" [ngModelOptions]="{ standalone: true }"  type="checkbox" />
+    <div class="fab" appTooltip tooltipText="{{'fab-menu'|translate}}" placement="bottom" style="color: #103f96; text-align: center;">
+      <mat-icon class="fab-menu-icons">more_vert</mat-icon>
+    </div>
+    <div class="fac" *ngIf="fabMenuClose">
+
+      <div class="fab-display" (click)="addProfile()"  tabindex="0"  role="button" (keydown.enter)="addProfile()"  (keydown.space)="addProfile()">
+            <mat-icon class="fab-menu-icons" appTooltip tooltipText="{{'profile'|translate}}" placement="left">account_circle</mat-icon>
+      </div>
+
+      <div class="fab-display">
+        <a matLine class="help-txt-1 ovi-font-family" [attr.href]="helpDocument" target="_blank">
+                <mat-icon class="fab-menu-icons" appTooltip tooltipText="{{'help'|translate}}" placement="left">help</mat-icon>
+        </a>
+      </div>
+
+      <div class="fab-display" (click)="changePassword()" tabindex="0"  role="button" (keydown.enter)="changePassword()"  (keydown.space)="changePassword()">
+            <mat-icon class="fab-menu-icons" appTooltip tooltipText="{{'changePassword'|translate}}" placement="left">how_to_reg</mat-icon>
+      </div>
+
+        <div class="fab-display" style="color: #cc0707"  (click)="logout()" tabindex="0"  role="button"
+         (keydown.enter)="logout()"  (keydown.space)="logout()">
+            <mat-icon class="fab-menu-icons" appTooltip tooltipText="{{'logout'|translate}}" placement="left">exit_to_app</mat-icon>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+<div class="mat-elevation-z8">
+    <div>
+        <div style="margin: 10px 0px;" class="table-container mat-table-overflow">
+            <table mat-table [dataSource]="dataSource">
+                <ng-container *ngFor="let column of tableColumns" [matColumnDef]="column">
+                    <mat-header-cell *matHeaderCellDef class="manage-table-header ovi-fnt-sze15" [ngStyle]="headercolor && {'background':headercolor}" style="height: 35px;">{{ column }}</mat-header-cell>
+                    <mat-cell *matCellDef="let element;let i = index">
+                        <mat-icon id="expand_more"  #expand_more *ngIf="!element.close && ( column == 'UHID')&& hasChild(element) " class="exp-colp-style">add_box</mat-icon>
+                        <mat-icon id="expand_less"  #expand_less  *ngIf="element.close && (column == 'UHID')" class="exp-colp-style">remove</mat-icon>
+                        <span>{{ element[column] }}</span>
+                    </mat-cell>
+                </ng-container>
+                <mat-header-row *matHeaderRowDef="tableColumns"></mat-header-row>
+                <mat-row *matRowDef="let row; columns: tableColumns;" class="element-row"  (click)="hasChild(row) && rowClick(row)"
+                (toggleChange)="hasChild(row) && onToggleChange($event,row)"  
+                [cdkDetailRowTpl]="hasChild(row) ? tpl1 : null"
+                [cdkDetailRow]="hasChild(row) ? row : null" (keydown.enter)="fixClick()" ></mat-row>
+            </table>
+        </div>
+        <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+    </div>
+    <ng-template #tpl1 let-element>
+        <div class="mat-row detail-row oflw-style" style="padding: 10px;" [@detailExpand]>
+            <table mat-table [dataSource]="tempTable">
+                <ng-container *ngFor="let column of tempCol" [matColumnDef]="column">
+                    <mat-cell *matCellDef="let element1;let i = index" class="manage-table-header ovi-fnt-sze15" style="height: 35px;">
+                        <mat-icon id="expand_more"  #expand_more *ngIf="!element1.close && hasChildData(element,element1)" class="exp-colp-style">add_box</mat-icon>
+                        <mat-icon id="expand_less"  #expand_less  *ngIf="element1.close" class="exp-colp-style">remove</mat-icon>
+                        <span>{{ element1[column] }}</span>
+                    </mat-cell>
+                </ng-container>
+                <mat-row *matRowDef="let row; columns: tempCol;" class="element-row" (toggleChange)="onToggleChange2($event,row)"  
+                [cdkDetailRowTpl]="tpl" [cdkDetailRow]="row"></mat-row>
+            </table>
+        </div>
+    </ng-template>
+    <ng-template #tpl let-element1>
+        <div class="mat-row detail-row oflw-style" style="padding: 15px;" [@detailExpand]>
+            <table mat-table [dataSource]="locationTable" *ngIf="element1.Type == 'Location'">
+                <ng-container *ngFor="let column of locTableColumns" [matColumnDef]="column">
+                    <mat-header-cell *matHeaderCellDef class="manage-table-header ovi-fnt-sze15" [ngStyle]="headercolor && {'background':headercolor}" style="height: 35px;">{{ column }}</mat-header-cell>
+                    <mat-cell *matCellDef="let element;let i = index">
+                    <span>{{ element[column] }}</span>
+                    </mat-cell>
+                </ng-container>
+                <mat-header-row *matHeaderRowDef="locTableColumns"></mat-header-row>
+                <mat-row *matRowDef="let row; let i = index; columns: locTableColumns;"></mat-row>
+            </table>
+            <table mat-table [dataSource]="assetTable" *ngIf="element1.Type == 'Assets'">
+                <ng-container *ngFor="let column of assetTableColumns" [matColumnDef]="column">
+                    <mat-header-cell *matHeaderCellDef class="manage-table-header ovi-fnt-sze15" [ngStyle]="headercolor && {'background':headercolor}" style="height: 35px;">{{ column }}</mat-header-cell>
+                    <mat-cell *matCellDef="let element;let i = index">
+                    <span>{{ element[column] }}</span>
+                    </mat-cell>
+                </ng-container>
+                <mat-header-row *matHeaderRowDef="assetTableColumns"></mat-header-row>
+                <mat-row *matRowDef="let row; let i = index; columns: assetTableColumns;"></mat-row>
+            </table>
+            <table mat-table [dataSource]="careProviderTable" *ngIf="element1.Type == 'Careproviders'">
+                <ng-container *ngFor="let column of cpTableColumns" [matColumnDef]="column">
+                    <mat-header-cell *matHeaderCellDef class="manage-table-header ovi-fnt-sze15" [ngStyle]="headercolor && {'background':headercolor}" style="height: 35px;">{{ column }}</mat-header-cell>
+                    <mat-cell *matCellDef="let element;let i = index">
+                    <span>{{ element[column] }}</span>
+                    </mat-cell>
+                </ng-container>
+                <mat-header-row *matHeaderRowDef="cpTableColumns"></mat-header-row>
+                <mat-row *matRowDef="let row; let i = index; columns: cpTableColumns;"></mat-row>
+            </table>
+        </div>
+    </ng-template>
+</div>

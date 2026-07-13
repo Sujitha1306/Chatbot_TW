@@ -1,0 +1,134 @@
+<div>
+    <div id="tables">
+        <div *ngFor="let item of allData; let i = index">
+            <div  class="ovi-font-family" id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;height: 30px;" *ngIf="id == 'pat-contact' || id == 'contact-tree'|| id == 'emp-contact' || id == 'staff-contact'"><p style="font-weight:bold;color:white;text-align:justify;text-indent: 15px;padding-top: 6px;">{{header[i]}}</p></div>
+            <div *ngIf="!noRecords[i]" class="manage-body" style="padding-top: 7px;padding-bottom: 10px;">
+                <div fxLayout="column" class="mat-elevation-z4 manage-component" [ngClass.xs]="'components-container-xs'"  fxLayoutGap="5px">
+                    <div class="table-container mat-table-overflow" *ngIf="displayedData.length > 0">
+                        <mat-table #table [dataSource]="DataSource[i]">
+                            <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}" >
+                                <mat-header-cell *matHeaderCellDef class="manage-table-header" [ngClass] = "col.colName == 'CONTACT NAME' ? 'style' : col.colName == 'Count' ? 'style5' : 'style4'"> {{col.title}}
+                                </mat-header-cell>
+                                <mat-cell class="ovi-fnt-sze12" style=" display:flex;" *matCellDef="let element" [ngClass] = "col.colName == 'Name' ? 'style3' : col.colName == 'Count' ? 'style5' : 'style4'">
+                                <mat-icon id="expand_more"  #expand_more *ngIf="!element.close && (col.colName == 'CONTACT NAME' || col.colName =='EmployeeId' || col.colName == 'UHID')" class="exp-colp-style">add_box</mat-icon>
+                                <mat-icon id="expand_less"  #expand_less  *ngIf="element.close && (col.colName == 'CONTACT NAME' || col.colName =='EmployeeId' || col.colName == 'UHID')" class="exp-colp-style">remove</mat-icon>
+                                    <span>{{element[col.dataName]}}</span>
+                                </mat-cell>
+                            </ng-container>
+                            <mat-header-row *matHeaderRowDef="displayedColumns;sticky: true;" class="manage-table-header-row"></mat-header-row>
+                            <ng-container *ngIf="id == 'pat-contact' || id == 'contact-tree' || id =='emp-contact' || id == 'staff-contact'">
+                                <mat-row *matRowDef="let row; columns: displayedColumns;" (toggleChange)="onToggleChange($event,row)" class="element-row" [cdkDetailRow]="row" [ngClass]="{'highlight' : row.id === selectedName}" [cdkDetailRowTpl]="tpl" (click)=rowClick(row,i)  (keydown.enter)="fixClick()"></mat-row>
+                            </ng-container>
+                            <ng-container *ngIf="id != 'pat-contact' && id != 'contact-tree' && id!='emp-contact' && id != 'staff-contact'">
+                                <mat-row *matRowDef="let row; columns: displayedColumns;" (toggleChange)="onToggleChange($event,row)" class="element-row" [cdkDetailRow]="row" [ngClass]="{'highlight' : row.id === selectedName}" [cdkDetailRowTpl]="tpl" (click)=rowClick(row,i) (keydown.enter)="fixClick()"></mat-row>
+                            </ng-container>
+                        </mat-table> 
+                        <mat-paginator #paginator1 [pageSizeOptions]="[20, 40, 60, 80]" [pageSize]="50" [showFirstLastButtons]="true"></mat-paginator>
+                    </div>
+                    <div class="table-container mat-table-overflow" *ngIf="displayedData.length == 0">
+                        <mat-table #table [dataSource]="DataSource[i]">
+                            <ng-container *ngFor="let col of displayedColumns" matColumnDef="{{col}}" >
+                                <mat-header-cell *matHeaderCellDef class="manage-table-header" [ngClass] = "col == 'Contact Name' ? 'style6' : col == 'Count' ? 'style5' : 'style4'"> {{col == 'Location_id' ? '' : col}}
+                                </mat-header-cell>
+                                <mat-cell class="ovi-fnt-sze12" style=" display:flex;" *matCellDef="let element" [ngClass] = "col == 'Contact Name' ? 'style' : col == 'Count' ? 'style5' : 'style4'">
+                                <mat-icon id="expand_more"  #expand_more *ngIf="!element.close && (col == 'Contact Name' || col =='EmployeeId' || col =='Location Category' || col == 'UHID' || col == 'Location_id' || (col == 'Type' && id != 'ambulance-conn-devices' && id != 'ambulance-conndev-alert') || col == 'Id' || col == 'Performer' || col == 'Category' || (col == 'Location' && id != 'staff-tracking' && id != 'ambulance-conn-devices' && id != 'ambulance-conndev-alert')  || col == 'Requester' || (col == 'Ambulance' && (id == 'ambulance-conn-devices' || id == 'ambulance-conndev-alert'))) && id != 'mov-rep'" [ngStyle]="{'padding-left' : col == 'Location_id' ? '40px' : '0px'}" class="exp-colp-style">add_box</mat-icon>
+                                <mat-icon id="expand_less"  #expand_less  *ngIf="element.close && (col == 'Contact Name' || col =='EmployeeId' || col =='Location Category' || col == 'UHID' || col == 'Location_id' || (col == 'Type' && id != 'ambulance-conn-devices' && id != 'ambulance-conndev-alert') || col == 'Id' || col == 'Performer' || col == 'Category' || (col == 'Location' && id != 'ambulance-conn-devices' && id != 'ambulance-conndev-alert') || col == 'Requester' || (col == 'Ambulance' && (id == 'ambulance-conn-devices' || id == 'ambulance-conndev-alert'))) && id != 'mov-rep'" [ngStyle]="{'padding-left' : col == 'Location_id' ? '40px' : '0px'}" class="exp-colp-style">remove</mat-icon>
+                                    <span *ngIf="col != 'Location_id'">{{element[col]}}</span>
+                                    <span *ngIf="col === 'Navigation'" style="color: blue; cursor: pointer;">
+                                        <span *ngIf="id == 'staff-tracking' && element['is_dummy'] != '1'" (click)="eventTrigger(element)" (keydown.enter)="fixClick()">
+                                            <img  style="width:15px;margin-right:5px" src="/assets/Alert/common_icons/map_marker.svg" alt="navigation">
+                                        </span>
+                                    </span>
+                                </mat-cell>
+                            </ng-container>
+                            <mat-header-row *matHeaderRowDef="displayedColumns;sticky: true;" class="manage-table-header-row"></mat-header-row>
+                            <ng-container *ngIf="id == 'pat-contact' || id == 'contact-tree' || id =='emp-contact' || id == 'staff-contact'">
+                                <mat-row *matRowDef="let row; columns: displayedColumns;" (toggleChange)="onToggleChange($event,row)" class="element-row" [cdkDetailRow]="row" [ngClass]="{'highlight' : row.id === selectedName}" [cdkDetailRowTpl]="tpl" (click)=rowClick(row,i) (keydown.enter)="fixClick()"></mat-row>
+                            </ng-container>
+                            <ng-container *ngIf="id != 'pat-contact' && id != 'contact-tree' && id!='emp-contact' && id != 'staff-contact'">
+                                <mat-row *matRowDef="let row; columns: displayedColumns;" (toggleChange)="onToggleChange($event,row)" class="element-row" [cdkDetailRow]="row" [ngClass]="{'highlight' : row.id === selectedName  && id != 'staff-site-nav'}" [cdkDetailRowTpl]="tpl" (click)=rowClick(row,i) (keydown.enter)="fixClick()"></mat-row>
+                            </ng-container>
+                        </mat-table>
+                        <mat-paginator #paginator1 [pageSizeOptions]="[20, 40, 60, 80]" [pageSize]="50" [showFirstLastButtons]="true"></mat-paginator>
+                    </div>
+                    
+                    <ng-template #tpl let-element>
+                        <div class="mat-row detail-row oflw-style " [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'" *ngIf="id == 'contact-tree' && element.history.length > 1 && subTableDisplayedData.length > 0" style="padding-left: 25px;">
+                            <mat-table #table [dataSource]="subTableData" style="width: 75%;padding-left: 25px;padding-top: 1px;" >      
+                                <ng-container *ngFor="let col of subDisplayedData" matColumnDef="{{col.colName}}" >
+                                    <ng-container *ngIf="id == 'pat-contact' || id == 'contact-tree'">
+                                        <mat-header-cell *matHeaderCellDef class="manage-table-header"> {{col.title}}
+                                        </mat-header-cell>
+                                    </ng-container>
+                                    <ng-container *ngIf="id != 'pat-contact' || id != 'contact-tree'">
+                                        <mat-header-cell *matHeaderCellDef class="manage-table-header" [ngStyle]="{'flex' : col == displayedColumns1[0] ? '0 0 260px':'0 0 100px'}"> {{col}}
+                                        </mat-header-cell>
+                                    </ng-container>
+                                    <mat-cell [ngClass] = "col == 'Alert Message' ? 'style1' : 'style2' "  *matCellDef="let element">
+                                        <span>{{element[col.dataName]}}</span>
+                                    </mat-cell>
+                                </ng-container>
+                                <mat-header-row *matHeaderRowDef="displayedColumns1;sticky: true;" class="manage-table-header-row" style="height: 25px;"></mat-header-row>
+                                <!-- <mat-row *matRowDef="let element; columns: displayedColumns1;" class="example-element-row" [class.example-expanded-row]="expandedElement === element"(click)="expandedElement = expandedElement === element ? null : element"></mat-row> -->
+                                <mat-row *matRowDef="let row; columns: displayedColumns1;" class="element-row bg-colr" [cdkDetailRow]="row" [cdkDetailRowTpl]="tpl">
+                                </mat-row>
+                            </mat-table>
+                        </div>
+                        <div class="mat-row detail-row oflw-style " [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'" *ngIf=" id!= 'contact-tree' && element.children.length > length && subTableDisplayedData.length == 0" style="padding-left: 25px;">
+                            <mat-table #table [dataSource]="subTableData" style="padding-left: 25px;padding-top: 1px;" [ngStyle]="{width : id == 'emp-ccd-agg' || id == 'porter-req-det' || id == 'multi-porter' || id == 'ambulance-conn-devices' || id == 'ambulance-conndev-alert' ? '90%' : '75%'}" *ngIf = "id != 'stf-routin-sumary' && id != 'pat-routin-sumary' && id != 'task-activity-compliance' && id != 'staff-tracking'">   
+                                <ng-container *ngFor="let col of displayedColumns1" matColumnDef="{{col}}" >
+                                    <ng-container *ngIf="id == 'pat-contact' || id == 'contact-tree' || id == 'emp-contact' || id == 'staff-contact' || id == 'OT-Rep' || id == 'DC-utilz' || id == 'porter-pharmacy' || id == 'multi-porter' || id == 'ambulance-conn-devices' || id == 'ambulance-conndev-alert' || id == 'ER-Rep-new' || id == 'porter-req-det' || id == 'asset-util-patient' || id == 'emp-ccd-agg' || id == 'staff-site-nav' || id == 'mov-rep' || id == 'infant-alert' || id == 'port-esc-data' || id == 'tat-by-shift'">
+                                        <mat-header-cell *matHeaderCellDef class="manage-table-header"> {{col}}
+                                        </mat-header-cell>
+                                    </ng-container>
+                                    <ng-container *ngIf="id != 'pat-contact' || id != 'contact-tree' || id!='emp-contact' || id != 'staff-contact' || id!= 'OT-Rep' || id != 'DC-utilz' || id != 'porter-pharmacy' || id != 'multi-porter' || id != 'ambulance-conn-devices' || id != 'ambulance-conndev-alert' || id != 'ER-Rep-new' || id != 'porter-req-det' || id!= 'asset-util-patient' || id != 'emp-ccd-agg' || id != 'staff-site-nav' || id != 'mov-rep' || id != 'infant-alert' || id != 'port-esc-data' || id != 'tat-by-shift'">
+                                        <mat-header-cell *matHeaderCellDef class="manage-table-header" [ngStyle]="{'flex' : col == displayedColumns1[0] ? '0 0 260px':'0 0 100px'}"> {{col}}
+                                        </mat-header-cell>
+                                    </ng-container>
+                                    <mat-cell [ngClass] = "col == 'Alert Message' && id != 'infant-alert' ? 'style1' : 'style2' "  *matCellDef="let element">
+                                        <span>{{element[col]}}</span>
+                                    </mat-cell>
+                                </ng-container>
+                                <mat-header-row *matHeaderRowDef="displayedColumns1;sticky: true;" class="manage-table-header-row" style="height: 25px;"></mat-header-row>
+                                <!-- <mat-row *matRowDef="let element; columns: displayedColumns1;" class="example-element-row" [class.example-expanded-row]="expandedElement === element"(click)="expandedElement = expandedElement === element ? null : element"></mat-row> -->
+                                <mat-row *matRowDef="let row; columns: displayedColumns1;" class="element-row bg-colr" [cdkDetailRow]="row" [cdkDetailRowTpl]="tpl">
+                                </mat-row>
+                            </mat-table>
+                            <mat-table #table [dataSource]="element.children" style="padding-left: 25px;padding-top: 1px;" [ngStyle]="{width : id == 'stf-routin-sumary' || id == 'pat-routin-sumary' || id == 'task-activity-compliance' || id == 'staff-tracking'? '93%' : '75%'}" *ngIf = "id == 'stf-routin-sumary' || id == 'pat-routin-sumary' || id == 'task-activity-compliance' || id == 'staff-tracking'">
+                                <ng-container *ngFor="let col of displayedColumns1" matColumnDef="{{col}}" >
+                                    <mat-header-cell *matHeaderCellDef class="manage-table-header" [ngClass] = "col == 'Contact Name' ? 'style6' : col == 'Count' ? 'style5' : 'style4'"> {{col == 'Location_id' ? '' : col}}
+                                    </mat-header-cell>
+                                    <mat-cell class="ovi-fnt-sze12" style=" display:flex;" *matCellDef="let element1" [ngClass] = "col == 'Contact Name' ? 'style' : col == 'Count' ? 'style5' : 'style4'">
+                                    <mat-icon id="expand_more"  #expand_more *ngIf="!element1.close && col == 'Routine'" [ngStyle]="{'padding-left' : col == 'Location_id' ? '40px' : '0px'}" class="exp-colp-style">add_box</mat-icon>
+                                    <mat-icon id="expand_less"  #expand_less  *ngIf="element1.close && col == 'Routine'" [ngStyle]="{'padding-left' : col == 'Location_id' ? '40px' : '0px'}" class="exp-colp-style">remove</mat-icon>
+                                        <span>{{element1[col]}}</span>
+                                    </mat-cell>
+                                </ng-container>
+                                <mat-header-row *matHeaderRowDef="displayedColumns1;sticky: true;" class="manage-table-header-row" style="height: 25px;"></mat-header-row>
+                                <mat-row *matRowDef="let row; columns: displayedColumns1;" (toggleChange)="onToggleChange($event,row)" class="element-row" [cdkDetailRow]="row" [ngClass]="{'highlight' : row.id === selectedName}" [cdkDetailRowTpl]="tpl1" (click)=rowClick(row,i) (keydown.enter)="fixClick()"></mat-row>
+                            </mat-table>
+                        </div>
+                    </ng-template>
+                    <ng-template #tpl1 let-element1>
+                        <mat-table #table [dataSource]="element1.children" style="padding-left: 25px;padding-top: 1px;" [ngStyle]="{width : id == 'stf-routin-sumary' || id == 'pat-routin-sumary' || id == 'task-activity-compliance' || id == 'staff-tracking' || id == 'porter-req-det' || id == 'multi-porter' || id == 'ambulance-conn-devices' || id == 'ambulance-conndev-alert' ? '95%' : '75%'}">   
+                            <ng-container *ngFor="let col of displayedColumns2" matColumnDef="{{col}}" >
+                                <ng-container *ngIf="id != 'pat-contact' || id != 'contact-tree' || id!='emp-contact' || id != 'staff-contact' || id!= 'OT-Rep' || id != 'DC-utilz' || id!='porter-pharmacy' || id!='multi-porter' || id != 'ambulance-conn-devices' || id != 'ambulance-conndev-alert' || id != 'ER-Rep-new' || id != 'porter-req-det' || id!= 'asset-util-patient' || id != 'emp-ccd-agg' || id != 'staff-site-nav' || id != 'mov-rep' || id != 'infant-alert'">
+                                    <mat-header-cell *matHeaderCellDef class="manage-table-header"> {{col}}
+                                    </mat-header-cell>
+                                </ng-container>
+                                <mat-cell [ngClass] = "col == 'Alert Message' && id != 'infant-alert' ? 'style1' : 'style2' "  *matCellDef="let element">
+                                    <span>{{element[col]}}</span>
+                                </mat-cell>
+                            </ng-container>
+                            <mat-header-row *matHeaderRowDef="displayedColumns2;sticky: true;" class="manage-table-header-row" style="height: 25px;"></mat-header-row>
+                            <mat-row *matRowDef="let row; columns: displayedColumns2;" class="element-row bg-colr" [cdkDetailRow]="row" [cdkDetailRowTpl]="tpl">
+                            </mat-row>
+                        </mat-table>
+                    </ng-template>
+                </div>    
+            </div>
+            <div *ngIf="noRecords[i]" style="text-align: center;margin: 2% 0 0 -7%;"> No Records</div>
+        </div>
+    </div>
+</div>
+

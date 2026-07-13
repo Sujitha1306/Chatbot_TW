@@ -54,6 +54,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
+    APP_PORT=8000 \
     FLASK_ENV=production \
     PYTHONPATH=/app
 
@@ -93,7 +94,7 @@ EXPOSE 8501 5000
 
 # Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:${APP_PORT:-8000}/health || exit 1
 
 # Create startup script
 RUN echo '#!/bin/bash\n\
@@ -108,11 +109,11 @@ sleep 5\n\
 \n\
 # Start based on SERVICE_TYPE environment variable\n\
 if [ "$SERVICE_TYPE" = "api" ]; then\n\
-    echo "🌐 Starting Flask API on port 5000"\n\
-    exec python api.py\n\
+    echo "🌐 Starting Backend API on port ${APP_PORT:-8000}"\n\
+    exec python api.py --port ${APP_PORT:-8000}\n\
 elif [ "$SERVICE_TYPE" = "both" ]; then\n\
-    echo "🔄 Starting both Streamlit UI and Flask API"\n\
-    python api.py &\n\
+    echo "🔄 Starting both Streamlit UI and Backend API"\n\
+    python api.py --port ${APP_PORT:-8000} &\n\
     exec streamlit run main.py --server.address 0.0.0.0 --server.port 8501\n\
 else\n\
     echo "💻 Starting Streamlit UI on port 8501"\n\

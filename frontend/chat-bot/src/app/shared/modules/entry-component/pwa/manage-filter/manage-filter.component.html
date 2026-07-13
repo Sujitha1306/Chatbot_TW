@@ -1,0 +1,69 @@
+<div class="ovi-font-family" style="overflow-x: hidden;">
+  <div class="filter-dialog-bottom-sheet-content">
+      <div class="close-slider"><span class="close-slider-act-btn" (click)="applyFilters()" (keydown.enter)="fixClick()"></span></div>
+    <div class="ovi-fnt-sze16" style="font-weight: bold;color:#0c6a97;">{{"Filter"|translate}}</div>
+
+    <div class="popup-margin" style="max-height: 45vh; overflow-y: auto;overflow-x: hidden;margin: 0px !important;padding-top:10px !important">
+      <div *ngIf="showDateFilter !== null" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+        <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh">
+          <mat-label>{{"Select Date"|translate}}</mat-label>
+          <input matInput [matDatepicker]="picker" [formControl]="dateControl">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div *ngFor="let filter of groupFilter" class="filter-group">
+        <div class="filter-header">{{ filter.value }}</div>
+
+        <ng-container *ngIf="filter.subFilters.length > 15 || filter.id === 'assetType'; else simpleFilter">
+        <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+        <div class="ovi-row-gap" >
+         <div class="ovi-row-clmn ovi-matfrmfld-input-box-pdg ">
+          <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+           <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate"
+              [(ngModel)]="searchInputs[filter.id]" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onSearch(filter.id)"
+              [disabled]="isFilterDisabled(filter.id)"/>
+              </mat-form-field>
+         </div>
+        </div>
+        </div>
+
+        <div class="filter-options">
+          <span *ngFor="let selected of getVisibleSelected(filter.id)" class="chip selected"
+            [class.selected]="isSelected(filter.id, selected.code)"
+            (click)="selectedFilter(filter.id, selected.code)" (keydown.enter)="fixClick()">
+            {{ selected.value }}
+          </span>
+
+            <span *ngFor="let sub of (searchInputs[filter.id]?.trim()? getFilteredOptions(filter.id): getFilteredOptions(filter.id))" class="chip"
+            [class.selected]="isSelected(filter.id, sub.code)"
+            [class.disabled]="isFilterDisabled(filter.id)"
+            (click)="!isFilterDisabled(filter.id) && selectedFilter(filter.id, sub.code)" (keydown.enter)="fixClick()">
+            {{ sub.value }}
+          </span>
+          </div>
+          </ng-container>
+
+        <ng-template #simpleFilter>
+          <div class="filter-options">
+            <span *ngIf="filter.isAll || filter.isNoneAll" class="chip"[class.selected]="filter.isAll ? checkIfAllSelected(filter.id) : isSelected(filter.id, 'All')"
+              [class.disabled]="isFilterDisabled(filter.id)"
+              (click)="!isFilterDisabled(filter.id) &&(filter.isAll ? selectAllFilters(filter.id) : selectedFilter(filter.id, 'All'))"(keydown.enter)="fixClick()">
+              All
+            </span>
+
+            <span *ngFor="let sub of filter.subFilters" class="chip" [class.selected]="isSelected(filter.id, sub.code)"
+              [class.disabled]="isFilterDisabled(filter.id)"(click)="!isFilterDisabled(filter.id) && selectedFilter(filter.id, sub.code)"(keydown.enter)="fixClick()">
+              {{ sub.value }}
+            </span>
+        </div>
+      </ng-template>
+      </div>
+    </div>
+
+    <div class="pwa-footer">
+      <button mat-button class="pwa-active-btn" appDebounceClick [debounceTime]="300" cdkFocusInitial
+        (debounceClick)="applyFilters()">{{"Apply"|translate}}</button>
+    </div>
+  </div>
+</div>

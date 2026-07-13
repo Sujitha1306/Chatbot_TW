@@ -1,0 +1,834 @@
+<div class="ovi-calendar ovi-font-family" style="width: 100%;height : 100%;overflow: hidden;padding: 0px;">
+  <div *ngIf="this.data && !['CAL-MS'].includes(calendarInput.status)" class="ovi-pop-hdr">
+    <div>{{"Calendar"| translate}}</div>
+    <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+  </div>
+  <div style="padding: 0px;" *ngIf="!['CAL-TL', 'CAL-MS'].includes(calendarInput?.status)">
+     <div class="loading-spinner" *ngIf="calendarBoolen?.isloading">
+      <div class="spinnerload">
+          <div class="spin1"></div>
+          <div class="spin2"></div>
+          <div class="spin3"></div>
+      </div>
+  </div>
+    <mat-drawer-container [ngClass]="this.calendarInput.entityType !== 'CAL-OT' ? 'example-container' : 'example-container-ot'">
+      <mat-drawer *ngIf="calendarBoolen.resourceExpand && !['CAL-AMC'].includes(calendarInput.entityType) " mode="side" opened class="left-drawer" style="background: #ffffff;" [ngStyle]="{'padding' : ['CAL-US'].includes(calendarInput.entityType) ? '3px' : '10px'}">
+        <div style="display: flex ; flex-direction: column;" [ngStyle]="{'gap' : ['CAL-US'].includes(calendarInput.entityType) ? '5px' : '15px','max-width' : ['CAL-US'].includes(calendarInput.entityType) ? 'none' : '270px'}">
+          <div class="drawer-header"  [ngStyle]="{'display' : ['CAL-US'].includes(calendarInput.entityType) ? '' : 'none'}">
+            <div *ngIf="['CAL-US'].includes(calendarInput.entityType)" class="drawer-title" [ngClass]="['CAL-US'].includes(calendarInput.entityType) ? '' : 'ovi-prmry-clr'" style="display: flex;align-items: center;gap: 5px; padding-left: 5px;">
+              <span>{{ 'Users' |translate}}</span>
+            </div>
+            <div *ngIf="['CAL-US'].includes(calendarInput.entityType)" style="display: flex; padding-top: 5px; align-items: center;padding-bottom: 5px;">
+              <form autocomplete="off">
+                <input class="tw-filter-new search-box" [(ngModel)]="filterValue" [ngModelOptions]="{ standalone: true }" style="height: 28px;border: 1px solid #d1d1d1 !important;width: 190px;margin-left: 20px;"
+                  (keyup)="applyFilter($event.target.value)" autocomplete="off" appPlaceholder [showPlaceholder]="true"
+                  [placeholderText]="'Search'|translate">
+              </form>
+            </div>
+            <span *ngIf="data" class="drawer-title ovi-prmry-clr">{{data?.resourseType === 'RT-US' ? 'User' : data?.resourseType |translate}}</span>
+            <span *ngIf="['CAL-AMC'].includes(calendarInput.entityType)" class="drawer-title ovi-prmry-clr">{{calendarInput?.type |translate}}</span>
+            <span>
+              <mat-icon *ngIf="calendarBoolen.resourceExpand" class="ovi-fnt-sze25" style="padding: 0px;" (click)="expandSide()"
+                [ngClass]="['CAL-US'].includes(calendarInput.entityType) ? '' : 'ovi-prmry-clr'" (keydown.enter)="fixClick()">keyboard_double_arrow_left</mat-icon>
+            </span>
+          </div>
+          <mat-divider *ngIf="['CAL-US'].includes(calendarInput.entityType)" class="divider"> </mat-divider>
+          <div *ngIf="['CAL-US'].includes(calendarInput.entityType)" class="cal-us-panel">
+            <mat-list  style="padding: 6px;">
+              <mat-list-item *ngFor="let list of scheduleList; let i = index" (click)="getscheduleList(list, i)"
+                class="cal-list-item cal-mat-selected-ped" [class.active]="selectedIndex === i">
+                <div class="cal-item">
+                  <div class="cal-item-row">
+                    <div class="cal-user">
+                      <span class="cal-icon">👤</span>
+                      <span class="cal-us-name">
+                        {{ list?.entityName | titlecase }}
+                      </span>
+                    </div>
+                    <div class="cal-shift" appTooltip tooltipText="{{ list?.shiftMasterName | translate }}" placement="bottom">
+                      {{ list?.shiftMasterName | titlecase }}
+                    </div>
+                  </div>
+          
+                  <div class="cal-dates" *ngIf="list?.startDate && list?.endDate">
+                    <span class="cal-icon-sm">⏰</span>
+                    <span>
+                      {{ list?.startDate | date:'dd MMM yyyy' }}
+                      <span class="cal-separator">–</span>
+                      {{ list?.endDate | date:'dd MMM yyyy' }}
+                    </span>
+                  </div>
+                </div>
+              </mat-list-item>
+            </mat-list>
+          </div>
+          <div *ngIf="!['CAL-US'].includes(calendarInput.entityType)">
+            <div *ngIf="view !== 'Month'" class="tw-cal-border-2" style="border-radius: 15px;">
+              <mat-calendar #calendar class="calen-mat-calendar"
+                [(selected)]="this.calDetail.view === 'week' ? selectedDateRange : calDetail.selectedDate"
+                (selectedChange)="getDateChange($event)"></mat-calendar>
+            </div>
+            <div *ngIf="view === 'Month'" class="tw-cal-border-2" style="border-radius: 15px; padding: 5px;">
+              <mat-calendar #calendar class="calen-mat-calendar" [(selected)]="calDetail.selectedDate" [startView]="'year'"
+                (selectedChange)="getDateChange($event)">
+              </mat-calendar>
+            </div>
+          </div>
+        </div>
+        <!-- <mat-divider class="divider"></mat-divider> -->
+        <!-- <div class="radio-button" style="display: flex;flex-direction: column;row-gap: 10px;padding-top: 12px;padding-left: 12px;">
+          <mat-radio-group formControlName="gender" >
+              <mat-radio-button style="padding-right: 10px;" *ngFor="let o of entityList; let i = index" [value]="o.code">
+                  {{o.value|translate}}</mat-radio-button>
+          </mat-radio-group>
+        </div> -->
+        <!-- <div class="drawer-header">
+          <button mat-icon-button class="expand-button" (click)="expandSide()">
+            <mat-icon style="font-size: 25px; padding: 0px;">keyboard_arrow_left</mat-icon>
+          </button>
+          <span class="drawer-title">{{"Calendar Details"|translate}}</span>
+          <button mat-icon-button (click)="reloading()">
+            <mat-icon class="refresh-icon" style="padding: 0px;">refresh</mat-icon>
+          </button>
+        </div>
+        <div class="cal-list">
+          <div class="cal-card" *ngFor="let calenDetails of tableDetails; let indexJ = index" [class.active]="isEventSelectedId.includes(calenDetails.id)" (click)="viewDetails(calenDetails); isEventActive(calenDetails.id)">
+            <div class="cal-content">
+              <div class="cal-header">
+                <span class="cal-name" style="display: flex;align-items: center;gap: 5px;" appTooltip [tooltipText]="calenDetails['name']"><i class='material-icons' style="color: #1e8fc8;padding: 0px;">account_circle</i>{{ calenDetails['name'] }}</span>
+                <div class="cal-info">
+                  <img *ngIf="calenDetails.gender === 'Male' && calenDetails.gender != null" src="../../../../../assets/icons/gender-male.svg" alt="Male"
+                    class="gender-icon" />
+                  <img *ngIf="calenDetails.gender === 'Female' && calenDetails.gender != null" src="../../../../../assets/icons/gender-female.svg" alt="Female"
+                    class="gender-icon" />
+                  <span *ngIf="calenDetails.birthDate != null" class="cal-age">{{ calculateAge(calenDetails['birthDate']) }}yrs</span>
+                  <span *ngIf="calenDetails['calId']" class="cal-id" appTooltip [tooltipText]="calenDetails['calId']"><i class='material-icons' style="color: #1e8fc8;padding: 0px;">perm_identity</i>{{ calenDetails['id'] }}</span>
+                  <span *ngIf="calenDetails['assign'] != null" class="cal-id" appTooltip [tooltipText]="calenDetails['assign']"><i class='material-icons' style="color: #1e8fc8;padding: 0px;">assignment_ind</i>{{ calenDetails['assign'] }}</span>
+                </div>
+              </div>
+              <div class="cal-details">
+                <span *ngIf="calenDetails['startTime'] != null" class="cal-start-time"><i class='material-icons' style="color: #1e8fc8;padding: 0px;">access_time</i>{{ calenDetails['startTime'] | date: 'hh:mm' }}</span>
+                <span *ngIf="calenDetails['date'] != null" class="cal-start-time"><i class='material-icons' style="color: #1e8fc8;padding: 0px;">today</i>{{ calenDetails['date'] }}</span>
+                <span *ngIf="calenDetails['frequency'] != null" class="cal-start-time" appTooltip [tooltipText]="calenDetails['frequency']"> Frequency: {{ calenDetails['frequency'] }}</span>
+              </div>
+            </div> -->
+            <!-- <div class="cal-location">
+              <mat-icon class="location-icon">place</mat-icon>
+            </div> -->
+          <!-- </div>
+        </div> -->
+      </mat-drawer>
+      <mat-drawer *ngIf="calendarBoolen.resourceExpandRight" mode="side" position="end" opened class="left-drawer" style="padding: 5px !important;">
+        <div style="height: calc(100% - 0px); display: flex; flex-direction: column;background-color: #ffffff;">
+          <div class="rht-header">
+            <span style="display: flex;align-items: center;padding: 5px;">{{"Modify Details"|translate}}</span>
+            <span style="display: flex;align-items: center;"><mat-icon class="ovi-fnt-sze21" (click)="closeDrawer()" (keydown.enter)="fixClick()">highlight_off</mat-icon></span>
+          </div>
+          <form [formGroup]="calendarGroup">
+            <div style="display: flex; flex-direction: column; gap: 20px; padding: 10px;">
+              <div style="display: flex; flex-direction: column; gap:7px;">
+                <span class="ovi-calen-labl">{{"Name"|translate}}</span>
+                <input class="ovi-calen-inpt" type="text" formControlName="name" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Entity Name'|translate"/>
+              </div>
+              <div style="display: flex; flex-direction: column; gap:7px;">
+                <span class="ovi-calen-labl">{{"Start Date & Time"|translate}}</span>
+                <input class="ovi-calen-inpt" type="datetime-local" formControlName="startDate" />
+              </div>              
+              <div style="display: flex; flex-direction: column; gap:7px;">
+                <span class="ovi-calen-labl">{{"End Date & Time"|translate}}</span>
+                <input class="ovi-calen-inpt" type="datetime-local" formControlName="endDate" />
+              </div>
+              <div style="display: flex; flex-direction: column; gap:7px;">
+                <span class="ovi-calen-labl">{{"Status"|translate}}</span>
+                <input class="ovi-calen-inpt" type="text" formControlName="status" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate"/>
+              </div>
+            </div>            
+          </form>
+          <div class="cal-footer">
+            <button class="btn save">{{"Save"|translate}}</button>
+            <button class="btn cancel" (click)="closeDrawer()">{{"Cancel"|translate}}</button>
+          </div>
+        </div>
+      </mat-drawer>
+      <mat-drawer-content style="padding: 0px; background: #ffffff;width: 100% !important;">
+        <div style="display: flex;justify-content: space-between;
+            align-items: baseline; padding: 5px 10px 5px 0px;">
+          <div style="display: flex;align-items: center;gap:5px">
+            <div style="height: 38px;display: flex;align-items: center;justify-content: center;">
+              <mat-icon *ngIf="!calendarBoolen.resourceExpand" class="ovi-prmry-clr  ovi-fnt-sze25" style="padding: 0px;"
+                (click)="expandSide()" (keydown.enter)="fixClick()">keyboard_double_arrow_right</mat-icon>
+            </div>
+          <!-- <button *ngIf="['CAL-OT'].includes(calendarInput.entityType) ? calendarBoolen.resourceExpand : !calendarBoolen.resourceExpand" mat-icon-button class="filter-btns" (click)="expandSide($event)">
+            <mat-icon style="color: #ffffff; font-size: 25px; padding: 0px;">keyboard_arrow_right</mat-icon>
+          </button> -->
+          <div *ngIf="['CAL-OT'].includes(calendarInput.entityType)" class="dateput-container">
+            <span class="ovi-fnt-sze11">{{ calDetail.selectedDate | calendarDate:(calDetail.view + 'ViewTitle'):'en' }}</span>
+          </div>
+          <div  *ngIf="!['CAL-OT'].includes(calendarInput.entityType)" class="dateput-container">
+            <div class="calen-datePic-sty">
+              <span *ngIf="view !== 'Week' && view !== '3Days' && view != 'Month'" class="ovi-fnt-sze11" style="display: contents;font-weight: bold;">
+                <input class="hidden-input" matInput [matDatepicker]="picker" [(ngModel)]="calDetail.selectedDate" [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="getDateChange()" />
+                <mat-datepicker-toggle matSuffix [for]="picker" class="ovi-prmry-clr tw-date-pic" style=" transform: scale(0.8);"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </span>
+            
+              <span *ngIf="view === 'Week' || view === '3Days'" class="ovi-fnt-sze11" style="display: contents;font-weight: bold;">
+                <mat-datepicker-toggle matIconSuffix [for]="picker1" class="ovi-prmry-clr tw-date-pic" style=" transform: scale(0.8);"></mat-datepicker-toggle>
+                <mat-date-range-picker #picker1></mat-date-range-picker>
+                <!-- <span>{{start}}</span> -->
+                <mat-date-range-input #range [rangePicker]="picker1" style="width: 0px;">
+                  <input #dateRangeStart matStartDate appPlaceholder [showPlaceholder]="true" [placeholderText]="'Start date'|translate" hidden
+                    (dateChange)="getDateChange($event.target.value)" [(ngModel)]="calDetail.selectedDate" [ngModelOptions]="{ standalone: true }">
+                  <input #dateRangeEnd matEndDate appPlaceholder [showPlaceholder]="true" [placeholderText]="'End date'|translate" [value]="calDetail.selectedEndDate" hidden>
+                </mat-date-range-input>
+                <!-- <span>{{end}}</span> -->
+              </span>
+              <span *ngIf="view != 'Week' && view != '3Days' && view != 'Day' && view == 'Month'" class="ovi-fnt-sze11" style="display: contents; font-weight: bold;">
+                <input class="hidden-input" matInput [matDatepicker]="picker" [(ngModel)]="calDetail.selectedDate" [ngModelOptions]="{ standalone: true }" (ngModelChange)="getDateChange()" />
+                <mat-datepicker-toggle matSuffix [for]="picker" class="ovi-prmry-clr tw-date-pic" style="transform: scale(0.8);"></mat-datepicker-toggle>
+                <mat-datepicker #picker startView="year" (monthSelected)="getDateChange($event, picker)">
+                </mat-datepicker>
+              </span>
+            
+              <span *ngIf="view == 'Day' || view == 'Month'" class="date-label ovi-fnt-sze11" mwlCalendarToday [(viewDate)]="calDetail.selectedDate"
+                (click)="picker.open()" (keydown.enter)="fixClick()">{{currentDate}}</span>
+                <span *ngIf="view == '3Days' || view == 'Week' " class="date-label ovi-fnt-sze11" mwlCalendarToday [(viewDate)]="calDetail.selectedDate"
+                (click)="picker.open()" (keydown.enter)="fixClick()">{{currentDate | date:'MMM d' }} - {{calDetail.selectedEndDate | date:'MMM d'}}</span>
+                <span class="date-arrow-box">
+                  <span mwlCalendarNextView [view]="calDetail.view" [(viewDate)]="calDetail.selectedDate"
+                    (viewDateChange)="closeOpenMonthViewDay()" class="dateFilter-up-down">
+                    <mat-icon class="tw-dateArrow-right">arrow_right</mat-icon>
+                  </span>
+                  <span [matMenuTriggerFor]="menu" mwlCalendarPreviousView [view]="calDetail.view" [(viewDate)]="calDetail.selectedDate"
+                    (viewDateChange)="closeOpenMonthViewDay()" class="dateFilter-up-down">
+                    <mat-icon class="tw-dateArrow-left">arrow_left</mat-icon>
+                  </span>
+                </span>
+              <!-- <div [matMenuTriggerFor]="menu"   mwlCalendarPreviousView [view]="calDetail.view"
+                [(viewDate)]="calDetail.selectedDate" (viewDateChange)="closeOpenMonthViewDay()">
+                <mat-icon class="ovi-prmry-clr" style="padding-top: 4px;" appTooltip>keyboard_arrow_left</mat-icon>
+              </div>
+              <div mwlCalendarNextView [view]="calDetail.view"
+                [(viewDate)]="calDetail.selectedDate" (viewDateChange)="closeOpenMonthViewDay()">
+                <mat-icon class="ovi-prmry-clr" style="padding-top: 4px;" appTooltip>keyboard_arrow_right</mat-icon>
+              </div> -->
+            </div>
+            <div *ngIf="this.data" class="calen-benner-sty">
+              <div *ngIf="this.entityData['booking']?.length > 0" style="display: flex ; align-items: center;">
+                <span class="cal-name ovi-fnt-sze11" style="display: flex;align-items: center;gap: 5px;" appTooltip [tooltipText]="this.entityData['booking'][0]['entityName']">
+                  <img matlisticon="" class="mat-list-icon"  src="/assets/Menus/{{this.entityData['booking'][0]['entityIcon']}}.svg"  alt="icon" style="height: 18px;width: 18px;margin-right: 5px; filter:invert(37%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%)">
+                  {{ this.entityData['booking'][0]['entityName'] }} <span *ngIf="this.entityData['booking'][0]['entityCategory'] !== null">({{this.entityData['booking'][0]['entityCategory']}})</span><br>
+                  <!-- {{ this.entityData['booking'][0]['entityType'] }} -->
+                </span>
+                <div class="ovi-fnt-sze11" *ngIf="this.entityData['booking'][0]['entityType'] === 'Asset'">({{this.entityData['booking'][0]['entityId']}})</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ovi-matfrmfld-err ovi-fnt-sze11" [ngStyle]="{'margin-right' : view == 'Day' ? '16px' : '10px', 'width': ['CAL-AMC', 'CAL-US'].includes(calendarInput.entityType) ? '70px' : '100px'}" style="margin-top: 2px;display: flex;align-self: anchor-center;gap: 10px;">
+          <div class="custom-select">
+            <div>
+              <mat-select id="view-select" [(ngModel)]="calDetail.view" [ngModelOptions]="{ standalone: true }" (change)="setView($event.target.value)" class="tw-cal-border-1" style="width: 60px; padding: 8px;border-radius: 16px;box-shadow: 2px 1px 9px 0px rgba(0, 0, 0, 0.1607843137);">
+                <mat-option [value]="CalendarView.Day" (click)="checkView('Day')" (keydown.enter)="fixClick()">Day</mat-option>
+                <mat-option [value]="CalendarView.Week" (click)="checkView('Week')" (keydown.enter)="fixClick()">Week</mat-option>
+                <mat-option [value]="CalendarView.Week" (click)="checkView('3Days')" (keydown.enter)="fixClick()">3 Days</mat-option>
+                <mat-option *ngIf="!['CAL-US'].includes(calendarInput.entityType)" [value]="CalendarView.Month" (click)="checkView('Month')" (keydown.enter)="fixClick()">Month</mat-option>
+              </mat-select>
+              <!-- <div class="icon-container" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);">
+                <i class="material-icons">arrow_drop_down</i>
+              </div> -->
+            </div>
+          </div>
+          <div *ngIf="!['CAL-AMC'].includes(calendarInput.entityType) && false">
+            <tw-header-new-component [component]="'calendar'" [type]="'new'" [permission]="null" [dateFilter]="null"
+              [rowFilter]="null" [manageAction]="null" [selectDropdown]="null" [selectedName]="null" [locationId]="null"
+              [selectedView]="null" [multiView]="false" (headerEventAction)="headerEventAction($event)"
+              [groupFilter]="groupFilter"></tw-header-new-component>
+          </div>
+          <div *ngIf="view === 'Day' && !['CAL-AMC', 'CAL-US'].includes(calendarInput.entityType)" class="tw-refresh-icon" style="float:right">
+            <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
+                (click)="reloading()" (keydown.enter)="fixClick()" style="cursor: pointer; float: right;">autorenew</i>
+            </span>
+          </div>
+        </div>
+        </div>
+        <div [ngSwitch]="calDetail.view" [ngClass]="['CAL-US'].includes(calendarInput.entityType) ? 'scroll-us-container' : 'scroll-container'" #scrollContainer>
+          <mwl-calendar-month-view *ngSwitchCase="CalendarView.Month" class="tw-Amc-month-header slide-in tw-month-view-cell-width tw-month-view-cell-open tw-month-cell-hover" [cellTemplate]="['CAL-AMC'].includes(calendarInput.entityType) ? customCellTemplate : null" [viewDate]="calDetail.selectedDate"
+            [events]="events" [refresh]="refresh" [activeDayIsOpen]="calendarBoolen.activeDayIsOpen" [weekStartsOn]="calDetail.weekStartsOn"
+            [tooltipPlacement]="'auto'" [tooltipTemplate]="['CAL-AMC'].includes(calendarInput.entityType) ? MaintenanceTooltip : ['CAL-US'].includes(calendarInput.entityType) ? usertooltipTemplate : tooltipEventTemplate"
+            [tooltipAppendToBody]="true">
+          </mwl-calendar-month-view>
+
+          <div *ngIf="!calendarBoolen.threeDaysExist">
+            <mwl-calendar-week-view *ngSwitchCase="CalendarView.Week" class="slide-in calendar-day-view-sche" [ngClass]="{ 'tw-Amc-day-event-het': calendarInput.entityType === 'CAL-AMC', 'tw-us-day-event-het-wid': calendarInput.entityType === 'CAL-US', 'tw-us-day-event-het': calendarInput.entityType === 'CAL-US', 'tw-Amc-week-timehin': !calendarConfi.dynamicConfigData?.displayTimeShow && calendarInput.entityType === 'CAL-AMC', 'tw-us-week-timehin':  calendarInput.entityType === 'CAL-US' }"
+              [viewDate]="calDetail.selectedDate" [headerTemplate]="customHeaderTemplate" [events]="events" [refresh]="refresh"
+              [weekStartsOn]="calDetail.weekStartsOn" [daysInWeek]="7" [snapDraggedEvents]="false" [dayStartHour]="calendarConfi.dynamicConfigData?.dayStartHour || calDetail.dayStartHour"
+              [dayEndHour]="calendarConfi.dynamicConfigData?.dayEndHour || calDetail.dayEndHour" [hourSegmentTemplate]="weekViewHourSegmentTemplate" [tooltipPlacement]="'auto'" 
+              (hourSegmentClicked)="['CAL-US'].includes(calendarInput.entityType) ? eventAction($event) : null" (eventClicked)="['CAL-AMC','CAL-US'].includes(calendarInput.entityType) ? onChangeOpenpop([$event.event]) : null"
+              [tooltipTemplate]="['CAL-AMC'].includes(calendarInput.entityType) ? MaintenanceTooltip : ['CAL-US'].includes(calendarInput.entityType) ? usertooltipTemplate : tooltipEventTemplate" [tooltipAppendToBody]="true">
+            </mwl-calendar-week-view>
+          </div>
+          <div *ngIf="calendarBoolen.threeDaysExist">
+            <mwl-calendar-week-view *ngSwitchCase="CalendarView.Week" class="slide-in calendar-day-view-sche" [ngClass]="{ 'tw-Amc-day-event-het': calendarInput.entityType === 'CAL-AMC', 'tw-us-day-event-het-wid': calendarInput.entityType === 'CAL-US', 'tw-us-day-event-het': calendarInput.entityType === 'CAL-US', 'tw-Amc-week-timehin': !calendarConfi.dynamicConfigData?.displayTimeShow && calendarInput.entityType === 'CAL-AMC', 'tw-us-week-timehin': calendarInput.entityType === 'CAL-US' }"
+              [viewDate]="calDetail.selectedDate" [headerTemplate]="customHeaderTemplate" [events]="events" [refresh]="refresh" [dayStartHour]="calendarConfi.dynamicConfigData?.dayStartHour || calDetail.dayStartHour"
+              [dayEndHour]="calendarConfi.dynamicConfigData?.dayEndHour || calDetail.dayEndHour" [weekStartsOn]="calDetail.weekStartsOn" [daysInWeek]="3" [snapDraggedEvents]="false"
+              (hourSegmentClicked)="['CAL-US'].includes(calendarInput.entityType) ? eventAction($event) : null" (eventClicked)="['CAL-AMC','CAL-US'].includes(calendarInput.entityType) ? onChangeOpenpop([$event.event]) : null"
+              [tooltipPlacement]="'auto'" [tooltipTemplate]="['CAL-AMC'].includes(calendarInput.entityType) ? MaintenanceTooltip : ['CAL-US'].includes(calendarInput.entityType) ? usertooltipTemplate : tooltipEventTemplate" [tooltipAppendToBody]="true">
+            </mwl-calendar-week-view>
+          </div>
+          <ng-template #customHeaderTemplate let-days="days" let-locale="locale">
+            <div class="cal-header ovi-fnt-sze12" style="display: flex;flex-direction: row;row-gap: 18px;border: 1px solid lightgray;
+            align-items: center;height: 35px;font-family: 'Open Sans', sans-serif;" [ngStyle]="{'padding-left' : !['CAL-AMC','CAL-US'].includes(calendarInput.entityType) ? '70px' : ''}">
+              <!-- Customize the header content here -->
+              <div class="cal-header-day" *ngFor="let day of days" style="text-align: center;border-left: 1px solid lightgray;"
+              [ngStyle]="{'background': weekRange.indexOf((day.date | date:'YYYY-MM-dd')) > -1 || (this.start | date:'d' : locale) === (day.date | date:'d' : locale) ? '#dee1f2' : '#dee1f2',
+            'width': !calendarBoolen.threeDaysExist ? 'calc(100% / 7)' : 'calc(100% / 3)'}">
+                <div>
+                  {{ day.date | date:'d' : locale }}
+                </div>
+                <div>
+                  {{ day.date | date:'EEEE' : locale }}
+                </div>
+              </div>
+            </div>
+          </ng-template>
+          <div *ngSwitchCase="CalendarView.Day">
+            <div class="time-display">
+                  <mwl-calendar-day-view style="width: 1070px;" class="calendar-day-event time-slot" [ngClass]="{ 'tw-Amc-day-event-het-wid': ['CAL-AMC'].includes(calendarInput.entityType),'tw-us-day-event-het-wid' :['CAL-US'].includes(calendarInput.entityType), 'tw-Amc-day-timehin': !calendarConfi.dynamicConfigData?.displayTimeShow && ['CAL-AMC', 'CAL-US'].includes(calendarInput.entityType), 
+                    'tw-AMC-dayview-header' : ['CAL-AMC','CAL-US'].includes(calendarInput.entityType) }" [viewDate]="calDetail.selectedDate"
+                    [events]="events" [users]="usersDetails" [refresh]="refresh" [dayStartHour]="calendarConfi.dynamicConfigData?.dayStartHour || calDetail.dayStartHour"
+                    [dayEndHour]="calendarConfi.dynamicConfigData?.dayEndHour || calDetail.dayEndHour" [hourSegments]="2" [minimumEventHeight]="30" [snapDraggedEvents]="false" [tooltipPlacement]="'auto'" 
+                    [tooltipTemplate]="['CAL-AMC'].includes(calendarInput.entityType) ? MaintenanceTooltip : ['CAL-US'].includes(calendarInput.entityType) ? usertooltipTemplate : tooltipEventTemplate"
+                    (hourSegmentClicked)="['CAL-US'].includes(calendarInput.entityType) ? eventDropped($event) : null" 
+                    (eventClicked)="['CAL-AMC','CAL-US'].includes(calendarInput.entityType) ? onChangeOpenpop([$event.event]) : null" [tooltipAppendToBody]="true" [tooltipDelay]="tooltipDelay">
+                  </mwl-calendar-day-view>
+            </div>
+          </div>
+        </div>
+        <ng-template #customCellTemplate let-day="day" let-locale="locale">
+          <div class="tw-month-custom-cell">
+            <div class="tw-month-date">{{ day?.date | date: 'd' }}</div>
+            <div class="event tooltip-wrapper">
+              <div *ngFor="let event of day.events | slice:0:3" class="tw-month-event-cell"
+                [style.background]="event.color?.secondary">
+                <span class="tw-month-event-time tw-Amc-tooltip-item">
+                  <!-- <img style="width:16px; cursor:pointer;" [src]="event.activityCategoryId === 'AC-AMC'? 'assets/icons/AMC_02.svg': event.activityCategoryId === 'AC-PMS'
+                    ? 'assets/icons/PMC_01.svg': event.activityCategoryId === 'AC-CAL'? 'assets/icons/calibrate1.svg': event.activityCategoryId === 'AC-COR' ? 'assets/icons/Corrective1_clipboard-check-outline.svg'
+                    : '/assets/Alert/common_icons/asset_due_date.svg'" [ngStyle]="{ filter:(event?.isNextDue && event?.isOverDue) ? 'invert(43%) sepia(77%) saturate(7490%) hue-rotate(346deg) brightness(91%) contrast(92%)'
+                    : event?.isOverDue? 'invert(55%) sepia(98%) saturate(4153%) hue-rotate(2deg) brightness(102%) contrast(104%)': event?.isNextDue
+                    ? 'invert(64%) sepia(96%) saturate(743%) hue-rotate(1deg) brightness(96%) contrast(95%)': 'invert(54%) sepia(93%) saturate(2183%) hue-rotate(182deg) brightness(94%) contrast(94%)'}" /> -->
+                 <div class="tw-Amc-tooltip-row" (click)="onChangeOpenpop([event])">
+                      <span class="calen-title-3">{{ event?.categoryName }} :</span>
+                      <span class="tw-Amc-tooltip-row-2" style="padding-left: 2px;"> {{ event?.counts }}
+                      </span>
+                  </div>
+                  <div class="tw-Amc-tooltip-con ovi-font-family">
+                    <div class="tw-Amc-tooltip-header"> {{ event?.categoryName }} Details</div>
+                     <div class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1"> Counts :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.counts}}</span>
+                    </div>
+                    <div class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1"> Date :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.start | date:'d MMM'}}</span>
+                    </div>
+                    <!-- <div class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">{{ event?.activityCategoryName || 'AMC' }} :</span>
+                      <span class="tw-Amc-tooltip-row-2"> {{ (event?.isNextDue && event?.isOverDue) ? 'Overdue/Upcoming' :
+                        (event?.isNextDue ? 'Upcoming' : (event?.isOverDue ? 'Overdue' : 'Schedule')) }}
+                      </span>
+                    </div>
+                    <div *ngIf="event?.isOverDue" class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Previous Start :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.overDueStartTime | date:'hh:mm a, d MMM' }}</span>
+                    </div>
+                    <div *ngIf="event?.isOverDue" class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Previous End :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.overDueEndTime | date:'hh:mm a, d MMM' }}</span>
+                    </div>
+                    <div *ngIf="event?.isNextDue" class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Next Start :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.nextDueStartTime | date:'hh:mm a, d MMM' }}</span>
+                    </div>
+                    <div *ngIf="event?.isNextDue" class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Next End :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.nextDueEndTime | date:'hh:mm a, d MMM' }}</span>
+                    </div>
+                    <div *ngIf="!event?.isOverDue && !event?.isNextDue && event?.scheduleStartTime" class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Start :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.scheduleStartTime | date:'hh:mm a, d MMM' }}</span>
+                    </div>
+                    <div *ngIf="!event?.isOverDue && !event?.isNextDue && event?.scheduleEndTime" class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">End :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.scheduleEndTime | date:'hh:mm a, d MMM' }}</span>
+                    </div>
+                     <div class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Identifier :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.requestIdentifier }}</span>
+                    </div>
+                    <div class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Frequency :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.scheduleTypeName }}</span>
+                    </div>
+                    <div class="tw-Amc-tooltip-row">
+                      <span class="tw-Amc-tooltip-row-1">Status :</span>
+                      <span class="tw-Amc-tooltip-row-2">{{ event?.statusName }}</span>
+                    </div> -->
+                  </div>
+                </span>
+                <!-- <span class="tw-month-event-title" (click)="onChangeOpenpop([event])">{{ event?.entityName }}</span> -->
+              </div>
+
+            <div *ngIf="day?.events?.length > 0 && day?.events?.length <= 3" class="tw-month-more" (click)="onChangeOpenpop(day.events)"><span class="tw-Amc-click-link" style="padding-left: 3px;"> View more...</span> </div>
+            
+            <div *ngIf="day?.events?.length > 3" class="tw-month-more" (click)="onChangeOpenpop(day.events)">
+            <span class="tw-Amc-click-link">+ {{ day?.events?.length - 3 }} more...</span>
+            </div>
+            </div>
+          </div>
+        </ng-template>
+        <mat-menu #moreMenu="matMenu" class="tw-month-menu-template ovi-font-family">
+          <div class="tw-month-menu-header"> Events </div>
+          <div style="height: 252px;overflow-y: auto;">
+            <div *ngFor="let event of eventlistInfo">
+              <button mat-menu-item (click)="onChangeOpenpop([event])">
+                <div class="tw-month-menu-event">
+                  <div class="tw-menu-title">
+                    <span>
+                      <mat-icon class="menu-icon tw-month-icon-menu1">event_note</mat-icon>
+                    </span>{{ event?.entityName }}
+                  </div>
+                  <div class="tw-month-menu-time">
+                    <span>
+                      <mat-icon class="menu-icon tw-month-icon-menu2">access_time</mat-icon>
+                    </span>
+                    {{ event?.start | date:'shortTime' }} - {{ event?.end | date:'shortTime' }}
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </mat-menu>
+        <ng-template #MaintenanceTooltip let-event="event">
+          <div class="tw-Amc-tooltip-con-1 ovi-font-family">
+            <div class="tw-Amc-tooltip-header">{{ event?.categoryName }} Details</div>
+              <div class="tw-Amc-tooltip-row">
+                <span class="tw-Amc-tooltip-row-1"> Counts :</span>
+                <span class="tw-Amc-tooltip-row-2">{{ event?.counts}}</span>
+              </div>
+              <div class="tw-Amc-tooltip-row">
+                <span class="tw-Amc-tooltip-row-1"> Date :</span>
+                <span class="tw-Amc-tooltip-row-2">{{ event?.start | date:'d MMM'}}</span>
+              </div>
+        
+            <!-- <div class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">{{ event?.activityCategoryName || 'AMC' }} :</span>
+              <span class="tw-Amc-tooltip-row-2">
+                {{ (event?.isNextDue && event?.isOverDue) ? 'Overdue/Upcoming' :
+                (event?.isNextDue ? 'Upcoming' :
+                (event?.isOverDue ? 'Overdue' : 'Schedule')) }}
+              </span>
+            </div>
+        
+            <div *ngIf="event?.isOverDue" class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Previous  Start :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.overDueStartTime | date:'hh:mm a, d MMM' }}</span>
+            </div>
+            <div *ngIf="event?.isOverDue" class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Previous End :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.overDueEndTime | date:'hh:mm a, d MMM' }}</span>
+            </div>
+        
+            <div *ngIf="event?.isNextDue" class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Next Start :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.nextDueStartTime | date:'hh:mm a, d MMM' }}</span>
+            </div>
+            <div *ngIf="event?.isNextDue" class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Next End :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.nextDueEndTime | date:'hh:mm a, d MMM' }}</span>
+            </div>
+        
+            <div *ngIf="!event?.isOverDue && !event?.isNextDue && event?.scheduleStartTime" class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Start :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.scheduleStartTime | date:'hh:mm a, d MMM' }}</span>
+            </div>
+            <div *ngIf="!event?.isOverDue && !event?.isNextDue && event?.scheduleEndTime" class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">End :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.scheduleEndTime | date:'hh:mm a, d MMM' }}</span>
+            </div>
+
+            <div class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Identifier :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.requestIdentifier }}</span>
+            </div>
+        
+            <div class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Frequency :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.scheduleTypeName }}</span>
+            </div>
+        
+            <div class="tw-Amc-tooltip-row">
+              <span class="tw-Amc-tooltip-row-1">Status :</span>
+              <span class="tw-Amc-tooltip-row-2">{{ event?.statusName }}</span>
+            </div> -->
+          </div>
+        </ng-template>
+           <ng-template #usertooltipTemplate let-event="event">
+            <div class="cal-us-tip-animate ovi-font-family">
+              <div class="cal-us-tip-header">
+                <div class="cal-us-tip-user">
+                  <i class="material-icons">person</i>
+                  <span class="event-name">
+                    {{ event.meta?.entityName | titlecase }}
+                  <span class="role-us" *ngIf="event.meta?.roleName">
+                    ({{ event.meta?.roleName }})
+                  </span>
+                  </span>
+                </div>
+                <span class="cal-us-tip-status" [class.active]="event.meta?.status"> {{ event.meta?.status ? 'Active' : 'Inactive' }} </span>
+              </div>
+              <div *ngIf="event.meta?.userPools?.length" class="cal-us-tip-pools">
+                <div class="cal-us-tip-pool" *ngFor="let pool of event.meta.userPools">
+                  <i class="material-icons">place</i>
+                  <div>
+                    <div class="pool-name">{{ pool.poolName }}</div>
+                    <div class="pool-meta">
+                      {{ pool.poolLocationName }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="cal-us-tip-time">
+                <i class="material-icons">access_time</i>
+                {{ event.meta.startDate | date:'dd MMM yyyy' }} – {{ event.meta.endDate  | date:'dd MMM yyyy' }}
+              </div>
+              <div class="cal-us-tip-shift"> {{ event.meta?.shiftMasterName }} </div>
+            </div>
+          </ng-template>
+         <ng-template #tooltipEventTemplate let-event="event">
+            <div class="schEvt-tooleTip-1 ovi-font-family">
+              <div class="schEvt-tooleTip-2">
+                <div *ngIf="event?.patientId" class="schEvt-tooleTip-3">
+                   <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">person</i>
+                 <span class="schEvt-tooleTip-3" style="position: relative; top: 2px;">{{ event.patientName }}</span>
+                  <span style="position: relative;left: 5px;" class="ovi-prmry-clr">({{ event.patientId }})</span>
+                </div>
+                <div *ngIf="event?.surgeryName" class="schEvt-tooleTip-3">
+                   <img alt="Schedule" src="../../../../../assets/Menus/surgery.svg" height="18px" width="18px"
+                    style="margin-right: 6px; filter:invert(37%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%)" />
+                  <span style="position: relative; top: 2px;">{{ event.surgeryName}}</span>
+                </div>
+                <div class="schEvt-tooleTip-3">
+                  <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">access_time</i>
+                  <span style="position: relative; top: 2px;">{{ event?.start | date: 'HH:mm' }} - {{ event?.end | date: 'HH:mm' }}</span>
+                </div>
+                <div *ngIf="event?.delayScheduleEndTime || event?.delayScheduleStartTime" class="schEvt-tooleTip-3">
+                  <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">more_time</i>
+                  <span style="position: relative; top: 2px;"> {{
+                    event.delayScheduleStartTime && event.delayScheduleEndTime ? 'Document Start & End delays' :
+                    event.delayScheduleStartTime ? 'Document Start delays' :
+                    event.delayScheduleEndTime ? 'Document End delays' : ''
+                    }} ({{ event.totalMins }}m)</span>
+                </div>
+              </div>
+            </div>
+           </ng-template>
+      </mat-drawer-content>
+    </mat-drawer-container>
+  </div>
+      <!-- Operation theatre Timeline Code -->
+  <div class="ovi-font-family" style="height: 100%; width: 100%;" *ngIf="['CAL-TL'].includes(calendarInput.status)">
+    <div class="loading-spinner" *ngIf="calendarBoolen.loading">
+      <div class="spinnerload">
+          <div class="spin1"></div>
+          <div class="spin2"></div>
+          <div class="spin3"></div>
+      </div>
+  </div>
+    <mat-drawer-container class="example-container">
+      <!-- <mat-drawer-content *ngIf="usersDetails.length !== 0" style="width: 30%; height: calc(100% - 76px);border: 1px solid #ddd">
+        <div class="cal-list">
+          <div class="cal-card" *ngFor="let calenDetails of tableDetails; let indexJ = index">
+            <div class="cal-content">
+              <div class="cal-header">
+                <span class="cal-name" style="display: flex;align-items: center;gap: 5px;" appTooltip [tooltipText]="calenDetails['name']"><i class='material-icons' style="color: #1e8fc8;padding: 0px;font-size: 18px;">account_circle</i>{{ calenDetails['name'] }}</span>
+                <div class="cal-info">
+                  <img *ngIf="calenDetails.gender === 'Male' && calenDetails.gender != null" src="../../../../../assets/icons/gender-male.svg" alt="Male"
+                    class="gender-icon" />
+                  <img *ngIf="calenDetails.gender === 'Female' && calenDetails.gender != null" src="../../../../../assets/icons/gender-female.svg" alt="Female"
+                    class="gender-icon" />
+                  <span *ngIf="calenDetails.birthDate != null" class="cal-age">{{ calculateAge(calenDetails['birthDate']) }}yrs</span>
+                  <span *ngIf="calenDetails['calId']" class="cal-id" appTooltip [tooltipText]="calenDetails['calId']"><i class='material-icons' style="color: #1e8fc8;padding: 0px;font-size: 18px">perm_identity</i>{{ calenDetails['id'] }}</span>
+                </div>
+              </div>
+              <div class="cal-details">
+                <span *ngIf="calenDetails['startTime'] != null" class="cal-start-time"><i class='material-icons' style="color: #1e8fc8;padding: 0px;font-size: 18px">access_time</i>{{ calenDetails['startTime'] | date: 'hh:mm' }} - {{ calenDetails['endTime'] | date: 'HH:mm' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-drawer-content> -->
+      <mat-drawer-content style="width: 100%;">
+        <div *ngIf="usersDetails.length !== 0" id="otTimeline" [ngSwitch]="calDetail.view" style="padding: 0px ; border: 1px solid #ddd;" class="calendar-container scroll-container-ot" #scrollContainerOt>
+          <div *ngSwitchCase="CalendarView.Day">
+            <div style="display: flex;" [ngStyle]="{width: usersDetails.length > 4 ? 'fit-content' : '100%'}">
+              <div *ngFor="let user of usersDetails; let i = index" [ngStyle]="{width: usersDetails.length > 4 ? '350px' : '100%', 'max-width': usersDetails.length > 4 ? '400px' : '100%'}">
+                <div class="calen-header-container">
+                  <div class="ovi-lbl-text-size header">
+                    {{ user }}
+                  </div>
+                </div>
+                <div class="ovi-cal-container">
+                  <mwl-calendar-day-view   [ngStyle]="{ width: '50%' }" class="ovi-day-cal-color" [ngClass]="i == 0 ? '' : 'ovi-day-cal ovi-cal-scroll'"
+                    [viewDate]="calDetail.selectedDate" [events]="getEventsForUser(user)" [refresh]="refresh"
+                    (eventClicked)="onEventClicked($event)"
+                    [dayStartHour]="calendarConfi.dynamicConfigData?.dayStartHour || calDetail.dayStartHour"
+                    [dayEndHour]="calendarConfi.dynamicConfigData?.dayEndHour || calDetail.dayEndHour"
+                    [hourSegments]="calendarConfi.dynamicConfigData?.hourSegments || calDetail.hourSegments"
+                    [minimumEventHeight]="52" (eventTimesChanged)="eventDropped($event)"
+                    (hourSegmentClicked)="segmentClicked($event, date)('clicked', $event.date)" [snapDraggedEvents]="true"
+                    [tooltipPlacement]="'auto'" [tooltipTemplate]="tooltipTemplate">
+                  </mwl-calendar-day-view>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="usersDetails.length == 0" style="display: flex; justify-content: center;padding: 20px 0px 20px 0px;" class="no-shift">{{"No records Found"|translate}}</div>     
+            <!-- Tooltip-events -->
+            
+            <ng-template #tooltipTemplate let-event="event">
+              <div class="ovi-cal-tooltip ovi-lbl-text-size tw-cal-border-1"
+                style="display: flex; flex-direction: column; gap: 8px; width: 260px; padding: 12px; background-color: whitesmoke;  border-radius: 8px; box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center;">
+                    <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">person</i>
+                    <span *ngIf="event.patientName">
+                      {{ event.patientName | maskData: (event.vipTypeId === null || event.vipTypeId === 'General') }}
+                      <span *ngIf="event.mainIdentifier" class="ovi-prmry-clr">({{ event.mainIdentifier }})</span>
+                    </span>
+                  </div>
+                  <div style="display: flex; align-items: center;">
+                    <i *ngIf="event.gender === 'Male'" class="material-icons ovi-fnt-sze18" style="color: #382bee;">male</i>
+                    <i *ngIf="event.gender === 'Female'" class="material-icons ovi-fnt-sze18" style="color: #f505c1;">female</i>
+                    <span style="margin-left: 4px;">{{ event.patientAge ? event.patientAge + ' yrs' : '' }}</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <img alt="Schedule" src="../../../../../assets/Menus/surgery.svg" height="18px" width="18px"
+                    style="margin-right: 6px; filter:invert(37%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%)" />
+                  <span>{{ event.otProcedureNames || '' }}</span>
+                </div>
+                <div *ngIf="event.patientQueueStatusId !== 'QS-PE'" style="display: flex; align-items: center;">
+                  <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">local_hospital</i>
+                  <span>{{ event.doctorName || '' }}</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                  <img alt="Schedule" src="../../../../../assets/icons/schduleCanlendar.jpg" height="18px" width="18px"
+                    style="margin-right: 6px;" />
+                  <span>{{ event.scheduleStartTime ? (event.scheduleStartTime | date: 'dd-MM-yyyy HH:mm') : '' }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="display: flex; align-items: center;">
+                    <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">access_time</i>
+                    <span *ngIf="event.patientQueueStatusId === 'QS-CO'">
+                      {{ event?.start | date: 'HH:mm' }} - {{ event?.end | date: 'HH:mm' }}
+                    </span>
+                    <span *ngIf="event.patientQueueStatusId !== 'QS-CO'">
+                      {{ event?.start | date: 'HH:mm' }}
+                    </span>
+                  </div>
+                  <div *ngIf="event.patientQueueStatusId === 'QS-CO'" style="display: flex; align-items: center;">
+                    <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 4px;">timer</i>
+                    <span>{{ event?.duration }}</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                  <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">room</i>
+                  <span>{{ event.locationName }}</span>
+                  <img *ngIf="event.surgeryTypeId === 'SGT-EM'" src="../../../../../assets/icons/emergency.png" alt="Emergency"
+                    height="18px" width="18px" style="margin-left: 6px;" />
+                  <mat-icon class="ovi-fnt-sze18" *ngIf="event?.isVulnerable === true" style="color: orange;">warning</mat-icon>
+                  <mat-icon class="ovi-fnt-sze18" *ngIf="event?.threadId != null" style="color: red;">warning</mat-icon>
+                </div>
+                <div style="display: flex; align-items: center;">
+                  <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">how_to_reg</i>
+                  <span>{{ event.patientQueueStatusId === 'QS-PE' ? 'Schedule' : event.patientQueueStatusName }}</span>
+                </div>
+                <div *ngIf="event?.delayScheduleEndTime || event?.delayScheduleStartTime"
+                  style="display: flex; align-items: center;">
+                  <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">more_time</i>
+                  <span>
+                    {{
+                    event.delayScheduleStartTime && event.delayScheduleEndTime ? 'Document Start & End delays' :
+                    event.delayScheduleStartTime ? 'Document Start delays' :
+                    event.delayScheduleEndTime ? 'Document End delays' : ''
+                    }} ({{ event.totalMins }}m)
+                  </span>
+                </div>
+              </div>
+            </ng-template>
+          </mat-drawer-content>
+    </mat-drawer-container>
+    <!-- <div style="display: flex;justify-content: space-between;align-items: baseline; padding:5px 10px 5px 10px">
+      <div style="display: flex;align-items: center;">
+        <div class="dateput-container">
+          <label>{{ calDetail.selectedDate | calendarDate:(calDetail.view + 'ViewTitle'):'en' }}</label>
+        </div>
+      </div>
+    </div> -->
+  
+    <!-- time and date templet -->
+  
+    <!-- [hourSegmentTemplate] = "hourSegmentTemplate" -->
+    <!-- <ng-template #hourSegmentTemplate let-segment="segment">
+        <div class="custom-hour-segment">
+          {{ segment.date | date: 'shortTime' }}
+        </div>
+      </ng-template> -->
+  </div>
+  <div class="ovi-font-family" *ngIf="['CAL-MS'].includes(calendarInput.status)" style="height: 100%;width: 100%;">
+    <div style="display: flex ; justify-content: space-between; align-items: center;height: 55px;">
+      <div class="tw-cal-border-1" style="visibility: hidden;display: flex ; width: 60px; max-width: 135px; height: 29px; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 2px 1px 9px #00000029;">
+        <span class="ovi-fnt-sze13" style="font-weight: 600;">{{"Holiday view" | translate}}</span>
+      </div>
+      <div class="tw-cal-border-1 ovi-fnt-sze12" style="height: 30px; max-width: 150px; width: 115px; display: flex ; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 2px 1px 9px #00000029; font-weight: 600;">
+        {{ calDetail.selectedDate | date: 'MMMM yyyy' }}
+      </div>
+      <div class="tw-cal-border-1" style="height: 26px; display: flex ; max-width: 60px; width: 55px; align-items: center; justify-content: center; border-radius: 8px; gap: 5px; box-shadow: 2px 1px 9px #00000029;">
+          <button mwlCalendarPreviousView [view]="calDetail.view" [(viewDate)]="calDetail.selectedDate"
+            (viewDateChange)="closeOpenMonthViewDay()" class="ovi-mon-nav-button"><span
+              style="color:white;">&lt;</span></button>
+          <button mwlCalendarNextView [view]="calDetail.view" [(viewDate)]="calDetail.selectedDate"
+            (viewDateChange)="closeOpenMonthViewDay()" class="ovi-mon-nav-button"><span
+              style="color:white;">&gt;</span></button>
+      </div>
+    </div>
+    <div [ngSwitch]="calDetail.view" class="scroll-container-month" #scrollContainer>
+      <div *ngSwitchCase="CalendarView.Month"
+        style="width: calc(100vw - 900px);margin-top: 5px;min-width: 600px;max-width: 900px;">
+        <mwl-calendar-month-view *ngSwitchCase="CalendarView.Month" class="slide-in ovi-schedule-month-height ovi-month-view-calendar ovi-monthview-count-hidden ovi-monthview-background-color"
+          [viewDate]="calDetail.selectedDate" [events]="events" [refresh]="refresh" [activeDayIsOpen]="calendarBoolen.activeDayIsOpen"
+          [weekStartsOn]="calDetail.weekStartsOn"  (eventTimesChanged)="eventDropped($event)"
+          (eventTimesChanged)="eventTimesChanged($event)"(dayClicked)="onDayClick($event)" [tooltipPlacement]="'auto'" [tooltipTemplate]="tooltipMonthTemplate" [tooltipAppendToBody]="false">
+        </mwl-calendar-month-view>
+      </div>
+      <ng-template #tooltipMonthTemplate let-event="event">
+        <div class="ovi-cal-tooltip ovi-lbl-text-size tw-cal-border-1"
+          style="display: flex; flex-direction: column; gap: 8px; width: 80px; padding: 12px;background-color: whitesmoke;  border-radius: 8px; box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);">
+          <div style="display: flex; align-items: center;">
+            <img alt="Schedule" src="/assets/icons/clipboard-text-clock-outline.svg" height="18px" width="18px"
+              style="margin-right: 6px; filter:invert(37%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%)" />
+            <span class="ovi-fnt-sze12" style="font-weight: 400;">{{ event.title || '' }}</span>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <img alt="Schedule" src="/assets/icons/calendar-day.svg" height="16px" width="16px"
+              style="margin-right: 6px; filter:invert(37%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%)" />
+            <span class="ovi-fnt-sze12" style="font-weight: 400;">{{ event.start | date: 'dd-MM-yyyy'}}</span>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+
+                                          <!-- MAT-DRAG -->
+
+ <!-- <div class="row mt-3">
+          <div class="col-12">
+            <div class="card border-primary shadow" mwlDroppable (drop)="externalDrop($event.dropData.event)"
+              dragOverClass="drag-over">
+              <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Events</h5>
+              </div>
+              <div class="card-body">
+                <p class="text-muted" *ngIf="externalEvents.length === 0">
+                  <em>No events added</em>
+                </p>
+                <ul class="list-group">
+                  <li *ngFor="let event of externalEvents" class="list-group-item d-flex align-items-center"
+                    mwlDraggable [dropData]="{event: event}" [touchStartLongPress]="{ delay: 300, delta: 30 }"
+                    dragActiveClass="drag-active">
+                    <a href="javascript:;" class="text-decoration-none" [style.color]="event.color.primary">
+                      {{ event.title }}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div> -->
+
+        <ng-template #eventsDetails let-event>
+          <div class="ovi-cal-tooltip ovi-lbl-text-size tw-cal-border-1" 
+            style="display: flex; flex-direction: column; gap: 8px; width: 260px; padding: 12px; background-color: whitesmoke;  border-radius: 8px; box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center;">
+                <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">person</i>
+                <span *ngIf="event?.patientName">
+                  {{ event?.patientName | maskData: (event?.vipTypeId === null || event?.vipTypeId === 'General') }}
+                  <span *ngIf="event?.mainIdentifier" class="ovi-prmry-clr">({{ event?.mainIdentifier }})</span>
+                </span>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <i *ngIf="event?.gender === 'Male'" class="material-icons ovi-fnt-sze18" style="color: #382bee;">male</i>
+                <i *ngIf="event?.gender === 'Female'" class="material-icons ovi-fnt-sze18" style="color: #f505c1;">female</i>
+                <span style="margin-left: 4px;">{{ event?.patientAge ? event?.patientAge + ' yrs' : '' }}</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center;">
+              <img alt="Schedule" src="../../../../../assets/Menus/surgery.svg" height="18px" width="18px"
+                style="margin-right: 6px; filter:invert(37%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%)" />
+              <span>{{ event?.otProcedureNames || '' }}</span>
+            </div>
+            <div *ngIf="event?.patientQueueStatusId !== 'QS-PE'" style="display: flex; align-items: center;">
+              <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">local_hospital</i>
+              <span>{{ event?.doctorName || '' }}</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+              <img alt="Schedule" src="../../../../../assets/icons/schduleCanlendar.jpg" height="18px" width="18px"
+                style="margin-right: 6px;" />
+              <span>{{ event?.scheduleStartTime ? (event?.scheduleStartTime | date: 'dd-MM-yyyy HH:mm') : '' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center;">
+                <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">access_time</i>
+                <span *ngIf="event?.patientQueueStatusId === 'QS-CO'">
+                  {{ event?.start | date: 'HH:mm' }} - {{ event?.end | date: 'HH:mm' }}
+                </span>
+                <span *ngIf="event?.patientQueueStatusId !== 'QS-CO'">
+                  {{ event?.start | date: 'HH:mm' }}
+                </span>
+              </div>
+              <div *ngIf="event?.patientQueueStatusId === 'QS-CO'" style="display: flex; align-items: center;">
+                <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 4px;">timer</i>
+                <span>{{ event?.duration }}</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; flex-wrap: wrap;">
+              <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">room</i>
+              <span>{{ event?.locationName }}</span>
+              <img *ngIf="event?.surgeryTypeId === 'SGT-EM'" src="../../../../../assets/icons/emergency.png" alt="Emergency"
+                height="18px" width="18px" style="margin-left: 6px;" />
+              <mat-icon *ngIf="event?.isVulnerable === true" class="ovi-fnt-sze18" style="color: orange;">warning</mat-icon>
+              <mat-icon *ngIf="event?.threadId != null" class="ovi-fnt-sze18" style="color: red;">warning</mat-icon>
+            </div>
+            <div style="display: flex; align-items: center;">
+              <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">how_to_reg</i>
+              <span>{{ event?.patientQueueStatusId === 'QS-PE' ? 'Schedule' : event?.patientQueueStatusName }}</span>
+            </div>
+            <div *ngIf="event?.delayScheduleEndTime || event?.delayScheduleStartTime"
+              style="display: flex; align-items: center;">
+              <i class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="margin-right: 6px;">more_time</i>
+              <span>
+                {{
+                event?.delayScheduleStartTime && event?.delayScheduleEndTime ? 'Document Start & End delays' :
+                event?.delayScheduleStartTime ? 'Document Start delays' :
+                event?.delayScheduleEndTime ? 'Document End delays' : ''
+                }} ({{ event.totalMins }}m)
+              </span>
+            </div>
+          </div>
+        </ng-template>

@@ -1,0 +1,90 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div> 
+<div class="pwa-full-container ovi-font-family">
+    <div class="header">
+        <span mat-dialog-close class="back-to-menu-btn">
+           <mat-icon style="height: fit-content; width: fit-content; padding: 0;">keyboard_arrow_left</mat-icon>
+        </span>
+
+    <div style="text-align: center; flex: 1;">
+        <div class="ovi-fnt-sze16" style="font-weight: 600;">{{"Asset Maintenance"|translate}} </div>
+        <div class="ovi-fnt-sze14" style="font-weight: 400;"> {{ computedAssetName }} </div>
+        </div>
+
+        <button mat-icon-button aria-label="Add" (click)="addRoutine(null)" (keydown.enter)="fixClick()">
+            <mat-icon>add</mat-icon>
+        </button>
+    </div>
+    <div class="pwa-task-container">
+        <div *ngIf="visibleData?.length > 0">
+            <div style="padding: 0 12px; margin: 5px 0px 0px 0px;"
+                class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin ovi-matfrmfld-input-box-pdg search-field">
+                <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh">
+                    <mat-icon matPrefix class="pwa-search">search</mat-icon>
+                    <input matInput [(ngModel)]="searchText" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onSearchChange($event)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-fnt-sze12" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 20px;">
+                <span style="color: #889093;">{{totalRecords}}&nbsp;Routines</span>
+            </div>
+
+            <div class="content-container">
+                <mat-card class="card-list" *ngFor="let data of visibleData" (click)="addRoutine(data)" (keydown.enter)="fixClick()">
+                    <div style="display: flex; gap: 20px; align-items: center; font-weight: 600; padding-bottom: 5px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <mat-icon class="icon">confirmation_number</mat-icon>
+                        </div>
+                        <div style="display: flex;flex-direction:column">
+                        <span>{{ data?.pfRoutineName }}</span>
+                        <span> {{"Asset Maintenance"|translate}}</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="content-texts">
+                            <span class="card-label">{{"Schedule Type"|translate}}</span>
+                            <span class="task-data-text">{{data?.scheduleTypeName}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"Created By"|translate}}</span>
+                            <span class="task-data-text">{{data?.createdByName}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.fromDate">
+                            <span class="card-label">{{"Schedule Start"|translate}}</span>
+                            <span class="task-data-text">{{data?.fromDate| date: 'hh:mm a' }}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.statusName">
+                            <span class="card-label">{{"Status"|translate}}</span>
+                            <span class="task-data-text" style="color: #0f89ad;">{{data?.statusName}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.entityName">
+                            <span class="card-label">{{"Asset"|translate}}</span>
+                            <span class="task-data-text">{{ data?.entityName}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.fromDate">
+                            <span class="card-label">{{"From Date"|translate}}</span>
+                            <span class="task-data-text">{{data?.fromDate| date: 'dd MMM YY' }}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.toDate">
+                            <span class="card-label">{{"To Date"|translate}}</span>
+                            <span class="task-data-text">{{data?.toDate| date: 'dd MMM YY'}}</span>
+                        </div>
+                    </div>
+                </mat-card>
+            <span class="ovi-fnt-sze10" style="text-align: center; color: #717171; cursor: pointer;" (click)="moreData()" (keydown.enter)="fixClick()">
+                    {{"More"|translate}}
+            </span>
+            </div>
+        </div>
+
+        <div *ngIf="visibleData?.length === 0" class="ovi-fnt-sze12" style="display:flex;justify-content: center;margin-top:5px">
+            {{"No records found"|translate}}
+        </div>
+    </div>
+</div>

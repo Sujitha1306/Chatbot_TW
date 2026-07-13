@@ -1,0 +1,85 @@
+<div class="loading-spinner" *ngIf="isloading">
+      <div class="spinnerload">
+          <div class="spin1"></div>
+          <div class="spin2"></div>
+          <div class="spin3"></div>
+      </div>
+  </div>
+  <div class="manage-body">
+      <div>
+          <tw-header-new-component [type]="'new'" [component]="'approval-Matrix'" [permission]="null" [dateFilter]="null" [rowFilter]="null"
+              [manageAction]="null" [selectDropdown]="selectDropdown"
+              [selectedName]="selectedName !== null ? selectedName : true" [locationId]="null"
+              [selectedView]="selectedView" [multiView]="false" (selectedViewAction)="null" [groupFilter]="parentFilter"
+              (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+      </div>
+      <div>
+         <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+            <mat-tab label="{{'My Approval'|translate}}">
+                <div *ngIf="tableVersion === 1">
+                    <tw-table-component [component]="'approval-Matrix'" [columns]="displayedColumns" [tableData]="tableData"
+                        [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                        [dateTimeColumns]="dateTimeColumns" [rowId]="'id'" [rowClick]="false" (rowClickAction)="rowClick($event)"
+                        [rowDbClick]="false" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue"
+                        [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+                    </tw-table-component>
+                </div>
+                <div *ngIf="tableVersion === 2">
+                    <tw-data-table [columns]="approvalTwColumns" [data]="tableData" [loading]="isloading"
+                        [pagination]="approvalPaginationConfig" [rowClickable]="false" [rowId]="'requestId'"
+                        [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowColor]="null"
+                        tableClass="tdt-borderless" tableSize="220px" (cellAction)="onCellAction($event)" (rowClick)="null"
+                        (pageChange)="onPageChange($event)">
+                        <ng-template twCellDef="Approval Action" let-row>
+                                <mat-icon *ngIf="row.isCurrentApproval" class="ovi-fnt-sze20"
+                                    style="color:#28bf28;cursor:pointer" appTooltip
+                                    tooltipText="{{'Approve'|translate}}" placement="bottom"
+                                    (click)="eventAction({key:'Approve', data:row}); $event.stopPropagation()">
+                                    check_circle
+                                </mat-icon>
+                                <mat-icon *ngIf="row.isCurrentApproval && row.options?.status?.['RQ-RJ']" class="ovi-fnt-sze20"
+                                    style="color:#bf2828;cursor:pointer" appTooltip
+                                    tooltipText="{{'Reject'|translate}}" placement="bottom"
+                                    (click)="eventAction({key:'Reject', data:row}); $event.stopPropagation()">
+                                    highlight_off
+                                </mat-icon>
+                        </ng-template>
+                    </tw-data-table>
+                </div>
+          </mat-tab>
+          <mat-tab *ngIf="activate_btn?.includes('BT_APMVALL')" label="{{'All Approvals'|translate}}">
+            <div *ngIf="tableVersion === 1">
+                <tw-table-component [component]="'approval-Matrix'" [columns]="displayedColumns" [tableData]="tableData"
+                    [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                    [dateTimeColumns]="dateTimeColumns" [rowId]="'id'" [rowClick]="false" (rowClickAction)="rowClick($event)"
+                    [rowDbClick]="false" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue"
+                    [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+                </tw-table-component>
+            </div>
+            <div *ngIf="tableVersion === 2">
+                <tw-data-table [columns]="approvalTwColumns" [data]="tableData" [loading]="isloading"
+                    [pagination]="approvalPaginationConfig" [rowClickable]="false" [rowId]="'requestId'"
+                    [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowColor]="null"
+                    tableClass="tdt-borderless" tableSize="220px" (cellAction)="onCellAction($event)"
+                    (rowClick)="null" (pageChange)="onPageChange($event)"> 
+
+                    <ng-template twCellDef="Approval Action" let-row>
+                            <mat-icon *ngIf="row.isCurrentApproval" class="ovi-fnt-sze20"
+                                style="color:#28bf28;cursor:pointer" appTooltip
+                                tooltipText="{{'Approve'|translate}}" placement="bottom"
+                                (click)="eventAction({key:'Approve', data:row}); $event.stopPropagation()">
+                                check_circle
+                            </mat-icon>
+                            <mat-icon *ngIf="row.isCurrentApproval && row.options?.status?.['RQ-RJ']" class="ovi-fnt-sze20"
+                                style="color:#bf2828;cursor:pointer" appTooltip
+                                tooltipText="{{'Reject'|translate}}" placement="bottom"
+                                (click)="eventAction({key:'Reject', data:row}); $event.stopPropagation()">
+                                highlight_off
+                            </mat-icon>
+                    </ng-template>
+                </tw-data-table>
+            </div>
+          </mat-tab>
+          </mat-tab-group>
+      </div>
+  </div>

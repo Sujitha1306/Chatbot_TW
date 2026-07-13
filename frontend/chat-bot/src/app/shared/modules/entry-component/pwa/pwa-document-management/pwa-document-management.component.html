@@ -1,0 +1,93 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div> 
+<div class="pwa-full-container ovi-font-family">
+    <div class="header">
+        <span mat-dialog-close class="back-to-menu-btn">
+           <mat-icon style="height: fit-content; width: fit-content; padding: 0;">keyboard_arrow_left</mat-icon>
+        </span>
+    <div style="text-align: center; flex: 1;">
+        <div class="ovi-fnt-sze16" style="font-weight: 600;">
+            {{"Documents"|translate}}
+        </div>
+        <div class="ovi-fnt-sze14" style="font-weight: 400;">
+            {{ computedAssetName }}
+        </div>
+        </div>
+        <button mat-icon-button aria-label="Add" (click)="uploadfile()" (keydown.enter)="fixClick()">
+            <mat-icon>add</mat-icon>
+        </button>
+    </div>
+    <div class="pwa-task-container">
+        <div *ngIf="visibleData?.length > 0">
+            <div class="content-container">
+                <mat-card class="card-list" *ngFor="let data of visibleData">
+                    <div style="width: 100%; font-weight: 600; padding: 5px 0; overflow: hidden;">
+                    <span style="float: left; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <ng-container *ngIf="data?.fileType === 'Link'; else showName">
+                        {{ data?.fileUrl }}
+                    </ng-container>
+
+                    <ng-template #showName>
+                        {{ data?.fileName }}
+                    </ng-template>
+                    </span>
+
+                    <span style="float: right;">
+                        <button mat-icon-button color="primary"(click)="preview(data)" (keydown.enter)="fixClick()" aria-label="Edit" style="line-height:20px; height: 0px">
+                        <mat-icon style="padding-top:0px">preview</mat-icon>
+                        </button>
+
+                        <button mat-icon-button color="warn"(click)="removeAttachment(data)" (keydown.enter)="fixClick()" aria-label="Delete" style="line-height:20px; height: 0px">
+                        <mat-icon style="padding-top:0px">delete</mat-icon>
+                        </button>
+                    </span>
+                    </div>
+
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="content-texts">
+                            <span class="card-label">{{"Entity Type"|translate}}</span>
+                            <span class="task-data-text">{{data?.entityType}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"File Type"|translate}}</span>
+                            <span class="task-data-text">{{data?.fileType}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.documentTypeName">
+                            <span class="card-label">{{"Document Type"|translate}}</span>
+                            <span class="task-data-text">{{data?.documentTypeName}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.createdBy">
+                            <span class="card-label">{{"Created By"|translate}}</span>
+                            <span class="task-data-text">{{data?.createdBy}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.createdOn">
+                            <span class="card-label">{{"Created On"|translate}}</span>
+                            <span class="task-data-text">{{ data?.createdOn| date: 'dd MMM YY'}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.modifyByName">
+                            <span class="card-label">{{"Modified By"|translate}}</span>
+                            <span class="task-data-text">{{data?.modifyByName}}</span>
+                        </div>
+                        <div class="content-texts" *ngIf="data?.modifiedOn">
+                            <span class="card-label">{{"Modified On"|translate}}</span>
+                            <span class="task-data-text">{{data?.modifiedOn| date: 'dd MMM YY'}}</span>
+                        </div>
+                    </div>
+                </mat-card>
+            <span *ngIf="hasMore()" class="ovi-fnt-sze10" style="text-align: center; color: #717171; cursor: pointer;" (click)="loadMore()" (keydown.enter)="fixClick()">
+              {{"More"|translate}}
+            </span>
+            </div>
+        </div>
+
+        <div *ngIf="visibleData?.length === 0" class="ovi-fnt-sze12" style="display:flex;justify-content: center;margin-top:5px">
+            {{"No records found"|translate}}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="ovi-font-family" style="padding: 10px;">
+    <div style="display: flex; justify-content: space-between;">
+        <span class="ovi-fnt-sze16" style="color: #086284;">{{"Upload"|translate}}</span>
+        <span class="upload-close-circle">
+            <mat-icon mat-dialog-close class="pwa-custome-icon-style"
+                 style="color: #086284; margin: 0;">cancel</mat-icon>
+        </span>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="documentForm">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-one-clmn  ovi-matfrmfld-drpdwn-top-box">
+                <mat-label  class="ovi-lbl-text-size">{{"Document Type"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Document Type'|translate" formControlName="documentTypeId">
+                        <mat-option *ngFor="let docType of documentType" [value]="docType.code">
+                            {{docType.value}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-one-clmn">
+                <div class="upload-btn-group">
+                    <button
+                            [ngClass]="!documentForm.controls['documentTypeId'].value ? 'file-upload-button-disabled' : 'file-upload-button'"
+                            [disabled]="!documentForm.controls['documentTypeId'].value">
+                            <mat-icon class="ovi-fnt-sze18" style="height: fit-content;width: fit-content;padding-top: 0;margin: 0;">photo_camera</mat-icon>
+                            <input type="file" capture="environment" *ngIf="documentForm.controls['documentTypeId'].value" multiple
+                                #fileInput accept="image/*" title="" class="custom-file-input" id="file3"
+                                (change)="handleFileSelect($event); onFileSelect(fileInput)" />
+                            {{"Captured"|translate}}
+                        </button>
+                    <div class="file-button-wrapper">
+                            <button [ngClass]="!documentForm.controls['documentTypeId'].value ? 'file-upload-button-disabled' : 'file-upload-button'"
+                                [disabled]="!documentForm.controls['documentTypeId'].value">
+                                <input type="file" *ngIf="documentForm.controls['documentTypeId'].value" multiple #fileInput
+                                    accept="image/x-png,image/jpeg, .pdf, .txt" title="" class="custom-file-input" id="file3"
+                                    (change)="handleFileSelect($event); onFileSelect(fileInput)" />
+                                {{"Choose File"|translate}}
+                            </button>
+                            <!-- <span  class="file-info" *ngIf="documentForm.controls['documentTypeId'].value && !isFileSelected">{{"Please
+                                select .jpeg / .png / .pdf / .txt file format only"|translate}}</span> -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="ovi-row-one-clmn">
+            <button  mat-button class="pwa-active-btn" appDebounceClick [debounceTime]="600"
+                (debounceClick)="addDocRow()" [disabled]="documentForm.invalid" cdkFocusInitial>{{"save"|translate}}
+            </button>
+            </div>
+        </div>
+    </div>
+</div>

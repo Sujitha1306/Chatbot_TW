@@ -1,0 +1,245 @@
+<div class="mcb-container ovi-font-family">
+    <div class="mcb-chat-layout">
+        <aside class="mcb-sidebar">
+            <div class="mcb-search-wrap">
+                <input type="text" class="mcb-search-input" placeholder="Search..." [(ngModel)]="searchTerm"
+                    (ngModelChange)="onSearchChange()" />
+            </div>
+
+            <div class="mcb-tabs">
+                <button class="mcb-tab" [class.mcb-active]="selectedTab === 'dm'" (click)="setActiveTab('dm')">
+                    Direct Messages
+                </button>
+                <button class="mcb-tab" [class.mcb-active]="selectedTab === 'requests'"
+                    (click)="setActiveTab('requests'); isDirect = false;">
+                    Requests
+                </button>
+            </div>
+
+            <div *ngIf="selectedTab === 'dm'" class="mcb-toolbar">
+                <button class="mcb-new-conv-btn" (click)="isDirect = true">
+                    <span class="mcb-btn-emoji">➕</span>
+                    <span>New {{ selectedTab === 'dm' ? 'Direct message' : 'Request' }}</span>
+                </button>
+            </div>
+            <div [formGroup]="userRequestForm" *ngIf="selectedTab === 'dm' && isDirect"
+                style="display: flex;padding: 0px 13px 0px 12px;gap: 2px;">
+                <div class="direct-field-input ovi-row-one-clmn">
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                         <span matPrefix class="material-icons" style="font-size: 15px; position: relative; right: 4px; bottom: 6px;">👤</span>
+                        <input matInput appPlaceholder [showPlaceholder]="true"
+                            [placeholderText]="'User Name...'|translate" id="users" formControlName="userId" appTypeHit
+                            (typeHit)="searchUserNameList($event)" [matAutocomplete]="users" autocomplete="off">
+                        <mat-autocomplete autoActiveFirstOption
+                            [displayWith]="this.userEnabled === true ? getBindingList.bind(userList) : ''"
+                            #users="matAutocomplete">
+                            <mat-option *ngFor="let option of userList" [value]="option.id"
+                                (click)="createUserData(option)">
+                                <div class="act-wid-styl">{{option.firstName}} {{option.lastName}}</div>
+                            </mat-option>
+                        </mat-autocomplete>
+                        <span matSuffix class="material-icons" style="font-size: 15px; position: relative; left: 8px; bottom: 7px;" (click)="directFiledClose('isDirect')">❌</span>
+                        <mat-error *ngIf="userRequestForm.controls.userId.invalid">
+                            <span [hidden]="!userRequestForm.controls['userId'].errors.required">{{"User Name is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <!-- <div class="mcb-highlight"><mat-icon (click)="directFiledClose('isDirect')">highlight_off</mat-icon>
+                </div> -->
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div class="mcb-conv-list">
+                <div *ngFor="let conv of conversations" class="mcb-conv-item"
+                    [class.mcb-active]="activeConvId === conv.id" (click)="selectConversation(conv)">
+                    <div class="mcb-conv-avatar" [class.mcb-req]="selectedTab === 'requests'">
+                        {{ selectedTab === 'requests' ? '#' + getRequestId(conv) :
+                        getInitials(getConversationDisplayName(conv)) }}
+                    </div>
+                    <div class="mcb-conv-body">
+                        <div *ngIf="selectedTab === 'dm'" class="mcb-conv-top">
+                            <span class="mcb-conv-name">{{ getConversationDisplayName(conv) | titlecase  }}</span>
+                            <span class="mcb-conv-time">{{ fromMsgTime(conv.lastMessageAt || conv.modifiedOn) }}</span>
+                        </div>
+                        <div *ngIf="selectedTab === 'requests'" class="mcb-conv-top">
+                            <span class="mcb-conv-name">Req ID:<span class="req-colors"> #{{ conv.entityId }}</span></span>
+                            <span class="mcb-conv-time">{{ fromMsgTime(conv.lastMessageAt || conv.modifiedOn) }}</span>
+                        </div>
+                        <div class="mcb-conv-preview">{{ conv.lastMessage || conv.body || conv.lastMessageName || 'No
+                            messages yet' }}</div>
+                    </div>
+                    <span *ngIf="conv.unreadCount > 0" class="mcb-unread-dot">{{ conv.unreadCount }}</span>
+                </div>
+
+                <div *ngIf="conversations.length === 0 && !isLoading" class="mcb-empty-list">
+                    <div class="mcb-empty-emoji">🔍</div>
+                    <span>No conversations found</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="mcb-thread">
+            <div class="mcb-thread-header" *ngIf="activeConv">
+                <div class="mcb-thread-title-wrap">
+                    <div class="mcb-conv-avatar" [class.mcb-req]="selectedTab === 'requests'">
+                        {{ selectedTab === 'requests' ? '#' + getRequestId(activeConv) :
+                        getInitials(getConversationDisplayName(activeConv)) }}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div class="mcb-thread-title" *ngIf="selectedTab !== 'requests'">{{
+                            getConversationDisplayName(activeConv) }}</div>
+                        <div class="mcb-thread-title" *ngIf="selectedTab === 'requests'"> <span class="mcb-conv-name">Req ID:<span style="color: var(--primary-menu-bg-color);"> #{{ activeConv.entityId }}</span></span>
+                        </div>
+                        <div class="mcb-thread-meta">Conversation #{{ activeConv.id }}</div>
+                    </div>
+                </div>
+                <!-- <div class="mcb-thread-actions">
+                    <button class="mcb-icon-btn" title="Mark all as read">
+                        <mat-icon>done</mat-icon>
+                    </button>
+                </div> -->
+            </div>
+             
+            <div class="chat-skeleton" *ngIf="isLoading">
+                <div class="skeleton-msg left"></div>
+                <div class="skeleton-msg right"></div>
+                <div class="skeleton-msg left"></div>
+                <div class="skeleton-msg right"></div>
+            </div>
+
+                <div class="mcb-messages" *ngIf="activeConv" #messagesBody (scroll)="onMessagesScroll()">
+                    <div *ngIf="!messages?.length && !isLoading" class="mcb-empty-chat">
+                        <div class="mcb-empty-icon">💭</div>
+                        <h3>No Messages Yet</h3>
+                        <p> Start the conversation by sending your first message.</p>
+                        <div class="mcb-empty-wave"></div>
+                    </div>
+                    <ng-container *ngFor="let msg of messages; let i = index">
+                        <div *ngIf="shouldShowDate(i)" class="mcb-date-divider">
+                            {{ getDateLabel(msg?.createdOn) }}
+                        </div>
+
+                        <div *ngIf="msg.isInvited" class="mcb-invite-text">
+                            <span class="mcb-inline-emoji">✨</span>
+                            {{ msg.text }}
+                        </div>
+
+                        <div *ngIf="!msg.isInvited" class="mcb-msg-row" [class.mcb-me]="isOwnMessage(msg)"
+                            [class.mcb-them]="!isOwnMessage(msg)">
+                            <div class="mcb-bubble">
+                                <div class="mcb-message-owner" *ngIf="shouldShowMessageOwner(i)">
+                                    {{ msg.msgOwner | titlecase }}
+                                </div>
+                                <div class="mcb-bubble-body">
+                                    <span *ngIf="msg.text">{{ msg.text }}</span>
+
+                                    <img *ngIf="msg.image" [src]="msg.image" class="mcb-image" alt="chat attachment"
+                                        (click)="openPreview(msg.image, 'image')" />
+
+                                    <div *ngIf="msg.file" class="mcb-file-card"
+                                        (click)="openPreview(msg.file, 'file', msg.fileName)">
+                                        <mat-icon class="mcb-file-icon">description</mat-icon>
+                                        <div class="mcb-file-info">
+                                            <div class="mcb-file-name" [title]="msg.fileName">{{ msg.fileName || 'Document'
+                                                }}</div>
+                                            <div class="mcb-file-type">{{ getFileType(msg.fileName) }}</div>
+                                        </div>
+                                        <mat-icon class="mcb-file-action">download</mat-icon>
+                                    </div>
+
+                                    <video *ngIf="msg.video" [src]="msg.video" controls class="mcb-video"></video>
+
+                                    <audio *ngIf="msg.audio" [src]="msg.audio" controls class="mcb-audio"></audio>
+                                </div>
+                                <div class="mcb-bubble-meta">
+                                    <span>{{ formatTime(msg.createdOn) }}</span>
+                                    <mat-icon class="mcb-read-tick" [class.mcb-read]="isMessageRead(msg)"
+                                        [class.mcb-unread]="!isMessageRead(msg)"
+                                        *ngIf="isOwnMessage(msg)">done_all</mat-icon>
+                                </div>
+                            </div>
+                        </div>
+                    </ng-container>
+                </div>
+
+            <div class="mcb-empty-chat" *ngIf="!activeConv">
+                <div class="mcb-empty-icon">💭</div>
+                <h3>Pick a conversation</h3>
+                <p>Select a conversation from the sidebar to start chatting.</p>
+                <div class="mcb-empty-wave"></div>
+            </div>
+
+            <div class="mcb-composer" *ngIf="activeConv">
+                <div class="mcb-composer-row">
+                    <div class="mcb-attach-wrapper">
+                        <button class="mcb-composer-btn" title="Attach file" (click)="toggleAttachMenu()">
+                            <mat-icon>attach_file</mat-icon>
+                        </button>
+                        <div class="mcb-attach-menu ovi-font-family" *ngIf="showAttachMenu">
+                            <label class="mcb-attach-item">
+                                <mat-icon>image</mat-icon>
+                                <span>Image</span>
+                                <input type="file" hidden accept="image/*" #imageInput
+                                    (change)="onFileSelected($event, 'image')" />
+                            </label>
+                            <label class="mcb-attach-item">
+                                <mat-icon>videocam</mat-icon>
+                                <span>Video</span>
+                                <input type="file" hidden accept="video/*" (change)="onFileSelected($event, 'video')" />
+                            </label>
+                            <label class="mcb-attach-item">
+                                <mat-icon>description</mat-icon>
+                                <span>Document</span>
+                                <input type="file" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" #docInput
+                                    (change)="onFileSelected($event, 'document')" />
+                            </label>
+                        </div>
+                    </div>
+                    <textarea class="mcb-composer-textarea" placeholder="Type a message..." rows="1"
+                        [(ngModel)]="messageInput" (keydown.enter)="sendMessage(); $event.preventDefault()"></textarea>
+                    <button class="mcb-composer-btn" title="Voice" [ngClass]="isRecording ? 'mcb-recording' : ''"
+                        (click)="toggleRecording()">
+                        <mat-icon>{{ isRecording ? 'stop' : 'mic' }}</mat-icon>
+                    </button>
+                    <button class="mcb-composer-btn mcb-send-btn" title="Send" (click)="sendMessage()"
+                        [disabled]="!messageInput.trim()">
+                        <mat-icon>send</mat-icon>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="mcb-preview-overlay" *ngIf="previewData || showUnsupportedPreview">
+        <div class="mcb-preview-box">
+            <div class="mcb-preview-actions">
+                <button class="mcb-preview-btn" (click)="toggleMenu()">
+                    <mat-icon>more_vert</mat-icon>
+                </button>
+                <div class="mcb-preview-menu ovi-font-family" *ngIf="showMenu">
+                    <div (click)="downloadFile()">Download</div>
+                </div>
+            </div>
+            <button class="mcb-preview-close" (click)="closePreview()">
+                <mat-icon>close</mat-icon>
+            </button>
+            <div class="mcb-image-wrapper" *ngIf="previewType === 'image'">
+                <div class="mcb-zoom-controls">
+                    <button class="mcb-zoom-btn" (click)="zoomIn()">+</button>
+                    <button class="mcb-zoom-btn" (click)="zoomOut()">-</button>
+                    <button class="mcb-zoom-btn" (click)="resetZoom()">
+                        <mat-icon>restart_alt</mat-icon>
+                    </button>
+                </div>
+                <img [src]="previewData" class="mcb-preview-img" alt="preview"
+                    [style.transform]="'scale(' + zoomLevel + ')'" />
+            </div>
+            <iframe *ngIf="previewType === 'file'" [src]="previewData" class="mcb-preview-frame"></iframe>
+            <div *ngIf="showUnsupportedPreview" class="mcb-file-fallback">
+                <p>Preview not available for this file</p>
+                <button (click)="downloadFile()">Download</button>
+            </div>
+        </div>
+    </div>
+</div>

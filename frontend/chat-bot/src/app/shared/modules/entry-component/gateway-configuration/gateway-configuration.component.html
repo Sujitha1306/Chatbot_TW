@@ -1,0 +1,207 @@
+<div class="input-component-holder ovi-font-family" style="height: 100%;overflow: hidden;"
+    appWindowResize (resized)="onWindowResized($event)" [component]="'pop-up'">
+    <mat-toolbar class="input-header block-1">
+        <div class="header-name close-align">
+            {{data.configType === 'CFT-SC'? 'Server Configuration' : data.configType === 'CFT-JC'? 'Job Configuration' :
+            'Task Configuration'}}</div>
+        <div class="header-close">
+            <button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </div>
+    </mat-toolbar>
+    <div #container class="popup-margin" style="height: calc(100% - 35px);">
+        <div  style="width: 250px;float: left;height : calc(100% - 2px);border-right: 2px solid lightgray;overflow: auto;">
+            <mat-list *ngIf="masterValue?.length !== 0" [style.height.px]="contentHeight" style="overflow-x: hidden;overflow-y: scroll;">
+                <mat-list-item [ngClass] = "selectedData && selectedData.id == data.id ? 'selected-list' : 'non-selected-list'" 
+                *ngFor="let data of masterValue" (keydown.enter)="fixClick()" (click) = "triggerAction(data)"
+                style="border-bottom: 1.5px solid #e8e8e8;height: 50px;">
+                <h6 matLine class="ovi-fnt-sze14" appTooltip tooltipText="{{'data.name'|translate}}" placement="top">{{data.name}}</h6>
+                <mat-icon *ngIf="configJson !== null && configJson?.indexOf(data.id) > -1" class="ovi-fnt-sze14"
+                    [ngStyle]="{'color': selectedData && selectedData.id == data.id ? 'white' : 'gray'}">edit</mat-icon>
+                <mat-icon *ngIf="configJson === null || configJson?.indexOf(data.id) == -1" class="ovi-fnt-sze14"
+                    [ngStyle]="{'color': selectedData && selectedData.id == data.id ? 'white' : 'gray'}">add</mat-icon>
+                <h6 matLine [ngStyle]="{'color': selectedData && selectedData.id == data.id ? 'white' : 'gray'}" class="ovi-fnt-sze10" 
+                  appTooltip tooltipText="{{'data.desc'|translate}}" placement="top">{{data.desc}}</h6>
+            </mat-list-item>
+            </mat-list>
+        </div>
+        <div style="width: calc(100% - 270px);float: left;height : calc(100% - 2px);padding-left: 10px;">
+            <div *ngIf="configField.length !== 0" class="mat-custom-form-field-box" [formGroup]="configForm">
+                <div formArrayName="inputList" [style.height.px]="contentHeight" style="overflow-x: hidden;overflow-y: scroll;">
+                    <div *ngFor="let obj of configForm.controls.inputList.controls; let i=index">
+                        <div [formGroupName]="i" [ngStyle]="{'margin-top': isMultiple && i == 0 ? '40px' : '20px'}">
+                            <div *ngIf="isMultiple && i == 0" style="float: right; margin-top: -40px;">
+                                <button mat-mini-fab style="margin-right: 25px;cursor: pointer;"
+                                    (click)="addInputs()">+</button>
+                            </div>
+                            <mat-icon *ngIf="isMultiple && i >= masterData?.config?.length" class="config-close" (keydown.enter)="fixClick()" (click)="removeInputs(i, 'clear')">close</mat-icon>
+                            <div class="create-shadow" >
+                                <div class="form-row block-3" style="margin: 10px;">
+                                    <div class="row-field-2" *ngFor="let field of configField;" [ngStyle]="{'width': field?.type === 'LAB' || field?.type === 'LBO' ? '100%' : ''}">
+                                        <div class="example-form" *ngIf="field?.type === 'IFI'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input type="number" matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}"
+                                                    autocomplete="off"  [min]="field?.min" [max]="field?.max" 
+                                                    [readonly]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false">
+                                                <mat-error class="error-txt-1">
+                                                    {{"Value exceed the min or max"|translate}}.
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'IFS'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input type="string" matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}"
+                                                    autocomplete="off"  
+                                                    [readonly]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false">
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'TAO'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <textarea  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" (change)="customValidateJson($event.target.value)" 
+                                                [readonly]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false"></textarea>
+                                                <mat-hint *ngIf="invalidJson == true">
+                                                    <span style="color:red;">{{"Invalid Json Format"|translate}}.</span>
+                                                </mat-hint>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'TAA'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <textarea  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" (change)="customValidateArray($event.target.value)" 
+                                                [readonly]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false"></textarea>
+                                                <mat-hint *ngIf="invalidArray == true">
+                                                    <span style="color:red;">{{"Invalid Array Format"|translate}}.</span>
+                                                </mat-hint>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'DDA'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" 
+                                                [disabled]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false">
+                                                    <mat-option *ngFor="let data of this[field?.id + 'List']" [value]="data.code" (keydown.enter)="fixClick()" (click)="revoveDuplicate(i, field?.id, data.code)">{{data.value}}</mat-option>
+                                                </mat-select>
+                                                <mat-hint *ngIf="this[field?.id + i + 'exist'] == true">
+                                                    <span style="color:red;">{{field?.name}} already exist.</span>
+                                                </mat-hint>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'DMA'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" [disableOptionCentering]="true" multiple formControlName="{{field?.id}}" (openedChange)="openedChange($event, i, field?.id)"
+                                                [disabled]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false">
+                                                    <mat-option *ngFor="let data of this[field?.id + 'List']" [value]="data.code" (keydown.enter)="fixClick()">{{data.value}}</mat-option>
+                                                </mat-select>
+                                                <mat-hint *ngIf="this[field?.id + i + 'exist'] == true">
+                                                    <span style="color:red;">{{field?.name}} already exist.</span>
+                                                </mat-hint>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'DDO'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" 
+                                                [disabled]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false">
+                                                    <mat-option *ngFor="let data of field?.option_values" [value]="data.value">{{data.name}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'DDF'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" 
+                                                [disabled]="this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : false">
+                                                    <mat-option *ngFor="let data of facilityList" [value]="data.facilityId" (keydown.enter)="fixClick()" (click)="field?.name === 'Facility ID' ? enableLocation(field?.id, i) : ''">{{data.facilityName}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'DDL'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" id="locationSearch" appTypeHit
+                                                    (typeHit)="getLocationSearch($event)" [matAutocomplete]="Loc" autocomplete="off"
+                                                    [readonly]="!editLocation && this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : (!editLocation ? true : false)">
+                                                <mat-autocomplete autoActiveFirstOption [displayWith]="this.locationIdEnabled === true ? getLocationIdList.bind(locationDetails) : ''" #Loc="matAutocomplete">
+                                                    <mat-option *ngFor="let option of locationDetails" [value]="option.id">
+                                                        <div class="alrt-wid-styl">{{option.name}}, {{option.fullName}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'DML'">
+                                            <mat-label class="ovi-lbl-text-size">{{field?.name}}</mat-label>&nbsp;
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" id="locationSearch" appTypeHit
+                                                    (typeHit)="getLocationSearch($event)" [matAutocomplete]="Loc" autocomplete="off" (input)="preventString($event, i, field?.id)"
+                                                    [readonly]="!editLocation && this.configLength > i && configForm.controls.inputList.value[i][field?.id] !== null && configForm.controls.inputList.value[i][field?.id] !== '' ? field?.disable : (!editLocation ? true : false)">
+                                                <mat-autocomplete autoActiveFirstOption #Loc="matAutocomplete" [displayWith]="displayLocation">
+                                                    <mat-option *ngFor="let option of locationDetails" [value]="option.id" (click)="$event.stopPropagation()">
+                                                         <mat-checkbox [checked]="isSelected(option.id, i)" (click)="$event.stopPropagation()" (change)="checkLocationName(option.id, i, $event, field?.id)">
+                                                            <div class="alrt-wid-styl">{{option.name}}, {{option.fullName}}</div>
+                                                        </mat-checkbox>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'LAB'">
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="none">
+                                                <input type="string" matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}"
+                                                    autocomplete="off"  readonly style="font-weight: 600;">
+                                                <mat-divider class="divider"></mat-divider>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" *ngIf="field?.type === 'LBO'">
+                                            <span *ngIf="field?.hint" class="ovi-lbl-text-size">({{field?.hint}})</span>
+                                            <mat-form-field class="example-full-width form-field" appearance="none">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.id}}" disabled>
+                                                    <mat-option *ngFor="let data of field?.option_values" [value]="data.value">{{data.name}}</mat-option>
+                                                </mat-select>
+                                                <mat-divider class="divider"></mat-divider>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="example-form" style="text-align: center;" *ngIf="field?.type === 'SLD'">
+                                            <div class="ovi-fnt-sze11" >{{field?.name}} : {{slider.value}}</div>
+                                            <span class="ovi-fnt-sze11" >{{field?.min}}</span>
+                                            <mat-slider #slider min="{{field?.min}}" max="{{field?.max}}" class="slider-width"
+                                            formControlName="{{field?.id}}" [thumbLabel]="true" [step]="step"></mat-slider>
+                                            <span class="ovi-fnt-sze11" style="padding-left: 10px;">{{field?.max}}</span>
+                                        </div>
+                                        <div class="example-form" style="text-align: left;margin-top: 30px;" *ngIf="field?.type === 'TGB'">
+                                            <mat-slide-toggle formControlName="{{field?.id}}"></mat-slide-toggle>
+                                            <span class="ovi-fnt-sze11" style=" padding-left: 20px;">{{field?.name}}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-footer" style="padding: 0px 0px 10px 0px;text-align: right !important;">
+                    <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+                    <button mat-button *ngIf="configValue.length === 0" class="active-btn margin-r-1" appDebounceClick 
+                    (debounceClick)="addConfig()" [debounceTime]="300" cdkFocusInitial [disabled]="configForm.invalid || !isDisable">{{"Add"|translate}}</button>
+                    <button mat-button *ngIf="configValue.length !== 0" class="active-btn margin-r-1" appDebounceClick 
+                    (debounceClick)="updateConfig()" [debounceTime]="300" cdkFocusInitial [disabled]="configForm.invalid">{{"Update"|translate}}</button>
+                    <button mat-button *ngIf="configValue.length !== 0" class="active-btn margin-r-1" appDebounceClick 
+                    (debounceClick)="deleteConfig()" [debounceTime]="300" cdkFocusInitial [disabled]="configForm.invalid">{{"Delete"|translate}}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

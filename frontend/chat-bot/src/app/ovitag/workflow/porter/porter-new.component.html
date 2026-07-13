@@ -1,0 +1,361 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div  *ngIf="twTableVersionData === 1" class="manage-body">
+    <tw-header-new-component [type]="'new'" [component]="'porter'" [permission]="null" [dateFilter]="this.selectedDate" [rowFilter]="null"
+        [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="true" [locationId]="null"
+        [selectedView]="null" [multiView]="false" (selectedViewAction)="null" [groupFilter]="parentFilter"
+        (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+    <div *ngIf="selectedView == 'table'" class="tw-content1">
+        <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+            <mat-tab [disabled]="this.enableTab" label="{{'All Requests'|translate}}">
+                <div *ngIf="this.tableData && this.tableData.length > 0">
+                    <tw-table-component *ngIf="this.selectedTabIndex === 0" [component]="'porter'" [columns]="displayedColumns1"
+                        [tableData]="tableData" [dateTimeColumns]="dateTimeColumns" [timeColumns]="timeColumns"
+                        [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                        (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue" [rowClick]="true" [rowId]="'requestId'"
+                        (rowClickAction)="rowClick($event)" [permissionControl]="permissionControl" [colColor]="tableColColor"
+                        [rowColor]="tableRowColor" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]"
+                        [tableClass]="'tab-table'"></tw-table-component>
+                </div>
+                <div *ngIf="!this.tableData || this.tableData.length === 0" class="tw-no-records-header">
+                    <Span class="tw-no-records-text">{{'No Records Found'|translate}}</Span>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'My Requests'|translate}}">
+                <div *ngIf="this.tableData && this.tableData.length > 0">
+                    <tw-table-component *ngIf="this.selectedTabIndex === 1" [component]="'porter'" [subcomponent]="'my-request'"
+                        [columns]="displayedColumns1" [tableData]="tableData" [dateTimeColumns]="dateTimeColumns"
+                        [timeColumns]="timeColumns" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+                        [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue"
+                        [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="rowClick($event)"
+                        [permissionControl]="permissionControl" [colColor]="tableColColor" [rowColor]="tableRowColor"
+                        [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'"></tw-table-component>
+                </div>
+                <div *ngIf="!this.tableData || this.tableData.length === 0" class="tw-no-records-header">
+                    <Span class="tw-no-records-text">{{'No Records Found'|translate}}</Span>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Manage Team'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFPOMGT')">
+                <div *ngIf="this.tableData && this.tableData.length > 0">
+                    <tw-table-component *ngIf="this.selectedTabIndex === 2" [component]="'task'" [columns]="MTDisplayedColumns"
+                        [tableData]="tableData" [iconHeader]="['Device']"
+                        [iconColumn]="['Device','Name', 'Current Location', 'Break Status']" [sortColumn]="sortColumn"
+                        [eventColumn]="['Schedule', 'Device', 'Name']" (eventAction)="eventAction($event)" [rowClick]="true"
+                        [rowId]="'id'" (rowClickAction)="rowClick($event)" [applyFilter]="applyFilterValue"
+                        [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]"
+                        [tableClass]="'tab-table'"></tw-table-component>
+                </div>
+                <div *ngIf="!this.tableData || this.tableData.length === 0" class="tw-no-records-header">
+                    <Span class="tw-no-records-text">{{'No Records Found'|translate}}</Span>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Pharmacy Tasks'|translate}}" *ngIf="activate_btn && activate_btn.includes('TB_WFPOPHRM')">
+                <div *ngIf="this.tableData && this.tableData.length > 0">
+                    <tw-table-component *ngIf="selectedTabIndex === 3" [component]="'porter-req-detail'" [columns]="RDDisplayedColumns"
+                        [tableData]="tableData" [iconHeader]="RDiconHeader" [iconColumn]="RDiconColumn" [sortColumn]="RDsortColumn"
+                        [timeColumns]="RDTimeColumns" [eventColumn]="[]" (eventAction)="eventAction($event)" [rowClick]="true"
+                        [rowId]="'id'" (rowClickAction)="rowClick($event)" (checkBoxAction)="checkBoxAction($event)"
+                        [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
+                        [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'"></tw-table-component>
+                </div>
+                <div *ngIf="!this.tableData || this.tableData.length === 0" class="tw-no-records-header">
+                    <Span class="tw-no-records-text">{{'No Records Found'|translate}}</Span>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Pharmacy Request'|translate}}" *ngIf="activate_btn && activate_btn.includes('BT_WFPOPR')">
+                <div *ngIf="this.tableData && this.tableData.length > 0">
+                    <tw-table-component *ngIf="this.selectedTabIndex === 4" [component]="'porter'" [columns]="displayedColumns1"
+                        [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+                        [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue"
+                        [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="rowClick($event)"
+                        [permissionControl]="permissionControl" [colColor]="tableColColor" [rowColor]="tableRowColor"
+                        [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'"></tw-table-component>
+                </div>
+                <div *ngIf="!this.tableData || this.tableData.length === 0" class="tw-no-records-header">
+                    <Span class="tw-no-records-text">{{'No Records Found'|translate}}</Span>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+</div>
+<div class="manage-body" *ngIf="twTableVersionData == 2">
+  <tw-header-new-component [type]="'new'" [component]="'porter'" [permission]="null" [dateFilter]="this.selectedDate"
+    [rowFilter]="null" [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="true"
+    [locationId]="null" [selectedView]="null" [multiView]="false" (selectedViewAction)="null"
+    [groupFilter]="parentFilter" (headerEventAction)="headerEventAction($event)">
+  </tw-header-new-component>
+
+  <div *ngIf="selectedView == 'table'" class="tw-content1">
+    <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- Tab 0 — All Requests                                              -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <mat-tab [disabled]="this.enableTab" label="{{ 'All Requests' | translate }}">
+        <tw-data-table *ngIf="selectedTabIndex === 0" [columns]="porterTwColumns" [data]="tableData" [loading]="loading"
+          [pagination]="porterPaginationConfig" [rowClickable]="false" [rowId]="'requestId'"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowColor]="getPorterRowColorFn()"
+          tableClass="tdt-borderless" tableSize="165px" (cellAction)="onCellAction($event)"
+          (rowClick)="handleRowClick($event)" (pageChange)="onPageChange($event)">
+
+          <!-- Message column: chat icon + unread badge -->
+          <ng-template twCellDef="Message" let-row>
+            <span class="porter-chat-meg-btn"
+              (click)="eventAction({key:'Message', data:row}); $event.stopPropagation()">
+              <mat-icon
+                [ngClass]="{ 'conversation-active': row.conversationId, 'conversation-inactive': !row.conversationId }">chat</mat-icon>
+              <span *ngIf="row?.unreadCount > 0" class="porter-chat-badge">{{ row.unreadCount }}</span>
+            </span>
+          </ng-template>
+
+          <!-- Alert column: warning icon + tooltip list -->
+          <ng-template twCellDef="Alert" let-row>
+            <span *ngIf="row['Alert']?.length" class="porter-alert-cell">
+              <mat-icon class="porter-alert-icon" [title]="row['Alert']?.join('\n')">warning</mat-icon>
+            </span>
+          </ng-template>
+
+          <!-- Rating column: star icon -->
+          <ng-template twCellDef="Rating" let-row>
+            <span class="porter-rating-cell" (click)="eventAction({key:'rating', data:row}); $event.stopPropagation()">
+
+              <mat-icon class="rating-star" [style.color]="(row.rating || 0) > 0 ? 'rgb(229 164 19)' : 'lightgray'">
+                ⭐
+              </mat-icon>
+
+              <span *ngIf="row.status =='RQ-CO' && row.performer?.length > 0 && row.rating" class="rating-value">
+                {{ row.rating }}
+              </span>
+            </span>
+          </ng-template>
+
+          <!---priority colums -->
+          <ng-template twCellDef="Priority" let-row>
+            <span>
+              <img *ngIf="row['priority']" style="width:25px;" src="/assets/Alert/common_icons/priority_high.svg"
+                alt="priority">
+            </span>
+          </ng-template>
+          <!---Location -->
+          <ng-template twCellDef="Location" let-row>
+
+            <span *ngIf="row.status !== 'RQ-CO'" style="text-align:center; cursor:pointer;"
+              (click)="$event.stopPropagation()">
+              <img src="/assets/Alert/common_icons/map_marker.svg" alt="Map-marker"
+                *ngIf="row.status !== 'RQ-RJ' && row.status !== 'RQ-CA'" class="cur-ptr"
+                (click)="eventAction({ key: 'Location', data: row }); $event.stopPropagation()"
+                (keydown.enter)="fixClick()" />
+              <img src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Map-marker-grey"
+                *ngIf="row.status === 'RQ-RJ' || row.status === 'RQ-CA'" class="cur-ptr"
+                (click)="$event.stopPropagation()" />
+            </span>
+            <div *ngIf="row.status === 'RQ-CO'" class="cur-ptr" style="color: blue;"
+              (click)="eventAction({ key: 'viewHistory', data: row }); $event.stopPropagation()"
+              (keydown.enter)="fixClick()">View History
+            </div>
+
+          </ng-template>
+
+        </tw-data-table>
+      </mat-tab>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- Tab 1 — My Requests                                               -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <mat-tab label="{{ 'My Requests' | translate }}">
+        <tw-data-table *ngIf="selectedTabIndex === 1" [columns]="porterTwColumns" [data]="tableData" [loading]="loading"
+          [pagination]="porterPaginationConfig" [rowClickable]="false" [rowId]="'requestId'"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowColor]="getPorterRowColorFn()"
+          tableClass="tdt-borderless" tableSize="165px" (cellAction)="onCellAction($event)"
+          (rowClick)="handleRowClick($event)" (pageChange)="onPageChange($event)">
+
+          <!-- Message column: chat icon + unread badge -->
+          <ng-template twCellDef="Message" let-row>
+            <span class="porter-chat-meg-btn"
+              (click)="eventAction({key:'Message', data:row}); $event.stopPropagation()">
+              <mat-icon
+                [ngClass]="{ 'conversation-active': row.conversationId, 'conversation-inactive': !row.conversationId }">chat</mat-icon>
+              <span *ngIf="row?.unreadCount > 0" class="porter-chat-badge">{{ row.unreadCount }}</span>
+            </span>
+          </ng-template>
+
+          <!-- Alert column: warning icon + tooltip list -->
+          <ng-template twCellDef="Alert" let-row>
+            <span *ngIf="row['Alert']?.length" class="porter-alert-cell">
+              <mat-icon class="porter-alert-icon" [title]="row['Alert']?.join('\n')">warning</mat-icon>
+            </span>
+          </ng-template>
+
+          <!-- Rating column: star icon -->
+          <ng-template twCellDef="Rating" let-row>
+            <span class="porter-rating-cell" (click)="eventAction({key:'rating', data:row}); $event.stopPropagation()">
+
+              <mat-icon class="rating-star" [style.color]="(row.rating || 0) > 0 ? 'rgb(229 164 19)' : 'lightgray'">
+                star
+              </mat-icon>
+
+              <span *ngIf="row.status =='RQ-CO' && row.performer?.length > 0 && row.rating" class="rating-value">
+                {{ row.rating }}
+              </span>
+            </span>
+          </ng-template>
+
+          <!---priority colums -->
+          <ng-template twCellDef="Priority" let-row>
+            <span>
+              <img *ngIf="row['priority']" style="width:25px;" src="/assets/Alert/common_icons/priority_high.svg"
+                alt="priority">
+            </span>
+          </ng-template>
+          <!---Location -->
+          <ng-template twCellDef="Location" let-row>
+
+            <span *ngIf="row.status !== 'RQ-CO'" style="text-align:center; cursor:pointer;"
+              (click)="$event.stopPropagation()">
+              <img src="/assets/Alert/common_icons/map_marker.svg" alt="Map-marker"
+                *ngIf="row.status !== 'RQ-RJ' && row.status !== 'RQ-CA'" class="cur-ptr"
+                (click)="eventAction({ key: 'Location', data: row }); $event.stopPropagation()"
+                (keydown.enter)="fixClick()" />
+              <img src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Map-marker-grey"
+                *ngIf="row.status === 'RQ-RJ' || row.status === 'RQ-CA'" class="cur-ptr"
+                (click)="$event.stopPropagation()" />
+            </span>
+            <div *ngIf="row.status === 'RQ-CO'" class="cur-ptr" style="color: blue;"
+              (click)="eventAction({ key: 'viewHistory', data: row }); $event.stopPropagation()"
+              (keydown.enter)="fixClick()">View History
+            </div>
+
+          </ng-template>
+        </tw-data-table>
+      </mat-tab>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- Tab 2 — Manage Team                                               -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <mat-tab label="{{ 'Manage Team' | translate }}"
+        [disabled]="activate_btn && !activate_btn.includes('TB_WFPOMGT')">
+        <tw-data-table *ngIf="selectedTabIndex === 2" [columns]="mtTwColumns" [data]="tableData" [loading]="loading"
+          [pagination]="porterPaginationConfig" [rowClickable]="false" [rowId]="'id'" [applyFilter]="applyFilterValue"
+          [permissionControl]="permissionControl" tableClass="tdt-borderless" tableSize="165px"
+          (cellAction)="onCellAction($event)" (rowClick)="handleRowClick($event)" (pageChange)="onPageChange($event)">
+
+          <!-- Device: coaster / device image -->
+          <ng-template twCellDef="Device" let-row>
+            <span>
+              <span *ngIf="row['Device'] === null && row['tag_type'] === null && row.status != 'Assign Token'">
+                <img style="width:18px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+              </span>
+              <span *ngIf="row['Device'] === null && row['tag_type'] !== null && row['tag_type'] !== 'TT-MB'">
+                <img style="width:18px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+              </span>
+              <span *ngIf="row['Device'] !== null && row['tag_type'] !== null && row['tag_type'] !== 'TT-MB'" appTooltip
+                [tooltipText]="row['tagId']">
+                <img style="width:18px;" src="/assets/Alert/common_icons/coaster.svg" alt="coaster_img">
+              </span>
+              <span
+                *ngIf="row['iotAlertStatus'] === 'Y' && row['tag_type'] !== null && row['tag_type'] !== 'TT-MB' && row['tag_type'] !== 'TT-PA'">
+                <img style="width:18px;" src="/assets/Alert/common_icons/coaster-missing.svg" alt="coaster_img">
+              </span>
+              <span *ngIf="row['Device'] !== null && row['tag_type'] === 'TT-MB'">
+                <img style="width:18px;" src="/assets/Alert/common_icons/mobile_phone.svg" alt="coaster_img">
+              </span>
+              <span *ngIf="row['Device'] === null && row['tag_type'] === 'TT-MB'">
+                <img style="width:18px;" src="/assets/Alert/common_icons/mobile_phone-g.svg" alt="coaster_img">
+              </span>
+            </span>
+          </ng-template>
+
+          <!-- Name: clickable porter name -->
+          <ng-template twCellDef="Name" let-row>
+            <span class="tdt-cell-link" (click)="eventAction({key:'Name', data:row}); $event.stopPropagation()">
+              {{ row['Name'] }}
+            </span>
+          </ng-template>
+
+          <!-- Break Status: break action buttons -->
+          <ng-template twCellDef="Break Status" let-row>
+            <span>
+              <img *ngIf="row?.breakId == null && row?.associateId"
+                (click)="eventAction({key:'addBreak', data:row}); $event.stopPropagation()"
+                style="width:35px;cursor: pointer;" src="assets\Alert\processing_break_g.svg" alt="AddBreak"
+                (keydown.enter)="fixClick()">
+              <img *ngIf="row?.breakId && row?.associateId" (click)="eventAction({key:'closeBreak',data:row})"
+                style="width:35px;cursor: pointer;" src="assets\Alert\processing_break.svg" alt="OnBreak"
+                (keydown.enter)="fixClick()">
+
+            </span>
+          </ng-template>
+
+        </tw-data-table>
+      </mat-tab>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- Tab 3 — Pharmacy Tasks (with checkbox selection)                  -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <mat-tab label="{{ 'Pharmacy Tasks' | translate }}" *ngIf="activate_btn && activate_btn.includes('TB_WFPOPHRM')">
+        <tw-data-table *ngIf="selectedTabIndex === 3" [columns]="rdTwColumns" [data]="tableData" [loading]="loading"
+          [pagination]="porterPaginationConfig" [selectable]="true" [rowClickable]="true" [rowId]="'id'"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" tableClass="tdt-borderless"
+          tableSize="165px" (cellAction)="onCellAction($event)" (rowClick)="handleRowClick($event)"
+          (pageChange)="onPageChange($event)" (selectionChange)="onSelectionChange($event)">
+
+          <!-- Ack column: acknowledge button -->
+          <ng-template twCellDef="Ack" let-row>
+            <span *ngIf="row['status'] == 'RQ-CO'" style="cursor: pointer;">
+              <img *ngIf="row['acknowledgeTime'] && !row['isPartiallyCompleted']" src="/assets/Alert/IP/check-mark.svg"
+                alt="ack" class="cur-ptr" style="width: 18px" appTooltip
+                [tooltipText]="element['acknowledgedByName']" />
+              <img *ngIf="!row['acknowledgeTime'] && !row['isPartiallyCompleted']"
+                src="/assets/Alert/common_icons/warning.svg" alt="ack" class="cur-ptr" style="width: 18px" appTooltip
+                [tooltipText]="'Pending Acknowledgement'|translate"
+                (click)="eventAction({key:'rdAck', data:row}); $event.stopPropagation()" (keydown.enter)="fixClick()" />
+              <img *ngIf="row['isPartiallyCompleted']" src="/assets/Alert/IP/check-mark-incomplete.svg" alt="ack"
+                class="cur-ptr" style="width: 24px;margin-left: -4px;" appTooltip
+                [tooltipText]="element['acknowledgedByName']"
+                (click)="eventAction({key:'rdAck', data:row}); $event.stopPropagation()" (keydown.enter)="fixClick()" />
+            </span>
+          </ng-template>
+
+        </tw-data-table>
+      </mat-tab>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!-- Tab 4 — Pharmacy Request                                          -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <mat-tab label="{{ 'Pharmacy Request' | translate }}" *ngIf="activate_btn && activate_btn.includes('BT_WFPOPR')">
+        <tw-data-table *ngIf="selectedTabIndex === 4" [columns]="porterTwColumns" [data]="tableData" [loading]="loading"
+          [pagination]="porterPaginationConfig" [rowClickable]="false" [rowId]="'requestId'"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowColor]="getPorterRowColorFn()"
+          tableClass="tdt-borderless" tableSize="165px" (cellAction)="onCellAction($event)"
+          (rowClick)="handleRowClick($event)" (pageChange)="onPageChange($event)">
+
+          <ng-template twCellDef="Location" let-row>
+            <span *ngIf="row.status !== 'RQ-CO'" style="text-align:center; cursor:pointer;"
+              (click)="$event.stopPropagation()">
+              <img src="/assets/Alert/common_icons/map_marker.svg" alt="Map-marker"
+                *ngIf="row.status !== 'RQ-RJ' && row.status !== 'RQ-CA'" class="cur-ptr"
+                (click)="eventAction({ key: 'Location', data: row }); $event.stopPropagation()"
+                (keydown.enter)="fixClick()" />
+              <img src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Map-marker-grey"
+                *ngIf="row.status === 'RQ-RJ' || row.status === 'RQ-CA'" class="cur-ptr"
+                (click)="$event.stopPropagation()" />
+            </span>
+            <div *ngIf="row.status === 'RQ-CO'" class="cur-ptr" style="color: blue;"
+              (click)="eventAction({ key: 'viewHistory', data: row }); $event.stopPropagation()"
+              (keydown.enter)="fixClick()">View
+              History
+            </div>
+          </ng-template>
+
+          <ng-template twCellDef="Priority" let-row>
+            <span>
+              <img *ngIf="row['priority']" style="width:25px;" src="/assets/Alert/common_icons/priority_high.svg"
+                alt="priority">
+            </span>
+          </ng-template>
+
+        </tw-data-table>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+</div>

@@ -1,0 +1,139 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div class="manage-body" style="position: relative;">
+  <tw-header-new-component [component]="'ot'" [type]="'new'" [permission]="null" [dateFilter]="this.selectedDate" [rowFilter]="null" [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="selectedName !== null ? selectedName : true"
+    [locationId]="null" [selectedView]="null" [multiView]="true"  (headerEventAction)="headerEventAction($event)" [groupFilter]="parentFilter"></tw-header-new-component>
+
+      <mat-tab-group (selectedTabChange)="tabChanged($event)" [ngStyle]="{height: selectedTab == 'OT Complex' || selectedTab == 'Timeline' ?'calc(100% - 130px)':''}" class="ot-view">
+        <mat-tab label="{{'Planned Surgeries'|translate}}">
+          <tw-table-component [component]="'ot'" [columns]="HCDisplayedColumns" [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [rowDbClick]="true" (rowDbClickAction)="patientInfo($event)" 
+            [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'patientId'" (rowClickAction)="rowClick($event)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null" [tableClass]="'tab-table'"></tw-table-component>
+        </mat-tab>
+        <mat-tab label="{{'OT Complex'|translate}}">
+          <ng-template mat-tab-label >{{"OT Complex"|translate}}</ng-template>
+          <app-card-management [cardData]="otCardInfo" [selectedDate]="selectedDate" [statusCountInfo]="statusCountInfo" (refreshCard)="refreshPage()"></app-card-management>
+        </mat-tab>
+        <mat-tab label="{{'Timeline'|translate}}" style="width: 99%;">
+          <ng-template mat-tab-label >{{'Timeline'|translate}}</ng-template>
+          <div id="timelineElement" style="height: calc(100%);">
+            <app-calendar *ngIf="selectedTab == 'Timeline'" #appCalendar [calendarInput]="calendarData" (calendarUpdatedData)="calendarUpdatedData($event)"></app-calendar>
+          <div class="loading-spinner" *ngIf="false">
+            <div class="spinnerload">
+              <div class="spin1"></div>
+              <div class="spin2"></div>
+              <div class="spin3"></div>
+            </div>
+          </div>
+          <div *ngIf="!isChartLoading && timelineChart['dataTable'].length && false" class="ot-chart-container-timeline">
+            <google-chart #chart style="width: 100%;height: 100%;" [type]="timelineChart['chartType']"
+              [data]="timelineChart['dataTable']" [columns]="timelineChart['columns']"
+              [options]="timelineChart['options']"></google-chart>
+          </div>
+          <div *ngIf="!isChartLoading && timelineChart['dataTable'].length == 0" style="text-align: center;padding: 30px;">
+            {{'No Data Found'|translate}}
+          </div>
+        </div>
+        </mat-tab>  
+        <mat-tab label="{{'My Porter Request'|translate}}">
+          <tw-table-component [component]="'porter'" [columns]="PRDisplayedColumns" [tableData]="tableData"[iconHeader]="iconHeaderPR" [iconColumn]="iconColumnPR" [sortColumn]="sortColumn" [timeColumns]="PRDTimeColumns" [dateTimeColumns]="PRDDateTimeColumns"
+          [eventColumn]="[]" (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="rowClick($event)"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null"></tw-table-component>
+        </mat-tab>
+        <mat-tab *ngIf="false" label="{{'Calendar View'|translate}}">
+          <app-calendar *ngIf="selectedTab == 'Calendar View'" #appCalendar [calendarInput]="calendarData" (calendarUpdatedData)="calendarUpdatedData($event)"></app-calendar>
+         </mat-tab> 
+      </mat-tab-group>
+      <div *ngIf="selectedTab == 'Timeline'" style="position: absolute; top: 46px;left: 98%;cursor: pointer;z-index: 1000;" (click)="downloadPdf()"  (keydown.enter)="fixClick()">
+        <img height="20" width="20" src="/assets/Alert/common_icons/pdf-file.png" alt="pdf-file"  style="cursor: pointer;height: 28px;width: 28px;">
+      </div>
+      <div *ngIf="selectedTab == 'Planned Surgeries'" style="position: absolute; top: 45px; left: calc(100% - 35px); cursor: pointer; z-index: 1000;">
+        <img *ngIf="activate_btn && activate_btn.indexOf('BT_HPISUOEP') > -1" src="/assets/Alert/common_icons/excelimport.png"  alt="excel-import" appTooltip [tooltipText]="'Upload OT Schedule'"placement="bottom"width="25px"style="cursor: pointer;"(click)="fileInput.click()"  (keydown.enter)="fixClick()">
+        <input type="file" #fileInput accept=".xlsx" style="display: none;" (change)="patientsImport($event)">
+      </div>
+        <div *ngIf="selectedView == 'table' && false">
+          <tw-table-component [component]="'ot'" [columns]="HCDisplayedColumns" [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"  
+           [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'patientId'" (rowClickAction)="rowClick($event)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null"></tw-table-component>
+        </div>
+
+        <div *ngIf="selectedView == 'card' && false">
+          <app-card-management [cardData]="otCardInfo"></app-card-management>
+        </div>
+      <div class="manage-body" *ngIf="selectedView == 'card' && false" (window:resize)="onResizeWindow1($event)" [style.max-height.px]="this.CardHeight">
+
+        <div id="block_container" class="header_">
+          <div class="right_ dq-status-styl" id="colr">
+          </div>
+        </div>
+        <div class="dig-q-styl">
+
+          <mat-grid-list [cols]="gridCols" rowHeight="430px" (window:resize)="onResizeGridCols($event)" style="overflow: auto;">
+            <mat-grid-tile class="custom-mat-grid-tile" *ngFor="let group of digitalQueueList_new">
+              <div class="category-header" [id]="digitalQueueModelId.DQ_LA" class="border-styl_" style="background-color: white;">
+                <div class="groupHeaderClass hdr-styl header_">
+                  <div class="header left_">{{group.name}}</div>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="queue-locations">
+                  <mat-list class="locations-list" [style.height.px]="list_height">
+                    <div *ngFor="let location of group.locations">
+                      <mat-list-item *ngIf="!location.test_locations" class="single-location">
+
+                        <div class="location-info count-space">
+                          <div mat-line class="location-name" appTooltip [tooltipText]="location.testName" placement="bottom">
+                            {{location.testName}}</div>
+                          <div mat-line class="location-desc">{{location.floorName}},
+                            {{location.name}}</div>
+                        </div>
+                        <div class="location-queue-count" *ngIf="group.code != 'Waiting'">
+                          <span class="circle" id="colr1"
+                            (click)="locationInfo(location.id, location.testName, 'QS-IP', location.testId, location.inprogressCount, location.testType, group)"  (keydown.enter)="fixClick()">
+                            {{location.inprogressCount}}
+                          </span>
+                          <span class="circle" id="colr2" [ngClass]="location.waitingAlert ? 'blink-orange' : ''"
+                            (click)="locationInfo(location.id, location.testName, 'QS-WT', location.testId, location.waitingCount, location.testType, group)" (keydown.enter)="fixClick()">
+                            {{location.waitingCount}}
+                          </span>
+                          <span class="circle" id="colr3"
+                            (click)="locationInfo(location.id, location.testName, 'QS-CO', location.testId, location.completedCount, location.testType, group)"  (keydown.enter)="fixClick()">
+                            {{location.completedCount}}
+                          </span>
+                        </div>
+                        <div class="location-queue-count" *ngIf="group.code == 'Waiting'">
+                          <span class="circle" id="colr2"
+                            (click)="locationInfo(location.id, 'Waiting Area', 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                            {{location.pendingCount}}
+                          </span>
+                        </div>
+                      </mat-list-item>
+                      <div *ngIf="location.test_locations" style="border: 1px solid #E2E9ED;">
+                        <mat-list-item style="height: 35px !important;" class="multi-location">
+                          <div class="test-name">{{location.testName}}</div>
+                        </mat-list-item>
+                        <mat-list-item *ngFor="let test_location of location.test_locations"
+                          style="height: 50px !important;" class="multi-location">
+                          <div class="location-info count-space">{{test_location.floorName}},
+                            {{test_location.name}}</div>
+                          <div class="location-queue-count">
+                            <span class="circle" id="colr1"
+                              (click)="locationInfo(test_location.id, test_location.testName, 'QS-IP', location.testId, test_location.inprogressCount, location.testType, group)"  (keydown.enter)="fixClick()">
+                              {{test_location.inprogressCount}}
+                            </span>
+                            <span class="circle" id="colr2"
+                              (click)="locationInfo(test_location.id, test_location.testName, 'QS-WT', location.testId, test_location.waitingCount, location.testType, group)" (keydown.enter)="fixClick()">
+                              {{test_location.waitingCount}}
+                            </span>
+                            <span class="circle" id="colr3"
+                              (click)="locationInfo(test_location.id, test_location.testName, 'QS-CO', location.testId, test_location.completedCount, location.testType, group)"  (keydown.enter)="fixClick()">
+                              {{test_location.completedCount}}
+                            </span>
+                          </div>
+                        </mat-list-item>
+                      </div>
+                    </div>
+                  </mat-list>
+                </div>
+              </div>
+            </mat-grid-tile>
+          </mat-grid-list>
+        </div>
+      </div>
+</div>

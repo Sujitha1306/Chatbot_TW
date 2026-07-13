@@ -1,0 +1,125 @@
+<div class="mat-tab-content" [formGroup]="formTemplate">
+    <div style="display: flex; gap: 20px; align-items: center;padding-top:10px">
+        <div class="ovi-row-four-clmn  ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Select"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select'|translate"
+                        formControlName="formTemplateId" matSelectSearch>
+                        <mat-select-trigger>
+                        <ng-container *ngFor="let f of formTemplateList">
+                        <span *ngIf="f.id === formTemplate.get('formTemplateId')?.value">
+                            {{ f.name }}
+                        </span>
+                        </ng-container>
+                    </mat-select-trigger>
+                        <mat-option *ngFor="let form of sortedFormTemplateList" [value]="form.id">
+                            <div class="form-option">
+                                <span *ngIf="form?.hasImportant" class="exclusive-icon-wrapper">
+                                    <img alt="exclusive" src="../../../../../assets/icons/authenticity.png" class="exclusive-icon">
+                                </span>
+                                <span class="form-name">
+                                    {{ form.name }}
+                                </span>
+                            </div>
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+        </div>
+        <div>
+            <button mat-button [disabled]="formTemplate.controls['formTemplateId'].value == null" class="active-btn margin-r-1"
+                appDebounceClick (debounceClick)="getFormTemplateInfo();" [debounceTime]="800"
+                cdkFocusInitial>{{"Add"|translate}}</button>
+        </div>
+        <div *ngIf="activate_btn.includes('BT_NFG')">
+            <button mat-button class="active-btn margin-r-1 auto-custom-menu" [matMenuTriggerFor]="autoFormMenu" >{{"✨ Form"|translate}}</button>
+            <mat-menu #autoFormMenu="matMenu" class="auto-custom-menu" [hasBackdrop]="false">
+                <div class="popup-container ovi-font-family" (click)="$event.stopPropagation()" [ngStyle]="{height: !isUploading ? '240px' : '180px'}">
+                    <div class="auto-header">
+                        <div class="ovi-fnt-sze15" style="font-weight: 600;"> {{"Import Form"}} <span>  <img src="assets/Alert/info-circle.svg" alt="item" 
+                         [matMenuTriggerFor]="autoFormDetails"   style="position: relative; left: 4px; width: 16px; height: 16px; top: 4px;filter: invert(100%);" /> </span></div>
+                        <div><mat-icon (click)="menuTrigger.closeMenu()">highlight_off</mat-icon></div>
+                    </div>
+                    <div *ngIf="!isUploading" style="height: 126px;padding: 10px;">
+                        <div class="auto-field-input ovi-matfrmfld-drpdwn-top-box ovi-row-one-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{"User/Service manual PDF link"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'PDF link'|translate"
+                                    formControlName="userURL" matSelectSearch>
+                                    <mat-option value="null">{{"Auto Search Engine" | translate}}</mat-option>
+                                    <mat-option *ngFor="let user of userManualsData" [value]="user.fileUrl">
+                                        {{user.fileName}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="formTemplate.controls.userURL.invalid" class="error-txt-1">
+                                    <span [hidden]="!formTemplate.controls['userURL'].errors.required">
+                                        {{"User manual PDF link is required."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                            <!-- <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput type="text" appPlaceholder [showPlaceholder]="true" [placeholderText]="'PDF link'|translate"
+                                    formControlName="userURL">
+                                    <mat-error *ngIf="formTemplate.controls.userURL.invalid" class="error-txt-1">
+                                        <span  [hidden]="!formTemplate.controls['userURL'].errors.required">
+                                            {{"User manual PDF link is required."|translate}}</span>
+                                    </mat-error>
+                            </mat-form-field> -->
+                        </div>
+                    </div>
+                    <div *ngIf="isUploading && mqttData" class="auto-mqtt-card">
+                        <div class="auto-mqtt-header">
+                            <div class="auto-title">
+                                    Form Generation
+                                <span class="auto-facility">
+                                    Message : <span class="mqtt-message">{{ mqttData?.message }}</span> 
+                                </span>
+                            </div>
+                    
+                            <div class="auto-progress-text">
+                                {{ mqttData?.completion }}
+                            </div>
+                    
+                        </div>
+                    
+                        <div class="auto-progress-bar">
+                            <div class="auto-progress-fill" [style.width]="mqttData?.completion"></div>
+                        </div>
+                    
+                        <div class="auto-current-stage">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="auto-pulse-dot"> </div>
+                                <span class="auto-stage-message">
+                                    {{ mqttData?.status}}
+                                </span>
+                            </div>
+                            <!-- <div style="display: flex;align-items: center;" class="ovi-fnt-sze16">
+                                🧰 <span class="ovi-fnt-sze12 auto-model-id">{{'123456'}}</span>
+                            </div> -->
+                        </div>
+                    
+                    </div>
+                    <div *ngIf="!isUploading" class="popup-footer">
+                        <button mat-button class="cancle-btn" (click)="menuTrigger.closeMenu()">{{"Cancel"|translate}}</button>
+                         <button mat-button class="active-btn" cdkFocusInitial  appDebounceClick (debounceClick)="saveUrlData()" 
+                        [debounceTime]="300" [disabled]="formTemplate.controls['userURL'].invalid">{{"Create"|translate}}</button>
+                    </div>
+                </div>
+            </mat-menu>
+
+             <mat-menu class="auto-details ovi-font-family" #autoFormDetails="matMenu">
+                <div style="padding: 8px;" class="ovi-fnt-siz13">
+                    {{'✨ This feature is designed to generate equipment-specific forms and checklists. It leverages user guides and service manuals,
+                     along with AI, to automatically create relevant and tailored forms for each asset'}}
+                </div>
+
+             </mat-menu>
+        </div>
+    </div>
+    <div *ngIf="formBuilderSource.length > 0"  style="padding: 10px 10px 10px 0px;" >
+    <angular-table-component [id]="'formBuilder'" [type]="'ng-table'" [tableData]="formBuilderSource"
+    [columns]="['Name', 'Comments', 'Created on', 'Created By', 'Modified on', 'Modified by','Form Status','PreviewHistory']"
+    [columnData]="['name','comments','createdOn','createdUser', 'modifiedOn', 'modifiedUser','entityFormStatusName','PreviewHistory']"
+    (triggerAction)="triggerAction($event)">
+    </angular-table-component>
+    </div>
+    <div *ngIf="formBuilderSource.length === 0" class ="no-shift">{{"No records Found"|translate}}</div>
+</div>

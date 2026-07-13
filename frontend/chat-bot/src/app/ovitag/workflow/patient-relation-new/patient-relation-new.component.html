@@ -1,0 +1,177 @@
+<div class="prn-page">
+
+    <tw-header-new-component
+        [type]="'new'"
+        [component]="'patient-relation'"
+        [permission]="null"
+        [dateFilter]="null"
+        [rowFilter]="null"
+        [manageAction]="showActions"
+        [selectDropdown]="selectDropdown"
+        [selectedName]="selectedName !== null ? selectedName : true"
+        [locationId]="null"
+        [selectedView]="null"
+        (selectedViewAction)="null"
+        (headerEventAction)="headerEventAction($event)"
+        [groupFilter]="[]">
+    </tw-header-new-component>
+
+    <div class="prn-body">
+        <div class="prn-card ovi-font-family">
+
+            <!-- ── Scrollable table ── -->
+            <div class="prn-table-scroll">
+                <table class="prn-table">
+                    <thead style="height: 40px;">
+                        <tr class="prn-thead-row">
+                            <th class="th-device prn-sortable" (click)="sortBy('tagId')">
+                                Device
+                                <mat-icon class="prn-sort-ic" style="padding-bottom:'3px';padding-top: 0;">
+                                    {{ sortColumn === 'tagId' ? (sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
+                                </mat-icon>
+                            </th>
+                            <th class="th-device prn-sortable" (click)="sortBy('mainidentifier')">
+                                UHID
+                                <mat-icon class="prn-sort-ic" style="padding-bottom:'3px';padding-top: 0;">
+                                    {{ sortColumn === 'mainidentifier' ? (sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
+                                </mat-icon>
+                            </th>
+                            <th class="th-patient prn-sortable" (click)="sortBy('fullName')">
+                                Patient Name
+                                <mat-icon class="prn-sort-ic"  style="padding-bottom:'3px';padding-top: 0;">
+                                    {{ sortColumn === 'fullName' ? (sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}
+                                </mat-icon>
+                            </th>
+                            <th class="th-ic-col">Relation</th>
+                            <th class="th-ic-col">Alerts</th>
+                            <th class="th-gender">Gender</th>
+                            <th class="th-dob">DOB</th>
+                            <th class="th-phone">Phone</th>
+                            <th class="th-email">Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let row of tableData; let i = index" class="prn-row">
+                            <!-- Device icon -->
+                            <td class="td-device">
+                                <button *ngIf="row.tagId; else noDevice"
+                                        class="prn-ic-btn prn-ic-device prn-ic-device-on"
+                                        (click)="openDevice(row)"
+                                        title="Device: {{ row.tagId }} — Click to manage">
+                                    <img style="width:16px;" src="/assets/Alert/common_icons/coaster.svg" alt="device">
+                                </button>
+                                <ng-template #noDevice>
+                                    <button class="prn-ic-btn prn-ic-device prn-ic-device-off"
+                                            (click)="openDevice(row)"
+                                            title="No device — Click to associate">
+                                        <img style="width:16px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="no device">
+                                    </button>
+                                </ng-template>
+                            </td>
+                            <td class="td-phone">{{ row.mainidentifier || '—' }}</td>
+                            <!-- Patient Name → opens popup tab 0 -->
+                            <td class="td-patient">
+                                <span class="prn-event-link"
+                                      (click)="openPopup(row, 0)"
+                                      title="Manage Patient">
+                                    {{ row.fullName || '—' }}
+                                </span>
+                            </td>
+
+                            <!-- Relation icon → popup tab 1 -->
+                            <td class="td-ic-col">
+                                <button *ngIf="row.isRelation"
+                                        class="prn-ic-btn prn-ic-rel"
+                                        (click)="openPopup(row, 1)"
+                                        title="Manage Relations">
+                                    <mat-icon>group</mat-icon>
+                                </button>
+                                <span *ngIf="!row.isRelation" style="padding-right: 34px;" class="prn-ic-empty">—</span>
+                            </td>
+
+                            <!-- Alert icon → popup tab 2 (only when row has active alerts) -->
+                            <td class="td-ic-col">
+                                <button *ngIf="row.alerts && row.alerts.length > 0"
+                                        class="prn-ic-btn prn-ic-alert"
+                                        (click)="openPopup(row, 2)"
+                                         [matTooltip]="getAlertTooltip(row.alerts)"
+                                        matTooltipClass="prn-alert-tooltip"
+                                        matTooltipPosition="below">
+                                    <mat-icon class="prn-alert-triangle">warning_amber</mat-icon>
+                                </button>
+                                <span *ngIf="!row.alerts || row.alerts.length === 0" style="padding-right: 34px;"
+                                      class="prn-ic-empty">—</span>
+                            </td>
+
+                            <!-- Gender -->
+                            <td class="td-gender">
+                                <div class="prn-gender-cell"
+                                     [ngClass]="row.gender === 'Female' ? 'is-female' : (row.gender ? 'is-male' : '')">
+                                    <ng-container *ngIf="row.gender">
+                                        <span class="prn-gender-circle">
+                                            {{ row.gender === 'Female' ? '♀' : '♂' }}
+                                        </span>
+                                        <span>{{ row.gender }}</span>
+                                    </ng-container>
+                                    <span *ngIf="!row.gender" class="prn-dash">—</span>
+                                </div>
+                            </td>
+
+                            <!-- D.O.B -->
+                            <td class="td-dob">
+                                {{ (row.birthDate | date:'dd MMM yyyy') || '—' }}
+                            </td>
+
+                            <!-- Phone -->
+                            <td class="td-phone">{{ row.phoneNumber || '—' }}</td>
+
+                            <!-- Email -->
+                            <td class="td-email">{{ row.email || '—' }}</td>
+
+                        </tr>
+
+                        <!-- Empty state -->
+                        <tr *ngIf="!tableData || tableData.length === 0">
+                            <td colspan="8" class="prn-empty-td">
+                                <div class="prn-empty-body">
+                                    <mat-icon>people_outline</mat-icon>
+                                    <span>No records found</span>
+                                </div>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ── Pagination footer ── -->
+            <div class="prn-footer">
+                <div class="prn-rows-ctrl">
+                    <span class="prn-footer-lbl">Rows per page</span>
+                    <select [(ngModel)]="prnPageSize" (ngModelChange)="prnOnPageSizeChange()"
+                            class="prn-page-select">
+                        <option *ngFor="let s of prnPageSizeOptions" [ngValue]="s">{{ s }}</option>
+                    </select>
+                </div>
+                <div class="prn-page-info">
+                    {{ prnPageFrom }}–{{ prnPageTo }} of {{ prnTotalCount }}
+                </div>
+                <div class="prn-pager">
+                    <button class="prn-pager-arr" (click)="prnPrevPage()"
+                            [disabled]="prnCurrentPage === 1">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                    <button *ngFor="let p of prnPages" class="prn-pager-num"
+                            [class.prn-pager-active]="p === prnCurrentPage"
+                            (click)="prnGoToPage(p)">{{ p }}</button>
+                    <button class="prn-pager-arr" (click)="prnNextPage()"
+                            [disabled]="prnCurrentPage === prnTotalPages">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

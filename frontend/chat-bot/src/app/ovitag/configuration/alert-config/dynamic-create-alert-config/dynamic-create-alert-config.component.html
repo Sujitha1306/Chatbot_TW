@@ -1,0 +1,679 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: hidden;margin-left: 0px;" [formGroup]="dynamicAlertRuleForm">
+        <div class="mat-tab-content-alert" *ngIf="dynamicFormFields.length !== 0" >
+            <div [formGroup]="dynamicAlertRuleForm">
+                <div class="form-row">
+                    <div class="ovi-popup-title-text-size top-styl">{{"CREATE ALERT CONFIGURATION"|translate}}</div>
+                </div>
+                <div style="margin-top: 5px;">
+                    <button *ngIf="this.ruleType !== 'RU-SC' && this.ruleType !== 'RU-WO'" mat-mini-fab style="float:right;margin-top: -20px;margin-right: 25px;"
+                        (click)="addArrayList(dynamicAlertRuleForm.controls.arrayList.controls.length);">+</button>
+                </div>
+                <div formArrayName="arrayList">
+                    <mat-divider class="divider"></mat-divider>
+
+                    <div *ngFor="let obj of dynamicAlertRuleForm.controls.arrayList.controls; let i=index"
+                    [ngStyle]="{'padding-top': i === 0 ? '10px' : ''}">
+                        <div class="create-shadow" [formGroupName]="i">
+                            <mat-icon *ngIf="this.ruleType !== 'RU-SC' && this.ruleType !== 'RU-WO'" class="alert-close" (keydown.enter)="fixClick()" (click)="removeArrayList(i, 'clear')">close</mat-icon>
+                            <div class="ovi-row-gap form-height" style="width: 100%;margin-bottom: 5px;margin-left: 10px;">
+                                <div class="ovi-row-four-clmn" *ngFor="let field of dynamicFormFields;"
+                                    [ngStyle]="{'display': dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === false && 
+                                    field?.key === 'scope_id' && field?.key !== 'defender_type' && field?.key !== 'geo_type' && field?.key !== 'type' && this.ruleType !== 'RU-SC' && 
+                                    this.ruleType !== 'RU-WO' ? '' : 'none'}">
+                                    <div  *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === false">
+
+                                        <mat-label *ngIf="field?.fieldType !== 'slider'" class="ovi-lbl-text-size">{{field.label}}
+                                            <span *ngIf="field?.mandatory === 'Y'">*</span></mat-label>
+
+                                        <mat-form-field *ngIf="field?.fieldType === 'dropDown'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="{{field?.key}}"
+                                                [multiple]="field?.max === null ? true : false"
+                                                [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false"
+                                                (openedChange)="field?.key === 'tag_type_ids' || field?.key === 'sensor_type' || field?.key === 'device_config' ? openedChange($event, field?.key, i) : ''"
+                                                [disabled]="this.alertData?.length > i && 
+                                                (field?.key === 'scope_id' || field?.key === 'type' || field?.key === 'geo_type' || field?.key === 'defender_type' ||
+                                                field?.key === 'table')">
+                                                <mat-option *ngFor="let data of this[field?.key + 'List' + i]" 
+                                                [value]="data.tagId ? data.tagId : data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key"
+                                                (keydown.enter)="fixClick()" (click)="field?.key !== 'sensor_type' && field?.key !== 'device_config' ? showField(data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key, field?.validLink, i) : '';
+                                                field?.key === 'scope_id' || field?.key === 'type' || field?.key === 'geo_type' || field?.key === 'defender_type' || field?.type === 'table' ? formReset(field?.key, i) : ''">
+                                                {{data.tagId ? data.tagId : data.name ? data.name : data.value ? data.value : data.readerName}}</mat-option>
+                                                <mat-option *ngIf="field?.key === 'scope_id'" 
+                                                [value]="'None'" (keydown.enter)="fixClick()" (click)="showField('None', field?.validLink, i);getType(i)">None</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] !== '' && this.ruleType === 'RU-DEF'">
+                                        <mat-label class="ovi-lbl-text-size">{{"Defender Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="defenderType" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                                <mat-option *ngFor="let data of defenderTypeList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getDefenderType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['defenderType'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['defenderType'] === ''">
+                                                    {{"Defender Type is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['defenderType'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['defenderType'] !== '' && this.ruleType === 'RU-DEF'">
+                                        <mat-label class="ovi-lbl-text-size">{{"Tag Entity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                             <mat-select *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] !== 'None'" formControlName="tagEntity" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                                <mat-option *ngFor="let data of tagEntityList"
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getDefenderType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-select *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] === 'None'" formControlName="tagEntity" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                                <mat-option *ngFor="let data of tagEntityDefList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getDefenderType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['tagEntity'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['tagEntity'] === ''">
+                                                    {{"Tag Entity is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] !== '' && this.ruleType === 'RU-GO'">
+                                        <mat-label class="ovi-lbl-text-size">{{"Geofence Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="geofenceType" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] === 'None'">
+                                                <mat-option *ngFor="let data of geofenceTypeList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getGeofenceType(i);getLocationOption(i, data.code)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['geofenceType'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['geofenceType'] === ''">
+                                                    {{"Geofence Type is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['geofenceType'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['geofenceType'] !== '' && this.ruleType === 'RU-GO'">
+                                        <mat-label class="ovi-lbl-text-size"> {{"Tag Entity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] !== 'None'" formControlName="tagEntityGeo" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                                <mat-option *ngFor="let data of tagEntityList"
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getGeofenceType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-select *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] === 'None'" formControlName="tagEntityGeo" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                    
+                                                <mat-option *ngFor="let data of tagEntityGeoList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getGeofenceType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['tagEntityGeo'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['tagEntityGeo'] === ''">
+                                                     {{"Tag Entity is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['tagEntityGeo'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['tagEntityGeo'] !== '' && this.ruleType === 'RU-GO'">
+                                        <mat-label class="ovi-lbl-text-size"> {{"Location Option"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="locationOption" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] === 'None' ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['geofenceType'] === 'AGT-BI' ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['scope_id'] === 'TAT-EM'">
+                                                <mat-option *ngFor="let data of locationOptionList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getGeofenceType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['locationOption'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['locationOption'] === ''">
+                                                     {{"Location Option is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="field?.key !== 'type' && this.ruleType === 'RU-SE'">
+                                        <mat-label class="ovi-lbl-text-size">{{"Scope"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="sensorType" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                                <mat-option *ngFor="let data of sensorTypeList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getSensorType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['sensorType'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['sensorType'] === ''">
+                                                    {{"Scope is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="field?.key !== 'type' && this.ruleType === 'RU-DA'">
+                                    <mat-label class="ovi-lbl-text-size">{{"Scope"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                        <mat-select formControlName="deviceType" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i || 
+                                            (dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] !== null &&
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] !== '')">
+                                            <mat-option *ngFor="let data of deviceTypeList" 
+                                            [value]="data.code" (keydown.enter)="fixClick()" (click)="getDeviceType(i)">{{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                            <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] === null ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] === ''">
+                                                {{"Scope is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['sensorType'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['sensorType'] !== '' && this.ruleType === 'RU-SE'">
+                                        <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="sensorEntity" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                                <mat-option *ngFor="let data of sensorEntityList" 
+                                                [value]="data.code" (keydown.enter)="fixClick()" (click)="getSensorType(i)">{{data.value}}</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['sensorEntity'] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['sensorEntity'] === ''">
+                                                    {{"Type is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] !== null &&
+                                dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] !== '' && this.ruleType === 'RU-DA'">
+                                    <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                        <mat-select formControlName="deviceEntity" [multiple]="false" [required]="true" [disabled]="this.alertData?.length > i">
+                                            <mat-option *ngFor="let data of deviceEntityList" 
+                                            [value]="data.code" (keydown.enter)="fixClick()" (click)="getDeviceType(i)">{{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                            <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['deviceEntity'] === null ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i]['deviceEntity'] === ''">
+                                                {{"Type is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                                <div class="ovi-row-four-clmn " *ngFor="let field of dynamicFormFields;"
+                                    [ngStyle]="{'display': dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === false &&
+                                     field?.key !== 'defender_type' && field?.key !== 'geo_type' && (field?.key !== 'scope_id' || this.ruleType === 'RU-SC') && field?.key !== 'type' ? '' : 'none'}">
+                                    <div  *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === false">
+
+                                        <mat-label *ngIf="field?.fieldType !== 'slider' && field?.fieldType !== 'checkbox'" class="ovi-lbl-text-size">{{field.label}}
+                                            <span *ngIf="field?.mandatory === 'Y'">*</span></mat-label>
+
+                                        <mat-form-field *ngIf="field?.fieldType === 'input'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}"
+                                                autocomplete="off" [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false">
+                                            <mat-error *ngIf="alertRuleForm.controls.name.invalid" class="error-txt-1" style="margin-top: 5px;">
+                                                <span [hidden]="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                {{field?.label}} is required.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+
+                                        <mat-form-field *ngIf="field?.fieldType === 'dropDown'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="{{field?.key}}" matSelectSearch 
+                                                [multiple]="field?.max === null ? true : false"
+                                                [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false"
+                                                (openedChange)="field?.key === 'tag_type_ids' || field?.key === 'sensor_type' || field?.key === 'device_config' ? openedChange($event, field?.key, i) : ''"
+                                                [disabled]="(this.alertData?.length > i || (this.alertData?.dq_type && (this.ruleType === 'RU-SC' || this.ruleType === 'RU-WO'))) && 
+                                                (field?.key === 'scope_id' || field?.key === 'type' || field?.key === 'geo_type' || field?.key === 'defender_type' ||
+                                                field?.key === 'table' || field?.key === 'dq_type' || field?.key === 'dq_sub_type')">
+                                                <mat-option *ngFor="let data of this[field?.key + 'List' + i]" 
+                                                [value]="data.tagId ? data.tagId : data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key"
+                                                (keydown.enter)="fixClick()" (click)="field?.key !== 'sensor_type' && field?.key !== 'device_config' ? showField(data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key, field?.validLink, i) : '';
+                                                (field?.key === 'scope_id' || field?.key === 'type' || field?.key === 'geo_type' || field?.key === 'defender_type' || field?.type === 'table') && this.ruleType !== 'RU-SC' ? formReset(field?.key, i) : ''">
+                                                {{data.tagId ? data.tagId : data.fullName ? data.fullName : data.name ? data.name : data.value ? data.value : data.readerName}}</mat-option>
+                                                <mat-option *ngIf="field?.key === 'scope_id' && this.ruleType !== 'RU-SC' && this.ruleType !== 'RU-WO'" 
+                                                [value]="'None'" (keydown.enter)="fixClick()" (click)="showField('None', field?.validLink, i)">None</mat-option>
+                                            </mat-select>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+
+                                        <mat-form-field *ngIf="field?.fieldType === 'typeAhead'" class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}" id="{{field?.key}}"
+                                            appTypeHit (typeHit)="getSearch($event,field, i);" [matAutocomplete]="auto" autocomplete="off"
+                                            [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false"
+                                            [readonly]="this.alertData?.length > i && this['locationsId' + i] !== null">
+                                            <button type="button" mat-button *ngIf="this.alertData?.length > i && this['locationsId' + i] !== null"
+                                                matSuffix mat-icon-button aria-label="Clear" (click)="locationClear(i, field?.key)">
+                                                <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                                            </button>
+                                            <mat-autocomplete autoActiveFirstOption
+                                                [displayWith]="this[field?.key + 'Enabled'] === true ? getList.bind(this[field?.key + 'List' + i]) : ''"
+                                                #auto="matAutocomplete">
+                                                <mat-option *ngFor="let option of this[field?.key + 'List' + i]" [value]="option.id">
+                                                    <div class="tot-wid-styl" (keydown.enter)="fixClick()" (click)="optionClicked($event, option);">
+                                                        <mat-checkbox [checked]="isSelected" (change)="checkLocationName(option.id, i, $event)">
+                                                            <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                                        </mat-checkbox> 
+                                                    </div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                            <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                {{field?.label}} is required.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+
+                                        <div *ngIf="field?.fieldType === 'checkbox'" class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="padding: 25px 0px 0px 0px;">
+                                            <span  class="ovi-lbl-text-size">
+                                                <mat-checkbox formControlName="{{field?.key}}" (change)="showField($event.checked, field?.validLink, i)">{{field?.label}}</mat-checkbox>
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="padding-top: 15px;" formArrayName="subArrayList" *ngIf="this.ruleType === 'RU-SC' && this.subArrayList?.length !== 0 && 
+                            alertTypeId === 'AT-RE' && ruleCategoryId !== 'RC-API' &&
+                            (dynamicAlertRuleForm.controls.arrayList.value[i]['dq_type'] !== '' && 
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['dq_type'] !== null)">
+                                <mat-divider class="divider"></mat-divider>
+                                <div *ngFor="let obj1 of obj.get('subArrayList').controls; let j=index">
+                                    <div [formGroupName]="j" class="ovi-row-gap form-height" style="width: max-content; margin: 10px;">
+                                        <div class="ovi-row-three-clmn " *ngFor="let field of subArrayList;"
+                                        [ngStyle]="{'display': dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true ? 'block' : 'none'}">
+                                            <div class="example-form" *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true ? 'block' : 'none'">
+
+                                                <div *ngIf="field?.fieldType === 'slider'" style="display: flex;justify-content: center;">
+                                                    <div *ngIf="field?.parentLabel !== null" class="ovi-fnt-sze11" style="padding-top: 30px;padding-right: 10px;width: 30%;">{{field?.parentLabel}} : </div>
+                                                    <div class="example-form">
+                                                        <div class="threshold-alert" style="margin-right: 40%;">
+                                                            {{field?.label}} : {{slider.value !== null ? slider.value : field?.defaultValue}}</div>
+                                                            <span classs="ovi-fnt-sze14">{{field?.lowValue}}</span>
+                                                        <mat-slider #slider min="{{field?.lowValue}}" max="{{field?.highValue}}"
+                                                        formControlName="{{field?.key}}" [disabled]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.referKey] === false"
+                                                        [thumbLabel]="true" [step]="step"></mat-slider>
+                                                        <span class="ovi-fnt-sze14" style=" padding-left: 10px;">{{field?.highValue}}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div *ngIf="field?.fieldType === 'slider_toggle'" style="margin-top: 25px;">
+                                                    <div class="example-form" style="display: flex;justify-content: center;">
+                                                        <span class="ovi-fnt-sze14" style=" padding-right: 10px;">OFF</span>
+                                                        <mat-slide-toggle #sliderOnOffVal formControlName="{{field?.key}}">
+                                                        </mat-slide-toggle>
+                                                        <span class="ovi-fnt-sze14" style=" padding-left: 10px;">ON</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div *ngIf="this.ruleType === 'RU-TD' &&
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['table'] !== null">
+                                <button mat-mini-fab style="float:right;margin-top: -20px;margin-right: 25px;"
+                                *ngIf="this['ColumnOption' + i]?.length !== this['columnList' + i]?.length"
+                                    (click)="addSubArrayList(i, obj.get('subArrayList').controls.length, 'new');">+</button>
+                            </div>
+                            <div formArrayName="subArrayList" *ngIf="this.ruleType === 'RU-TD' &&
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['table'] !== null;">
+                                <mat-divider class="divider"></mat-divider>
+                                <div *ngFor="let obj1 of obj.get('subArrayList').controls; let j=index">
+                                    <div [formGroupName]="j" class="ovi-row-gap form-height" style="width: 100%;">
+                                        <div class="ovi-row-four-clmn " *ngFor="let field of this['subArrayListCol' + i + j]">
+                                            <div *ngIf="field?.multipleField === true && field?.fieldType !== 'slider' ? 'block' : 'none'">
+        
+                                                <mat-label *ngIf="field?.fieldType !== 'slider'" class="ovi-lbl-text-size">{{field.label}}
+                                                    <span *ngIf="(field?.mandatory === 'Y' && field?.fieldType !== 'slider') ||
+                                                    this['subfields' + i]?.indexOf(field?.key) > -1">*</span></mat-label>
+        
+                                                <mat-form-field *ngIf="field?.fieldType === 'input'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                    <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}"
+                                                        autocomplete="off" [required]="field?.mandatory === 'Y' || field?.mandatory === true ? true : [field?.key + 'valid'] === true ? true : false">
+                                                        <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                            <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                                dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                                {{field?.label}} is required.</span>
+                                                        </mat-error>
+                                                </mat-form-field>
+        
+                                                <mat-form-field *ngIf="field?.fieldType === 'dropDown'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                    <mat-select formControlName="{{field?.key}}"
+                                                        [multiple]="field?.max === null ? true : false"
+                                                        [required]="this['subfields' + i]?.indexOf(field?.key) > -1 ? true : false"
+                                                        (openedChange)="field?.key === 'tag_type_ids' || field?.key === 'sensor_type' || field?.key === 'device_config' ? openedChange($event, field?.key, i) : ''">
+                                                        <mat-option *ngFor="let data of this[field?.key + 'List' + j]" 
+                                                        [value]="data.tagId ? data.tagId : data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key"
+                                                        (keydown.enter)="fixClick()" (click)="field?.key !== 'sensor_type' && field?.key !== 'device_config' ? showField(data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key, field?.validLink, i) : '';
+                                                        field?.key === 'column' ? getColumns(i, j, data, 'new') : ''"
+                                                        [ngStyle]="{display: field?.key === 'column' && this['ColumnOption' + i] && this['ColumnOption' + i]?.indexOf(data.key) > -1 ? 'none' : 'block'}">
+                                                        {{data.tagId ? data.tagId : data.name ? data.name : data.value ? data.value : data.readerName}}</mat-option>
+                                                        <mat-option *ngIf="field?.key === 'scope_id'" 
+                                                        [value]="'None'" (keydown.enter)="fixClick()" (click)="showField('None', field?.validLink, i)">None</mat-option>
+                                                    </mat-select>
+                                                    <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                        <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                            dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                            {{field?.label}} is required.</span>
+                                                    </mat-error>
+                                                </mat-form-field>
+        
+                                                <mat-form-field *ngIf="field?.fieldType === 'typeAhead'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                    <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}" id="{{field?.key}}"
+                                                    appTypeHit (typeHit)="getSearch($event,field, i);" [matAutocomplete]="auto" autocomplete="off"
+                                                    [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false">
+                                                    <mat-autocomplete autoActiveFirstOption
+                                                        [displayWith]="this[field?.key + 'Enabled'] === true ? getList.bind(this[field?.key + 'List' + i]) : ''"
+                                                        #auto="matAutocomplete">
+                                                        <mat-option *ngFor="let option of this[field?.key + 'List' + j]" [value]="option.id">
+                                                            <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                                        </mat-option>
+                                                    </mat-autocomplete>
+                                                    <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                        <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                        dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                        {{field?.label}} is required.</span>
+                                                    </mat-error>
+                                                </mat-form-field>
+        
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span><button mat-mini-fab color="primary"
+                                                (click)="removeSubArrayList(i, j, 'clear')" [ngStyle]="{'margin-top': j === 0 ? '15px' : ''}"
+                                                style="background-color: #FC8C91;"> x </button></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div formArrayName="subArrayList" *ngIf="this.ruleType === 'RU-SE' &&
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['sensor_type'] !== null;">
+                                <mat-divider class="divider"></mat-divider>
+                                <div *ngFor="let obj1 of obj.get('subArrayList').controls; let j=index">
+                                    <div [formGroupName]="j" class="ovi-row-gap form-height" style="width: 100%;"
+                                    *ngFor="let key of this['sensorKey' + i]">
+                                        <div class="ovi-row-four-clmn  sensor-label" *ngFor="let x of this['sensor_typeList' + i]"
+                                        [ngStyle]="{'display': x.code === key ? 'inline-block' : 'none'}">
+                                            <span class="ovi-fnt-sze14" style=" font-weight: bold;padding-right: 15px;" 
+                                            *ngIf="x.code === key">{{x.value}}: </span>
+                                        </div>
+                                        <div class="ovi-row-four-clmn " *ngFor="let field of obj1.value['sensorData']"
+                                        [ngStyle]="{'display': key === field?.type ? '' : 'none'}">
+                                            <div *ngIf="field?.fieldType === 'slider' && key === field?.type">
+                                                    <div class="sensor-low">
+                                                        {{field?.label}} : {{slider.value !== null ? slider.value : field?.defaultValue}}</div>
+                                                    <span class="ovi-fnt-sze14" >{{field?.lowValue}}</span>
+                                                    <mat-slider #slider min="{{field?.lowValue}}" max="{{field?.highValue}}"
+                                                    formControlName="{{field?.type+field?.key+i}}"
+                                                    [thumbLabel]="true" [step]="step"></mat-slider>
+                                                    <span class="ovi-fnt-sze14" style="padding-left: 10px;">{{field?.highValue}}</span>
+                                            </div>
+                                        </div> 
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div *ngIf="this.ruleType === 'RU-DA' && this.subArrayList?.length !== 0 &&
+                            (dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] !== null && 
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['deviceEntity'] !== null)">
+                                <button mat-mini-fab style="float:right;margin-top: -20px;margin-right: 25px;"
+                                *ngIf="this['device_config' + 'List' + i + 0]?.length > dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList']?.length"
+                                    (click)="addSubArrayList(i, obj.get('subArrayList').controls.length, 'new', 'subType');">+</button>
+                            </div>
+                            <div formArrayName="subArrayList" *ngIf="this.ruleType === 'RU-DA' && this.subArrayList?.length !== 0 &&
+                            (dynamicAlertRuleForm.controls.arrayList.value[i]['deviceType'] !== null && 
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['deviceEntity'] !== null)">
+                                <mat-divider class="divider"></mat-divider>
+                                <div *ngFor="let obj1 of obj.get('subArrayList').controls; let j=index">
+                                    <div [formGroupName]="j" class="form-row block-3 form-height" style="width: 100%; margin: 10px;">
+                                        <div class="row-field-aid" *ngFor="let field of subArrayList;"
+                                        [ngStyle]="{'display': dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true ? 'block' : 'none'}">
+                                        <div class="example-form" *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true ? 'block' : 'none'">
+    
+                                            <mat-label *ngIf="field?.fieldType !== 'slider' && field?.fieldType !== 'slider_toggle'" class="ovi-lbl-text-size">{{field.label}}
+                                                <span *ngIf="(dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 && field?.fieldType !== 'slider') ||
+                                                this['subfields' + i]?.indexOf(field?.key) > -1">*</span></mat-label>
+    
+                                            <mat-form-field *ngIf="field?.fieldType === 'input'" class="example-full-width form-field" appearance="outline">
+                                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}" autocomplete="off" 
+                                                    [required]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 ? true : false">
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span [hidden]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+    
+                                            <mat-form-field *ngIf="field?.fieldType === 'dropDown' && field?.key === 'locations'" class="example-full-width form-field" appearance="outline">
+                                                <mat-select formControlName="{{field?.key}}" matSelectSearch 
+                                                    [disabled]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] !== null &&
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] !== ''"
+                                                    [multiple]="field?.max === null ? true : false"
+                                                    [required]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 ? true : false">
+                                                    <mat-option *ngFor="let data of this[field?.key + 'List']" 
+                                                    [value]="data.tagId ? data.tagId : data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key"
+                                                    (keydown.enter)="fixClick()" (click)="getDeviceConfigList(data.code, i);showField(data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key, field?.validLink, i, j)">
+                                                    {{data.tagId ? data.tagId : data.fullName ? data.fullName : data.name ? data.name : data.value ? data.value : data.readerName}}</mat-option>
+                                                </mat-select>
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === null ||
+                                                        dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === ''">
+                                                        {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+
+                                            <mat-form-field *ngIf="field?.fieldType === 'dropDown' && field?.key !== 'locations'" class="example-full-width form-field" appearance="outline">
+                                                <mat-select formControlName="{{field?.key}}"
+                                                    [disabled]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] !== null &&
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] !== ''"
+                                                    [multiple]="field?.max === null ? true : false"
+                                                    [required]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 ? true : false"
+                                                    (openedChange)="field?.key === 'tag_type_ids' || field?.key === 'sensor_type' || field?.key === 'device_config' ? openedChange($event, field?.key, i) : ''">
+                                                    <mat-option *ngFor="let data of this[field?.key + 'List' + i + j]" 
+                                                    [value]="data.tagId ? data.tagId : data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key"
+                                                    (keydown.enter)="fixClick()" (click)="getDeviceConfigList(data.code, i);showField(data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key, field?.validLink, i, j)"
+                                                    [ngStyle]="{display: this['deviceConfigList' + i]?.indexOf(data.code) > -1 ? 'none' : 'block'}">
+                                                    {{data.tagId ? data.tagId : data.name ? data.name : data.value ? data.value : data.readerName}}</mat-option>
+                                                    <mat-option *ngIf="field?.key === 'scope_id'" 
+                                                    [value]="'None'" (keydown.enter)="fixClick()" (click)="showField('None', field?.validLink, i);">None</mat-option>
+                                                </mat-select>
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === null ||
+                                                        dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === ''">
+                                                        {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+    
+                                            <mat-form-field *ngIf="field?.fieldType === 'typeAhead' && field?.key !== 'locations'" class="example-full-width form-field" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}" id="{{field?.key}}"
+                                                appTypeHit (typeHit)="getSearch($event,field, i);" [matAutocomplete]="auto" autocomplete="off"
+                                                [required]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 ? true : false">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this[field?.key + 'Enabled'] === true ? getList.bind(this[field?.key + 'List' + i]) : ''"
+                                                    #auto="matAutocomplete">
+                                                    <mat-option *ngFor="let option of this[field?.key + 'List' + j]" [value]="option.id">
+                                                        <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+
+                                            <mat-form-field *ngIf="field?.fieldType === 'typeAhead' && field?.key === 'locations'" class="example-full-width form-field" appearance="outline">
+                                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}" id="{{field?.key}}"
+                                                appTypeHit (typeHit)="getSearch($event,field, j);" [matAutocomplete]="auto" autocomplete="off"
+                                                [required]="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j]['showFields'].indexOf(field?.key) > -1 ? true : false"
+                                                [readonly]="this.alertData?.length > j && this['locationsId' + j] != null">
+                                                <button type="button" mat-button *ngIf="this.alertData?.length > j && this['locationsId' + j] != null"
+                                                    matSuffix mat-icon-button aria-label="Clear" (click)="locationClear(j, field?.key)">
+                                                    <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                                                </button>
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this[field?.key + 'Enabled'] === true ? getList.bind(this[field?.key + 'List' + j]) : ''"
+                                                    #auto="matAutocomplete">
+                                                    <mat-option *ngFor="let option of this[field?.key + 'List' + j]" [value]="option.id">
+                                                        <div class="tot-wid-styl" (keydown.enter)="fixClick()" (click)="optionClicked($event, option);">
+                                                            <mat-checkbox [checked]="isSelected" (change)="checkDeviceLocationName(option.id, i, j, $event)">
+                                                                <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                                            </mat-checkbox> 
+                                                        </div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i]['subArrayList'][j][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+
+                                             <div *ngIf="field?.fieldType === 'slider_toggle'" style="margin-top: 25px;">
+                                                <div class="example-form" style="display: flex;">
+                                                    <span class="ovi-fnt-sze14" style=" padding-right: 10px;">OFF</span>
+                                                    <mat-slide-toggle #sliderOnOff formControlName="{{field?.key}}">
+                                                    </mat-slide-toggle>
+                                                    <span class="ovi-fnt-sze14" style=" padding-left: 10px;">ON</span>
+                                                </div>
+                                            </div>
+
+                                            <div *ngIf="field?.fieldType === 'slider'">
+                                                <div class="example-form">
+                                                    <div class="threshold-alert" style="margin-right: 40%;">
+                                                        {{field?.label}} : {{slider.value !== null ? slider.value : field?.defaultValue}}</div>
+                                                    <span class="ovi-fnt-sze14">{{field?.lowValue}}</span>
+                                                    <mat-slider #slider min="{{field?.lowValue}}" max="{{field?.highValue}}"
+                                                    formControlName="{{field?.key}}"
+                                                    [thumbLabel]="true" [step]="step"></mat-slider>
+                                                    <span class="ovi-fnt-sze14" style="padding-left: 10px;">{{field?.highValue}}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                        <div>
+                                            <div class="example-form">
+                                                <span><button mat-mini-fab color="primary"
+                                                        (click)="removeSubArrayList(i, j, 'clear', 'subType')"
+                                                        style="background-color: #FC8C91;margin-top: 20px;"> x </button></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div *ngIf="this.ruleType !== 'RU-SC' && this.ruleType !== 'RU-WO' && this.ruleType !== 'RU-SE' && this.ruleType !== 'RU-DA' && this.ruleType !== 'RU-TD' && this.subArrayList?.length !== 0 &&
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['defender_type'] !== null &&
+                            (dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf('reader_type') > -1 ||
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf('readers') > -1 ||
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf('group_ids') > -1)">
+                                <button mat-mini-fab style="float:right;margin-top: -20px;margin-right: 25px;"
+                                    (click)="addSubArrayList(i, obj.get('subArrayList').controls.length, 'new');">+</button>
+                            </div>
+                            <div formArrayName="subArrayList" *ngIf="this.ruleType !== 'RU-SC' && this.ruleType !== 'RU-WO' && this.ruleType !== 'RU-SE' && this.ruleType !== 'RU-DA' && this.subArrayList?.length !== 0 &&
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['defender_type'] !== null &&
+                            (dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf('reader_type') > -1 ||
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf('readers') > -1 ||
+                            dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf('group_ids') > -1)">
+                                <mat-divider class="divider"></mat-divider>
+                                <div *ngFor="let obj1 of obj.get('subArrayList').controls; let j=index">
+                                    <div [formGroupName]="j" class="ovi-row-gap form-height" style="width: 100%;">
+                                        <div class="ovi-row-four-clmn " *ngFor="let field of subArrayList;"
+                                        [ngStyle]="{'display': dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true && field?.fieldType !== 'slider' ? 'block' : 'none'}">
+                                        <div  *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true && field?.fieldType !== 'slider' ? 'block' : 'none'">
+    
+                                            <mat-label *ngIf="field?.fieldType !== 'slider'" class="ovi-lbl-text-size">{{field.label}}
+                                                <span *ngIf="(field?.mandatory === 'Y' && field?.fieldType !== 'slider') ||
+                                                this['subfields' + i]?.indexOf(field?.key) > -1">*</span></mat-label>
+    
+                                            <mat-form-field *ngIf="field?.fieldType === 'input'" class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}"
+                                                    autocomplete="off" [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false">
+                                                <mat-error *ngIf="alertRuleForm.controls.name.invalid" class="error-txt-1" style="margin-top: 5px;">
+                                                    <span [hidden]="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+    
+                                            <mat-form-field *ngIf="field?.fieldType === 'dropDown'" class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                                                <mat-select formControlName="{{field?.key}}"
+                                                    [multiple]="field?.max === null ? true : false"
+                                                    [required]="this['subfields' + i]?.indexOf(field?.key) > -1 ? true : false"
+                                                    (openedChange)="field?.key === 'tag_type_ids' || field?.key === 'sensor_type' || field?.key === 'device_config' ? openedChange($event, field?.key, i) : ''">
+                                                    <mat-option *ngFor="let data of this[field?.key + 'List' + j]" 
+                                                    [value]="data.tagId ? data.tagId : data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key"
+                                                    (keydown.enter)="fixClick()" (click)="field?.key !== 'sensor_type' && field?.key !== 'device_config' ? showField(data.code ? data.code : data.readerName ? data.readerName : data.id ? data.id : data.key, field?.validLink, i) : ''">
+                                                    {{data.tagId ? data.tagId : data.name ? data.name : data.value ? data.value : data.readerName}}</mat-option>
+                                                    <mat-option *ngIf="field?.key === 'scope_id'" 
+                                                    [value]="'None'" (keydown.enter)="fixClick()" (click)="showField('None', field?.validLink, i)">None</mat-option>
+                                                </mat-select>
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                        dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                        {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+    
+                                            <mat-form-field *ngIf="field?.fieldType === 'typeAhead'" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="{{field?.key}}" id="{{field?.key}}"
+                                                appTypeHit (typeHit)="getSearch($event,field, i);" [matAutocomplete]="auto" autocomplete="off"
+                                                [required]="field?.mandatory === 'Y' ? true : [field?.key + 'valid'] === true ? true : false">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this[field?.key + 'Enabled'] === true ? getList.bind(this[field?.key + 'List' + i]) : ''"
+                                                    #auto="matAutocomplete">
+                                                    <mat-option *ngFor="let option of this[field?.key + 'List' + j]" [value]="option.id">
+                                                        <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error class="error-txt-1" style="margin-top: 5px;">
+                                                    <span *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === null ||
+                                                    dynamicAlertRuleForm.controls.arrayList.value[i][field?.key] === ''">
+                                                    {{field?.label}} is required.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+    
+                                        </div>
+                                        </div>
+                                    </div>
+
+                                    <div [formGroupName]="j" class="ovi-row-gap form-height" style="width: 100%;">
+                                        <div class="ovi-row-four-clmn " *ngFor="let field of subArrayList;"
+                                        [ngStyle]="{'display': dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true && field?.fieldType === 'slider' ? 'block' : 'none'}">
+                                        <div  *ngIf="dynamicAlertRuleForm.controls.arrayList.value[i]['showFields'].indexOf(field?.key) > -1 && field?.multipleField === true && field?.fieldType === 'slider' ? 'block' : 'none'">
+
+                                            <div *ngIf="field?.fieldType === 'slider'">
+                                                    <div class="threshold-alert" style="margin-right: 40%;">
+                                                        {{field?.label}} : {{slider.value !== null ? slider.value : field?.defaultValue}}</div>
+                                                    <span class="ovi-fnt-sze14">{{field?.lowValue}}</span>
+                                                    <mat-slider #slider min="{{field?.lowValue}}" max="{{field?.highValue}}"
+                                                    formControlName="{{field?.key}}"
+                                                    [thumbLabel]="true" [step]="step"></mat-slider>
+                                                    <span class="ovi-fnt-sze14" style=" padding-left: 10px;">{{field?.highValue}}</span>
+                                            </div>
+                                        </div>
+                                        </div>
+
+                                        <div>
+                                            <span><button mat-mini-fab color="primary"
+                                                        (click)="removeSubArrayList(i, j, 'clear')" [ngStyle]="{'margin-top': j === 0 ? '20px' : ''}"
+                                                        style="background-color: #FC8C91;"> x </button></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

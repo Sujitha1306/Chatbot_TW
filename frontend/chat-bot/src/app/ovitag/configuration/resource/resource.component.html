@@ -1,0 +1,174 @@
+<div  class="loading-spinner" *ngIf="spinLoader">
+  <div class="spinnerload">
+      <div class="spin1"></div>
+      <div class="spin2"></div>
+      <div class="spin3"></div>
+  </div>
+</div>  
+<div class="tw-content1" >
+  <div class="tw-mat-elevation manage-component table-h-50" [ngClass.xs]="'components-container-xs'">
+    <div class="mat-table-overflow">
+      <mat-tab-group [(selectedIndex)]="selectedTabIndex"  (selectedTabChange)="tabChanged($event)">   
+        <mat-tab  label="{{'Resource'|translate}}">
+          <ng-template mat-tab-label >{{"Resource"|translate}}</ng-template>
+          <div style="display: flex;" >
+            <div >
+              <mat-form-field class="filter-mat-form-appearence"appearance="outline">
+                <input matInput #searchInputClear [formControl]="filter"
+                (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off" >
+                  <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value"
+                  (click)="searchInputClear.value=''; applyFilter('');">
+                  </button>
+               </mat-form-field>
+            </div>
+            <div style="padding-left:10px; width:calc(100% - 400px)" >
+              <mat-form-field class="row-field-appearence"  appearance="outline">
+                <mat-select [formControl]=" resource" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Resource Type'|translate" multiple
+                (selectionChange)="applyFilter()" matSelectSearch>
+                  <mat-option *ngFor="let resource of resourceList" [value]="resource.code">{{resource.value}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div style ="float:right ;display:flex">
+              <div  style ="display: flex;">
+                <mat-label class="label002 ovi-font-family">
+                  <img src="/assets/Alert/IP/notepad.png" alt="notepad" style="width: 14px; height: 14px">
+                </mat-label>
+                <mat-select  class="select-action-box actionw ovi-font-family" [formControl]="selectedDropdown" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action'|translate" (selectionChange)="headerEventAction($event)">
+                  <mat-option *ngFor="let data of showActions" [value]="data.name">{data.value, select, Modify {{{"Modify"|translate}}} Create {{{"Create"|translate}}}}</mat-option>
+                </mat-select>
+              </div>
+              
+              <div [ngClass]=" 'tw-refresh-icon'" style=" padding-left: 5px;float:right;margin-top:12px">
+                <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom" (click)="refreshPage()"
+                  style="cursor: pointer; float: right;" (keydown.enter)="fixClick()">autorenew</i>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="tw-mat-table-overflow" style="overflow: auto;max-height: calc(100vh - 220px);">
+            <table  mat-table [dataSource]="dataSource" matSort>
+              <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                <th mat-header-cell *matHeaderCellDef style="display: table-cell; " mat-sort-header
+                  class="manage-table-header" style="height:30px" >
+                  {col.title, select,Code {{{"Code"|translate}}} Name {{{"Name"|translate}}} Resource Type
+                  {{{"Resource Type"|translate}}} Page {{{"Page"|translate}}} Ispermit All {{{"Ispermit All"|translate}}} Status {{{"Status"|translate}}}} </th>
+                  <td mat-cell *matCellDef="let element" style="display: table-cell;" (click)="rowClickEvent(element)"
+                  (dblclick)="createPermission(element)" (keydown.enter)="fixClick()">
+                    <span *ngIf="col.dataName == 'permitAll'">
+                      {{element[col.dataName] == true ? 'Yes' : 'No'}}
+                    </span>
+                    <span *ngIf="col.dataName == 'status'">
+                      {{element[col.dataName] == true ? 'Active' : 'Inactive'}}
+                    </span>
+                    <span *ngIf="col.dataName != 'status' && col.dataName != 'permitAll'">
+                    {{element[col.dataName]}}
+                    </span>
+                    <span *ngIf="col.dataName === 'ID'">
+                      <mat-icon [ngStyle]="{'color': element[rowId] === this.rowClickId ? '#808080' : '#D3D3D3'}"
+                      class="ovi-fnt-sze12" style="cursor: pointer;">play_arrow</mat-icon>
+                    </span>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;" class="manage-table-header-row"></tr>
+                  <tr mat-row *matRowDef="let element; columns: displayedColumns; let i = index;"
+                  [ngClass]="{'highlight' : selectedRow && element.id === selectedRow.id}">
+                  </tr>
+            </table>
+          </div>
+          <mat-paginator #paginator1 [pageSizeOptions]="[20, 30, 50, 100]" showFirstLastButtons
+            style="bottom: 0px;position: sticky;z-index: 10;"> </mat-paginator>
+        </mat-tab>
+        <mat-tab  label="{{'Permission'|translate}}">
+          <ng-template mat-tab-label >{{"Permission"|translate}}</ng-template>
+          <div style="display: flex; overflow-x:hidden">
+            <mat-form-field class="filter-mat-form-appearence"appearance="outline">
+              <input  matInput #searchInputClear [formControl]="filter"
+                (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off" >
+                <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value"
+                  (click)="searchInputClear.value=''; applyFilter('');">
+                </button>
+            </mat-form-field>
+            <div style="padding-left:10px;" >
+              <mat-form-field class="row-field-appearence"  appearance="outline">
+                <mat-select [formControl]="resource" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Resource Type'|translate" multiple
+                  (selectionChange)="applyFilter()" matSelectSearch>
+                  <mat-option *ngFor="let resource of resourceList" [value]="resource.code">{{resource.value}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div style="padding-left:10px;" >
+              <mat-form-field class="row-field-appearence"  appearance="outline">
+                <mat-select [formControl]="role" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Role'|translate" multiple matSelectSearch
+                  (selectionChange)="applyFilter()" matSelectSearch>
+                  <mat-option *ngFor="let role of roleList" [value]="role.id">{{role.name}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div style="display:flex;width:100%">
+            <div style="padding-left:10px;min-width:calc(100% - 250px) " >
+              <mat-form-field class="row-field-appearence"  appearance="outline">
+                <mat-select [formControl]="user" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select User'|translate" multiple matSelectSearch
+                  (selectionChange)="applyFilter()" matSelectSearch>
+                    <mat-option *ngFor="let user of userList" [value]="user.loginId">{{user.userName}}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div style ="float:right ;display:flex ; padding-left: 5px">
+              <div  style ="display: flex;">
+                <mat-label class="label002 ovi-font-family">
+                  <img src="/assets/Alert/IP/notepad.png" alt="notepad" style="width: 14px; height: 14px">
+                </mat-label>
+                <mat-select  class="select-action-box actionw ovi-font-family" [formControl]="selectedDropdown" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action'|translate" (selectionChange)="headerEventAction($event)">
+                  <mat-option *ngFor="let data of showActions" [value]="data.name">{data.value, select, Modify {{{"Modify"|translate}}} Create {{{"Create"|translate}}}}</mat-option>
+                </mat-select>
+              </div>
+              
+              <div [ngClass]=" 'tw-refresh-icon'" style=" padding-left: 5px;float:right;margin-top:12px">
+                <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom" (click)="refreshPage()"
+                  style="cursor: pointer; float: right;" (keydown.enter)="fixClick()">autorenew</i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      
+        <div class="tw-mat-table-overflow" style="overflow: auto;max-height: calc(100vh - 220px);">
+          <table mat-table [dataSource]="dataSource" matSort>
+            <ng-container *ngFor="let col of displayedData " matColumnDef="{{col.colName}}">
+              <th mat-header-cell *matHeaderCellDef style="display: table-cell;" mat-sort-header
+                 class="manage-table-header">
+                {col.title, select, Role Name {{{"Role Name"|translate}}} User Name {{{"User Name"|translate}}} Code {{{"Code"|translate}}} Name {{{"Name"|translate}}} Resource Type
+                {{{"Resource Type"|translate}}} Page {{{"Page"|translate}}}  Status {{{"Status"|translate}}}} </th>
+                  <td mat-cell *matCellDef="let element" style="display: table-cell;" (click)="rowClickEvent(element)"
+                  (dblclick)="createPermission(element)" (keydown.enter)="fixClick()">
+                    <span *ngIf="col.dataName == 'permitAll'">
+                      {{element[col.dataName] == true ? 'Yes' : 'No'}}
+                    </span>
+                    <span *ngIf="col.dataName == 'status'">
+                      {{element[col.dataName] == true ? 'Active' : 'Inactive'}}
+                    </span>
+                    <span *ngIf="col.dataName != 'status' && col.dataName != 'permitAll'">
+                      {{element[col.dataName]}}
+                    </span>
+                    <span *ngIf="col.dataName === 'ID'">
+                      <mat-icon [ngStyle]="{'color': element[rowId] === this.rowClickId ? '#808080' : '#D3D3D3'}"
+                       class="ovi-fnt-sze12" style=" cursor: pointer;">play_arrow</mat-icon>
+                    </span>
+                  </td>
+            </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;" class="manage-table-header-row"></tr>
+                <tr mat-row *matRowDef="let element; columns: displayedColumns; let i = index;"
+                  [ngClass]="{'highlight' : selectedRow && element.id === selectedRow.id}">
+                </tr>
+          </table> 
+        </div>
+        <mat-paginator #paginator2 [pageSizeOptions]="[20, 30, 50, 100]" showFirstLastButtons
+          style="bottom: 0px;position: sticky;z-index: 10;"> </mat-paginator>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+</div>

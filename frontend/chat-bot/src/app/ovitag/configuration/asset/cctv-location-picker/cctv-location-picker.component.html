@@ -1,0 +1,106 @@
+<div class="input-component-holder ovi-font-family" style="height:100%;width:100%;">
+  <div class="ovi-pop-hdr">{{"Select CCTV Location"|translate}}
+    <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+  </div>
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+    style="overflow: hidden;padding-bottom: 3px;height: calc(100vh - 86px);">
+
+    <div class="ovi-row-gap" style="padding-top: 15px;">
+
+      <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"Select Block" | translate}} <span
+            class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <mat-select [value]="selectedBlockId" (selectionChange)="onBlockChange($event.value)"
+            [disableOptionCentering]="true" appPlaceholder [showPlaceholder]="true"
+            [placeholderText]="'Select Block'|translate">
+            <mat-option *ngFor="let block of blocks" [value]="block.id">
+              {{block.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"Select Floor" | translate}}<span
+            class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <mat-select [value]="selectedFloorId" (selectionChange)="onFloorChange($event.value)"
+            [disableOptionCentering]="true" [disabled]="!selectedBlockId" appPlaceholder [showPlaceholder]="true"
+            [placeholderText]="'Select Floor'|translate">
+            <mat-option *ngFor="let floor of filteredFloors" [value]="floor.id">
+              {{floor.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="selectedFloorId && !selectedLocation" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+        <div class="ovi-lbl-text-size"
+          style="color:#707070;margin-top:10px;padding:8px;background:#fff3e0;border-radius:4px;border-left:3px solid #ff9800;">
+          <mat-icon style="font-size:14px;height:14px;width:14px;vertical-align:middle;">info</mat-icon>
+          {{"Click on a highlighted zone in the floor plan to select a location"|translate}}
+        </div>
+      </div>
+
+      <div *ngIf="selectedLocation" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+        <div *ngIf="selectedLocation" class="single-location-card">
+
+          <div class="location-left">
+
+            <div class="location-icon">
+              <mat-icon>place</mat-icon>
+            </div>
+
+            <div class="location-details">
+              <div class="location-title">
+                {{ selectedLocation.locationName }}
+              </div>
+
+              <div class="location-status">
+                <span class="status-dot"></span>
+                Selected Location
+              </div>
+            </div>
+
+          </div>
+
+          <div class="coordinate-box x-box">
+            <span class="label">X</span>
+            <span class="value">{{ selectedLocation.x }}</span>
+          </div>
+
+          <div class="coordinate-box y-box">
+            <span class="label">Y</span>
+            <span class="value">{{ selectedLocation.y }}</span>
+          </div>
+
+          <mat-icon class="success-icon">
+            check_circle
+          </mat-icon>
+
+        </div>
+      </div>
+
+    </div>
+    <mat-divider style="margin-top: 10px;"></mat-divider>
+    <div class="ovi-row-gap map-container">
+      <div class="map-wrapper">
+        <div id="cctvLocationMap"></div>
+
+        <div *ngIf="!selectedFloorId" class="map-overlay">
+          <mat-icon>map</mat-icon>
+          <span class="ovi-lbl-text-size">
+            {{"Select a Block and Floor to view the floor plan" | translate}}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ovi-pop-ftr">
+    <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+    <button mat-button class="active-btn" [disabled]="!selectedLocation"
+      (click)="confirm()">{{"Confirm"|translate}}</button>
+  </div>
+</div>

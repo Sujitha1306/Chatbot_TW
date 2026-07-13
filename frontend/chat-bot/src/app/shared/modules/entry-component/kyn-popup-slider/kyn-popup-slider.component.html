@@ -1,0 +1,135 @@
+<div class="container ovi-font-family">
+    <div style="overflow: auto; height: calc(100% - 60px);">
+        <mat-toolbar class="block-1" style="padding-top: 10px; display: flex; height: 70px; ">
+            <div class="close-Btn">
+                <mat-icon appTooltip tooltipText="close" class="icon-style ovi-fnt-sze25" style="padding: 5px 15px; cursor: pointer;"
+                    (click)="close(false)" (keydown.enter)="fixClick()">close</mat-icon>
+            </div>
+            <div style="max-width: 60%;">
+                <div appTooltip [tooltipText]="dataDetails.title"
+                    style="font-weight: 600;overflow: hidden;text-overflow: ellipsis; cursor: pointer;">
+                    {{dataDetails.title}}
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <img class="profile-photo" [src]="dataDetails.userProfile === '' ? defaultImg : dataDetails.userProfile" alt="Profile">
+                    <div class="user-Name">{{dataDetails.Name}}&nbsp;&nbsp;</div>
+                    <div class="user-Name" style="color: #989898;">&nbsp;&nbsp;{{dataDetails.publishedAt | date : "MMM d"}}</div>
+                </div>
+            </div>
+        </mat-toolbar>
+        <div style="padding: 10px 10px 0;height: calc(100% - 90px);overflow: auto;">
+            <div style="display: flex; padding: 0 30px; gap: 10%; height: 60px;">
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">schedule</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">{{'Date and time"|translate}}</span>
+                        <div class="kynDetails">{{dataDetails.publishedAt | date:'MMM d, h:mm a'}}</div>
+                    </div>
+                </div>
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">location_on</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">{{"Event Location"|translate}}</span>
+                        <div class="kynDetails">{{dataDetails.locationValue}}</div>
+                    </div>
+                </div>
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">category</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">{{"Event Category"|translate}}</span>
+                        <div class="kynDetails">{{dataDetails.categoryValue}}</div>
+                    </div>
+                </div>
+            </div>
+            <mat-divider style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+            <span *ngIf="data.type === 'live'">
+                <div class="kynDetails" style="padding: 10px 35px 5px;">{{"Description"|translate}}</div>
+                <div style="padding: 5px 35px 10px;">
+                    <ng-container *ngIf="isExpanded; else shortDescription">
+                        {{dataDetails.description}}
+                        <span style="display: contents; color: #797979;" (click)="toggleExpand()" (keydown.enter)="fixClick()">less</span>
+                    </ng-container>
+                    <ng-template #shortDescription>
+                        {{dataDetails.description | slice:0:150 }}
+                        <span *ngIf="dataDetails.length && dataDetails.sourceDescription.length > 150"
+                            style="display: contents; color: #f44336;" (click)="toggleExpand()" (keydown.enter)="fixClick()">... more</span>
+                    </ng-template>
+                </div>
+                <mat-divider style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+                <div class="kynDetails" style="padding: 10px 35px;">{{"Attachments"|translate}}</div>
+                <div style="padding: 5px 35px;">
+                    <img style="height: 20%; width: 20%; object-fit: contain;" [src]="dataDetails.thumbnailUrl"
+                        alt="Attachments Not Found">
+                </div>
+            </span>
+            <span *ngIf="data.type === 'schedule'">
+                <div class="kynDetails" style="padding: 10px 35px;">{{"Action"|translate}}</div>
+                <div style="display: flex; padding: 0 40px; gap: 10%; height: 60px">
+                    <div>
+                        <span class="kyn-detailname">Action</span>
+                        <div class="kynDetails action-status" [ngStyle]="{'background': dataDetails.requestStatus === 'Rejected' ? '#f7ecec' : 
+                        dataDetails.requestStatus === 'Approved'? '#f1f7ec' : '#ffa50033', 
+                        'color': dataDetails.requestStatus === 'Rejected'? '#b55858'  : dataDetails.requestStatus === 'Approved'? '#79ad45' : '#dba819'}">
+                        {{dataDetails.requestStatus === null ? 'Pending' : dataDetails.requestStatus}}
+                        </div>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">{{"Thumbnail"|translate}}</span>
+                        <div style="height: 50%;">
+                            <img style="height: 100%; width: 100%; object-fit: contain;" [src]="dataDetails.thumbnailUrl"
+                                alt="Thumbnail not Available">
+                        </div>
+                    </div>
+                </div>
+                <mat-divider style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+                <div class="kynDetails" style="padding: 10px 35px;">{{"Attachments"|translate}}</div>
+                <div style="width: 100%; height: 80%; padding: 15px 0px;" *ngIf="dataDetails.sourceUrl !== null">
+                    <video controls class="video-content" autoplay>
+                        <source [src]="dataDetails.sourceUrl" type="video/mp4">
+                    </video>
+                </div>
+                <mat-divider style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+                <div class="kynDetails" style="padding: 10px 35px 5px;">{{"Description"|translate}}</div>
+                <div style="padding: 5px 35px 10px;">
+                    <ng-container *ngIf="isExpanded; else shortDescription">
+                        {{dataDetails.description}}
+                        <span style="display: contents; color: #797979;" (click)="toggleExpand()" (keydown.enter)="fixClick()">less</span>
+                    </ng-container>
+                    <ng-template #shortDescription>
+                        {{dataDetails.description | slice:0:150 }}
+                        <span *ngIf="dataDetails.length && userDetails.sourceDescription.length > 150"
+                            style="display: contents; color: #f44336;" (click)="toggleExpand()" (keydown.enter)="fixClick()">... more</span>
+                    </ng-template>
+                </div>
+            </span>
+        </div>
+    </div>
+    <mat-divider class="divider"></mat-divider>
+    <div class="input-footer" style="padding: 0 30px;">
+        <button  *ngIf="dataDetails.requestStatus !== 'Approved'" mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="Aproval('Approved')"
+            style="background-color: #639f27; border-radius: 3px;" [debounceTime]="300">{{"Approve"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="Aproval(null)"
+            style="background-color: #ed6a6a; border-radius: 3px;" [debounceTime]="300">{{"Reject"|translate}}</button>
+    </div>
+    <div>
+        <div *ngIf="reject" class="confim ovi-font-family" >
+            <div style="height: calc(100% - 60px); overflow: auto;">
+            <div class="kynDetails ovi-fnt-sze16" style="padding: 10px 25px; color: #ed6a6a;">{{"Reason for Reject"|translate}}</div>
+            <div class="ovi-fnt-sze20" style="font-weight: 800; text-align: center; display: flex;
+            justify-content: center; align-items: center; height: 180px;">{{"Are You Sure"|translate}}</div>
+            </div>
+            <div class="input-footer" style="padding: 0 25px;">
+                <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="Aproval('Rejected')"
+                    style="background-color: #de5757; border-radius: 3px;" [debounceTime]="300">{{"Yes! Reject"|translate}}</button>
+                <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="Aproval('no')"
+                    style="background-color: #b4afaf; border-radius: 3px;" [debounceTime]="300">{{"No"|translate}}</button>
+            </div>
+        </div>
+    </div>
+</div>

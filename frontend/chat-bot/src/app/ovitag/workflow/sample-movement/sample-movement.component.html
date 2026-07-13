@@ -1,0 +1,1214 @@
+<div class="sm-root ovi-font-family">
+
+  <!-- ═══════════════════════════════ LIST VIEW ══════════════════════════════ -->
+  <ng-container *ngIf="view === 'list'">
+
+    <!-- Header bar -->
+    <div class="sm-header-wrapper">
+      <tw-header-new-component
+        [type]="'new'"
+        [component]="'sample-movement'"
+        [permission]="null"
+        [dateFilter]="selectedDate"
+        [rowFilter]="null"
+        [groupFilter]=[]
+        [selectedView]="null"
+        (headerEventAction)="headerEventAction($event)">
+      </tw-header-new-component>
+      <div class="sm-initiate-btn-overlay">
+        <button mat-stroked-button class="sm-btn-scan-header" (click)="openScanPopup()">
+          <mat-icon>qr_code_scanner</mat-icon> Scan
+        </button>
+        <button mat-flat-button class="sm-btn-initiate" (click)="initiateSample()">
+          <mat-icon>add_circle_outline</mat-icon> Initiate Sample
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <mat-tab-group class="sm-tab-group" [(selectedIndex)]="activeTabIndex"
+      (selectedTabChange)="onTabChange($event)">
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="sm-tab-icon">inbox</mat-icon> Received
+        </ng-template>
+        <ng-container *ngTemplateOutlet="deliveryTable"></ng-container>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon class="sm-tab-icon">history</mat-icon> History
+        </ng-template>
+        <ng-container *ngTemplateOutlet="deliveryTable"></ng-container>
+      </mat-tab>
+
+    </mat-tab-group>
+
+    <!-- Shared table template -->
+    <ng-template #deliveryTable>
+      <div class="sm-table-outer">
+      <div class="sm-table-wrap">
+
+        <table class="sm-list-table">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>T-Bag Tag</th>
+              <th>Source Location</th>
+              <th>Carrier</th>
+              <th class="sm-th-center">Packets</th>
+              <th>Start Time</th>
+              <th>Status</th>
+              <th *ngIf="activeTabIndex === 1">Completed Time</th>
+              <th class="sm-th-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngIf="!isListLoading && listData.length > 0">
+              <tr *ngFor="let row of listData; let i = index">
+                <td [class.sm-td-clickable]="row.status !== 'RQ-CA'"
+                    class="sm-td-reqid"
+                    [title]="row.status === 'RQ-CA' ? 'Cancelled — read only' : 'Click to modify'"
+                    (click)="row.status !== 'RQ-CA' && openModify(row)">
+                  <span class="sm-reqid-chip">{{ row.requestId || '—' }}</span>
+                </td>
+                <td class="sm-td-tbag">
+                  <div class="sm-tbag-cell">
+                    <mat-icon class="sm-tbag-row-icon">view_week</mat-icon>
+                    <span>{{ row.remarks || '—' }}</span>
+                  </div>
+                </td>
+                <td class="sm-td-location" title="{{ row.sourceLocationName }}">
+                  {{ row.sourceLocationName || '—' }}
+                </td>
+                <td>
+                  <div class="sm-carrier-cell">
+                    <mat-icon class="sm-carrier-icon">person</mat-icon>
+                    {{ row.porterNames || '—' }}
+                  </div>
+                </td>
+                <td class="sm-td-center">{{ row.nonPerformer?.length || 0 }}</td>
+                <td class="sm-td-time">{{ row.startTime | date: 'dd MMM yy, hh:mm a' }}</td>
+                <td>
+                  <span class="sm-status-badge" [ngClass]="statusClass(row.status)"
+                        [class.sm-status-dblclick]="row.status !== 'RQ-CA'"
+                        [title]="row.status === 'RQ-CA' ? 'Cancelled — read only' : 'Double-click to modify'"
+                        (dblclick)="row.status !== 'RQ-CA' && openModify(row)">
+                    {{ row.statusName || '—' }}
+                  </span>
+                </td>
+                <td *ngIf="activeTabIndex === 1" class="sm-td-time">
+                  {{ (row.endTime || row.lastModifiedOn) | date: 'dd MMM yy, hh:mm a' }}
+                </td>
+                <td class="sm-td-center">
+                  <ng-container *ngIf="activeTabIndex === 0">
+                    <button mat-icon-button class="sm-collect-btn" title="Collect Sample"
+                            *ngIf="row.status !== 'RQ-CA'"
+                            (click)="openCollectPopup(row); $event.stopPropagation()">
+                      <mat-icon>move_to_inbox</mat-icon>
+                    </button>
+                    <span *ngIf="row.status === 'RQ-CA'" class="sm-cancelled-dash" title="Cancelled">—</span>
+                  </ng-container>
+                  <ng-container *ngIf="activeTabIndex === 1">
+                    <img *ngIf="getRowAckState(row) === 'full'"
+                         src="/assets/Alert/IP/check-mark.svg"
+                         alt="Acknowledged" class="sm-ack-icon cur-ptr" title="Fully Acknowledged"
+                         style="width:22px; cursor:pointer;"
+                         (click)="openAckDetailPopup(row); $event.stopPropagation()" />
+                    <img *ngIf="getRowAckState(row) === 'partial'"
+                         src="/assets/Alert/IP/check-mark-incomplete.svg"
+                         alt="Partial Acknowledged" class="sm-ack-icon cur-ptr" title="Partially Acknowledged"
+                         style="width:28px; cursor:pointer;"
+                         (click)="openAckDetailPopup(row); $event.stopPropagation()" />
+                  </ng-container>
+                </td>
+              </tr>
+            </ng-container>
+            <tr *ngIf="isListLoading">
+              <td [attr.colspan]="activeTabIndex === 1 ? 9 : 8" class="sm-td-empty">
+                <mat-spinner diameter="28" style="margin: 0 auto;"></mat-spinner>
+              </td>
+            </tr>
+            <tr *ngIf="!isListLoading && listData.length === 0">
+              <td [attr.colspan]="activeTabIndex === 1 ? 9 : 8" class="sm-td-empty">
+                No records found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+      <div class="sm-pagination" *ngIf="listData.length > 0">
+        <span class="sm-page-info">
+          Showing {{ pageIndex * pageSize + 1 }}–{{ pageIndex * pageSize + listData.length }} of {{ totalRecords }} records
+        </span>
+        <div class="sm-page-controls">
+          <button mat-icon-button class="sm-page-btn" [disabled]="pageIndex === 0" (click)="prevPage()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="sm-page-num">{{ pageIndex + 1 }} / {{ totalPages }}</span>
+          <button mat-icon-button class="sm-page-btn" [disabled]="pageIndex >= totalPages - 1" (click)="nextPage()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      </div>
+    </ng-template>
+
+  </ng-container>
+  <!-- ══════════════════════════════ / LIST VIEW ══════════════════════════════ -->
+
+
+  <!-- ══════════════════════════════ CREATE / MODIFY VIEW ═════════════════════ -->
+  <ng-container *ngIf="view === 'create' || view === 'modify'">
+
+    <!-- Create Header -->
+    <div class="sm-create-header">
+      <button mat-icon-button class="sm-back-list-btn" (click)="backToList()" title="Back to list">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="sm-create-title">{{ isModifying ? 'MODIFY DELIVERY' : 'CREATE DELIVERY (COLLECTION END)' }}</span>
+      <button mat-icon-button class="sm-back-list-btn" (click)="backToList()" title="Close">
+        <mat-icon>highlight_off</mat-icon>
+      </button>
+    </div>
+
+    <!-- Stepper -->
+    <!-- <div class="sm-stepper">
+      <ng-container *ngFor="let step of stepDefs; let i = index">
+        <div class="sm-step-item" [ngClass]="'step-' + getStepState(step.number)">
+          <div class="sm-step-circle">
+            <mat-icon *ngIf="getStepState(step.number) === 'completed'" class="sm-step-check">check</mat-icon>
+            <span *ngIf="getStepState(step.number) !== 'completed'">{{ step.number }}</span>
+          </div>
+          <div class="sm-step-label">{{ step.label }}</div>
+        </div>
+        <div *ngIf="i < stepDefs.length - 1"
+             class="sm-step-connector"
+             [class.sm-connector-done]="getStepState(step.number) === 'completed'">
+        </div>
+      </ng-container>
+    </div> -->
+
+    <!-- ── CREATE PAGE 1 ── -->
+    <div *ngIf="createPage === 1" class="sm-create-scroll">
+      <div class="sm-create-content">
+
+        <!-- ── LEFT column: Step 1 + Status + Step 3 ── -->
+        <div class="sm-create-left">
+
+          <!-- Step 1 Card: T-Bag Tag ID -->
+          <div class="sm-step-card">
+            <div class="sm-form-section">
+              <div class="sm-section-badge">Step 1</div>
+              <div class="sm-section-title">T-Bag Tag ID</div>
+
+              <!-- Read-only view (modify) -->
+              <div *ngIf="isModifying" class="sm-readonly-field">
+                <mat-icon class="sm-barcode-icon">view_week</mat-icon>
+                <span class="sm-readonly-value">{{ tBagTagId || '—' }}</span>
+              </div>
+
+              <!-- From location (auto-populated from logged-in user) -->
+              <ng-container *ngIf="!isModifying && sourceLocationName">
+                <div class="sm-from-loc-row">
+                  <mat-icon class="sm-from-loc-icon">location_on</mat-icon>
+                  <div class="sm-from-loc-info">
+                    <span class="sm-from-loc-label">From Location</span>
+                    <span class="sm-from-loc-name">{{ sourceLocationName }}</span>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- Editable (create) -->
+              <ng-container *ngIf="!isModifying">
+                <div class="sm-section-subtitle">Scan or enter the T-Bag tag to start a new delivery.</div>
+                <div class="sm-step1-body">
+                  <div class="sm-field-group">
+                    <label class="sm-field-label">T-Bag Tag ID <span class="sm-optional-tag">optional</span></label>
+                    <div class="sm-tbag-input-box" [class.sm-input-valid]="tBagTagValid">
+                      <mat-icon class="sm-barcode-icon sm-icon-clickable" title="Scan with camera" (click)="openCameraForTBag()">view_week</mat-icon>
+                      <mat-form-field class="sm-tbag-mat-field" appearance="outline">
+                        <input matInput id="tbag" placeholder="Scan or enter T-Bag Tag ID"
+                               [(ngModel)]="tBagTagId" [ngModelOptions]="{standalone: true}"
+                               appTypeHit (typeHit)="onTBagTypeHit($event)"
+                               [matAutocomplete]="tbagAuto" autocomplete="off" autofocus />
+                        <mat-autocomplete #tbagAuto="matAutocomplete" autoActiveFirstOption
+                                          panelClass="sm-tbag-autocomplete-panel"
+                                          (optionSelected)="onTBagOptionSelected($event)">
+                          <mat-option *ngFor="let tag of tBagSearchResults" [value]="tag.tagId">
+                            {{ tag.tagId }}
+                          </mat-option>
+                        </mat-autocomplete>
+                      </mat-form-field>
+                      <mat-icon *ngIf="tBagTagValid" class="sm-valid-icon">check_circle</mat-icon>
+                    </div>
+                  </div>
+                  <div class="sm-info-box">
+                    <mat-icon class="sm-info-icon">info_outline</mat-icon>
+                    <span>Ensure the T-Bag seal is intact before scanning.</span>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Status Card — modify only -->
+          <div class="sm-step-card" *ngIf="isModifying">
+            <div class="sm-form-section">
+              <div class="sm-section-badge">Status</div>
+              <div class="sm-section-title">Request Status</div>
+              <mat-form-field class="sm-performer-select" appearance="outline">
+                <mat-label>Status</mat-label>
+                <mat-icon matPrefix style="margin-right:4px;color:#6b7a99;">flag</mat-icon>
+                <mat-select [(ngModel)]="modifyStatus" [ngModelOptions]="{standalone: true}"
+                            [disabled]="modifyStatus === 'RQ-CO'">
+                  <mat-option value="RQ-CO" *ngIf="modifyStatus === 'RQ-CO'">Completed</mat-option>
+                  <mat-option value="RQ-CR" *ngIf="modifyStatus !== 'RQ-CO'">Initiated</mat-option>
+                  <mat-option value="RQ-CA" *ngIf="modifyStatus !== 'RQ-CO'">Cancelled</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Step 3 Card: Performer -->
+          <div class="sm-step-card">
+            <div class="sm-form-section">
+              <div class="sm-section-badge">Step 3</div>
+              <div class="sm-section-title">Choose Performer</div>
+              <div class="sm-section-subtitle">Select the person who will carry this T-Bag delivery.</div>
+
+              <!-- Read-only: completed or cancelled -->
+              <ng-container *ngIf="isModifying && (editingRecord?.status === 'RQ-CO' || editingRecord?.status === 'RQ-CA'); else editablePerformer">
+                <div class="sm-readonly-field">
+                  <mat-icon class="sm-barcode-icon">account_circle</mat-icon>
+                  <span class="sm-readonly-value">{{ selectedPerformerName || '—' }}</span>
+                </div>
+              </ng-container>
+
+              <!-- Editable -->
+              <ng-template #editablePerformer>
+                <mat-form-field class="sm-performer-select" appearance="outline">
+                  <mat-label>Search Performer / Carrier</mat-label>
+                  <mat-icon matPrefix style="margin-right:4px;color:#6b7a99;">person_search</mat-icon>
+                  <input matInput
+                         id="performer"
+                         placeholder="Type name to search…"
+                         [(ngModel)]="performerSearchText"
+                         [ngModelOptions]="{standalone: true}"
+                         appTypeHit
+                         (typeHit)="onPerformerTypeHit($event)"
+                         (focus)="loadAvailablePerformers()"
+                         [matAutocomplete]="perfAuto"
+                         autocomplete="off" />
+                  <mat-autocomplete #perfAuto="matAutocomplete"
+                                    autoActiveFirstOption
+                                    (optionSelected)="onPerformerOptionSelected($event)">
+                    <mat-option *ngFor="let p of performerSearchResults" [value]="p.name">
+                      <mat-icon style="font-size:16px;width:16px;height:16px;vertical-align:middle;margin-right:6px;">person</mat-icon>
+                      {{ p.name }}
+                    </mat-option>
+                    <mat-option *ngIf="performerSearchResults.length === 0 && performerSearchText.length >= 2" disabled>
+                      No available porters found
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+
+                <div *ngIf="selectedPerformerId" class="sm-performer-selected-card">
+                  <mat-icon class="sm-performer-avatar">account_circle</mat-icon>
+                  <div class="sm-performer-info">
+                    <div class="sm-performer-name">{{ selectedPerformerName }}</div>
+                    <div class="sm-performer-role">Assigned Carrier</div>
+                  </div>
+                  <mat-icon class="sm-performer-check">check_circle</mat-icon>
+                  <button mat-icon-button class="sm-performer-remove" title="Remove performer" (click)="clearPerformer()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+
+        </div><!-- /sm-create-left -->
+
+        <!-- ── RIGHT column: Step 2 ── -->
+        <div class="sm-create-right">
+
+        <!-- Step 2 Card: Locations & Tubes -->
+        <div class="sm-step-card" id="sm-locations-section">
+          <div class="sm-form-section">
+            <div class="sm-section2-header">
+              <div>
+                <div class="sm-section-badge">Step 2</div>
+                <div class="sm-section-title">Location(s) &amp; Tubes</div>
+                <div *ngIf="!isModifying" class="sm-section-subtitle">Add one or more locations. Each location can have multiple scanned tubes.</div>
+              </div>
+              <button *ngIf="!isModifying" mat-stroked-button class="sm-btn-add-location" (click)="addLocation()">
+                <mat-icon>add</mat-icon> Add Location
+              </button>
+            </div>
+
+            <!-- Read-only view (modify) -->
+            <ng-container *ngIf="isModifying">
+              <div *ngIf="locations.length === 0" class="sm-loc-empty">
+                <mat-icon>place</mat-icon><p>No locations recorded.</p>
+              </div>
+              <div *ngFor="let loc of locations; let i = index" class="sm-location-card sm-location-card-readonly">
+                <div class="sm-loc-card-header">
+                  <div class="sm-loc-card-title">
+                    <mat-icon class="sm-loc-icon">local_hospital</mat-icon>
+                    {{ loc.locationName || 'Location ' + (i + 1) }}
+                  </div>
+                  <span class="sm-tube-badge">{{ loc.tubes.length }} tube(s)</span>
+                </div>
+                <table *ngIf="loc.tubes.length > 0" class="sm-tubes-table sm-tubes-readonly">
+                  <thead><tr><th>#</th><th>Tube ID</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let tube of loc.tubes; let j = index">
+                      <td class="sm-td-seq">{{ j + 1 }}</td>
+                      <td class="sm-tube-id-cell">{{ tube.tubeId }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </ng-container>
+
+            <!-- Editable (create) -->
+            <ng-container *ngIf="!isModifying">
+              <div *ngIf="locations.length === 0" class="sm-loc-empty">
+                <mat-icon>place</mat-icon>
+                <p>No locations added. Click <strong>+ Add Location</strong> to begin.</p>
+              </div>
+              <div *ngFor="let loc of locations; let i = index" class="sm-location-card">
+                <div class="sm-loc-card-header">
+                  <div class="sm-loc-card-title">
+                    <mat-icon class="sm-loc-icon">local_hospital</mat-icon>
+                    Location {{ i + 1 }}
+                  </div>
+                  <button mat-icon-button class="sm-delete-loc-btn" (click)="removeLocation(loc.id)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+                <div class="sm-loc-card-body">
+                  <div class="sm-loc-left">
+                    <mat-form-field class="sm-loc-mat-field" appearance="outline">
+                      <input matInput [id]="'sm-loc-input-' + loc.id"
+                             placeholder="Type 3+ letters to search location…"
+                             [(ngModel)]="locationSearchMap[loc.id]"
+                             [ngModelOptions]="{standalone: true}"
+                             appTypeHit (typeHit)="onLocationTypeHit($event, loc.id)"
+                             [matAutocomplete]="locAuto" autocomplete="off" />
+                      <mat-icon matSuffix *ngIf="loc.locationId && !locationLoadingMap[loc.id]" class="sm-lsf-check">check_circle</mat-icon>
+                      <mat-icon matSuffix *ngIf="loc.locationId" class="sm-lsf-clear sm-icon-clickable" title="Clear" (click)="clearLocationSearch(loc.id)">close</mat-icon>
+                      <mat-spinner matSuffix *ngIf="locationLoadingMap[loc.id]" diameter="16"></mat-spinner>
+                      <mat-autocomplete #locAuto="matAutocomplete" autoActiveFirstOption
+                                        panelClass="sm-loc-autocomplete-panel"
+                                        (optionSelected)="onLocationOptionSelected($event, loc.id)">
+                        <mat-option *ngFor="let result of locationResultsMap[loc.id]"
+                                    [value]="result.name || result.fullName || ''">
+                          <div class="sm-ldi-row">
+                            <mat-icon class="sm-ldi-icon">place</mat-icon>
+                            <span>{{ result.fullName || result.name }}</span>
+                          </div>
+                        </mat-option>
+                      </mat-autocomplete>
+                    </mat-form-field>
+                    <div class="sm-scan-row">
+                      <div class="sm-tube-input-box">
+                        <mat-icon class="sm-tube-scan-icon sm-icon-clickable" title="Scan with camera" (click)="openCameraForTube(loc.id)">qr_code_scanner</mat-icon>
+                        <input class="sm-tube-input" type="text" placeholder="Scan or enter Tube ID"
+                          [(ngModel)]="tubeInputMap[loc.id]" (keydown)="onTubeKeydown($event, loc.id)" autocomplete="off" />
+                      </div>
+                      <button mat-stroked-button class="sm-btn-scan" (click)="scanTube(loc.id)">
+                        <mat-icon>add</mat-icon> Scan Tube
+                      </button>
+                    </div>
+                  </div>
+                  <div class="sm-loc-right">
+                    <div class="sm-tubes-count-label">Scanned Tubes ({{ loc.tubes.length }})</div>
+                    <div *ngIf="loc.tubes.length === 0" class="sm-tubes-empty">No tubes scanned yet.</div>
+                    <table *ngIf="loc.tubes.length > 0" class="sm-tubes-table">
+                      <thead><tr><th>#</th><th>Tube ID</th><th>Collected At</th><th></th></tr></thead>
+                      <tbody>
+                        <tr *ngFor="let tube of loc.tubes; let j = index">
+                          <td class="sm-td-seq">{{ j + 1 }}</td>
+                          <td class="sm-tube-id-cell">{{ tube.tubeId }}</td>
+                          <td>{{ tube.collectedAt | date: 'dd MMM yyyy, hh:mm a' }}</td>
+                          <td>
+                            <button mat-icon-button class="sm-remove-tube-btn" (click)="removeTube(loc.id, tube.tubeId)">
+                              <mat-icon>close</mat-icon>
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        </div><!-- /sm-create-right -->
+
+      </div>
+
+    </div>
+    <!-- / CREATE PAGE 1 -->
+
+    <!-- ── CREATE PAGE 2: Review + Submit — create only ── -->
+    <div *ngIf="createPage === 2 && !isModifying" class="sm-create-scroll">
+      <div class="sm-create-content">
+
+        <!-- Review Card (Step 3) -->
+        <div class="sm-step-card sm-review-left-card" *ngIf="!isSubmitted">
+          <div class="sm-form-section">
+            <div class="sm-section-badge sm-badge-review">Step 4</div>
+            <div class="sm-section-title">Review Delivery</div>
+            <div class="sm-section-subtitle">Verify all details before submitting.</div>
+
+            <!-- T-Bag ID -->
+            <div class="sm-rv-info-card">
+              <span class="sm-rv-info-label">T-BAG ID</span>
+              <div class="sm-rv-info-row">
+                <mat-icon class="sm-rv-icon">view_week</mat-icon>
+                <span class="sm-rv-value">{{ tBagTagId || '—' }}</span>
+                <mat-icon class="sm-rv-check">check_circle</mat-icon>
+              </div>
+            </div>
+
+            <!-- Performer -->
+            <div class="sm-rv-info-card">
+              <span class="sm-rv-info-label">PERFORMER / CARRIER</span>
+              <div class="sm-rv-info-row">
+                <mat-icon class="sm-rv-icon">account_circle</mat-icon>
+                <span class="sm-rv-value">{{ selectedPerformerName || '—' }}</span>
+                <mat-icon class="sm-rv-check">check_circle</mat-icon>
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="sm-rv-stats-row">
+              <div class="sm-rv-stat-card">
+                <div class="sm-rv-stat-icon-wrap"><mat-icon>place</mat-icon></div>
+                <span class="sm-rv-stat-num">{{ locations.length }}</span>
+                <span class="sm-rv-stat-lbl">LOCATION(S)</span>
+              </div>
+              <div class="sm-rv-stat-card">
+                <div class="sm-rv-stat-icon-wrap"><mat-icon>edit</mat-icon></div>
+                <span class="sm-rv-stat-num">{{ totalTubes }}</span>
+                <span class="sm-rv-stat-lbl">TOTAL TUBE(S)</span>
+              </div>
+            </div>
+
+            <!-- Locations & Tubes -->
+            <div class="sm-rv-loc-section">
+              <div class="sm-rv-loc-section-hdr">
+                <div class="sm-rv-loc-hdr-left">
+                  <div class="sm-rv-loc-icon-box"><mat-icon>remove</mat-icon></div>
+                  <span>Location &amp; Tubes</span>
+                </div>
+                <span class="sm-tube-badge">{{ totalTubes }} tube(s)</span>
+              </div>
+              <div *ngFor="let loc of locations; let i = index" class="sm-rv-loc-block">
+                <div class="sm-rv-loc-name">Location {{ i + 1 }}: <strong>{{ loc.locationName }}</strong></div>
+                <table class="sm-tubes-table sm-tubes-review">
+                  <thead><tr><th>#</th><th>Tube ID</th><th>Collected At</th></tr></thead>
+                  <tbody>
+                    <tr *ngFor="let tube of loc.tubes; let j = index">
+                      <td class="sm-td-seq">{{ j + 1 }}</td>
+                      <td class="sm-tube-id-cell">{{ tube.tubeId }}</td>
+                      <td>{{ tube.collectedAt | date: 'dd MMM yyyy, hh:mm a' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Submit / Success Card (Step 4) -->
+        <div class="sm-step-card sm-submit-right-card">
+          <div class="sm-form-section">
+
+            <!-- Pre-submit state -->
+            <ng-container *ngIf="!isSubmitted">
+              <div class="sm-section-badge sm-badge-submit">Step 5</div>
+              <div class="sm-section-title">Submit Delivery</div>
+              <div class="sm-section-subtitle">Once submitted, the delivery record will be created and tracked in the list.</div>
+
+              <div class="sm-ready-wrap">
+                <div class="sm-ready-icon-wrap">
+                  <mat-icon class="sm-ready-box-icon">inventory_2</mat-icon>
+                  <mat-icon class="sm-ready-check-icon">check_circle</mat-icon>
+                </div>
+                <div class="sm-ready-title">You're ready to submit!</div>
+                <div class="sm-ready-sub">Please review the summary below before submitting the delivery.</div>
+
+                <div class="sm-ready-summary">
+                  <div class="sm-ready-sum-row">
+                    <mat-icon class="sm-rsr-icon">view_week</mat-icon>
+                    <span class="sm-rsr-label">T-Bag ID</span>
+                    <span class="sm-rsr-value">{{ tBagTagId || '—' }}</span>
+                  </div>
+                  <div class="sm-ready-sum-row">
+                    <mat-icon class="sm-rsr-icon">place</mat-icon>
+                    <span class="sm-rsr-label">Locations</span>
+                    <span class="sm-rsr-value">{{ locations.length }} location(s)</span>
+                  </div>
+                  <div class="sm-ready-sum-row">
+                    <mat-icon class="sm-rsr-icon">colorize</mat-icon>
+                    <span class="sm-rsr-label">Tubes</span>
+                    <span class="sm-rsr-value">{{ totalTubes }} tube(s)</span>
+                  </div>
+                  <div class="sm-ready-sum-row">
+                    <mat-icon class="sm-rsr-icon">account_circle</mat-icon>
+                    <span class="sm-rsr-label">Performer / Carrier</span>
+                    <span class="sm-rsr-value">{{ selectedPerformerName || '—' }}</span>
+                  </div>
+                </div>
+
+              </div>
+            </ng-container>
+
+            <!-- Success state -->
+            <div *ngIf="isSubmitted" class="sm-success-block">
+              <div class="sm-success-icon-wrap">
+                <mat-icon class="sm-success-icon">check_circle</mat-icon>
+              </div>
+              <div class="sm-success-title">{{ isModifying ? 'Delivery Updated Successfully!' : 'Delivery Created Successfully!' }}</div>
+              <div *ngIf="createdRequestId" class="sm-success-request-id">
+                <span class="sm-req-id-label">Request ID</span>
+                <span class="sm-req-id-value">{{ createdRequestId }}</span>
+              </div>
+              <div class="sm-success-sub">
+                T-Bag <strong>{{ tBagTagId || editingRecord?.tBagTagId || '—' }}</strong>
+                has been dispatched with
+                <strong>{{ locations.length }}</strong> location(s) and
+                <strong>{{ totalTubes }}</strong> tube(s).
+              </div>
+              <div class="sm-success-loc-list">
+                <div *ngFor="let loc of locations" class="sm-success-loc-row">
+                  <mat-icon class="sm-loc-icon">local_hospital</mat-icon>
+                  <span>{{ loc.locationName }}</span>
+                  <span class="sm-tube-badge">{{ loc.tubes.length }} tube(s)</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+    <!-- / CREATE PAGE 2 -->
+
+    <!-- Footer — outside scroll so it is always visible -->
+    <div class="sm-create-footer">
+      <!-- Page 1: Cancel -->
+      <button *ngIf="createPage === 1" mat-stroked-button class="sm-btn-back-nav" (click)="backToList()">
+        <mat-icon>arrow_back</mat-icon> Cancel
+      </button>
+      <!-- Page 1 Modify: Save Changes -->
+      <button *ngIf="createPage === 1 && isModifying" mat-flat-button class="sm-btn-next sm-btn-submit-action"
+        (click)="submitAction()"
+        [disabled]="isSubmitting || editingRecord?.status === 'RQ-CO' || editingRecord?.status === 'RQ-CA'"
+        [class.sm-btn-muted]="editingRecord?.status === 'RQ-CO' || editingRecord?.status === 'RQ-CA'">
+        <mat-spinner *ngIf="isSubmitting" diameter="16" class="sm-btn-spinner"></mat-spinner>
+        <mat-icon *ngIf="!isSubmitting">save</mat-icon>
+        {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+      </button>
+      <!-- Page 1 Create: Next Review -->
+      <button *ngIf="createPage === 1 && !isModifying" mat-flat-button class="sm-btn-next" (click)="goToReview()">
+        Next: Review &nbsp;<mat-icon>arrow_forward</mat-icon>
+      </button>
+      <!-- Page 2 pre-submit: Back + Submit Delivery -->
+      <button *ngIf="createPage === 2 && !isSubmitted" mat-stroked-button class="sm-btn-back-nav" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon> Back
+      </button>
+      <button *ngIf="createPage === 2 && !isSubmitted" mat-flat-button class="sm-btn-next sm-btn-submit-action"
+        (click)="submitAction()" [disabled]="isSubmitting">
+        <mat-spinner *ngIf="isSubmitting" diameter="16" class="sm-btn-spinner"></mat-spinner>
+        <mat-icon *ngIf="!isSubmitting">send</mat-icon>
+        {{ isSubmitting ? 'Submitting...' : 'Submit Delivery' }}
+      </button>
+      <!-- Page 2 Success: New Delivery -->
+      <button *ngIf="createPage === 2 && isSubmitted && !isModifying" mat-stroked-button class="sm-btn-back-nav" (click)="initiateSample()">
+        <mat-icon>add_circle_outline</mat-icon> New Delivery
+      </button>
+      <!-- Page 2 Success: Go to List -->
+      <button *ngIf="createPage === 2 && isSubmitted" mat-flat-button class="sm-btn-next" (click)="doneAction()">
+        <mat-icon>list</mat-icon>&nbsp; Go to List
+      </button>
+    </div>
+
+  </ng-container>
+  <!-- ══════════════════════════════ / CREATE / MODIFY VIEW ═══════════════════ -->
+
+
+  <!-- ══════════════════════════════ RECEIVE VIEW ═════════════════════════════ -->
+  <ng-container *ngIf="view === 'receive'">
+
+    <!-- Header -->
+    <div class="sm-create-header">
+      <button mat-icon-button class="sm-back-list-btn" (click)="backToList()" title="Back to list">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="sm-create-title">RECEIVE SAMPLE (ACKNOWLEDGMENT)</span>
+      <button mat-icon-button class="sm-back-list-btn" (click)="backToList()" title="Close">
+        <mat-icon>highlight_off</mat-icon>
+      </button>
+    </div>
+
+    <!-- Stepper -->
+    <!-- <div class="sm-stepper">
+      <ng-container *ngFor="let step of receiveStepDefs; let i = index">
+        <div class="sm-step-item" [ngClass]="'step-' + getReceiveStepState(step.number)">
+          <div class="sm-step-circle">
+            <mat-icon *ngIf="getReceiveStepState(step.number) === 'completed'" class="sm-step-check">check</mat-icon>
+            <span *ngIf="getReceiveStepState(step.number) !== 'completed'">{{ step.number }}</span>
+          </div>
+          <div class="sm-step-label">{{ step.label }}</div>
+        </div>
+        <div *ngIf="i < receiveStepDefs.length - 1"
+             class="sm-step-connector"
+             [class.sm-connector-done]="getReceiveStepState(step.number) === 'completed'">
+        </div>
+      </ng-container>
+    </div> -->
+
+    <!-- ── Page 1: Scan T-Bag ── -->
+    <div *ngIf="receivePage === 1" class="sm-create-scroll">
+      <div class="sm-create-content">
+
+        <div class="sm-step-card">
+          <div class="sm-form-section">
+            <div class="sm-section-badge">Step 1</div>
+            <div class="sm-section-title">Scan T-Bag Tag ID</div>
+            <div class="sm-section-subtitle">Scan or enter the T-Bag Tag ID to load the delivery details.</div>
+
+            <div class="sm-step1-body">
+              <div class="sm-field-group">
+                <label class="sm-field-label">T-Bag Tag ID <span class="sm-required">*</span></label>
+                <div class="sm-tbag-input-box" [class.sm-input-valid]="receiveTBagValid && !!receivedDelivery">
+                  <mat-icon class="sm-barcode-icon sm-icon-clickable" title="Scan with camera"
+                    (click)="openCameraForReceiveTBag()">view_week</mat-icon>
+                  <input class="sm-tbag-input" type="text"
+                    placeholder="Scan or enter T-Bag Tag ID"
+                    [value]="receiveTBagId"
+                    (input)="onReceiveTBagInput($any($event.target).value)"
+                    (keydown)="onReceiveTBagKeydown($event)"
+                    autocomplete="off" autofocus />
+                  <mat-icon *ngIf="receivedDelivery" class="sm-valid-icon">check_circle</mat-icon>
+                </div>
+                <button mat-stroked-button class="sm-btn-load-delivery"
+                  *ngIf="receiveTBagValid && !receivedDelivery"
+                  (click)="loadReceiverDelivery()">
+                  <mat-icon>search</mat-icon> Load Delivery
+                </button>
+                <div *ngIf="receiveError" class="sm-receive-error">
+                  <mat-icon>error_outline</mat-icon> {{ receiveError }}
+                </div>
+              </div>
+              <div class="sm-info-box">
+                <mat-icon class="sm-info-icon">info_outline</mat-icon>
+                <span>Scan the T-Bag tag — delivery details load automatically.</span>
+              </div>
+            </div>
+
+            <!-- Delivery Preview -->
+            <div *ngIf="receivedDelivery" class="sm-receive-preview">
+              <div class="sm-receive-preview-row">
+                <mat-icon class="sm-rp-icon">view_week</mat-icon>
+                <div><span class="sm-rp-label">T-Bag Tag</span><span class="sm-rp-val">{{ receivedDelivery.tBagTagId }}</span></div>
+              </div>
+              <div class="sm-receive-preview-row">
+                <mat-icon class="sm-rp-icon">person</mat-icon>
+                <div><span class="sm-rp-label">Requester</span><span class="sm-rp-val">{{ receivedDelivery.requester }}</span></div>
+              </div>
+              <div class="sm-receive-preview-row">
+                <mat-icon class="sm-rp-icon">local_shipping</mat-icon>
+                <div><span class="sm-rp-label">Carrier</span><span class="sm-rp-val">{{ receivedDelivery.carrier }}</span></div>
+              </div>
+              <div class="sm-receive-preview-row">
+                <mat-icon class="sm-rp-icon">place</mat-icon>
+                <div>
+                  <span class="sm-rp-label">Locations / Tubes</span>
+                  <span class="sm-rp-val">{{ receivedDelivery.locations.length }} location(s) &nbsp;|&nbsp; {{ totalReceiveTubes }} tube(s)</span>
+                </div>
+              </div>
+              <div class="sm-receive-preview-row">
+                <mat-icon class="sm-rp-icon">schedule</mat-icon>
+                <div><span class="sm-rp-label">Dispatched At</span><span class="sm-rp-val">{{ receivedDelivery.createdAt | date:'dd MMM yyyy, hh:mm a' }}</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Page 2: Acknowledge ── -->
+    <div *ngIf="receivePage === 2" class="sm-create-scroll">
+      <div class="sm-create-content">
+
+        <!-- Progress summary card -->
+        <div class="sm-step-card">
+          <div class="sm-form-section">
+            <div class="sm-section-badge">Step 2</div>
+            <div class="sm-section-title">Acknowledge Received Tubes</div>
+            <div class="sm-section-subtitle">Check each tube that was physically received. You can do full or partial acknowledgment.</div>
+
+            <div class="sm-ack-progress-row">
+              <div class="sm-ack-counts">
+                <span class="sm-ack-num">{{ acknowledgedCount }}</span>
+                <span class="sm-ack-sep">/</span>
+                <span class="sm-ack-total">{{ totalReceiveTubes }}</span>
+                <span class="sm-ack-lbl">tubes acknowledged</span>
+              </div>
+              <span class="sm-ack-type-badge" [class.sm-ack-full]="isFullAcknowledgment" [class.sm-ack-partial]="!isFullAcknowledgment && acknowledgedCount > 0">
+                {{ isFullAcknowledgment ? 'Full Acknowledgment' : (acknowledgedCount > 0 ? 'Partial Acknowledgment' : 'None Acknowledged') }}
+              </span>
+              <button mat-stroked-button class="sm-btn-ack-all" (click)="acknowledgeAll()">
+                <mat-icon>{{ isFullAcknowledgment ? 'remove_done' : 'done_all' }}</mat-icon>
+                {{ isFullAcknowledgment ? 'Unmark All' : 'Acknowledge All' }}
+              </button>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="sm-ack-progress-bar">
+              <div class="sm-ack-progress-fill"
+                [style.width.%]="totalReceiveTubes ? (acknowledgedCount / totalReceiveTubes) * 100 : 0"
+                [class.sm-bar-full]="isFullAcknowledgment">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location cards -->
+        <div class="sm-step-card" *ngFor="let loc of receivedDelivery?.locations">
+          <div class="sm-form-section">
+            <div class="sm-receive-loc-hdr">
+              <mat-icon class="sm-loc-icon">local_hospital</mat-icon>
+              <div class="sm-receive-loc-name">{{ loc.locationName }}</div>
+              <span class="sm-receive-loc-count">
+                {{ getAckedCount(loc.tubes) }} / {{ loc.tubes.length }}
+              </span>
+              <button mat-stroked-button class="sm-btn-loc-ack-all" (click)="acknowledgeAllInLocation(loc.id)">
+                {{ allTubesAcked(loc.tubes) ? 'Unmark All' : 'Mark All' }}
+              </button>
+            </div>
+
+            <div class="sm-receive-tubes-list">
+              <div *ngFor="let tube of loc.tubes"
+                   class="sm-receive-tube-row"
+                   [class.sm-tube-acked]="tube.acknowledged"
+                   (click)="toggleTubeAck(loc.id, tube.tubeId)">
+                <mat-icon class="sm-tube-ack-icon">
+                  {{ tube.acknowledged ? 'check_circle' : 'radio_button_unchecked' }}
+                </mat-icon>
+                <div class="sm-tube-row-info">
+                  <span class="sm-tube-row-id">{{ tube.tubeId }}</span>
+                  <span class="sm-tube-row-time">Collected: {{ tube.collectedAt | date:'dd MMM yyyy, hh:mm a' }}</span>
+                </div>
+                <span class="sm-tube-ack-status" [class.sm-status-acked]="tube.acknowledged">
+                  {{ tube.acknowledged ? 'Received' : 'Pending' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Page 3: Success ── -->
+    <div *ngIf="receivePage === 3" class="sm-create-scroll">
+      <div class="sm-create-content">
+        <div class="sm-step-card">
+          <div class="sm-form-section">
+            <div class="sm-success-block">
+              <div class="sm-success-icon-wrap">
+                <mat-icon class="sm-success-icon">check_circle</mat-icon>
+              </div>
+              <div class="sm-success-title">
+                {{ acknowledgeType === 'full' ? 'Fully Acknowledged!' : 'Partially Acknowledged!' }}
+              </div>
+              <div class="sm-success-sub">
+                T-Bag <strong>{{ receiveTBagId }}</strong> —
+                <strong>{{ acknowledgedCount }}</strong> of <strong>{{ totalReceiveTubes }}</strong> tube(s) received across
+                <strong>{{ receivedDelivery?.locations?.length }}</strong> location(s).
+              </div>
+              <div class="sm-ack-type-final"
+                [class.sm-ack-full]="acknowledgeType === 'full'"
+                [class.sm-ack-partial]="acknowledgeType === 'partial'">
+                <mat-icon>{{ acknowledgeType === 'full' ? 'verified' : 'rule' }}</mat-icon>
+                {{ acknowledgeType === 'full' ? 'Full Acknowledgment' : 'Partial Acknowledgment' }}
+              </div>
+
+              <div class="sm-success-loc-list">
+                <div *ngFor="let loc of receivedDelivery?.locations" class="sm-success-loc-row">
+                  <mat-icon class="sm-loc-icon">local_hospital</mat-icon>
+                  <span>{{ loc.locationName }}</span>
+                  <span class="sm-tube-badge">
+                    {{ getAckedCount(loc.tubes) }}/{{ loc.tubes.length }} received
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer — outside scroll so it is always visible -->
+    <div class="sm-create-footer">
+      <!-- Page 1 -->
+      <button *ngIf="receivePage === 1" mat-stroked-button class="sm-btn-back-nav" (click)="backToList()">
+        <mat-icon>arrow_back</mat-icon> Cancel
+      </button>
+      <button *ngIf="receivePage === 1" mat-flat-button class="sm-btn-next" (click)="goToAcknowledge()" [disabled]="!receivedDelivery">
+        Next: Acknowledge &nbsp;<mat-icon>arrow_forward</mat-icon>
+      </button>
+      <!-- Page 2 -->
+      <button *ngIf="receivePage === 2" mat-stroked-button class="sm-btn-back-nav" (click)="goBackToScan()">
+        <mat-icon>arrow_back</mat-icon> Back
+      </button>
+      <button *ngIf="receivePage === 2" mat-flat-button class="sm-btn-next sm-btn-submit-action"
+        (click)="submitAcknowledgment()" [disabled]="acknowledgedCount === 0 || isSubmittingReceive">
+        <mat-spinner *ngIf="isSubmittingReceive" diameter="16" class="sm-btn-spinner"></mat-spinner>
+        <mat-icon *ngIf="!isSubmittingReceive">check_circle</mat-icon>
+        {{ isSubmittingReceive ? 'Submitting...' : (isFullAcknowledgment ? 'Submit Full Acknowledgment' : 'Submit Partial Acknowledgment') }}
+      </button>
+      <!-- Page 3 -->
+      <button *ngIf="receivePage === 3" mat-stroked-button class="sm-btn-back-nav" (click)="receiveSample()">
+        <mat-icon>qr_code_scanner</mat-icon> Scan Another
+      </button>
+      <button *ngIf="receivePage === 3" mat-flat-button class="sm-btn-next" (click)="doneReceiveAndGoToList()">
+        <mat-icon>list</mat-icon>&nbsp; Go to List
+      </button>
+    </div>
+
+  </ng-container>
+  <!-- ══════════════════════════════ / RECEIVE VIEW ════════════════════════════ -->
+
+
+  <!-- ══════════ Tube Scan Popup ══════════ -->
+  <div class="sm-collect-overlay" *ngIf="scanPopupOpen" (click)="closeScanPopup()">
+    <div class="sm-scan-popup-modal" (click)="$event.stopPropagation()">
+
+      <div class="sm-collect-hdr">
+        <div class="sm-collect-hdr-title">
+          <mat-icon>qr_code_scanner</mat-icon>
+          <span>Scan Tube to Find Request</span>
+        </div>
+        <button mat-icon-button class="sm-collect-hdr-close" (click)="closeScanPopup()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="sm-scan-popup-body">
+        <p class="sm-scan-popup-hint">Scan or type a tube barcode. The matching request will open for acknowledgement.</p>
+        <div class="sm-collect-scan-bar">
+          <mat-icon class="sm-csb-icon">qr_code_scanner</mat-icon>
+          <input id="sm-tube-scan-input"
+                 class="sm-csb-input"
+                 type="text"
+                 placeholder="Scan or type tube barcode and press Enter..."
+                 [(ngModel)]="scanInput"
+                 [disabled]="scanSearching"
+                 (keydown)="onTubeScanKeydown($event)"
+                 autocomplete="off" />
+          <button mat-icon-button class="sm-csb-cam-btn" title="Scan with camera"
+                  [disabled]="scanSearching"
+                  (click)="openCameraForTubeScan()">
+            <mat-icon>photo_camera</mat-icon>
+          </button>
+        </div>
+        <p class="sm-scan-popup-searching" *ngIf="scanSearching">
+          <mat-spinner diameter="16" style="display:inline-block;vertical-align:middle;margin-right:6px;"></mat-spinner>
+          Searching requests...
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ Collect Popup ══════════ -->
+  <div class="sm-collect-overlay" *ngIf="collectPopupOpen" (click)="closeCollectPopup()">
+    <div class="sm-collect-modal" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="sm-collect-hdr">
+        <div class="sm-collect-hdr-title">
+          <mat-icon>view_week</mat-icon>
+          <span>{{ collectReadOnly ? 'Acknowledgment Details' : 'Collect Sample' }} — {{ collectRequestData?.remarks || collectRequestData?.requestId }}</span>
+        </div>
+        <button mat-icon-button class="sm-collect-hdr-close" (click)="closeCollectPopup()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Body: Acknowledge -->
+      <div class="sm-collect-body" *ngIf="!collectDone">
+
+        <!-- Scanner bar -->
+        <div class="sm-collect-scan-bar" *ngIf="!collectReadOnly">
+          <mat-icon class="sm-csb-icon">qr_code_scanner</mat-icon>
+          <input id="sm-collect-scan-input"
+                 class="sm-csb-input"
+                 type="text"
+                 placeholder="Scan or type Tube barcode and press Enter..."
+                 [(ngModel)]="collectScanInput"
+                 (keydown)="onCollectTubeKeydown($event)"
+                 autocomplete="off" />
+          <button mat-icon-button class="sm-csb-cam-btn" title="Scan with camera"
+                  (click)="openCameraForCollectTube()">
+            <mat-icon>photo_camera</mat-icon>
+          </button>
+        </div>
+
+        <!-- Summary -->
+        <div class="sm-collect-summary">
+          <div class="sm-cs-row">
+            <mat-icon class="sm-cs-icon">person</mat-icon>
+            <span class="sm-cs-label">Carrier</span>
+            <span class="sm-cs-val">{{ collectRequestData?.porterNames || '—' }}</span>
+          </div>
+          <div class="sm-cs-row">
+            <mat-icon class="sm-cs-icon">place</mat-icon>
+            <span class="sm-cs-label">Source</span>
+            <span class="sm-cs-val">{{ collectRequestData?.sourceLocationName || '—' }}</span>
+          </div>
+          <div class="sm-cs-row" *ngIf="collectUserLocationName">
+            <mat-icon class="sm-cs-icon">location_on</mat-icon>
+            <span class="sm-cs-label">User Location</span>
+            <span class="sm-cs-val">{{ collectUserLocationName }}</span>
+          </div>
+          <div class="sm-cs-row">
+            <mat-icon class="sm-cs-icon">schedule</mat-icon>
+            <span class="sm-cs-label">Started</span>
+            <span class="sm-cs-val">{{ collectRequestData?.startTime | date: 'dd MMM yyyy, hh:mm a' }}</span>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="sm-collect-progress">
+          <div class="sm-cp-row">
+            <span class="sm-cp-label">
+              <ng-container *ngIf="!collectReadOnly">{{ collectAcknowledgedCount }} / {{ collectTotalTubes }} items acknowledged</ng-container>
+              <ng-container *ngIf="collectReadOnly">{{ collectAckedTotalCount }} / {{ collectNonPerformers.length }} items acknowledged</ng-container>
+            </span>
+            <button *ngIf="!collectReadOnly" mat-stroked-button class="sm-btn-ack-all" (click)="acknowledgeAllCollect()">
+              <mat-icon>{{ isCollectFullAck ? 'remove_done' : 'done_all' }}</mat-icon>
+              {{ isCollectFullAck ? 'Unmark All' : 'Acknowledge All' }}
+            </button>
+          </div>
+          <div class="sm-ack-progress-bar">
+            <div class="sm-ack-progress-fill"
+              [style.width.%]="collectTotalTubes > 0 ? (collectAcknowledgedCount * 100 / collectTotalTubes) : 0"
+              [class.sm-bar-full]="isCollectFullAck">
+            </div>
+          </div>
+        </div>
+
+        <!-- Location cards (scrollable) -->
+        <div class="sm-collect-loc-list">
+        <div *ngFor="let loc of collectLocations" class="sm-collect-loc-card">
+          <div class="sm-collect-loc-hdr">
+            <mat-icon class="sm-clh-icon">place</mat-icon>
+            <span class="sm-clh-name">{{ loc.locationName }}</span>
+            <span class="sm-clh-count">{{ getCollectAckedCountForLoc(loc.locationId) }}/{{ loc.items.length }}</span>
+            <button *ngIf="!collectReadOnly" mat-stroked-button class="sm-btn-loc-ack" (click)="acknowledgeAllInCollectLoc(loc.locationId)">
+              {{ allCollectLocTubesAcked(loc.locationId) ? 'Unmark All' : 'Mark All' }}
+            </button>
+          </div>
+          <div class="sm-collect-tubes">
+            <div *ngFor="let np of loc.items"
+                 class="sm-collect-tube-row"
+                 [class.sm-tube-acked]="collectAckedIds.has(np._rowKey)"
+                 [class.sm-tube-just-scanned]="np.externalIdentifier === lastScannedCollectTubeId"
+                 (click)="!collectReadOnly && !np.acknowledgeTime && toggleCollectItem(np._rowKey, !collectAckedIds.has(np._rowKey))">
+              <span class="sm-tube-chk" [class.sm-tube-chk-on]="collectAckedIds.has(np._rowKey)">
+                <mat-icon>{{ collectAckedIds.has(np._rowKey) ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+              </span>
+              <span class="sm-ctube-id">{{ np.externalIdentifier || '—' }}</span>
+            </div>
+          </div>
+        </div>
+        </div><!-- /sm-collect-loc-list -->
+
+      </div>
+
+      <!-- Body: Success -->
+      <div class="sm-collect-success" *ngIf="collectDone">
+        <mat-icon>check_circle</mat-icon>
+        <span class="sm-cs-success-title">Sample Collected!</span>
+        <span class="sm-cs-success-sub">
+          {{ collectAcknowledgeType === 'full' ? 'All tubes have been fully acknowledged.' : 'Partial acknowledgment has been recorded.' }}
+        </span>
+        <div class="sm-ack-type-final"
+          [class.sm-ack-full]="collectAcknowledgeType === 'full'"
+          [class.sm-ack-partial]="collectAcknowledgeType === 'partial'">
+          <mat-icon>{{ collectAcknowledgeType === 'full' ? 'verified' : 'rule' }}</mat-icon>
+          {{ collectAcknowledgeType === 'full' ? 'Full Acknowledgment' : 'Partial Acknowledgment' }}
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="sm-collect-footer">
+        <ng-container *ngIf="collectReadOnly">
+          <button mat-flat-button class="sm-btn-submit-collect" (click)="closeCollectPopup()">
+            <mat-icon>close</mat-icon>&nbsp;Close
+          </button>
+        </ng-container>
+        <ng-container *ngIf="!collectReadOnly && !collectDone">
+          <button mat-stroked-button (click)="closeCollectPopup()">Cancel</button>
+          <button mat-flat-button class="sm-btn-submit-collect"
+                  (click)="submitCollect()"
+                  [disabled]="isSubmittingCollect || collectAcknowledgedCount === 0">
+            <mat-spinner *ngIf="isSubmittingCollect" diameter="16" class="sm-btn-spinner"></mat-spinner>
+            <mat-icon *ngIf="!isSubmittingCollect">check_circle</mat-icon>
+            {{ isSubmittingCollect ? 'Submitting...' : (isCollectFullAck ? 'Submit Full Acknowledgment' : 'Submit Partial Acknowledgment') }}
+          </button>
+        </ng-container>
+        <button *ngIf="!collectReadOnly && collectDone" mat-flat-button class="sm-btn-submit-collect" (click)="closeCollectPopup()">
+          <mat-icon>done</mat-icon>&nbsp;Done
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ Camera Overlay (shared across all views) ══════════ -->
+  <div class="sm-camera-overlay" *ngIf="cameraOpen" (click)="closeCamera()">
+    <div class="sm-camera-modal" (click)="$event.stopPropagation()">
+      <div class="sm-camera-hdr">
+        <span>{{ scanTarget === 'receive-tbag' ? 'Scan T-Bag Tag' : scanTarget === 'tbag' ? 'Scan T-Bag Tag' : 'Scan Tube Barcode' }}</span>
+        <button mat-icon-button class="sm-camera-close-btn" (click)="closeCamera()">
+          <mat-icon>highlight_off</mat-icon>
+        </button>
+      </div>
+      <div class="sm-camera-body">
+        <video id="sm-camera-video" autoplay playsinline muted class="sm-camera-video"></video>
+        <div class="sm-camera-frame">
+          <div class="sm-camera-crosshair"></div>
+          <p class="sm-camera-hint">Point camera at a barcode — it scans automatically</p>
+        </div>
+      </div>
+      <div class="sm-camera-footer">
+        <mat-icon class="sm-camera-footer-icon">info_outline</mat-icon>
+        External USB/Bluetooth scanners work directly in the input field
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ Ack Detail Popup ══════════ -->
+  <div class="sm-ack-detail-overlay" *ngIf="ackDetailPopupOpen" (click)="closeAckDetailPopup()">
+    <div class="sm-ack-detail-modal" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="sm-ack-detail-hdr">
+        <div class="sm-ack-detail-hdr-title">
+          <mat-icon>fact_check</mat-icon>
+          <span>Acknowledgment Details — {{ ackDetailRow?.requestId }}</span>
+        </div>
+        <button mat-icon-button class="sm-ack-detail-close" (click)="closeAckDetailPopup()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Meta row -->
+      <div class="sm-ack-detail-meta" *ngIf="ackDetailRow">
+        <div class="sm-ack-meta-chip">
+          <mat-icon>view_week</mat-icon>
+          <span>{{ ackDetailRow.remarks || '—' }}</span>
+        </div>
+        <div class="sm-ack-meta-chip">
+          <mat-icon>person</mat-icon>
+          <span>{{ ackDetailRow.porterNames || '—' }}</span>
+        </div>
+        <div class="sm-ack-meta-chip">
+          <span class="sm-status-badge" [ngClass]="statusClass(ackDetailRow.status)">{{ ackDetailRow.statusName || '—' }}</span>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="sm-ack-detail-body">
+        <div *ngIf="isLoadingAckDetail" class="sm-ack-detail-loading">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+
+        <ng-container *ngIf="!isLoadingAckDetail && ackDetailItems.length > 0">
+
+          <!-- Acknowledged section -->
+          <div class="sm-ack-section-title sm-ack-section-done">
+            <mat-icon>check_circle</mat-icon>
+            Acknowledged ({{ ackedDetailItems.length }})
+          </div>
+          <table class="sm-ack-detail-table" *ngIf="ackedDetailItems.length > 0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Location</th>
+                <th>Tube ID</th>
+                <th>Acknowledged By</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let np of ackedDetailItems; let i = index">
+                <td class="sm-td-seq">{{ i + 1 }}</td>
+                <td class="sm-ack-loc-cell">{{ np.perfLocFullName || np.porterLocation || '—' }}</td>
+                <td class="sm-ack-tube-cell">{{ np.externalIdentifier || '—' }}</td>
+                <td class="sm-ack-user-cell">
+                  <mat-icon class="sm-ack-user-icon">account_circle</mat-icon>
+                  {{ np.comments || np.acknowledgedByName || np.ackmobileByName || '—' }}
+                </td>
+                <td class="sm-ack-time-cell">{{ np.acknowledgeTime | date: 'dd MMM yy, hh:mm a' }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Pending section -->
+          <div class="sm-ack-section-title sm-ack-section-pending" style="margin-top:16px"
+               *ngIf="pendingDetailItems.length > 0">
+            <mat-icon>hourglass_empty</mat-icon>
+            Pending ({{ pendingDetailItems.length }})
+          </div>
+          <table class="sm-ack-detail-table sm-ack-table-pending"
+                 *ngIf="pendingDetailItems.length > 0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Location</th>
+                <th>Tube ID</th>
+                <th colspan="2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let np of pendingDetailItems; let i = index">
+                <td class="sm-td-seq">{{ i + 1 }}</td>
+                <td class="sm-ack-loc-cell">{{ np.perfLocFullName || np.porterLocation || '—' }}</td>
+                <td class="sm-ack-tube-cell">{{ np.externalIdentifier || '—' }}</td>
+                <td colspan="2" class="sm-ack-pending-label">Pending</td>
+              </tr>
+            </tbody>
+          </table>
+
+        </ng-container>
+
+        <div *ngIf="!isLoadingAckDetail && ackDetailItems.length === 0" class="sm-ack-detail-empty">
+          No packet data found.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,69 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="pwa-full-container ovi-font-family">
+    <div class="header">
+        <span mat-dialog-close class="back-to-menu-btn">
+           <mat-icon style="height: fit-content; width: fit-content; padding: 0;">keyboard_arrow_left</mat-icon>
+        </span>
+
+        <div style="text-align: center; flex: 1;">
+            <div class="ovi-fnt-sze16" style="font-weight: 600;">Manage Asset Task (Ticket)</div>
+        <div class="ovi-fnt-sze14" style="font-weight: 400;"> {{ computedAssetName }}</div>
+        </div>
+
+        <button mat-icon-button aria-label="Add" (click)="addTask()" (keydown.enter)="fixClick()">
+            <mat-icon>add</mat-icon>
+        </button>
+
+    </div>
+
+    <div *ngIf="visibleData.length >0" class="ovi-fnt-sze12"  style="display: flex; justify-content: space-between; align-items: center; padding: 5px 20px; ">
+        <span style="color: #889093;">{{totalRecords}}&nbsp;Tasks</span>
+    </div>
+    <div class="content-container">
+        <mat-card class="card-list" *ngFor="let data of visibleData" (click)="editTicket(data)" (keydown.enter)="fixClick()">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; padding-bottom: 5px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <mat-icon class="icon">confirmation_number</mat-icon>
+                    <span>{{ data?.activityName }}</span>
+                </div>
+                <span style="color: #0f89ad;">{{ data?.statusName }}</span>
+            </div>
+
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="content-texts">
+                    <span class="card-label">{{"Type"|translate}}</span>
+                    <span class="task-data-text">{{data?.porterTypeName}}</span>
+                </div>
+                <div class="content-texts">
+                    <span class="card-label">{{"Category"|translate}}</span>
+                    <span class="task-data-text">{{data?.activityCategoryName}}</span>
+                </div>
+                <div class="content-texts" *ngIf="data?.requestIdentifier">
+                    <span class="card-label">{{"Identifier"|translate}}</span>
+                    <span class="task-data-text">{{data?.requestIdentifier}}<span *ngIf="data?.floorName">, {{
+                            data?.floorName }}</span></span>
+                </div>
+                <div class="content-texts" *ngIf="data?.porterNames">
+                    <span class="card-label">{{"Assigned To"|translate}}</span>
+                    <span class="task-data-text">{{data?.porterNames}}</span>
+                </div>
+                <div class="content-texts" *ngIf="data?.actualTime">
+                    <span class="card-label">{{"Schedule Date"|translate}}</span>
+                    <span class="task-data-text">{{ data?.actualTime | date: 'dd MMM hh:mm a' }}</span>
+                </div>
+                <div class="content-texts" *ngIf="data?.tagSerialNumber">
+                    <span class="card-label">{{"Description"|translate}}</span>
+                    <span class="task-data-text">{{data?.currentLocationName}}</span>
+                </div>
+            </div>
+        </mat-card>
+        <div *ngIf="visibleData.length == 0" class="ovi-fnt-sze12" style="display:flex;justify-content: center;">{{"No records found"|translate}}</div>
+    </div>
+</div>

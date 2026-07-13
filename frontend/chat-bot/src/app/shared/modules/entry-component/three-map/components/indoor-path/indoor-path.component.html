@@ -1,0 +1,815 @@
+<div class="ip-wrapper" [style.height]="wrapperHeight">
+
+  <!-- Canvas -->
+  <div #canvasContainer class="ip-canvas"></div>
+
+  <!-- Loading -->
+  <div class="ip-loading" *ngIf="isLoading">
+    <div class="ip-spinner"></div>
+    <p>Loading 3D Map…</p>
+  </div>
+
+  <!-- ── Top Bar ──────────────────────────────────────────────── -->
+  <div class="ip-topbar" *ngIf="!isLoading">
+
+    <!-- Left zone: Quick Access button (or empty spacer to preserve center alignment) -->
+    <div class="ip-topbar-left">
+      <button class="ip-qa-topbar-btn" *ngIf="!hideQuickAccessAndSearch && !isQaOpen && !routeDistance" (click)="openQa()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f97316"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>Quick Access</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Center zone: Search Bar — hidden while route is active -->
+    <div class="ip-search-wrap" *ngIf="!hideQuickAccessAndSearch && !routeDistance">
+
+      <!-- Destination SELECTED state: highlighted chip -->
+      <div class="ip-search-box ip-dest-selected" [class.ip-dest-locked]="!!routeDistance" *ngIf="endRoom">
+        <svg class="ip-dest-pin" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+        <span class="ip-dest-name">{{ destinationSearchValue || (endRoom?.data?.name ?? endRoom?.name) }}</span>
+        <button class="ip-search-clear" *ngIf="!routeDistance" (click)="clearDestination()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Default state: search input — hidden while route is active -->
+      <div class="ip-search-box" [class.focused]="isDestDropdownOpen" *ngIf="!endRoom && !routeDistance">
+        <svg class="ip-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="ip-search-input"
+          type="text"
+          placeholder="Search destination…"
+          [(ngModel)]="destinationSearchValue"
+          (input)="onDestinationInput()"
+          (focus)="openDestDropdown()"
+          autocomplete="off"
+        />
+        <button class="ip-search-clear" *ngIf="destinationSearchValue" (click)="clearDestination()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Suggestions dropdown -->
+      <div class="ip-suggestions" *ngIf="isDestDropdownOpen && !endRoom" (mousedown)="$event.preventDefault()">
+        <div
+          class="ip-suggestion-item"
+          *ngFor="let option of getDestSuggestions()"
+          (click)="selectDestination(option)">
+          <span class="ip-sugg-pin">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </span>
+          <span class="ip-sugg-name">{{ option.name }}</span>
+          <span class="ip-sugg-type">{{ option.typeName }} - {{ option.floorName }}</span>
+        </div>
+        <div class="ip-sugg-empty" *ngIf="isNavSearchLoading && getDestSuggestions().length === 0">
+          Loading rooms...
+        </div>
+        <div class="ip-sugg-empty" *ngIf="!isNavSearchLoading && getDestSuggestions().length === 0">
+          No matching rooms found
+        </div>
+      </div>
+    </div>
+
+    <!-- Right zone: Hospital Info -->
+    <div class="ip-topbar-right">
+      <div class="ip-hospital-card">
+        <div class="ip-hospital-icon">
+          <img *ngIf="customerLogoUrl" [src]="customerLogoUrl" class="ip-hospital-logo"
+               alt="logo" (error)="$any($event.target).style.display='none'">
+        </div>
+        <div class="ip-hospital-info">
+          <span class="ip-hospital-name">{{ customerName }}</span>
+          <span class="ip-hospital-floor">{{ hospitalName }} · {{ floorName }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Quick Access Panel ────────────────────────────────────── -->
+  <div class="ip-qa-wrap" *ngIf="!isLoading && !hideQuickAccessAndSearch && isQaOpen">
+
+    <!-- Card 1: Category list (always visible while QA open) -->
+    <div class="ip-qa-panel">
+      <div class="ip-qa-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span class="ip-qa-title">Quick Access</span>
+        <button class="ip-qa-close" (click)="closeQa()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ip-qa-list">
+        <button
+          class="ip-qa-cat-item"
+          [class.active]="selectedQaCategory?.catId === cat.catId"
+          *ngFor="let cat of getFilteredQaCategories()"
+          (click)="onQaCategoryClick(cat, $event)">
+          <div class="ip-qa-cat-icon" [style.background]="cat.color">
+            <span class="material-icons ip-qa-mat-icon">{{ cat.icon }}</span>
+          </div>
+          <div class="ip-qa-cat-info">
+            <span class="ip-qa-cat-name">{{ cat.name }}</span>
+            <span class="ip-qa-cat-sub" *ngIf="getQaCategoryCount(cat) !== 1">
+              {{ getQaCategoryCount(cat) }} locations
+            </span>
+            <span class="ip-qa-cat-sub ip-qa-cat-sub--loc" *ngIf="getQaCategoryCount(cat) === 1">
+              {{ getQaSingleLocation(cat)?.name }}
+            </span>
+          </div>
+          <svg class="ip-qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+        <div class="ip-qa-empty" *ngIf="qaCategories.length === 0">
+          No navigable rooms on this floor
+        </div>
+      </div>
+    </div>
+    <!-- Card 2: Location list — aligned to the clicked category row -->
+    <div class="ip-qa-panel ip-qa-loc-list-panel" *ngIf="selectedQaCategory"
+      [style.margin-top]="qaLocCardTop + 'px'"
+      [style.max-height]="'calc(100% - ' + qaLocCardTop + 'px)'">
+      <div class="ip-qa-header">
+        <div class="ip-qa-cat-icon sm" [style.background]="selectedQaCategory.color">
+          <span class="material-icons ip-qa-mat-icon sm">{{ selectedQaCategory.icon }}</span>
+        </div>
+        <div class="ip-qa-cat-info">
+          <span class="ip-qa-cat-name" [style.color]="selectedQaCategory.color">{{ selectedQaCategory.name }}</span>
+          <span class="ip-qa-cat-sub">{{ getQaLocations().length }} Location{{ getQaLocations().length !== 1 ? 's' : '' }}</span>
+        </div>
+        <button class="ip-qa-close" (click)="selectedQaCategory = null">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ip-qa-list">
+        <button
+          class="ip-qa-loc-item"
+          *ngFor="let option of getQaLocations()"
+          (click)="selectFromQa(option)">
+          <svg class="ip-qa-pin" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <div class="ip-qa-loc-info">
+            <span class="ip-qa-loc-name">{{ option.name }}</span>
+            <span class="ip-qa-loc-floor">{{ option.floorName }} • {{ hospitalName }}</span>
+          </div>
+        </button>
+        <div class="ip-qa-empty" *ngIf="getQaLocations().length === 0">
+          No locations in this category
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Right Controls ──────────────────────────────────────── -->
+  <div class="ip-right-controls" *ngIf="!isLoading">
+    <button class="ip-ctrl-btn" (click)="zoomIn()" title="Zoom In">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button class="ip-ctrl-btn" (click)="zoomOut()" title="Zoom Out">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <div class="ip-ctrl-divider"></div>
+    <button class="ip-ctrl-btn" (click)="resetCamera()" title="Reset View">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      </svg>
+    </button>
+    <button class="ip-ctrl-btn" *ngIf="viewMode !== '2d'" [class.active]="isRotateMode" (click)="toggleRotateMode()"
+      [title]="isRotateMode ? 'Rotate ON — click to disable' : 'Enable 3D Rotate'">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="round">
+        <!-- Nearly complete flat orbit ellipse, gap at front-bottom for arrow -->
+        <path d="M22 10 A10 4 0 1 0 14 13.9"/>
+        <!-- Arrowhead at the arc end, pointing clockwise -->
+        <polyline points="10.5 12 14 13.9 11.5 16.8" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── Settings Authentication Popup ──────────────────────── -->
+  <div class="ip-auth-overlay" *ngIf="isAuthPopupOpen" (click)="cancelAuth()">
+    <div class="ip-auth-card" (click)="$event.stopPropagation()">
+      <div class="ip-auth-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span class="ip-auth-title">Settings Access</span>
+        <button class="ip-auth-close" (click)="cancelAuth()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ip-auth-body">
+        <div class="ip-auth-field">
+          <label class="ip-auth-label">Username</label>
+          <input class="ip-auth-input" type="text" [(ngModel)]="authUsername"
+            placeholder="Enter username" autocomplete="off" />
+        </div>
+        <div class="ip-auth-field">
+          <label class="ip-auth-label">Password</label>
+          <input class="ip-auth-input" type="password" [(ngModel)]="authPassword"
+            placeholder="Enter password" (keydown.enter)="submitAuth()" />
+        </div>
+        <button class="ip-auth-submit-btn" (click)="submitAuth()" [disabled]="isAuthLoading">
+          <svg *ngIf="isAuthLoading" class="ip-auth-spinner-icon" width="14" height="14"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/>
+          </svg>
+          {{ isAuthLoading ? 'Verifying…' : 'Access' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings Panel ─────────────────────────────────────── -->
+  <div class="ip-settings-panel" *ngIf="!isLoading && isSettingsOpen">
+    <div class="ip-settings-header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="ip-settings-title">Settings</span>
+      <button class="ip-settings-close" (click)="closeSettings()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="ip-settings-scrollable">
+
+    <button class="ip-settings-toggle-btn" [class.open]="isDisplaySettingsOpen"
+      (click)="isDisplaySettingsOpen = !isDisplaySettingsOpen">
+      <span class="ip-settings-toggle-text">Display Settings</span>
+      <span class="ip-settings-toggle-summary">{{ viewMode | uppercase }} · {{ locationFontSize }}px · {{ mapViewMode === 'default' ? 'Standard' : 'Urban' }}</span>
+      <svg class="ip-settings-toggle-chevron" [class.open]="isDisplaySettingsOpen"
+        width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+
+    <ng-container *ngIf="isDisplaySettingsOpen">
+
+    <!-- View Mode: 2D / 3D -->
+    <div class="ip-settings-section">
+      <span class="ip-settings-section-label">View</span>
+      <div class="ip-chips-row">
+        <button class="ip-chip" [class.active]="viewMode === '3d'"
+          (click)="onViewModeChange('3d')">3D</button>
+        <button class="ip-chip" [class.active]="viewMode === '2d'"
+          (click)="onViewModeChange('2d')">2D</button>
+      </div>
+    </div>
+
+    <!-- Label Size -->
+    <div class="ip-settings-section">
+      <span class="ip-settings-section-label">Label Size</span>
+      <div class="ip-chips-row">
+        <button class="ip-chip" [class.active]="locationFontSize === 12"
+          (click)="locationFontSize = 12; onFontSizeChange()">S</button>
+        <button class="ip-chip" [class.active]="locationFontSize === 14"
+          (click)="locationFontSize = 14; onFontSizeChange()">M</button>
+        <button class="ip-chip" [class.active]="locationFontSize === 16"
+          (click)="locationFontSize = 16; onFontSizeChange()">L</button>
+        <button class="ip-chip" [class.active]="locationFontSize === 18"
+          (click)="locationFontSize = 18; onFontSizeChange()">XL</button>
+      </div>
+    </div>
+
+    <div class="ip-settings-divider"></div>
+
+    <!-- Map View Type -->
+    <div class="ip-settings-section">
+      <span class="ip-settings-section-label">Map View</span>
+      <div class="ip-chips-row">
+        <button class="ip-chip" [class.active]="mapViewMode === 'default'"
+          (click)="mapViewMode = 'default'; onMapViewModeChange()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          Standard
+        </button>
+        <button class="ip-chip" [class.active]="mapViewMode === 'urban'"
+          (click)="mapViewMode = 'urban'; onMapViewModeChange()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          Urban
+        </button>
+      </div>
+    </div>
+
+    <!-- Map Location Search (only when urban/landscape) -->
+    <div class="ip-settings-section" *ngIf="mapViewMode !== 'default'">
+      <span class="ip-settings-section-label">Map Location</span>
+      <div class="ip-settings-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+          stroke-width="2.2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="ip-settings-input"
+          type="text"
+          placeholder="Search city or address…"
+          [(ngModel)]="mapLocationSearch"
+          (input)="onMapLocationInput()"
+          autocomplete="off"
+        />
+        <button class="ip-src-input-clear" *ngIf="mapLocationSearch" (click)="clearMapLocation()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <!-- Searching state -->
+      <div class="ip-settings-empty" *ngIf="isMapLocationSearching">
+        <div class="ip-settings-loading-dot"></div>
+        Searching…
+      </div>
+      <!-- Suggestions -->
+      <div class="ip-settings-list"
+        *ngIf="isMapLocationDropdownOpen && !isMapLocationSearching && mapLocationSuggestions.length > 0"
+        (mousedown)="$event.preventDefault()">
+        <button class="ip-settings-room"
+          *ngFor="let loc of mapLocationSuggestions"
+          (click)="selectMapLocation(loc)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <div class="ip-settings-room-info">
+            <span class="ip-settings-room-name">{{ loc.display_name.split(',')[0] }}</span>
+            <span class="ip-settings-room-type">{{ loc.display_name.split(',').slice(1, 3).join(',') }}</span>
+          </div>
+        </button>
+      </div>
+      <!-- No results -->
+      <div class="ip-settings-empty"
+        *ngIf="isMapLocationDropdownOpen && !isMapLocationSearching && mapLocationSuggestions.length === 0 && mapLocationSearch">
+        No locations found
+      </div>
+    </div>
+
+    </ng-container>
+
+    <div class="ip-settings-divider"></div>
+
+    <!-- Block selector (only when multiple blocks) -->
+    <div class="ip-settings-section" *ngIf="availableBlocks.length > 1">
+      <span class="ip-settings-section-label">Block</span>
+      <div class="ip-chips-row">
+        <button class="ip-chip"
+          *ngFor="let block of availableBlocks"
+          [class.active]="block.id === selectedBlock?.id"
+          (click)="onBlockSelect(block)">{{ block.name }}</button>
+      </div>
+    </div>
+
+    <div class="ip-settings-divider"></div>
+
+    <!-- Source location section -->
+    <div class="ip-settings-src-header">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/>
+      </svg>
+      <span>Start Location</span>
+    </div>
+
+    <!-- Current selection card -->
+    <div class="ip-src-display" [class.is-set]="!!startRoom">
+      <span class="ip-src-dot" [class.active]="!!startRoom"></span>
+      <div class="ip-src-display-info">
+        <span class="ip-src-display-label" *ngIf="startRoom">{{ sourceLabel }}</span>
+        <span class="ip-src-display-placeholder" *ngIf="!startRoom">No start location selected</span>
+      </div>
+      <button class="ip-src-clear-btn" *ngIf="startRoom" (click)="onClearStart()" title="Clear">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Search filter + location list (always visible when settings open) -->
+    <div class="ip-settings-source-search">
+      <div class="ip-settings-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+          stroke-width="2.2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="ip-settings-input"
+          type="text"
+          placeholder="Filter by name or floor…"
+          [(ngModel)]="settingsSourceSearch"
+          (input)="onSourceInput()"
+          autocomplete="off"
+        />
+        <button class="ip-src-input-clear" *ngIf="settingsSourceSearch" (click)="settingsSourceSearch = ''; onSourceInput()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Location list -->
+      <div class="ip-settings-list ip-settings-source-suggestions"
+        (mousedown)="$event.preventDefault()">
+        <button
+          class="ip-settings-room"
+          *ngFor="let option of getSourceSuggestions()"
+          [class.selected]="option.id === startRoom?.id"
+          (click)="selectSourceFromSettings(option)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.52-10 20-10 20S2 17.52 2 12A10 10 0 0 1 12 2z"/>
+          </svg>
+          <div class="ip-settings-room-info">
+            <span class="ip-settings-room-name">{{ option.name }}</span>
+            <span class="ip-settings-room-type">{{ option.typeName }} · {{ option.floorName }}</span>
+          </div>
+          <svg *ngIf="option.id === startRoom?.id" width="13" height="13" viewBox="0 0 24 24"
+            fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+        <div class="ip-settings-empty" *ngIf="isNavSearchLoading && getSourceSuggestions().length === 0">
+          <div class="ip-settings-loading-dot"></div>
+          Loading locations…
+        </div>
+        <div class="ip-settings-empty" *ngIf="!isNavSearchLoading && getSourceSuggestions().length === 0">
+          No locations found
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /.ip-settings-scrollable -->
+
+    <!-- Save settings to map-config -->
+    <div class="ip-settings-save-row" *ngIf="isDisplaySettingsOpen">
+      <button class="ip-settings-save-btn" (click)="saveIndoorNavSettings()" [disabled]="isNavSettingsSaving">
+        <svg *ngIf="!isNavSettingsSaving && navSettingsSaveStatus !== 'success'"
+          width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <svg *ngIf="!isNavSettingsSaving && navSettingsSaveStatus === 'success'"
+          width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span *ngIf="isNavSettingsSaving">Saving…</span>
+        <span *ngIf="!isNavSettingsSaving && navSettingsSaveStatus === 'success'">Saved</span>
+        <span *ngIf="!isNavSettingsSaving && navSettingsSaveStatus === 'error'">Failed — retry</span>
+        <span *ngIf="!isNavSettingsSaving && navSettingsSaveStatus === ''">Save Settings</span>
+      </button>
+    </div>
+
+    <!-- Logout (only for private/kiosk users) -->
+    <ng-container *ngIf="isPrivateUser">
+      <div class="ip-settings-divider"></div>
+      <div class="ip-settings-logout-section">
+        <button class="ip-settings-reload-btn" (click)="reload()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Reload
+        </button>
+        <button class="ip-settings-logout-btn" (click)="logout()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Logout
+        </button>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- ── Steps sheet (slides up above route bar) ──────────────── -->
+  <div class="ip-steps-sheet" *ngIf="!isLoading && isStepsOpen && pathSteps.length > 0">
+    <div class="ip-steps-sheet-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      <span>Turn-by-turn ({{ pathSteps.length - 2 }} steps)</span>
+      <button class="ip-steps-sheet-close" (click)="isStepsOpen = false">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="ip-steps-list">
+      <div class="ip-step" *ngFor="let step of pathSteps"
+        [class.first]="step.icon === 'start'"
+        [class.last]="step.icon === 'arrive'">
+        <div class="ip-step-icon" [class]="'ip-step-icon--' + step.icon">
+          <svg *ngIf="step.icon === 'start'" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.52-10 20-10 20S2 17.52 2 12A10 10 0 0 1 12 2z"/>
+          </svg>
+          <svg *ngIf="step.icon === 'straight'" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+          </svg>
+          <svg *ngIf="step.icon === 'turn-left'" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          <svg *ngIf="step.icon === 'turn-right'" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          <svg *ngIf="step.icon === 'arrive'" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="ip-step-body">
+          <span class="ip-step-instruction">{{ step.instruction }}</span>
+          <span class="ip-step-dist" *ngIf="step.distance">{{ step.distance }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Route Bar (pill) — shown when source + destination are both selected ── -->
+  <div class="ip-route-bar" *ngIf="!isLoading && startRoom && endRoom">
+    <!-- Nav icon -->
+    <div class="ip-route-nav-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+      </svg>
+    </div>
+    <!-- Route title + meta -->
+    <div class="ip-route-info">
+      <div class="ip-route-title">{{ sourceLabel }} → {{ destinationSearchValue || (endRoom?.data?.name ?? endRoom?.name) }}</div>
+      <div class="ip-route-sub" *ngIf="routeDistance">{{ routeDistance }} • ~{{ routeTime }} walk</div>
+      <div class="ip-route-sub" *ngIf="!routeDistance">Tap Direction to navigate</div>
+    </div>
+    <!-- Actions -->
+    <div class="ip-route-actions">
+      <!-- Direction button — shown before route is calculated -->
+      <button class="ip-direction-btn" *ngIf="!routeDistance" (click)="onDirectionClick()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+        Direction
+      </button>
+      <!-- Steps button — shown after route is calculated -->
+      <button class="ip-steps-btn" [class.active]="isStepsOpen" *ngIf="routeDistance && pathSteps.length > 0"
+        (click)="isStepsOpen = !isStepsOpen">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Steps
+      </button>
+      <button class="ip-route-clear-btn" (click)="clearNavigation()" title="Clear route">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── QR Card (thumbnail — click to expand) ────────────────── -->
+  <button class="ip-qr-card" *ngIf="!isLoading && navQrUrl && !isLaunchedFromNavQr" (click)="openQrModal()" title="View Navigation QR">
+    <qrcode [qrdata]="navQrUrl" [width]="128" [errorCorrectionLevel]="'M'" [margin]="1"></qrcode>
+    <span class="ip-qr-label">Scan for Navigation</span>
+  </button>
+
+  <!-- ── QR Modal ──────────────────────────────────────────────── -->
+  <div class="ip-qr-overlay" *ngIf="isQrModalOpen" (click)="closeQrModal()">
+    <div class="ip-qr-modal" (click)="$event.stopPropagation()">
+      <h3 class="ip-qr-modal-title">Navigation QR Code</h3>
+
+      <div class="ip-qr-modal-code">
+        <qrcode [qrdata]="navQrUrl" [width]="280" [errorCorrectionLevel]="'M'" [margin]="2"></qrcode>
+      </div>
+
+      <div class="ip-qr-url-box">
+        <span class="ip-qr-url-text">{{ navQrUrl }}</span>
+      </div>
+
+      <div class="ip-qr-modal-actions">
+        <button class="ip-qr-copy-btn" (click)="copyNavUrl()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          {{ qrCopied ? 'Copied!' : 'Copy URL' }}
+        </button>
+        <button class="ip-qr-close-modal-btn" (click)="closeQrModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending destination card -->
+  <div class="ip-pending-dest" *ngIf="!isLoading && endRoom && !startRoom && !isSourceFromConfig">
+    <span class="ip-rdot to"></span>
+    <div class="ip-pending-info">
+      <span class="ip-pending-label">Destination selected</span>
+      <span class="ip-pending-name">{{ destinationSearchValue }}</span>
+    </div>
+    <button class="ip-pending-clear" (click)="clearDestination()" title="Clear">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── You Are Here callout (3D-tracked, follows source room on screen) ─── -->
+  <div class="ip-you-are-here" #youAreHereEl
+    *ngIf="!isLoading && startRoom && !routeDistance"
+    style="visibility:hidden">
+    <div class="ip-yah-pin">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+      </svg>
+    </div>
+    <div class="ip-yah-info">
+      <span class="ip-yah-label">You are here</span>
+      <span class="ip-yah-name">{{ sourceLabel }}</span>
+    </div>
+  </div>
+
+  <!-- ── Destination Direction callout (3D-tracked, shown when both rooms set, no route yet) ── -->
+  <div class="ip-dest-callout" #destCalloutEl
+    *ngIf="!isLoading && endRoom && startRoom && !routeDistance"
+    style="visibility:hidden">
+    <div class="ip-dest-callout-body">
+      <div class="ip-dest-callout-name">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#ef4444" stroke="none">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        </svg>
+        {{ destinationSearchValue }}
+      </div>
+      <button class="ip-dest-callout-btn" (click)="onDirectionClick()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+        Direction
+      </button>
+    </div>
+    <div class="ip-dest-callout-tail"></div>
+  </div>
+
+  <!-- ── Nav Markers — visible only when direction/route is active ── -->
+  <div class="ip-nav-marker ip-nav-marker--source" #sourceMarkerEl
+       *ngIf="!isLoading && startRoom && endRoom && !!routeDistance" style="visibility:hidden">
+    <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
+            fill="#1d4ed8" stroke="#1e40af" stroke-width="0.8"/>
+      <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+    </svg>
+  </div>
+
+  <div class="ip-nav-marker ip-nav-marker--dest" #destMarkerEl
+       *ngIf="!isLoading && endRoom && pathAnimComplete" style="visibility:hidden">
+    <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
+            fill="#ef4444" stroke="#c53030" stroke-width="0.8"/>
+      <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+    </svg>
+  </div>
+
+  <!-- Contextual hint chip -->
+  <div class="ip-hint-chip" *ngIf="!isLoading && navHint">{{ navHint }}</div>
+
+  <!-- ── Floor Selector + Settings (bottom-right) ──────────────── -->
+  <div class="ip-floor-selector" *ngIf="!isLoading">
+    <!-- Settings button — first in DOM → visually bottom with column-reverse -->
+    <button class="ip-floor-settings-btn ip-settings-btn"
+      [class.active]="isSettingsOpen"
+      [class.has-source]="!!startRoom"
+      (click)="openSettings()"
+      title="Settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+    <!-- Floor chips — shown only when multiple floors exist -->
+    <ng-container *ngIf="availableFloors.length > 1">
+      <div class="ip-floor-divider"></div>
+      <button
+        class="ip-floor-chip"
+        *ngFor="let floor of availableFloors; let i = index"
+        [class.active]="floor.id === selectedFloor?.id"
+        [title]="floor.name"
+        (click)="onFloorSelect(floor)">
+        {{ i }}F
+      </button>
+    </ng-container>
+    <!-- Block selector — appears at top (column-reverse), shown when multiple blocks -->
+    <ng-container *ngIf="availableBlocks.length > 1">
+      <div class="ip-floor-divider"></div>
+      <div class="ip-block-pill" [class.active]="isBlockDropdownOpen"
+        [title]="selectedBlock?.name || 'Block'"
+        (click)="isBlockDropdownOpen = !isBlockDropdownOpen; $event.stopPropagation()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <div class="ip-block-dropdown" *ngIf="isBlockDropdownOpen" (mousedown)="$event.stopPropagation()">
+          <div class="ip-block-dropdown-header">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            <span>Select Block</span>
+          </div>
+          <div class="ip-block-options-list">
+            <button class="ip-block-option"
+              *ngFor="let block of availableBlocks"
+              [class.active]="block.id === selectedBlock?.id"
+              (click)="onBlockSelect(block); isBlockDropdownOpen = false; $event.stopPropagation()">
+              <span class="ip-block-radio">
+                <span class="ip-block-radio-dot" *ngIf="block.id === selectedBlock?.id"></span>
+              </span>
+              <span class="ip-block-option-name">{{ block.name }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+</div>

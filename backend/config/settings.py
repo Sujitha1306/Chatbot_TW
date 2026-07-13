@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     environment: str = "development"
     app_port: int = 8000
     max_query_timeout: int = 30
+    
+    # Target Facility Config
+    target_facility_id: str = "0039"
+    target_facility_name: str = "BLK Max Hospital"
+    target_region_id: str = "0038"
+    target_customer_id: str = "0037"
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

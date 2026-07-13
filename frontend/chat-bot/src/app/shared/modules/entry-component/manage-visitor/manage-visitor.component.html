@@ -1,0 +1,581 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr" *ngIf="viewType != 'pwa'">
+        <div *ngIf="!data?.id">{{"Visitor Request"|translate}}</div>
+        <div *ngIf="data?.id">{{"Modify Visitor"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div *ngIf="viewType == 'pwa'" class="ovi-prmry-bg-clr ovi-prmry-wht-clr" style="padding: 10px;">
+       {{"Welcome to Trackerwave! We are delighted to have you here. Whether you are visiting for the first time or returning, we aim to provide you with a seamless and enriching experience"|translate}}.
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 135px);"
+        [ngStyle]="{'height' : viewType != 'pwa' ? 'calc(100% - 135px)' : 'calc(100% - 190px)'}">
+        <div [formGroup]="visitorForm">
+        <div class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Request Type"|translate}} <span class="mandatory-field">*</span> </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="identifyingType" [disabled]="data?.id" >
+                                <mat-option *ngFor="let o of identifyingTypeList" [value]="o.code">{{o.value}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="visitorForm.get('identifyingType')?.value != null">
+                        <div  *ngIf="this.identifyingTypeValue === 'Patient' || visitorForm.get('identifyingType')?.value === 'ENT-PA'">
+                        <mat-label  class="ovi-lbl-text-size"  >{{"Patient"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="text" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient'|translate" formControlName="Search" (keyup)="getPatientsCheck($event)" [matAutocomplete]="auto"   (blur)="validateEntitySelection()">
+                            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayPatientName" (optionSelected)="onPatientSelected($event)">
+                                <mat-option *ngFor="let list of patientList"  [value]="list.patientId">{{list.patientName}}</mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="searchError" class="error-txt-1">
+                                {{"Please select a valid patient from the list"|translate}}.
+                            </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div  *ngIf="this.identifyingTypeValue === 'Asset'|| visitorForm.get('identifyingType')?.value === 'ENT-AS'">
+                        <mat-label  class="ovi-lbl-text-size"  >{{"Asset"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="text" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset'|translate"  formControlName="Search" (keyup)="getPatientsCheck($event)" [matAutocomplete]="auto" (blur)="validateEntitySelection()" >
+                            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayAssetName" (optionSelected)="onPatientSelected($event)">
+                                <mat-option *ngFor="let list of assetList"  [value]="list.assetId">{{list.assetName}}</mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="searchError" class="error-txt-1">
+                                {{"Please select a valid Asset from the list"|translate}}.
+                            </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div  *ngIf="this.identifyingTypeValue === 'Staff'|| visitorForm.get('identifyingType')?.value === 'ENT-ST' || visitorForm.get('identifyingType')?.value === 'ENT-US'">
+                        <mat-label  class="ovi-lbl-text-size"  >{{"Requestor"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="text" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Requestor'|translate" formControlName="Search" (keyup)="getPatientsCheck($event)" [matAutocomplete]="auto"  (blur)="validateEntitySelection()">
+                            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayUserName" (optionSelected)="onPatientSelected($event)">
+                                <mat-option *ngFor="let list of userList"  [value]="list.id">{{list.fullName}}</mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="searchError" class="error-txt-1">
+                                {{"Please select a valid User the list"|translate}}.
+                            </mat-error>
+                            </mat-form-field>
+                        </div>
+                </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"Visitor Type"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="visitorTypeId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Visitor Type'|translate" [disabled]="data?.id">
+                                    <mat-option *ngFor="let type of visitorType" [value]="type.code" >
+                                        {{type.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error class="error-txt-1">
+                                     {{"visitor Type is required"|translate}}.
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" >
+                        <mat-label  class="ovi-lbl-text-size"  >{{"Location"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="text" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" formControlName="location" (keyup)="getLocationCheck($event)" [matAutocomplete]="auto"  (blur)="validateSelection()">
+                            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocationName" >
+                                <mat-option *ngFor="let list of locationList"  [value]="list.id">{{list.name}}</mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="searchError" class="error-txt-1">
+                                {{"Please select a valid Location from the list"|translate}}.
+                            </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"Access Level"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="pfEntityGroupId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Access Level'|translate">
+                                    <mat-option *ngFor="let type of accessList" [value]="type.id" >
+                                        {{type.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                </div>
+                    <div class="ovi-row-gap" style="margin-top: 10px;">
+                        <div class="ovi-popup-title-text-size">{{"Visitor Details"|translate}}</div>
+                    </div>
+                    <mat-divider class="ovi-pop-dvd"></mat-divider>
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"First Name"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'First Name'|translate" autocomplete="off" formControlName="firstName">
+                                    <mat-error *ngIf="visitorForm.controls.firstName.invalid" class="error-txt-1">
+                                        <span >{{"First name is required"|translate}}. </span>
+                                    </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"Middle Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Middle Name'|translate" autocomplete="off"  formControlName="middleName" >
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"Last Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" autocomplete="off"  formControlName="lastName" >
+                            </mat-form-field>
+                    </div>
+                    
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display: flex;gap: 10px">
+                        <div  style="width: 60px;">
+                            <mat-label  class="ovi-lbl-text-size">{{'Code' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" formControlName="countryCode" [matAutocomplete]="countryCode">
+                                <mat-autocomplete #countryCode="matAutocomplete"  panelWidth = "250px">
+                                    <mat-option *ngFor="let country of countryOptions | async" value={{country.code}} matTooltip="{{country.value}}">
+                                        {{country.code}} ({{country.value}})
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="visitorForm.controls.countryCode.invalid" class="error-txt-1">
+                                    <span  [hidden]="!visitorForm.controls['countryCode'].errors.pattern">code (eg. +91)</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-mob2-clmn">
+                            <mat-label  class="ovi-lbl-text-size"> {{'Mobile' | translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile'|translate" formControlName="phoneNumber" autocomplete="off">
+                                    <mat-error *ngIf="visitorForm.controls['phoneNumber'].invalid" class="error-txt">
+                                        <span [hidden]="!visitorForm.controls['phoneNumber'].errors.required">
+                                            {{"Phone number required"|translate}}.
+                                        </span>
+                                      <span [hidden]="!visitorForm.controls['phoneNumber'].errors.pattern">
+                                          {{"Invalid Phone number"|translate}}
+                                      </span>
+                                  </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Email"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Email'|translate" autocomplete="off" formControlName="email" type="email">
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn">
+                        <mat-label  class="ovi-lbl-text-size"> {{'Gender' | translate}} </mat-label>
+                        <div class="radio-button">
+                            <mat-radio-group formControlName="gender">
+                                <mat-radio-button class="cst-mgn_1" *ngFor="let o of genderList; let i = index"
+                                    [value]="o.code">{{o.value | translate}} &nbsp;</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size"> {{"Birth Date"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput autocomplete="off"  [matDatepicker]="birthDate" formControlName="birthDate" 
+                              appPlaceholder [showPlaceholder]="false" [placeholderText]="'Birth Date'|translate">
+                            <mat-datepicker-toggle matSuffix [for]="birthDate" class="ovi-fnt-sze15"></mat-datepicker-toggle>
+                            <mat-datepicker #birthDate></mat-datepicker>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Country Of Birth"|translate}}  </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="birthCountryId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Country Of Birth'|translate">
+                                <mat-option *ngFor="let type of countryList" [value]="type.code" >
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Country Of Citizenship"|translate}}  </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="citizenshipCountryId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Country Of Citizenship'|translate" >
+                                <mat-option *ngFor="let type of countryList" [value]="type.code" >
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Company Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Company Name'|translate" autocomplete="off"  formControlName="Organization" >
+                        </mat-form-field>
+                    </div> 
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Company Location"|translate}}  </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="organizationLocationId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Company Location'|translate">
+                                <mat-option *ngFor="let type of countryList" [value]="type.code" >
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div> 
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"State"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'State'|translate" autocomplete="off"  formControlName="state" >
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Company Address"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Enter Address'|translate" style="height: 30px;" formControlName="address"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Department of Visit"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select formControlName="departmentId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department of Visit'|translate">
+                            <mat-option *ngFor="let type of departmentList" [value]="type.id" >
+                                {{type.name}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div> 
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" >
+                    <mat-label  class="ovi-lbl-text-size">{{"Purpose of Visit"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Purpose of Visit'|translate" formControlName="purpose" ></textarea>
+                    </mat-form-field>
+                </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display: flex;max-height: 60px;">
+                        <div>
+                        <mat-label  class="ovi-lbl-text-size">{{"Technical Data Access/Discussion"|translate}}</mat-label>&nbsp;
+                    <mat-radio-group class="example-radio-group" style="display: flex;" formControlName="isTechnicalAccess">
+                        <mat-radio-button [value]="true">{{"Yes"|translate}}</mat-radio-button>&nbsp;
+                        <mat-radio-button [value]="false">{{"No"|translate}}</mat-radio-button>
+                    </mat-radio-group>
+                   </div>  
+                   <div style="margin-left: 63px;">
+                        <mat-label  class="ovi-lbl-text-size">{{"Additional visitors"|translate}} </mat-label>  
+                        <div style="width: 90px;top: 10px;">
+                            <div style="display: flex;margin-top: 8px;">
+                                <button class="ovi-prmry-wht-clr ovi-fnt-sze17" style="cursor: pointer;border: 5px solid #fcfff9; border-radius: 30px; font-weight: 600; height: 30px; width: 30px;"
+                                    [ngClass]="{'visitor-clr': visitorForm.controls['visitorCount'].value == 0,
+                                                'ovi-prmry-bg-clr': visitorForm.controls['visitorCount'].value != 0  }"
+                                    (click)="updateVisitorCount('decrement');">-</button>
+                                <button class="ovi-prmry-clr  ovi-fnt-sze18" style="background: transparent; border: 0px; height: 30px; font-weight: 800;">
+                                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" #availableVisitors="matInput" formControlName="visitorCount"
+                                        autocomplete="off"  [readonly]="true" style="margin-top: -5px;">
+                                </button>
+                                <button class="ovi-prmry-wht-clr  ovi-fnt-sze16" style="cursor: pointer;border: 5px solid #fcfff9; border-radius: 30px; font-weight: 600; height: 30px;"
+                                    [ngClass]="{'visitor-clr': visitorForm.controls['visitorCount'].value >= maxVisitorLimit,
+                                                'ovi-prmry-bg-clr': visitorForm.controls['visitorCount'].value < maxVisitorLimit}"
+                                    (click)="updateVisitorCount('increment'); ">+</button>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+
+                </div>
+                <div class="ovi-row-gap" style="margin-top: 10px;">
+                    <div class="ovi-popup-title-text-size ">{{"Document"|translate}}</div>
+                </div>
+                <mat-divider class="ovi-pop-dvd"></mat-divider>
+                <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Document Type"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Document Type'|translate" formControlName="idType">
+                            <mat-option *ngFor="let o of DocumentTypeList" [value]="o.code">{{o.value}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Document Id"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Document Id'|translate" autocomplete="off"  formControlName="idNO" >
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="margin-top: 13px;padding-right: 10px;">
+                    <div class="file-upload-container">
+                        <div class="file-upload-content">
+                            <label class="file-upload-button  ovi-fnt-sze10" [ngClass]="{'file-selected': isFileSelected}" style=" max-width: 100px; text-align: center;">
+                                {{ "Upload File" | translate }}
+                                <input type="file" multiple #fileInput accept="image/x-png,image/jpeg,.pdf,.txt"
+                                    id="file3" (change)="onFileChange($event, fileInput);" />
+                            </label>
+                            
+                            <span class="file-info" *ngIf="!isFileSelected">
+                                {{"Please select .jpeg / .png / .pdf / .txt file format only" | translate}}
+                            </span>
+                        </div>
+                    
+                        <div class="attachment-preview" *ngIf="attachment[0]?.fileType !== null " style="padding-bottom: 12px;">
+                            <mat-icon class="remove-icon" (click)="removeAttachment()" (keydown.enter)="fixClick()">close</mat-icon>
+                            <img *ngIf="attachment[0]?.fileType === 'image/png' || attachment[0]?.fileType === 'image/jpeg'"  alt="file"
+                                [src]="attachment[0]?.fileUrl" appTooltip tooltipText="Click To View" class="img-siz" (click)="getFileDownload(attachment[0])" (keydown.enter)="fixClick()"/>
+                                
+                            <img *ngIf="attachment[0]?.fileType === 'application/pdf'"   alt="pdf_green"
+                                src="../../../../../assets/Alert/common_icons/pdf_green.svg" appTooltip tooltipText="{{'Click To View'|translate}}" class="img-siz-doc" (click)="getFileDownload(attachment[0])"  (keydown.enter)="fixClick()"/>
+                                
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <div class="ovi-row-gap">
+                    <div class="ovi-popup-title-text-size">{{"Visitor Schedule"|translate}}</div>
+                </div>
+                <mat-divider class="ovi-pop-dvd"></mat-divider>
+                
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Schedule type"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select matInput (selectionChange)="scheduleSelection($event.value)" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule type'|translate" formControlName="scheduleType">
+                                <mat-option *ngFor="let o of ScheduleTypeList" [value]="o.code">{{o.value}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    </div>
+                    <div *ngIf="visitorForm.get('scheduleType')?.value==='VST-DNR' "class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                        <mat-label  class="ovi-lbl-text-size">{{"Schedule Datetime"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" >
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Time'|translate" formControlName="scheduleTime" type="datetime-local"  [min]="minDate">
+                            <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                <span >{{"Schedule Time is required"|translate}}. </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                        <mat-label  class="ovi-lbl-text-size">{{"Departure Datetime"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" >
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Departure DateTime'|translate" formControlName="departureDatetime" type="datetime-local"  [min]="minDate">
+                            <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                <span >{{"Departure Time is required"|translate}}. </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Duration (in hours)"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Duration'|translate" autocomplete="off"  formControlName="duration" >
+                        </mat-form-field>
+                    </div>
+                    </div>
+                    <div *ngIf="visitorForm.get('scheduleType')?.value==='VST-DLY'" class="ovi-row-gap">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                            <mat-label  class="ovi-lbl-text-size"> {{"Start Date"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" >
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate" formControlName="scheduleTime" type="datetime-local"  [min]="minDate">
+                                <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                    <span >{{"Schedule Time is required"|translate}}. </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local" >
+                            <mat-label  class="ovi-lbl-text-size"> {{"End Date"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" >
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate" formControlName="endDate" type="datetime-local"  [min]="minDate">
+                                <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                    <span >{{"Schedule Time is required"|translate}}. </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"Duration (in hours)"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Duration'|translate" autocomplete="off"  formControlName="duration" >
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="visitorForm.get('scheduleType')?.value==='VST-MN' || visitorForm.get('scheduleType')?.value==='VST-WK'" class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                        <mat-label  class="ovi-lbl-text-size"> {{"Start Date"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" >
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate" formControlName="scheduleTime" type="datetime-local"  [min]="minDate">
+                            <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                <span >{{"Schedule Time is required"|translate}}. </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local" >
+                        <mat-label  class="ovi-lbl-text-size"> {{"End Date"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" >
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate" formControlName="endDate" type="datetime-local"  [min]="minDate">
+                            <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                <span >{{"Schedule Time is required"|translate}}. </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Duration (in hours)"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Duration'|translate" autocomplete="off"  formControlName="duration" >
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="visitorForm.get('scheduleType')?.value==='VST-WK'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Pattern"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Pattern'|translate" formControlName="Pattern" multiple>
+                                <mat-option *ngFor="let o of weeklist" [value]="o.code">{{o.value}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg"*ngIf= "visitorForm.get('scheduleType')?.value === 'VST-MN'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Pattern"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Pattern'|translate" formControlName="mnPattern" multiple>
+                                <mat-option *ngFor="let o of daylist" [value]="o">{{o}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="visitorForm.get('scheduleType')?.value != 'VST-DNR'">
+                    <div class="ovi-row-gap" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                    
+                        <div class="ovi-popup-title-text-size">{{ "Schedule Exception" | translate }}</div>
+                        <span class="add-button" style="display: flex; align-items: center;" *ngIf="viewType !='pwa'">
+                            <mat-icon class="ovi-fnt-sze20" style="cursor: pointer; padding-top: 8%;padding-left: 3px;"
+                                (click)="typeLoad(visitorForm.get('scheduleType')?.value)" (keydown.enter)="fixClick()">add</mat-icon>
+                        </span>
+                        </div>
+                        <mat-divider class="ovi-pop-dvd" style="margin-top: 5px;"></mat-divider>
+                    
+                    
+                    <div *ngIf="isExclude || (data && data.schedules?.length)">
+                        <div class="ovi-row-gap" *ngIf="viewType !='pwa'">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"type"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'type'|translate" formControlName="Type"  (selectionChange)="typeSelection($event.value)">
+                                    <mat-option *ngFor="let o of typeList" [value]="o.code">{{o.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local"
+                            *ngIf="visitorForm.get('Type')?.value==='VST-SNG'">
+                            <mat-label class="ovi-lbl-text-size">{{"Schedule Time"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Time'|translate" formControlName="startTime"
+                                    type="datetime-local" [min]="minScheduleDate ? minScheduleDate : minDate" [max]="maxScheduleDate">
+                                <mat-error *ngIf="visitorForm.controls.scheduleTime.invalid" class="error-txt-1">
+                                    <span>{{"Schedule Time is required"|translate}}. </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="visitorForm.get('Type')?.value==='VST-WK'">
+                            <mat-label class="ovi-lbl-text-size">{{"Pattern"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Pattern'|translate" formControlName="exceptionPattern" multiple>
+                                    <mat-option *ngFor="let o of weeklist" [value]="o.code">{{o.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="visitorForm.get('Type')?.value === 'VST-MN'">
+                            <mat-label class="ovi-lbl-text-size">{{"Pattern"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Pattern'|translate"  formControlName="exceptionMnPattern" multiple>
+                                    <mat-option *ngFor="let o of daylist" [value]="o">{{o}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg"
+                            style="margin-top: 6px; display: flex; align-items: center; gap: 16px;">
+                    
+                            <div style="display: flex; flex-direction: column;">
+                                <mat-label class="ovi-lbl-text-size">{{"Admit"|translate}} :</mat-label>
+                                <mat-radio-group class="example-radio-group" formControlName="isInclude" style="display: flex; gap: 12px;">
+                                    <mat-radio-button value="true">{{"Yes"|translate}}</mat-radio-button>
+                                    <mat-radio-button value="false">{{"No"|translate}}</mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                    
+                            <button mat-button class="active-btn" appDebounceClick (debounceClick)="populateTable()" [debounceTime]="300"
+                                cdkFocusInitial style="margin-bottom: 25px;">{{ selectedRowIndex !== null ? 'Update' : 'Add' | translate }}</button>
+                        </div>
+                        </div>
+                        <div class="ovi-row-gap">
+                            <div style="margin: 10px 0px; overflow-x: auto; width: 100%; height: 100%; display: block;">
+                                <table mat-table [dataSource]="dataSource" style="table-layout: fixed;">
+                    
+                                    <ng-container matColumnDef="type">
+                                        <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header"
+                                            style="background-color: #EFEFEF;">
+                                            {{ "Type" | translate }}
+                                        </th>
+                                        <td mat-cell *matCellDef="let element" (click)="selectRow(element)" (keydown.enter)="fixClick()">
+                                            {{ element.type }}
+                                        </td>
+                                    </ng-container>
+                    
+                                    <ng-container matColumnDef="admit">
+                                        <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header"
+                                            style="background-color: #EFEFEF;">
+                                            {{ "Admit" | translate }}
+                                        </th>
+                                        <td mat-cell *matCellDef="let element" (click)="selectRow(element)" (keydown.enter)="fixClick()">
+                                            {{ element.isInclude }}
+                                        </td>
+                                    </ng-container>
+                    
+                                    <ng-container matColumnDef="pattern">
+                                        <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header"
+                                            style="background-color: #EFEFEF;">
+                                            {{ "Pattern" | translate }}
+                                        </th>
+                                        <td mat-cell *matCellDef="let element" (click)="selectRow(element)" (keydown.enter)="fixClick()">
+                                            {{ element.pattern }}
+                                        </td>
+                                    </ng-container>
+                    
+                                    <ng-container matColumnDef="scheduleTime">
+                                        <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header"
+                                            style="background-color: #EFEFEF;">
+                                            {{ "Schedule Time" | translate }}
+                                        </th>
+                                        <td mat-cell *matCellDef="let element" (click)="selectRow(element)" (keydown.enter)="fixClick()">
+                                            {{ element.scheduleTime }}
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="actions">
+                                        <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header" style="background-color: #EFEFEF;">
+                                        {{ "Actions" | translate }}
+                                        </th>
+                                        <td mat-cell *matCellDef="let element">
+                                        <button mat-icon-button color="warn" (click)="deleteRow(element)">
+                                            <mat-icon>delete</mat-icon>
+                                        </button>
+                                        </td>
+                                    </ng-container>
+                    
+                                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    
+                                </table>
+                            </div>
+                        </div>
+                    
+                    </div>
+                </div>
+        </div>
+</div>
+<div class="input-footer" *ngIf="viewType == 'pwa'" style="padding:10px;height: 65px;">
+    <div style="padding-bottom: 10px;">
+        <mat-checkbox [formControl]="visitorAck"></mat-checkbox>
+        <span style="color: #565656;"> {{"I acknowledge and agree to the terms and conditions"|translate}}. </span>
+    </div>
+    <div>
+        <button *ngIf="data?.id" mat-button class="active-btn" appDebounceClick
+            [disabled]="visitorForm.invalid || !visitorAck.value" (debounceClick)="AcceptRequest(data)"
+            cdkFocusInitial [debounceTime]="300">
+            {{'Accept' | translate }}
+        </button>
+    </div>
+</div>
+
+<div class="ovi-pop-ftr" *ngIf="viewType != 'pwa'">
+    <button  mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+    <button mat-button *ngIf="!data?.id"  class="active-btn" appDebounceClick [disabled]="visitorForm.invalid"
+    (debounceClick)=createVisitor()  [debounceTime]="300" cdkFocusInitial>{{'Save'|translate}}</button>
+    <button *ngIf="data?.id"  mat-button class="active-btn" appDebounceClick
+    [disabled]="visitorForm.invalid" (debounceClick)="updateVisitor(data)"
+    cdkFocusInitial [debounceTime]="300">{{'Update' | translate }}</button>
+</div>
+
+
+

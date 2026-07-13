@@ -1,0 +1,150 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="input-component-holder container" appWindowResize (resized)="onWindowResized($event)"
+    (resizedWidth)="onWindowResizedWidth($event)" [component]="'pop-up'" [style.height.px]="popHeight">
+    <mat-toolbar class="input-header">
+            <div class="header-name"> {{"Threshold Settings"|translate}} </div>
+            <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div class="form-body-thres threshold-container form-height-thr popup-margin" style="overflow: hidden;" #scrollbottom [style.height.px]="contentHeight">
+        <div class="block-3 mat-custom-form-field-box "  [formGroup]="thresholdForm">
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+                <div fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="50">
+            <mat-label class="ovi-lbl-text-size">{{"Hardware Type"|translate}} </mat-label>
+            <mat-form-field   style="width: calc(100% - 10px);" appearance="outline">
+                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hardware Type'|translate" formControlName="readerHardwareType" [disableOptionCentering]="true" [disabled]="this.data && this.data.id !== null">
+                    <mat-option *ngFor="let data of hardwareTypeList" [value]="data.code"
+                    (keydown.enter)="fixClick()" (click)="getReaders(data.code)">
+                        {{data.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            </div>
+            <div fxFlex.xs="50"   fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+            <mat-label class="ovi-lbl-text-size">{{"Reader"|translate}} </mat-label>
+            <mat-form-field   style="width: calc(100% - 10px);" appearance="outline">
+                <mat-select multiple appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader'|translate" formControlName="reader" [disableOptionCentering]="true" [compareWith]="selectedValue" [disabled]="(this.data && this.data.id !== null) || (!thresholdForm.controls.readerHardwareType.value)" matSelectSearch >
+                    <mat-option *ngFor="let data of readerList" [value]="data.id">
+                        {{data.readerId}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            </div>
+            <div fxFlex.xs="50"  fxFlex.gt-xs="50"  fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="50">
+            <mat-label class="ovi-lbl-text-size">{{"Tag Hardware Type"|translate}} </mat-label>
+            <mat-form-field  style="width: calc(100% - 10px);" appearance="outline">
+                <mat-select multiple appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag Hardware Type'|translate" formControlName="tagHardwareType" [disableOptionCentering]="true" [disabled] = "(!thresholdForm.controls.readerHardwareType.value) || (!thresholdForm.controls.reader.value.length)">
+                    <mat-option #tagSelected *ngFor="let tag of tagTypeList" [value]="tag.code"
+                    (keydown.enter)="fixClick()" (click)="getThresholdList(tagSelected.selected, tag);" >
+                        {{tag.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+            </div>
+            </div>
+        </div>
+        <div class="left-threshold ovi-font-family" *ngIf="thresholdList.length !== 0">
+            <div *ngIf ="windWidth >= 500" style="width:300px;float: left;border-bottom: 3px solid #D1D1D1;overflow-y: auto;margin-left: 10px;" [resizableMinWidth]="300" appResizable
+                [component]="'WorkFlow'" [style.height.px]="contentHeight - 70">
+                <div style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600;" class="ovi-fnt-sze14">
+                    <span >{{"TAG TYPES"|translate}}</span>
+                </div>
+                <div *ngFor="let threshold of getAllThresholdList" class="threshold-list">
+                    <div [ngClass]=" selectThreshold == threshold.tagHardwareTypeId ? 'selectThreshold' : 'unselectThreshold'"
+                        (keydown.enter)="fixClick()" (click)="getTagType(threshold.tagHardwareTypeId,'Tag')">
+                        <div style="margin-top: 15px; margin-bottom: 15px;margin-left: 15px;">{{threshold.tagHardwareTypeName}}</div>
+                    </div>
+                    <mat-divider style="margin-bottom: 0px;"></mat-divider>
+                </div>
+            </div>
+            <div [ngStyle]="{width: windWidth >= 500 ? 'calc(100% - 305px)' : 'calc(100%)'}" class="right-threshold">
+                <div [style.height.px]="contentHeight - 70" style="overflow-y: auto;">
+                    <div style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600;" class="ovi-fnt-sze14">
+                        <span >{{"THRESHOLD DETAILS"|translate}}</span>
+                    </div>
+                    <div class="threshold-info" *ngIf="this.data?.id !== null || this.addThreshold">
+                        <div class="threshold-info-container" *ngIf="thresholdList.length !== 0">
+                            <div class="tag-info">
+                                <span class="ovi-fnt-sze13" style=" font-weight: 600;">{{"TAG"|translate}}</span>
+                                <mat-divider class="tag-info"></mat-divider>
+
+                                <div class="form-row block-3">
+                                    <div class="threshold-row-field">
+                                        <div class="example-form" *ngFor="let tag of getTagList" >
+                                            <div class="ovi-fnt-sze13" style="font-weight: 600;text-align: center;width: 100%;" >{{"Checkin :"|translate}} {{tag.max}}</div>
+                                            <span class="ovi-fnt-sze13">-90</span>
+                                            <mat-slider min="-90" max="-50" [step]="step"
+                                                [value]="tag.max" [thumbLabel]="thumbLabel" class="max-width"
+                                                (change)="updateThresholdJson('tag', 'max', tag.threshold, $event.value)">
+                                            </mat-slider>
+                                            <span class="ovi-fnt-sze13">-50</span>
+                                        </div>
+                                    </div>
+                                    <div class="threshold-row-field">
+                                        <div class="example-form" *ngFor="let tag of getTagList">
+                                            <div class="ovi-fnt-sze13" style="font-weight: 600;text-align: center;width: 100%;" > {{"Hold :"|translate}} {{tag.min}}</div>
+                                            <span class="ovi-fnt-sze12" style="font-weight: bold;padding-right: 40px;"></span>
+                                            <span class="ovi-fnt-sze13">-90</span>
+                                            <mat-slider  min="-90" max="-50" name="tagging" #tagging [step]="step"
+                                                [value]="tag.min" [thumbLabel]="thumbLabel" class="min-width"
+                                                (change)="updateThresholdJson('tag', 'min', tag.threshold, $event.value)">
+                                            </mat-slider>
+                                            <span class="ovi-fnt-sze13">-50</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="reader-info">
+                                <span class="ovi-fnt-sze13" style="font-weight: 600;">{{"READER"|translate}}</span>
+                                <mat-divider class="reader-info"></mat-divider>
+
+                                <div class="form-row block-3">
+                                    <div class="threshold-row-field">
+                                        <div class="example-form"  *ngFor="let reader of getReaderList">
+                                            <div class="ovi-fnt-sze13" style="font-weight: 600;text-align: center;width: 100%;">{{"Minimum :"|translate}} {{reader.min}}</div>
+                                            <span class="ovi-fnt-sze12" style="font-weight: bold;padding-right: 15px;">{{reader.threshold}} M</span>
+                                            <span class="ovi-fnt-sze13">-90</span>
+                                            <mat-slider min="-90" max="-50"
+                                                [value]="reader.min" class="min-width"
+                                                (change)="updateThresholdJson('reader', 'min', reader.threshold, $event.value)"
+                                                [thumbLabel]="thumbLabel" [step]="step"></mat-slider>
+                                            <span class="ovi-fnt-sze13">-50</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="threshold-row-field">
+                                        <div class="example-form"  *ngFor="let reader of getReaderList">
+                                            <div class="ovi-fnt-sze13" style="font-weight: 600;text-align: center;width: 100%;">{{"Maximum :"|translate}} {{reader.max}}</div>
+                                            <span class="ovi-fnt-sze12">-90</span>
+                                            <mat-slider min="-90" max="-50"
+                                                [value]="reader.max" class="max-width"
+                                                (change)="updateThresholdJson('reader', 'max', reader.threshold, $event.value)"
+                                                [thumbLabel]="thumbLabel" [step]="step"></mat-slider>
+                                            <span class="ovi-fnt-sze13">-50</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="no-threshold ovi-font-family" *ngIf="thresholdList.length === 0">{{"Threshold Data Not Found"|translate}}</div>
+    </div>
+    <div class="input-footer-pad threshold-footer-pad">
+        <button mat-button class="cancle-btn" style="margin-right: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="this.data?.id !== null && !this.addThreshold" mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="updateThreshold(data)"
+            [disabled]="!this.thresholdList[0]?.id" [debounceTime]="300" cdkFocusInitial>{{"Modify"|translate}}</button>
+        <button *ngIf="this.addThreshold" mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="createThreshold()"
+            [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,525 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.itemData.id">{{"Create items"|translate}}</div>
+        <div *ngIf="data.itemData.id">{{"Modify items"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 135px);" [formGroup]="itemForm">
+        <div class="ovi-row-gap-four-fld" >
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Item No"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                        <input matInput formControlName="itemNo" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item No'|translate">
+                         <mat-error *ngIf="itemForm.controls.itemNo.invalid" class="error-txt-1">
+                          <span [hidden]="!itemForm.controls['itemNo'].errors.required">{{"Item No required"|translate}}.</span>
+                          <span [hidden]="!itemForm.get('itemNo')?.hasError('pattern')">{{"Spaces only are not allowed"| translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Item Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item Type'|translate" formControlName="itemType"
+                            [disableOptionCentering]="true" (selectionChange)="getItemCategory($event, 'select')">
+                            <mat-option *ngFor="let type of itemType" [value]="type.code">
+                                {{type.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="itemForm.controls.itemType.invalid" class="error-txt-1">
+                          <span [hidden]="!itemForm.controls['itemType'].errors.required">{{"Item Type required"|translate}}</span>
+                          <span [hidden]="!itemForm.get('itemType')?.hasError('pattern')">{{"Spaces only are not allowed"| translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Item Category"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item Category'|translate" formControlName="itemCategory"
+                            [disableOptionCentering]="true">
+                            <mat-option *ngFor="let category of itemCategory" [value]="category.code">
+                                {{category.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="itemForm.controls.itemCategory.invalid" class="error-txt-1">
+                          <span [hidden]="!itemForm.controls['itemCategory'].errors.required">{{"Item Category
+                          required"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" matInput formControlName="description">
+                    </mat-form-field>
+            </div>
+        </div>
+        <div class="ovi-row-gap-four-fld">
+        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{"Status"| translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate" formControlName="itemStatus">
+                <mat-option *ngFor="let option of statusList" [value]="option.code">
+                    {{ option.value }}
+                </mat-option>
+                </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+
+        <mat-tab-group style="margin-top: 10px;" (selectedTabChange)="onTabChanged($event)"
+            [selectedIndex]="selectedIndex">
+            <mat-tab label="{{'Basic Details'|translate}}">
+                <ng-template mat-tab-label >{{"Basic Details"|translate}}</ng-template>
+                    <div class="ovi-row-gap" style="overflow: hidden;">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name">
+                                 <mat-error *ngIf="itemForm.controls.name.invalid" class="error-txt-1">
+                                 <span [hidden]="!itemForm.controls['name'].errors.required">{{"Name
+                                    required"|translate}}</span>
+                                  </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Reorder Level"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reorder Level'|translate" formControlName="reorderLevel"
+                                        type="number" min="0" class="no-spinner">
+                                    <div matSuffix class="ovi-schl-custom-select">
+                                        <span (click)="updateReorderQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                        <span (click)="updateReorderQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                    </div>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Minimum Stock Level"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Minimum Stock Level'|translate" formControlName="minStock"
+                                        type="number" min="0" class="no-spinner">
+                                    <div matSuffix class="ovi-schl-custom-select">
+                                        <span (click)="updateminiumQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                        <span (click)="updateminiumQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                    </div>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Unit Of Measure"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Unit Of Measure'|translate"
+                                        formControlName="uom">
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'Average Cost'|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Average Cost'|translate"
+                                        type="number" min="0" formControlName="averageCost">
+                                </mat-form-field>
+                        </div>
+                         <div *ngIf="data.itemData" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Total Quantity"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Total Quantity'|translate"
+                                        formControlName="totalQuantity" min="0" readonly="true">
+                                </mat-form-field>
+                        </div>
+                        <div *ngIf="!excludeFields?.includes('Routine Type')" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Routine Type"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Type'|translate"
+                                    formControlName="routineTypeId" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let routine of routineTypes" [value]="routine.code">
+                                        {{routine.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="!excludeFields?.includes('Activity Category')" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Activity Category"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Type'|translate"
+                                    formControlName="activityCategoryId" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let activity of activityCategoryList" [value]="activity.code">
+                                        {{activity.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <textarea input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate"
+                                        formControlName="comments" rows=2>
+                                    </textarea>
+                                </mat-form-field>
+                        </div>
+                    </div>
+                
+            </mat-tab>
+            <mat-tab *ngIf="itemData && itemData.id" label="{{'Inventory'|translate}}">
+                <ng-template mat-tab-label >{{"Inventory"|translate}}</ng-template>
+                <div  style="overflow: hidden;">
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Batch Id"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err  " appearance="outline">
+                                    <input matInput formControlName="batchId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Batch Id'|translate">
+                                    <mat-error *ngIf="itemForm.controls.batchId.invalid">
+                                        <span [hidden]="!itemForm.controls['batchId'].errors.required">{{"Batch Id
+                                            required"|translate}}</span>
+                                            <span *ngIf="itemForm.controls.batchId.hasError('codeExists')">
+                                             {{"Batch Id already exists"|translate}}.
+                                            </span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Purchase Order Id"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err  " appearance="outline">
+                                    <input type="number" class="numberTypeInput" matInput  formControlName="purchaseOrderId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Purchase Order Id'|translate">
+                                        <mat-error *ngIf="itemForm.controls.purchaseOrderId.invalid">
+                                            <span [hidden]="!itemForm.controls['purchaseOrderId'].errors.required">{{"Purchase Order Id
+                                                required"|translate}}</span>
+                                            <span *ngIf="itemForm.controls.purchaseOrderId.hasError('codeExists')">
+                                             {{"Purchase Order Id already exists"|translate}}.
+                                            </span>
+                                        </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Supplier Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput autofocus appPlaceholder [showPlaceholder]="false" [placeholderText]="'Supplier Name'|translate" appTypeHit
+                                        (typeHit)="getSupplierSelection($event)" [matAutocomplete]="auto"
+                                        autocomplete="off" formControlName="supplierId">
+                                    <mat-autocomplete
+                                        [displayWith]="supplierEnabled === true ? getsupplierName.bind(supplierDetails) : null"
+                                        #auto="matAutocomplete">
+                                        <div *ngIf="supplierEnabled">
+                                            <mat-option class="option-bor" *ngFor="let option of supplierDetails"
+                                                [value]="option.id">{{option.name}}
+                                            </mat-option>
+                                        </div>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="itemForm.controls.supplierId.invalid">
+                                        <span *ngIf="itemForm.get('supplierId').hasError('invalidSupplierSelection')">
+                                            {{"Please select a valid Supplier Name from the list"|translate}}.
+                                        </span>
+                                         <span [hidden]="!itemForm.controls['supplierId'].errors.required">{{"Supplier Name
+                                            required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Unit Cost"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput type="number" class="numberTypeInput"  formControlName="unitCost" min="0" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Unit Cost'|translate">
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"No Of Quantity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err  " appearance="outline">
+                                    <input matInput formControlName="quantity" appPlaceholder [showPlaceholder]="false" min="0"
+                                        [placeholderText]="'No Of Quantity'|translate" type="number" class="no-spinner">
+                                    <div matSuffix class="ovi-schl-custom-select">
+                                        <span (keydown.enter)="fixClick()" (click)="updateindentQuantity(-1,'quantity')"
+                                            class="ovi-schl-custom-dec">-</span>
+                                        <span (keydown.enter)="fixClick()" (click)="updateindentQuantity(1,'quantity')"
+                                            class="ovi-schl-custom-incre">+</span>
+                                    </div>
+                                    <mat-error *ngIf="itemForm.controls.quantity.invalid">
+                                        <span [hidden]="!itemForm.controls['quantity'].errors.required">{{"No Of Quantity
+                                            required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Expiry Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err  " appearance="outline">
+                                    <input  matInput [matDatepicker]="picker1" [min]="today" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Expiry Date'|translate"
+                                        formControlName="expiryDate">
+                                    <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker1></mat-datepicker>
+                                    <mat-error *ngIf="itemForm.controls.expiryDate.invalid">
+                                        <span [hidden]="!itemForm.controls['expiryDate'].errors.required">{{"Expiry Date
+                                            required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <textarea  input matInput formControlName="invComments" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate" rows=2>
+                                    </textarea>
+                                </mat-form-field>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; padding: 5px 25px; justify-content: flex-end">
+                        <button *ngIf="!idInventoryEdit" mat-button class="active-btn" appDebounceClick [disabled]="itemForm.invalid"
+                            (debounceClick)="AddInventory();" [debounceTime]="300">{{"Add"|translate}}</button>
+                        <div *ngIf="idInventoryEdit">
+                            <button mat-button class="active-btn" style="margin: 0 3px;" appDebounceClick [disabled]="itemForm.invalid"
+                                (debounceClick)="editSaveInventory();" [debounceTime]="300">{{"Update"|translate}}</button>
+                            <button mat-button class="active-btn" appDebounceClick
+                                (debounceClick)="cancelEdit();">{{"Cancel"|translate}}</button>
+                        </div>
+                    </div>
+                    <div>
+                        <angular-table-component [id]="'inventory'" [type]="'ng-table'"
+                            [tableData]="inventoryDataSource"
+                            [columns]="['Batch Id','Purchase Order Id','Supplier Name','ItemMaster Name','Unit Cost','Balanced Qty', 'Expiry Date', 'Qty', 'Transaction Type','Edit']"
+                            [columnData]="['batchId','purchaseOrderId','supplierName','itemMasterName','unitCost','balancedQuantity', 'expiryDate', 'quantity', 'transactionTypeName','Edit']"
+                            (triggerAction)="triggerAction($event)">
+                        </angular-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="itemData && itemData.id" label="{{'Indent'|translate}}">
+                <ng-template mat-tab-label >{{"Indent"|translate}}</ng-template>
+                <div class="intend-header">
+                    <span></span>
+                    <span>
+                        <button mat-button class="active-btn" (click)="createRequest(itemData)">{{"Create Request"|translate}}</button>
+                    </span>
+                </div>
+                <div>
+                    <angular-table-component [id]="'intend'" [type]="'ng-table'"
+                        [tableData]="intendDataSource"
+                        [columns]="['Department', 'Requested User Name', 'Delivery Status', 'Requested Quantity', 'Allocated Quantity', 'Delivered Date']"
+                        [columnData]="['requestUserDepartmentName', 'requestedByUserName', 'deliveryStatusName', 'requestedQuantity', 'allocatedQuantity', 'deliveredDatetime']"
+                        (triggerAction)="triggerAction($event)">
+                    </angular-table-component>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="itemData && itemData.id && this.activate_btn.includes('BT_IM_VIL')" label="{{'Item Link'|translate}}">
+                <ng-template mat-tab-label >{{"Item Link"|translate}}</ng-template>
+                <div>
+                <div class="ovi-row-gap" >
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Item Master"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item Master'|translate"
+                                formControlName="itemLink" [disableOptionCentering]="true" multiple="true" (openedChange)="onFilterSearchOpened($event)">
+                                <mat-option>
+                                    <ngx-mat-select-search [formControl]="subitemSearch" [placeholderLabel]="'Search' | translate"
+                                        [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                                </mat-option>
+                                <mat-option *ngFor="let item of filteredModelSearch" [value]="item.id">
+                                    {{item.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div style="display: flex ; align-items: center; position: relative; top: 8px;">
+                        <button mat-button class="active-btn" (click)="addItemlink('create')">{{"ADD"|translate}}</button>
+                    </div>
+                </div>
+                <div>
+                  <angular-table-component [id]="'itemLink'" [type]="'ng-table'" [tableData]="itemLinkDataSource"
+                    [columns]="['Item Master','Delete']"
+                    [columnData]="['name','Delete']"
+                    (triggerAction)="triggerAction($event)">
+                  </angular-table-component>
+                </div>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="itemData && itemData.id" label="{{'Asset Link'|translate}}">
+                <ng-template mat-tab-label >{{"Asset Link"|translate}}</ng-template>
+                <div style="display: flex; height: calc(100vh - 275px); overflow: hidden;">
+                    <span class="link-type-container">
+                        <div style="height: calc(100vh - 290px);">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" style="width: 90% !important;">
+                                    <mat-label class="ovi-lbl-text-size">{{"Asset Link Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Link Type'|translate"
+                                            (selectionChange)="getAssetType($event)" formControlName="assetType">
+                                            <mat-option *ngFor="let type of assetTypes" [value]="type.code">
+                                                {{type.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                            </div>
+                            <div class="link-type-header">
+                                <span class="link-list-title">{{selectedLinkType === 'IAL-ALT' ? 'Asset Type' : 'Model Number'}}</span>
+                                <span class="tw-filter-new-map">
+                                    <input matInput #searchInputClear style="padding: 5px !important; height: 20px; color: black;"
+                                        (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+                                </span>
+                            </div>
+                            <mat-list class="list-container">
+                                <mat-list-item class="list-option" *ngFor="let asset of assetCatLog">
+                                    <mat-checkbox [checked]="isSelectedAsset(asset)" style="font-weight: 600;"
+                                        (change)="toggleSelection($event, asset)" [attr.data-asset-id]="asset.id">
+                                        {{selectedLinkType !== 'IAL-ALT' ? (asset.modelNumber ? asset.modelNumber + (asset.assetTypeName ? ' (' + asset.assetTypeName + ')':'')
+                                        : asset.assetTypeName) : asset.value}}
+                                    </mat-checkbox>
+                                </mat-list-item>
+                            </mat-list>
+                            <div class="link-Footer">
+                                <button mat-button class="active-btn" (click)="linkItem()" style="display: flex; align-items: center;">
+                                    <mat-icon class="add-link-icon">add</mat-icon>
+                                    {{"Add"|translate}}</button>
+                            </div>
+                        </div>
+                    </span>
+                    <span class="selected-link-container">
+                        <angular-table-component [id]="'Asset-Link'"
+                        [type]="'ng-table'" [component]="'item-asset-link'" [tableData]="selectedLinkResources"
+                        [columns]="displayColumn" [columnData]="columnData">
+                      </angular-table-component>
+                    </span>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Documents'|translate}}">
+                <ng-template mat-tab-label >{{"Documents"|translate}}</ng-template>
+                <div class="mat-tab-content">
+                    <div class="ovi-row-gap" style="overflow-y:hidden">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="false">
+                                <mat-label class="ovi-lbl-text-size">{{"Document Type"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  side-form-Field" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Document Type'|translate"
+                                        formControlName="documentTypeId">
+                                        <mat-option *ngFor="let docType of documentType" [value]="docType.code">
+                                            {{docType.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Document Name"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Document Name'|translate" formControlName="documentName" autocomplete="off">
+                                </mat-form-field>
+                        </div>
+
+                        <div class="ovi-row-three-clmn">
+                            <div  style="margin-top:11px">
+                                <button class="file-upload-button">
+                                    <input type="file" multiple #fileInput accept="image/x-png,image/jpeg, .pdf, .txt"
+                                        title="" class="custom-file-input" id="file3"
+                                        (change)="handleFileSelect($event); onFileSelect(fileInput)" />
+                                    {{"Choose File"|translate}}
+                                </button>
+                                <span class="file-info"
+                                    *ngIf="itemForm.controls['documentName'].value && !isFileSelected">{{"Please
+                                    select .jpeg / .png / .pdf / .txt file format only"|translate}}</span>
+                                <span class="file-info" *ngIf="isFileSelected">{{fileInfo}}</span>
+                            </div>
+                        </div>
+                        <span style="padding-top: 6px;">
+                            <button mat-icon-button
+                                style="margin-top: 5px; background-color: #599432 !important; height: 27px; width: 27px;"
+                                *ngIf="isAddDoc && isEditDocRow" appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom"
+                                (click)="addEditRow('documents')">
+                                <mat-icon class="ovi-fnt-sze20"
+                                    style="height: 33px !important ; width: 23px !important; color: white; padding-bottom: 5px; padding-top: 0px">done</mat-icon>
+                            </button>
+                            <button mat-button class="active-btn" *ngIf="!isEditDocRow"
+                                [disabled]="!(itemForm.controls['documentName'].value)&& !isEditDocRow"
+                                (click)="addDocRow()">{{"Add"|translate}}</button>
+                            <button mat-icon-button close-button class="ie-close-icon"
+                                (click)="removeSelectedRows('documents')">
+                                <mat-icon class="icon-style ovi-fnt-sze32" style="color: red;padding-top: 20px; width: 30px;"
+                                    *ngIf="itemForm.controls['documentName'].value && isEditDocRow">highlight_off</mat-icon></button>
+                        </span>
+                    </div>
+                    <div *ngIf="isDocTable === false" class="no-shift">{{"No records Found"|translate}}</div>
+                    <div class="ast-styl-1 mat-tab-content" *ngIf="isDocTable">
+                        <mat-table #table [dataSource]="docSourceIdentifier" class="mat mat-tbl-styl">
+
+                            <ng-container matColumnDef="select">
+                                <mat-header-cell *matHeaderCellDef class="mat-tbl-styl_1">
+                                    <mat-checkbox
+                                        (change)="$event ? masterDocToggle('documents') : null;  checkEvent('documents');"
+                                        [checked]="docSelection.hasValue() && isAllSelected('documents')"
+                                        [indeterminate]="docSelection.hasValue() && !isAllSelected('documents')"
+                                        style="background-color: #fff;">
+                                    </mat-checkbox>
+                                </mat-header-cell>
+                                <mat-cell *matCellDef="let row" class="tbl-width">
+                                    <mat-checkbox (click)="$event.stopPropagation(); checkEvent('documents');"
+                                        (change)="$event ? docSelection.toggle(row) : null"
+                                        [checked]="docSelection.isSelected(row)" (keydown.enter)="fixClick()">
+
+                                    </mat-checkbox>
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="name">
+                                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">
+                                    {{"Document Name"|translate}} </mat-header-cell>
+                                <mat-cell *matCellDef="let element">
+                                    {{element.fileName}}
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="type">
+                                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">
+                                    {{"Document Type"|translate}}
+                                </mat-header-cell>
+                                <mat-cell *matCellDef="let element" class="tbl-width">
+                                    {{element.fileType}}
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="fileImage">
+                                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">
+                                    {{"Preview"|translate}} </mat-header-cell>
+                                <mat-cell *matCellDef="let element" class="tbl-width_1 ovi-font-family">
+                                    <img *ngIf="!data.attachFiles && element.fileType !='application/pdf'"
+                                        [src]="element.image" alt="img" style="border: 0.5px solid grey;" width="100%"
+                                        height="121px">
+                                    <object *ngIf="!data.attachFiles && element.fileType =='application/pdf'"
+                                        [data]="element.image" type="application/pdf"
+                                        style="width:100%; height: 121px;">
+                                    </object>
+                                    <img *ngIf="data && element.attachmentId == null && element.fileType !='application/pdf'"
+                                        [src]="element.image" alt="img with attachment"
+                                        style="border: 0.5px solid grey;" width="100%" height="121px">
+                                    <object
+                                        *ngIf="data && element.attachmentId == null && element.fileType =='application/pdf'"
+                                        [data]="element.image" type="application/pdf"
+                                        style="width:100%; height: 121px;">
+                                    </object>
+                                    <img *ngIf="data && element.attachmentId != null && element.fileType !='application/pdf'"
+                                        [src]="element.fileUrl" alt="img with data" style="border: 0.5px solid grey;"
+                                        width="100%" height="121px">
+                                    <img *ngIf="data && element.attachmentId != null && element.fileType =='application/pdf'"
+                                        [src]="element.fileUrl" alt="img with data" style="border: 0.5px solid grey;"
+                                        width="100%" height="121px">
+                                </mat-cell>
+                            </ng-container>
+
+                            <ng-container matColumnDef="preview">
+                                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">
+                                </mat-header-cell>
+                                <mat-cell *matCellDef="let element">
+                                    <button mat-button appDebounceClick
+                                        style="border-radius: 3px;background:#f33c3c;color:white;"
+                                        (debounceClick)="getFileDownload(element)" [debounceTime]="300" cdkFocusInitial>
+                                        {{"Preview"|translate}}
+                                    </button>
+                                </mat-cell>
+                            </ng-container>
+
+                            <mat-header-row *matHeaderRowDef="docDisplayedColumns">
+                            </mat-header-row>
+                            <mat-row *matRowDef="let row; columns: docDisplayedColumns;"
+                                (click)="selection.toggle(row)" (keydown.enter)="fixClick()">
+                            </mat-row>
+                        </mat-table>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!data.itemData && selectedTab != 'Inventory'" class="active-btn" [disabled]="itemForm.get('itemNo').invalid || itemForm.get('name').invalid"
+            appDebounceClick (debounceClick)="createItemMaster();" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+        <button mat-button *ngIf="data.itemData && selectedTab != 'Inventory'" class="active-btn" [disabled]="itemForm.get('itemNo').invalid || itemForm.get('name').invalid"
+            appDebounceClick (debounceClick)="editItemMaster();" [debounceTime]="300" cdkFocusInitial>{{"Modify"|translate}}</button>
+    </div>
+</div>

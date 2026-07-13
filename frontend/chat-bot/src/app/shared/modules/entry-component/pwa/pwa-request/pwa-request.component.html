@@ -1,0 +1,152 @@
+<div style="width: 100%;height: 100%;">
+    <div class="page ovi-font-family">
+    <div class="curved-header">
+        <div class="header-content">
+            <span class="pwa-porter-header">{{ 'Transport Request' | translate }}</span>
+              <span class="pwa-porter-hi"> welcome, {{ patientName | titlecase }} ✨ </span>
+            <div class="pickup-highlight">
+                <span class="pickup-icon">📍</span>
+                    <span style="font-weight: 600;" class="pickup-text ovi-fnt-sze14">{{ locationName | titlecase }}</span>
+            </div>
+        </div>
+    </div>
+        <div class="card">
+            <form class="login-section" [formGroup]="requestForm" novalidate autocomplete="off">
+                <div class="form-wrapper">
+                    <!-- <div>
+                        <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family" appearance="outline">
+                            <mat-label>{{"Cetegory"|translate}}</mat-label>
+                            <mat-select formControlName="requestCategory">
+                                <mat-option *ngFor="let type of requestTypes" [value]="type.code">
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field> 
+                    </div> -->
+                    <!-- <div>
+                        <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family" appearance="outline">
+                            <mat-label>{{"Source"|translate}}</mat-label>
+                            <input matInput  formControlName="sourceId">
+                        </mat-form-field> 
+                    </div> -->
+                    <div class="ovi-lbl-text-size ovi-font-family" style="margin-left: -5px;">
+                        <mat-radio-group formControlName="requestCategory" class="type-radio-group" (change)="onRequestCategoryChange($event)">
+                        <mat-radio-button *ngFor="let type of requestTypes" [value]="type.code" class="type-chip api-chip">
+                            <span class="ovi-fnt-sze14" *ngIf="type.code === 'PR-AT'">🧰</span>
+                            <span class="ovi-fnt-sze14" *ngIf="type.code === 'PR-OT'">📁</span>
+                            <span class="ovi-fnt-sze14" *ngIf="type.code === 'PR-PA'">👤</span>
+                            <span class="ovi-fnt-sze14" *ngIf="type.code === 'PR-SE'">⚙️</span>
+                            {{ type.value | translate }}
+                        </mat-radio-button>
+                
+                    </mat-radio-group>
+                        
+                    </div>
+                    <div *ngIf="mode != 'PR-SE'"  class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> 👤 {{"Patient Name / MR Number" |translate}}</mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput  formControlName="patientName">
+                        </mat-form-field> 
+                    </div>
+
+                    <div *ngIf="mode == 'PR-SE'" class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> 🧰 {{"Service Group"|translate}}</mat-label>
+                        <mat-form-field appearance="outline">
+                            <mat-select formControlName="serviceGroupId" (selectionChange)="getAvailableServices($event.value)">
+                                <mat-option *ngFor="let type of serviceGroupList" [value]="type.code">
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field> 
+                    </div>
+
+                    <div *ngIf="mode == 'PR-SE'" class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> ⚙️ {{"Service"|translate}}</mat-label>
+                        <mat-form-field appearance="outline">
+                            <mat-select formControlName="assetCategory" (selectionChange)="getPoolName($event.value);">
+                                <mat-option *ngFor="let type of serviceFilterList" [value]="type.code">
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field> 
+                    </div>
+
+
+                    <div class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label > 🏢 {{"Destination"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput type="text" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Where to?'|translate" 
+                            formControlName="destinationId" (keyup)="getLocationCheck($event.target.value)" [matAutocomplete]="auto" (blur)="validateSelection()">
+                            <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayLocationName" >
+                                <mat-option *ngFor="let list of locationList"  [value]="list">{{list.fullName}}</mat-option>
+                            </mat-autocomplete>
+                             <mat-error *ngIf="!requestForm.controls.destinationId.valid">
+                                <span [hidden]="!requestForm.controls['destinationId'].errors.required">
+                                    {{"Destination required"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field> 
+                    </div>
+                <div *ngIf="mode != 'PR-SE'" class="ovi-lbl-text-size ovi-font-family">
+                    <mat-label>⚙️ {{"Service" | translate}}</mat-label>
+                
+                    <mat-radio-group formControlName="assetCategory" class="service-radio-group">
+                
+                        <mat-radio-button *ngFor="let type of assetCategoryList" [value]="type.code" class="service-chip api-chip">
+                            <span class="ovi-fnt-sze18" *ngIf="type.code === 'AT-STR'">🛌</span>
+                            <span class="ovi-fnt-sze18" *ngIf="type.code === 'AT-WH'">👨‍🦽‍➡️</span>
+                            {{ type.value | translate }}
+                        </mat-radio-button>
+
+                        <mat-radio-button [value]="null" class="service-chip api-chip">
+                            <span class="ovi-fnt-sze18">📭</span>
+                            {{"None" | translate}}
+                        </mat-radio-button>
+                
+                    </mat-radio-group>
+                </div>
+
+                    <div class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label  > 📝 {{"Description"|translate}}</mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput type="textarea"  formControlName="comments" aria-rowcount="2">
+                        </mat-form-field> 
+                    </div>
+                    <div *ngIf="poolNameList?.length && mode != 'PR-SE'" class="pool-section">
+                    
+                        <mat-label class="section-label">
+                            <mat-icon class="pool-icon">account_tree</mat-icon>
+                            {{"Pool Name" | translate}}
+                        </mat-label>
+                    
+                        <mat-radio-group formControlName="poolName" class="pool-radio-group">
+                            <mat-radio-button *ngFor="let type of poolNameList" [value]="type.code" class="pool-chip">
+                                {{ type.value | translate }}
+                            </mat-radio-button>
+                        </mat-radio-group>
+                    
+                    </div>
+                    <div *ngIf="mode != 'PR-SE'" class="roundtrip-wrapper">
+                        <mat-checkbox formControlName="isRoundTrip">
+                            {{"Roundtrip Transport"|translate}}
+                        </mat-checkbox>
+                    </div>
+
+                    <!-- <div>
+                        <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family" appearance="outline">
+                            <mat-label  >{{"Cetegory"|translate}}</mat-label>
+                            <input matInput  formControlName="requestCategory">
+                        </mat-form-field> 
+                    </div> -->
+                    
+                </div>
+            </form>
+        </div>
+        <div style="width: 100%;max-width: 431px;">
+            <button mat-button class="btn ovi-font-family" appDebounceClick (debounceClick)="postPorterRequest()" cdkFocusInitial 
+            [debounceTime]="1000" [disabled]="requestForm.invalid">{{"SUBMIT"|translate}}</button>
+        </div>
+        </div>
+
+
+</div>

@@ -1,0 +1,175 @@
+<div class="ovi-font-family">
+    <div style="padding: 5px 0;">
+        <div class="filter-item-box filter-box1-box2" style="align-items: center;">
+            <div id="filter-box1" style="min-width: 50px;"> {{"Location"|translate}} </div>
+            <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 180px  !important;">
+                <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Locations'|translate"
+                        [formControl]="selectedLocation" multiple (openedChange)="openedChange($event)"
+                        [disabled]="locationList?.length === 1">
+                        <mat-option>
+                            <ngx-mat-select-search [ngModel]="locationSearch" (ngModelChange)="applyFilter($event)"
+                                [placeholderLabel]="'Search....'|translate"
+                                [noEntriesFoundLabel]="'No matching options'">
+                            </ngx-mat-select-search>
+                        </mat-option>
+                        <mat-option *ngFor="let location of locationList" [value]="location.id">
+                            {{location.name}}, {{location.floorName}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+    <mat-grid-list class="grid-list-container" cols="100" gutterSize="30px">
+        <mat-grid-tile class="grid-title-container" [colspan]="24">
+            <div class="patient-q-title">
+                <span>{{"IN PROGRESS"|translate}}</span>
+                <span *ngIf="inprogressDetail" class="count-box">{{inprogressDetail.length}}</span>
+            </div>
+            <div class="queue-content">
+                <mat-card *ngFor="let obj of inprogressDetail" class="workList-card" appearance="outlined">
+                    <div class="card-content">
+                        <div class="content-line-1">
+                            <span class="title-header-color" (keydown.enter)="fixClick()" (click)="obj.visitTypeId!= 'VT-TK'?getPatientDetails(obj) : ''">{{obj.patientName}}</span>
+                            <span style="display: flex; align-items: center; gap: 5px;">
+                                <span>{{obj.visitTokenNo}}</span>
+                                <queue-status-list (updateStatus)="openedChange(false)" [menu]="true"
+                                    (isParallel)="getParallel($event)" [locationPending]="false"
+                                    [queueId]="obj.patientQueueId" [currentStatus]="'QS-IP'"
+                                    [visitTypeId]="obj.visitTypeId" [locationId]="obj.testLocationId"
+                                    [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest"
+                                    [dqtowerconfig]="dqtowerconfig" [patientTestDetail]="obj"
+                                    [changeLocation]="this.changeLocation">
+                                </queue-status-list>
+                            </span>
+                        </div>
+                        <div class="content-line-2">
+                            <span class="uhid-line">
+                                <span *ngIf="obj.gender" class="material-icons gender-icon"
+                                    [ngStyle]="{'color': obj.gender === 'Male' ? '#1f79d1' : '#ff2cce'}">
+                                    {{obj.gender === 'Male' ? 'male' : 'female'}}</span>
+                                <span style="color: #3A7AFE">{{obj.uhid}}</span>
+                                <span style="display: flex;">
+                                    <img *ngIf="obj.visitTypeId == 'VT-HC'" height="16px" width="16px" src="/assets/Alert/hear-monitor.svg"
+                                        alt="hear-monitor" />
+                                    <img *ngIf="obj.visitTypeId == 'VT-IP'" height="16px" width="16px" src="/assets/Alert/hear-monitor.svg"
+                                    alt="hear-monitor" />
+                                    <img *ngIf="obj.visitTypeId == 'VT-TK'" height="16px" width="16px" src="/assets/Alert/hear-monitor.svg"
+                                    alt="hear-monitor" />
+                                    <img *ngIf="obj.visitTypeId == 'VT-OP'" height="16px" width="16px" src="/assets/Alert/hear-monitor.svg"
+                                    alt="hear-monitor" />
+                                </span>
+                            </span>
+                            <span (click)="obj.visitTypeId == 'VT-TK' ? updateTokenStatus(obj, 'QS-CO') : toCheckout(obj.patientQueueId)"
+                              style="cursor: pointer; display: flex;" (keydown.enter)="fixClick()">
+                              <img height="16px" width="16px" src="/assets/Alert/ovi-logout.svg" alt="out" />
+                            </span>
+                        </div>
+                        <div class="content-line-3">
+                            <span style="font-weight: 600">{{obj.testLocationName}}</span>
+                            <span class="text-short">({{obj.testName}})</span>
+                        </div>
+                    </div>
+                </mat-card>
+            </div>
+        </mat-grid-tile>
+
+        <mat-grid-tile class="grid-title-container" [colspan]="51">
+            <div class="patient-q-title">
+                <span>{{"READY TO GO / Next / WAITING / PARTIAL COMPLETE"|translate}}</span>
+                <span *ngIf="waitingDetail" class="count-box">{{waitingDetail.length}}</span>
+            </div>
+            <div style="padding: 8px; height: calc(100% - 60px);overflow: auto;">
+                <mat-grid-list class="middel-grid-container" cols="2" rowHeight="78px" [gutterSize]="'7px'">
+                    <mat-grid-tile class="sub" *ngFor="let obj of waitingDetail">
+                        <mat-card class="workList-card" appearance="outlined">
+                            <div class="card-content">
+                                <div class="content-line-1">
+                                    <span class="title-header-color" (keydown.enter)="fixClick()" (click)="obj.visitTypeId!= 'VT-TK'?getPatientDetails(obj) : ''">{{obj.patientName}}</span>
+                                    <span style="display: flex; align-items: center; gap: 5px;">
+                                        <span>{{obj.visitTokenNo}}</span>
+                                        <queue-status-list style="margin-right: -3px;" (updateStatus)="openedChange(false)"
+                                            (isParallel)="getParallel($event)" [locationPending]="false"
+                                            [queueId]="obj.patientQueueId" [currentStatus]="obj.patientStatusId"
+                                            [visitTypeId]="obj.visitTypeId" [locationId]="obj.testLocationId"
+                                            [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest"
+                                            [dqtowerconfig]="dqtowerconfig">
+                                        </queue-status-list>
+                                    </span>
+                                </div>
+                                <div class="content-line-2">
+                                    <span class="uhid-line">
+                                        <span *ngIf="obj.gender" class="material-icons gender-icon"
+                                            [ngStyle]="{'color': obj.gender === 'Male' ? '#1f79d1' : '#ff2cce'}">
+                                            {{obj.gender === 'Male' ? 'male' : 'female'}}</span>
+                                        <span style="color: #3A7AFE">{{obj.uhid}}</span>
+                                        <span style="display: flex;">
+                                            <img *ngIf="obj.visitTypeId == 'VT-HC'" height="16px" width="16px" src="/assets/Alert/hear-monitor.svg"
+                                                alt="hear-monitor" />
+                                        </span>
+                                    </span>
+                                    <span (click)="obj.visitTypeId == 'VT-TK' ? updateTokenStatus(obj, 'QS-IP') :toCheckin(obj, obj.testLocationId, 'QS-IP')"
+                                      style="cursor: pointer; display: flex;" (keydown.enter)="fixClick()">
+                                      <img height="16px" width="16px" src="/assets/Alert/login.svg" alt="out" />
+                                    </span>
+                                </div>
+                                <div class="content-line-3">
+                                    <span *ngIf="obj.testLocationName" style="font-weight: 600;" >{{obj.testLocationName}}</span>
+                                    <span *ngIf="obj.testName" class="text-short">({{obj.testName}})</span>
+                                </div>
+                            </div>
+                        </mat-card>
+                    </mat-grid-tile>
+                </mat-grid-list>
+            </div>
+        </mat-grid-tile>
+
+        <mat-grid-tile class="grid-title-container" [colspan]="24">
+            <div class="patient-q-title">
+                <span>{{"PENDING"|translate}}</span>
+                <span *ngIf="pendingDetail" class="count-box">{{pendingDetail.length}}</span>
+            </div>
+            <div class="queue-content">
+                <mat-card *ngFor="let obj of pendingDetail" class="workList-card" appearance="outlined">
+                    <div class="card-content">
+                        <div class="content-line-1">
+                            <span class="title-header-color" (keydown.enter)="fixClick()" (click)="obj.visitTypeId!= 'VT-TK'?getPatientDetails(obj) : ''">{{obj.patientName}}</span>
+                            <span style="display: flex; align-items: center; gap: 5px;">
+                                <span>{{obj.visitTokenNo}}</span>
+                                <queue-status-list style="margin-right: -3px;" (updateStatus)="openedChange(false)"
+                                    (isParallel)="getParallel($event)" [locationPending]="false"
+                                    [queueId]="obj.patientQueueId" [currentStatus]="'QS-PE'"
+                                    [visitTypeId]="obj.visitTypeId" [locationId]="obj.testLocationId"
+                                    [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest"
+                                    [dqtowerconfig]="dqtowerconfig" [patientTestDetail]="obj"
+                                    [changeLocation]="this.changeLocation">
+                                </queue-status-list>
+                            </span>
+                        </div>
+                        <div class="content-line-2">
+                            <span class="uhid-line">
+                                <span *ngIf="obj.gender" class="material-icons gender-icon"
+                                    [ngStyle]="{'color': obj.gender === 'Male' ? '#1f79d1' : '#ff2cce'}">
+                                    {{obj.gender === 'Male' ? 'male' : 'female'}}</span>
+                                <span style="color: #3A7AFE">{{obj.uhid}}</span>
+                                <span style="display: flex;">
+                                    <img *ngIf="obj.visitTypeId == 'VT-HC'" height="16px" width="16px" src="/assets/Alert/hear-monitor.svg"
+                                        alt="hear-monitor" />
+                                </span>
+                            </span>
+                            <span (click)="obj.visitTypeId == 'VT-TK' ? updateTokenStatus(obj, 'QS-IP') : toCheckin(obj, obj.testLocationId, 'QS-IP')"
+                              style="cursor: pointer; display: flex;" (keydown.enter)="fixClick()">
+                              <img height="16px" width="16px" src="/assets/Alert/login.svg" alt="out" />
+                            </span>
+                        </div>
+                        <div class="content-line-3">
+                            <span style="font-weight: 600">{{obj.testLocationName}}</span>
+                            <span class="text-short">({{obj.testName}})</span>
+                        </div>
+                    </div>
+                </mat-card>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+</div>

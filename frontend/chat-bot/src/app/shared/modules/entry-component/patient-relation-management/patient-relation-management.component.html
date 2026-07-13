@@ -1,0 +1,217 @@
+<div class="input-component-holder ovi-font-family prm-dialog-container">
+
+  <mat-toolbar class="input-header">
+    <div class="header-name">{{ "Patient Relation Management" | translate }}</div>
+    <div class="header-close">
+      <button mat-icon-button mat-dialog-close class="ie-close-icon">
+        <mat-icon class="icon-style">highlight_off</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <div class="prm-body">
+
+    <div class="prm-left-panel">
+
+      <div class="patient-info-wrapper">
+        <ng-container *ngIf="selectedPatient; else noPatient">
+          <div class="patient-card">
+            <div class="patient-avatar" style="height: 30px;">
+              <mat-icon style="padding: 0;">account_circle</mat-icon>
+            </div>
+            <div class="patient-details">
+              <span class="patient-name">{{ selectedPatient?.patientName }}</span>
+              <span class="patient-id" *ngIf="selectedPatient?.id">ID: {{ selectedPatient?.id }}</span>
+            </div>
+          </div>
+        </ng-container>
+        <ng-template #noPatient>
+          <div class="no-patient-placeholder">
+            <mat-icon class="placeholder-icon">person_outline</mat-icon>
+            <span>{{ "No patient selected" | translate }}</span>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <div class="prm-right-panel">
+
+      <div class="prm-upper-section" [formGroup]="contactForm">
+
+        <div class="ovi-row-gap">
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">
+              {{ "Patient Name" | translate }}
+              <span class="mandatory-field">*</span>
+            </mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput [value]="selectedPatient?.patientName" disabled>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "First Name" | translate }}<span
+                class="mandatory-field">*</span></mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput formControlName="firstName" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'First Name' | translate" />
+              <mat-error class="error-txt-1">{{ "First Name is required" | translate }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Middle Name" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput formControlName="middleName" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Middle Name' | translate" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="ovi-row-gap">
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Last Name" | translate }}<span
+                class="mandatory-field">*</span></mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput formControlName="lastName" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Last Name' | translate" />
+              <mat-error class="error-txt-1">{{ "Last Name is required" | translate }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Relationship" | translate }}<span
+                class="mandatory-field">*</span></mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <mat-select formControlName="relationshipId" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Relationship' | translate">
+                <mat-option *ngFor="let r of relationshipList" [value]="r.code">{{ r.value }}</mat-option>
+              </mat-select>
+              <mat-error class="error-txt-1">{{ "Relationship is required" | translate }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Birth Date" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput [matDatepicker]="birthPicker" formControlName="birthDate" appPlaceholder
+                [showPlaceholder]="false" [placeholderText]="'Birth Date' | translate" />
+              <mat-datepicker-toggle matSuffix [for]="birthPicker"></mat-datepicker-toggle>
+              <mat-datepicker #birthPicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="ovi-row-gap">
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Gender" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <mat-select formControlName="gender" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Gender' | translate">
+                <mat-option *ngFor="let g of genderList" [value]="g.code">{{ g.value }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display:flex; gap:6px;">
+            <div style="width:60px; flex-shrink:0;">
+              <mat-label class="ovi-lbl-text-size">{{ "Code" | translate }}</mat-label>
+              <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                <input matInput formControlName="countryCode" [matAutocomplete]="countryCode" appPlaceholder
+                  [showPlaceholder]="false" [placeholderText]="'Code' | translate" />
+                <mat-autocomplete #countryCode="matAutocomplete" panelWidth="250px">
+                  <mat-option *ngFor="let c of countrycodeList" [value]="c.code"
+                    (click)="getPhoneValidate(c.code, 'code')">{{ c.code }} ({{ c.value }})</mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+            </div>
+            <div style="flex:1; min-width:0;">
+              <mat-label class="ovi-lbl-text-size">{{ "Mobile" | translate }}<span
+                  class="mandatory-field">*</span></mat-label>
+              <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                <input matInput formControlName="mobileNo" appPlaceholder [showPlaceholder]="false"
+                  [placeholderText]="'Phone' | translate" />
+                <mat-error class="error-txt-1">{{ "Phone is required" | translate }}</mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display:flex; gap:6px;">
+            <div style="width:60px; flex-shrink:0;">
+              <mat-label class="ovi-lbl-text-size">{{ "Code" | translate }}</mat-label>
+              <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                <input matInput formControlName="altCountryCode" placeholder="+91" [matAutocomplete]="altCountryCode" />
+                <mat-autocomplete #altCountryCode="matAutocomplete" panelWidth="250px">
+                  <mat-option *ngFor="let c of countrycodeList" [value]="c.code"
+                    (click)="getPhoneValidate(c.code, 'alt')">{{ c.code }} ({{ c.value }})</mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+            </div>
+            <div style="flex:1; min-width:0;">
+              <mat-label class="ovi-lbl-text-size">{{ "Alternate Phone" | translate }}</mat-label>
+              <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                <input matInput formControlName="altPhone" appPlaceholder [showPlaceholder]="false"
+                  [placeholderText]="'Alternate Phone' | translate" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="ovi-row-gap">
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Email" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput type="email" formControlName="email" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Email' | translate" />
+              <mat-error class="error-txt-1">{{ "Enter a valid email" | translate }}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Address" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <textarea matInput formControlName="address" rows="2" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Address' | translate"></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Remarks" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <textarea matInput formControlName="notes" rows="2" appPlaceholder [showPlaceholder]="false"
+                [placeholderText]="'Notes' | translate"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="prm-last-row">
+          <div class="prm-checkbox-group ovi-fnt-sze12" style="display: flex;gap: 47px;margin-right: 40px;">
+            <mat-checkbox formControlName="isPrimaryContact">{{ "Primary Contact" | translate }}</mat-checkbox>
+            <mat-checkbox formControlName="isEmergencyContact">{{ "Emergency Contact" | translate }}</mat-checkbox>
+            <mat-checkbox formControlName="isLegalGuardian">{{ "Legal Guardian" | translate }}</mat-checkbox>
+            <mat-checkbox formControlName="isAuthorizedPickup">{{ "Authorized Pickup" | translate }}</mat-checkbox>
+          </div>
+          <div class="prm-form-btns">
+            <button mat-button class="cancel-btn" (click)="cancelRelation()">{{ "Cancel" | translate }}</button>
+            <button mat-button class="active-btn" [disabled]="contactForm.invalid" appDebounceClick [debounceTime]="500"
+              (debounceClick)="addRelation()"> {{ editId ? ('Update' | translate) : ('Add' | translate) }}</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="prm-lower-section" style="margin-top:15px">
+        <div class="prm-table-area">
+          <angular-table-component [id]="'patient-relaiton-management'" [type]="'ng-table'" [tableData]="tabledata"
+            [columns]="DisplayColumn" [columnData]="Column" (triggerAction)="triggerAction($event)">
+          </angular-table-component>
+        </div>
+      </div>
+      <div class="ovi-pop-ftr">
+        <button mat-button class="active-btn" mat-dialog-close>{{ "Cancel" | translate }}</button>
+        <button mat-button class="active-btn" (debounceClick)="onSave()" appDebounceClick [debounceTime]="300">{{ "Save"
+          | translate }}</button>
+      </div>
+    </div>
+  </div>
+</div>

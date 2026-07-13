@@ -1,0 +1,213 @@
+<div class="ovi-font-family">
+  <div class="close-slider">
+    <span class="close-slider-act-btn" (click)="close()" (keydown.enter)="fixClick()"></span>
+  </div>
+  <div class="title">{{ data?.type === 'modify' ? 'Modify' : 'Create' }} Routine - {{data?.tabType}}</div>
+
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="routineForm">
+    <div class="ovi-row-gap" style="display: flex; gap: 15px; padding: 5px 3px;">
+      
+      <div *ngIf="selectedContext == 'RC-LOC'" class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+          <mat-label  class="ovi-lbl-text-size">{{"Location"|translate}}<span
+                  class="mandatory-field">*</span></mat-label>
+          <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" id="locationSearch"
+                  formControlName="locationId" appTypeHit (typeHit)="searchLocationList($event)"
+                  [matAutocomplete]="loc" autocomplete="off" [readonly]="data.id && data.entityById">
+              <mat-autocomplete autoActiveFirstOption
+                  [displayWith]="locationEnabled === true ? getLocationList.bind(locationList) : ''"
+                  #loc="matAutocomplete">
+                  <mat-option *ngFor="let option of locationList" [value]="option.id">
+                      <div class="act-wid-styl">{{option.fullName}}</div>
+                  </mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="routineForm.controls['locationId'].invalid">
+                  <span *ngIf="routineForm.get('locationId')?.hasError('invalidLocation')">
+                      {{"Please select a value from the options"|translate}}.
+                  </span>
+                  <span *ngIf="routineForm.controls['locationId'].hasError('required')">
+                      {{"Location Name is required" | translate}}.
+                  </span>
+              </mat-error>
+          </mat-form-field>
+      </div>
+      <div *ngIf="selectedContext == 'RC-AST'" class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+          <mat-label  class="ovi-lbl-text-size">{{"Asset"|translate}}<span
+                  class="mandatory-field">*</span></mat-label>
+          <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset'|translate" id="assetSearch"
+                  formControlName="assetId" appTypeHit (typeHit)="searchAssetList($event)"
+                  [matAutocomplete]="asset" autocomplete="off" [readonly]="data.id || data.entityById">
+              <mat-autocomplete autoActiveFirstOption
+                  [displayWith]="assetNameEnabled === true ? getAssetList.bind(assetList) : ''"
+                  #asset="matAutocomplete">
+                  <mat-option *ngFor="let option of assetList" [value]="option.assetId">
+                      <div class="act-wid-styl">{{option.assetName}}</div>
+                  </mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="routineForm.controls.assetId.invalid">
+                  <span  [hidden]="!routineForm.get('assetId').hasError('invalidAsset')">{{"Please
+                      select
+                      value from the option"|translate}}</span>
+                  <span  [hidden]="!routineForm.controls['assetId'].errors.required">{{"Asset Name
+                      is
+                      required"|translate}}.</span>
+              </mat-error>
+          </mat-form-field>
+      </div>
+      <div *ngIf="selectedContext == 'RC-PAT'" class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+          <mat-label  class="ovi-lbl-text-size">{{"Patient"|translate}}<span
+                  class="mandatory-field">*</span></mat-label>
+          <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient'|translate" id="patientSearch"
+                  formControlName="patientId" appTypeHit (typeHit)="searchPatientList($event)"
+                  [matAutocomplete]="patient" autocomplete="off" [readonly]="data.id || data.entityById">
+              <mat-autocomplete autoActiveFirstOption
+                  [displayWith]="patientNameEnabled === true ? getPatientList.bind(patientList) : ''"
+                  #patient="matAutocomplete">
+                  <mat-option *ngFor="let option of patientList" [value]="option.id">
+                      <div class="act-wid-styl">{{option.fullName}}</div>
+                  </mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="routineForm.controls.patientId.invalid">
+                  <span  [hidden]="!routineForm.get('patientId').hasError('invalidPatient')">{{"Please
+                      select
+                      value from the option"|translate}}</span>
+                  <span  [hidden]="!routineForm.controls['patientId'].errors.required">{{"Patient
+                      Name is
+                      required"|translate}}.</span>
+              </mat-error>
+          </mat-form-field>
+      </div>
+      <div *ngIf="selectedContext == 'RC-SAF'" class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+          <mat-label  class="ovi-lbl-text-size">{{"Staff"|translate}}<span
+                  class="mandatory-field">*</span></mat-label>
+          <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+              <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Staff'|translate" id="staffSearch"
+                  formControlName="staffId" appTypeHit (typeHit)="searchStaffList($event)"
+                  [matAutocomplete]="staff" autocomplete="off" [readonly]="data.id || data.entityById">
+              <mat-autocomplete autoActiveFirstOption
+                  [displayWith]="staffNameEnabled === true ? getSatffList.bind(staffList) : ''"
+                  #staff="matAutocomplete">
+                  <mat-option *ngFor="let option of staffList" [value]="option.id">
+                      <div class="act-wid-styl">{{option.name}}</div>
+                  </mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="routineForm.controls.staffId.invalid">
+                  <span  [hidden]="!routineForm.get('staffId').hasError('invalidStaff')">{{"Please
+                      select
+                      value from the option"|translate}}</span>
+                  <span  [hidden]="!routineForm.controls['staffId'].errors.required">{{"Patient
+                      Name is
+                      required"|translate}}.</span>
+              </mat-error>
+          </mat-form-field>
+      </div>
+
+      <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label  class="ovi-lbl-text-size">
+          {{ 'Routine Type' | translate }}<span class="mandatory-field">*</span>
+        </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Type'|translate"
+          formControlName="routineTypeId" [disabled]="data?.id"(selectionChange)="getRoutineList($event)">
+            <mat-option *ngFor="let item of routineTypeList" [value]="item.code">
+              {{ item.value }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label  class="ovi-lbl-text-size">{{ 'Routine' | translate }}<span class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine'|translate"
+            formControlName="routineId" [disabled]="data?.id" (selectionChange)="getRoutineActivityList($event)">
+            <mat-option *ngFor="let item of routineList" [value]="item.id">
+              {{ item.name }} <span class="ovi-fnt-sze11" style="color: #646464">({{ item.scheduleTypeName }})</span>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label  class="ovi-lbl-text-size">{{ 'Start Date' | translate }} <span class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh datepicker" appearance="outline">
+          <input matInput [matDatepicker]="frompicker" [min]="data?.type =='modify'? null : today" 
+          appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate" formControlName="startDate">
+          <mat-datepicker-toggle matSuffix [for]="frompicker"></mat-datepicker-toggle>
+          <mat-datepicker #frompicker></mat-datepicker>
+          <mat-error *ngIf="routineForm.controls.startDate.hasError('required')">
+            {{ 'From Date is required' | translate }}.
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label  class="ovi-lbl-text-size">{{ 'End Date' | translate }}</mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh datepicker" appearance="outline">
+          <input matInput [matDatepicker]="topicker" [min]="routineForm.controls['startDate'].value"
+          appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate" formControlName="endDate">
+          <mat-datepicker-toggle matSuffix [for]="topicker"></mat-datepicker-toggle>
+          <mat-datepicker #topicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label  class="ovi-lbl-text-size">{{ 'Start Time' | translate }} <span class="mandatory-field">*</span> </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule'|translate" class="time-input" [value]="defaultscheduleTime"
+          [ngxTimepicker]="timepicker" [disableClick]="true" formControlName="scheduleTime">
+          <ngx-material-timepicker-toggle matSuffix [for]="timepicker"></ngx-material-timepicker-toggle>
+          <ngx-material-timepicker #timepicker></ngx-material-timepicker>
+          <mat-error *ngIf="routineForm.controls.scheduleTime.hasError('required')">
+            {{ 'Start Time is required' | translate }}.
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div *ngIf="activityTableData.length">
+      <div class="activity-header">
+        <span class="ovi-fnt-sze13"  style="color: #000000; font-weight: 600; display: flex; gap: 5px">
+          {{ 'Activity List'| translate}}
+          <span class="material-icons ovi-prmry-clr ovi-fnt-sze18" style="padding: 0;cursor: pointer;"(click)="addActivity('')" (keydown.enter)="fixClick()">control_point</span>
+        </span>
+      </div>
+
+      <div class="tab-container" style="padding: 10px 0 !important;">
+        <mat-card class="card-list" *ngFor="let item of activityTableData">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600;">{{ item.activityName }}</span>
+          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="selectedItem = item">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="triggerAction('delete', selectedItem)">{{ "Delete" | translate }}</button>
+            <button mat-menu-item (click)="triggerAction('edit', selectedItem)">{{ "Edit" | translate }}</button>
+            <button mat-menu-item (click)="triggerAction('duplicate', selectedItem)">{{ "Duplicate" | translate }}</button>
+          </mat-menu>
+          </div>
+
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="content-texts">
+              <span class="card-label">{{"Assign To"| translate }}</span>
+              <span class="task-data-text">{{ item?.inchargeName }}</span>
+            </div>
+            <div class="content-texts">
+              <span class="card-label">{{"Schedule Type"| translate }}</span>
+              <span class="task-data-text">{{ item.scheduleTypeName }}</span>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </div>
+
+    <div class="pwa-footer">
+      <button mat-button class="pwa-active-btn" [disabled]="routineForm.invalid" (click)="data?.type === 'modify' ? updateRoutine() : saveRoutine()">
+        {{ data?.type === 'modify' ? 'Update' : 'Create' }}</button>
+      <button mat-button class="pwa-cancel-btn" (click)="close()">{{ "Cancel" | translate }}</button>
+    </div>
+  </div>
+</div>

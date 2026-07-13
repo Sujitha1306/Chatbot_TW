@@ -1,0 +1,224 @@
+<div class="tdt-wrapper" [class]="tableClass" [style.--tdt-size]="tableSize">
+
+  <!-- ── Loading skeleton ─────────────────────────────────────────────────── -->
+  <div class="tdt-skeleton" *ngIf="loading" aria-busy="true">
+    <div class="tdt-skeleton-header">
+      <div class="tdt-skeleton-cell" *ngFor="let col of columns" [style.width]="col.width ?? 'auto'"></div>
+    </div>
+    <div class="tdt-skeleton-row" *ngFor="let _ of skeletonRows">
+      <div class="tdt-skeleton-cell" *ngFor="let col of columns"></div>
+    </div>
+  </div>
+
+  <!-- ── Table ────────────────────────────────────────────────────────────── -->
+  <div class="tdt-scroll-container" *ngIf="!loading">
+    <table mat-table [dataSource]="dataSource" matSort class="tdt-table"
+           [trackBy]="trackById"
+           (matSortChange)="sortChange.emit($event)">
+
+      <!-- ── Checkbox column ──────────────────────────────────────────────── -->
+      <ng-container matColumnDef="__select" sticky>
+        <th mat-header-cell *matHeaderCellDef class="tdt-header-cell tdt-select-cell">
+          <mat-checkbox
+            [checked]="allSelected"
+            [indeterminate]="someSelected"
+            (change)="toggleAll()"
+            aria-label="Select all rows">
+          </mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let row" class="tdt-body-cell tdt-select-cell"
+            (click)="$event.stopPropagation()">
+          <mat-checkbox
+            [checked]="selection.isSelected(row)"
+            (change)="toggleRow(row)"
+            [aria-label]="'Select row'">
+          </mat-checkbox>
+        </td>
+      </ng-container>
+
+      <!-- ── Dynamic columns ─────────────────────────────────────────────── -->
+      <ng-container *ngFor="let col of columns"
+                    [matColumnDef]="col.key"
+                    [sticky]="isSticky(col)"
+                    [stickyEnd]="isStickyEnd(col)">
+
+        <!-- Header cell -->
+        <th mat-header-cell *matHeaderCellDef
+            class="tdt-header-cell"
+            [mat-sort-header]="col.sortable ? col.key : null"
+            [disabled]="!col.sortable"
+            [style.width]="col.width"
+            [style.min-width]="col.minWidth"
+            [style.text-align]="col.align ?? 'left'">
+
+          <ng-container *ngIf="col.headerIcon?.matIcon">
+            <mat-icon class="tdt-header-icon"
+                      [title]="col.headerIcon.tooltip ?? col.header ?? col.key">
+              {{ col.headerIcon.matIcon }}
+            </mat-icon>
+          </ng-container>
+
+          <ng-container *ngIf="col.headerIcon?.src">
+            <img class="tdt-header-img"
+                 [src]="col.headerIcon.src"
+                 [alt]="col.header ?? col.key"
+                 [title]="col.headerIcon.tooltip ?? col.header ?? col.key">
+          </ng-container>
+
+          <ng-container *ngIf="!col.headerIcon && col.key != 'select'">
+            {{ col.header ?? col.key | translate }}
+          </ng-container>
+        </th>
+
+        <!-- Data cell -->
+        <td mat-cell *matCellDef="let row"
+            class="tdt-body-cell"
+            [class.tdt-truncate]="col.truncate"
+            [class.tdt-cell-link]="col.clickable"
+            [style.width]="col.width"
+            [style.min-width]="col.minWidth"
+            [style.max-width]="col.maxWidth"
+            [style.text-align]="col.align ?? 'left'"
+            (click)="onCellClick(col, row)">
+
+          <!-- Custom projected template wins if provided -->
+          <ng-container *ngIf="getCellTemplate(col.key) as tpl; else builtinCell">
+            <ng-container [ngTemplateOutlet]="tpl"
+                          [ngTemplateOutletContext]="{ $implicit: row, col: col }">
+            </ng-container>
+          </ng-container>
+
+          <!-- Built-in type renderers -->
+          <ng-template #builtinCell>
+            <ng-container [ngSwitch]="col.type">
+
+              <!-- Date types -->
+              <span *ngSwitchCase="'date'">
+                {{ row[col.key] | date: (col.dateFormat ?? dateFormat) }}
+              </span>
+
+              <span *ngSwitchCase="'datetime'">
+                {{ row[col.key] | date: (col.dateFormat ?? dateTimeFormat) }}
+              </span>
+
+              <span *ngSwitchCase="'time'">
+                {{ row[col.key] | date: (col.dateFormat ?? timeFormat) }}
+              </span>
+
+               <span *ngSwitchCase="'status'">
+                {{ row[col.key] ? 'Active' : 'Inactive' | translate }}
+              </span>
+
+              <span *ngSwitchCase="'cellColor'" [style.color]="col.colorCellMap?.[row[col.key]] || 'inherit'">
+                {{ row[col.key] }}
+              </span>
+
+              <!-- Badge pill -->
+              <span *ngSwitchCase="'badge'" class="tdt-badge" [ngStyle]="getBadgeStyle(col, row)">
+                {{ row[col.key] }}
+              </span>
+
+              <!-- Inline bar -->
+              <ng-container *ngSwitchCase="'bar'">
+                <div class="tdt-bar-wrap">
+                  <div class="tdt-bar-track">
+                    <div class="tdt-bar-fill"
+                         [style.width.%]="getBarWidth(col, row)"
+                         [style.background]="col.bar?.color ?? 'var(--tdt-accent)'">
+                    </div>
+                  </div>
+                  <span *ngIf="col.bar?.showLabel" class="tdt-bar-label">
+                    {{ getBarLabel(col, row) }}
+                  </span>
+                </div>
+              </ng-container>
+
+              <!-- Mat icon cell -->
+              <ng-container *ngSwitchCase="'icon'">
+                <span class="tdt-cell-icon-wrap"
+                      [title]="getCellIconTooltip(col, row)">
+                  <mat-icon *ngIf="getCellMatIcon(col, row) as ico"
+                            class="tdt-cell-mat-icon"
+                            [style.color]="getCellIconColor(col, row)"
+                            [style.font-size]="col.icon?.size ?? '20px'"
+                            [style.width]="col.icon?.size ?? '20px'"
+                            [style.height]="col.icon?.size ?? '20px'">
+                    {{ ico }}
+                  </mat-icon>
+                  <!-- Fallback: value text if no icon resolved -->
+                  <span *ngIf="!getCellMatIcon(col, row)">{{ row[col.key] }}</span>
+                </span>
+              </ng-container>
+
+              <!-- Image cell -->
+              <ng-container *ngSwitchCase="'image'">
+                <span class="tdt-cell-icon-wrap"
+                      [title]="getCellIconTooltip(col, row)">
+                  <img *ngIf="getCellImgSrc(col, row) as src"
+                       class="tdt-cell-img"
+                       [src]="src"
+                       [style.width]="col.icon?.size ?? '20px'"
+                       [style.height]="col.icon?.size ?? '20px'"
+                       [alt]="getCellIconTooltip(col, row)">
+                </span>
+              </ng-container>
+
+              <!-- Default: plain text -->
+              <span *ngSwitchDefault [title]="col.truncate ? (row[col.key] ?? '') : ''">
+                {{ row[col.key] }}
+              </span>
+
+            </ng-container>
+          </ng-template>
+
+        </td>
+      </ng-container>
+
+      <!-- ── Row definitions ─────────────────────────────────────────────── -->
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"
+          class="tdt-header-row">
+      </tr>
+
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          class="tdt-row"
+          [class.tdt-row--active]="row[rowId] === activeRowId"
+          [class.tdt-row--selected]="selection.isSelected(row)"
+          [class.tdt-row--clickable]="rowClickable"
+          [class.tdt-row--colored]="!!getRowBg(row)"
+          [style.background]="getRowBg(row)"
+          (click)="rowClickable && onRowClick(row)"
+          (dblclick)="rowDblClickable && onRowDblClick(row)">
+      </tr>
+
+      <!-- Empty state row -->
+      <tr class="tdt-no-data-row" *matNoDataRow>
+        <td class="tdt-no-data-cell" [colSpan]="displayedColumns.length">
+          <div class="tdt-empty-state">
+            <svg class="tdt-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="4" width="18" height="3" rx="1.5"/>
+              <rect x="3" y="9" width="18" height="3" rx="1.5" opacity="0.5"/>
+              <rect x="3" y="14" width="12" height="3" rx="1.5" opacity="0.25"/>
+            </svg>
+            <p class="tdt-empty-label">{{ emptyMessage | translate }}</p>
+          </div>
+        </td>
+      </tr>
+
+    </table>
+  </div>
+
+  <!-- ── Paginator ─────────────────────────────────────────────────────────── -->
+  <div class="tdt-footer" *ngIf="pagination && !loading">
+    <mat-paginator
+      [length]="pagination.length"
+      [pageSize]="pagination.pageSize"
+      [pageIndex]="pagination.pageIndex ?? 0"
+      [pageSizeOptions]="pagination.pageSizeOptions ?? [10, 25, 50, 100]"
+      (page)="pageChange.emit({ pageIndex: $event.pageIndex, pageSize: $event.pageSize })"
+      showFirstLastButtons
+      class="tdt-paginator">
+    </mat-paginator>
+  </div>
+
+</div>

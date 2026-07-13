@@ -1,0 +1,551 @@
+<div class="pp-root ovi-font-family">
+
+  <!-- ═══ TOP BAR ════════════════════════════════════════════════════════════ -->
+  <div class="pp-top-bar">
+    <div class="pp-top-bar-left">
+      <span class="pp-title">PRODUCTION PLAN</span>
+      <ng-container *ngIf="salesOrderData">
+        <span class="pp-bc-sep">›</span>
+        <span class="pp-so-chip">{{salesOrderData?.identifier}}</span>
+        <ng-container *ngIf="salesOrderData?.purchaser">
+          <span class="pp-bc-sep">›</span>
+          <span class="pp-bc-text">{{salesOrderData?.purchaser}}</span>
+        </ng-container>
+        <ng-container *ngIf="selectedSubData">
+          <span class="pp-bc-sep">›</span>
+          <span class="pp-bc-text pp-bc-active">{{selectedSubData?.itemMasterName}}</span>
+        </ng-container>
+      </ng-container>
+    </div>
+    <div class="pp-top-bar-right">
+      <button class="pp-btn pp-btn-outline-light" (click)="exportTasks()">
+        <mat-icon class="pp-btn-icon">file_download</mat-icon>Export
+      </button>
+      <button class="pp-btn pp-btn-primary"
+        *ngIf="isEditable && !isRoutine"
+        [disabled]="!isDeliveryDetail"
+        appDebounceClick [debounceTime]="500"
+        (debounceClick)="saveSalesRoutine()">
+        Save Plan
+      </button>
+      <button class="pp-close-btn" (click)="closeDialog()" matTooltip="Close">
+        <mat-icon>highlight_off</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ BANNER INFO BAR ══════════════════════════════════════════════════════ -->
+  <div class="pp-banner" *ngIf="salesOrderData">
+    <div class="pp-banner-item">
+      <div class="pp-banner-label">PURCHASER</div>
+      <div class="pp-banner-value">{{salesOrderData?.purchaser}}</div>
+    </div>
+    <div class="pp-banner-divider"></div>
+    <div class="pp-banner-item">
+      <div class="pp-banner-label">DEPT</div>
+      <div class="pp-banner-value">{{salesOrderData?.requestUserDepartmentName}}</div>
+    </div>
+    <div class="pp-banner-divider"></div>
+    <div class="pp-banner-item">
+      <div class="pp-banner-label">EXPECTED DATE</div>
+      <div class="pp-banner-value">{{salesOrderData?.deliveredDatetime | date:'yyyy-MM-dd'}}</div>
+    </div>
+    <div class="pp-banner-divider"></div>
+    <div class="pp-banner-item">
+      <div class="pp-banner-label">DELIVERY STATUS</div>
+      <div class="pp-banner-value">
+        <span class="pp-delivery-status" [ngClass]="{
+          'ds-pending':    salesOrderData?.deliveryStatusId === 'DL-PEN',
+          'ds-inprogress': salesOrderData?.deliveryStatusId === 'DL-IP',
+          'ds-complete':   salesOrderData?.deliveryStatusId === 'DL-CO'
+        }">{{salesOrderData?.deliveryStatusName}}</span>
+      </div>
+    </div>
+    <div class="pp-banner-divider"></div>
+    <div class="pp-banner-item">
+      <div class="pp-banner-label">TOTAL PROGRESS</div>
+      <div class="pp-banner-value">
+        {{overallProgress}}% &nbsp;({{doneCount}}/{{totalTasksCount}} tasks)
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN CONTENT ══════════════════════════════════════════════════════════ -->
+  <div class="pp-main">
+
+    <!-- ── LEFT SIDEBAR ──────────────────────────────────────────────────── -->
+    <div class="pp-sidebar">
+      <div class="pp-sidebar-title">MANUFACTURING ITEMS</div>
+
+      <!-- Search -->
+      <div class="pp-search-box">
+        <mat-icon class="pp-search-icon">search</mat-icon>
+        <input class="pp-search-input" placeholder="Search items..."
+          [formControl]="searchControl"
+          (input)="applyItemSearch(searchControl.value)" />
+      </div>
+
+      <!-- Filter chips -->
+      <div class="pp-filter-chips">
+        <span class="pp-chip" [class.active]="activeFilter==='all'"        (click)="setFilter('all')">All</span>
+        <span class="pp-chip" [class.active]="activeFilter==='inprogress'" (click)="setFilter('inprogress')">In Progress</span>
+        <span class="pp-chip" [class.active]="activeFilter==='pending'"    (click)="setFilter('pending')">Pending</span>
+        <span class="pp-chip" [class.active]="activeFilter==='done'"       (click)="setFilter('done')">Done</span>
+      </div>
+
+      <!-- Item cards -->
+      <div class="pp-items-list">
+        <div class="pp-item-card" *ngFor="let sub of filteredSubOrderList; let i = index"
+          [class.active]="selectedSubIndex === i"
+          (click)="onSelectSubOrder(sub, i)">
+
+          <div class="pp-item-meta">
+            ITEM-{{sub.itemNo}}
+          </div>
+          <div class="pp-item-name">{{sub.itemMasterName}}</div>
+          <div class="pp-item-detail-row"
+            *ngIf="sub.itemMasterCategoryName || sub.quantity || sub.priorityName">
+            <span *ngIf="sub.itemMasterCategoryName">{{sub.itemMasterCategoryName}}</span>
+            <span *ngIf="sub.quantity"> · Qty: {{sub.quantity}}</span>
+            <span *ngIf="sub.priorityName"> · {{sub.priorityName}} priority</span>
+          </div>
+          <div class="pp-item-footer">
+            <img style="width:16px;cursor:pointer;flex-shrink:0;"
+              [src]="sub.tagId ? '/assets/Alert/common_icons/coaster.svg' : '/assets/Alert/common_icons/coaster-g.svg'"
+              alt="tag" matTooltip="Associate Tag / Asset"
+              (click)="$event.stopPropagation(); openTagAssociate(sub)">
+            <span class="pp-item-task-count" *ngIf="sub.routineId">
+              {{sub.completedCount || 0}}/{{sub.totalCount || 0}} tasks
+            </span>
+            <span class="pp-status-badge" *ngIf="sub.routineId" [ngClass]="{
+              'badge-assigned':   sub.routineStatusId === 'RQ-CR',
+              'badge-inprogress': sub.routineStatusId === 'RQ-IP',
+              'badge-done':       sub.routineStatusId === 'RQ-CO',
+              'badge-pending':    sub.routineStatusId === 'RQ-PEN'
+            }">{{sub.routineStatusName}}</span>
+            <span class="pp-status-badge badge-pending" *ngIf="!sub.routineId">Pending</span>
+          </div>
+        </div>
+
+        <div class="pp-no-items" *ngIf="!filteredSubOrderList?.length">
+          No items found
+        </div>
+      </div>
+
+      <!-- Add item footer -->
+      <div class="pp-add-item-footer">
+        <button class="pp-add-item-btn">
+          <mat-icon>add</mat-icon> Add manufacturing item
+        </button>
+      </div>
+    </div><!-- /sidebar -->
+
+    <!-- ── RIGHT CONTENT ─────────────────────────────────────────────────── -->
+    <div class="pp-content" *ngIf="selectedSubData; else noSelection">
+
+      <!-- Content header -->
+      <div class="pp-content-header">
+        <div class="pp-content-header-left">
+          <div class="pp-item-breadcrumb">
+            ITEM-{{selectedSubData.itemNo}}
+          </div>
+          <div class="pp-content-title">{{selectedSubData.itemMasterName}}</div>
+        </div>
+        <div class="pp-content-header-right">
+          <button class="pp-btn pp-btn-sm pp-btn-ghost"
+            matTooltip="Refresh"
+            *ngIf="!isEditable"
+            (click)="onRefreshClick(selectedSubData.id)">
+            <mat-icon class="pp-btn-icon" [class.rotate-once]="isRotating">refresh</mat-icon>
+          </button>
+          <button class="pp-btn pp-btn-sm pp-btn-ghost"
+            *ngIf="!isRoutine && isEditable"
+            (click)="addTask()">
+            <mat-icon class="pp-btn-icon">add</mat-icon>Task
+          </button>
+          <button class="pp-btn pp-btn-sm pp-btn-success"
+            *ngIf="isRoutine"
+            [matTooltip]="doneCount === totalTasksCount && totalTasksCount > 0 ? 'All tasks completed' : 'Complete next pending task'"
+            (click)="markNextTaskDone()">
+            <mat-icon class="pp-btn-icon">check</mat-icon>Mark Done
+          </button>
+          <button class="pp-btn pp-btn-sm pp-btn-ghost"
+            *ngIf="isRoutine"
+            (click)="editMode()">
+            <mat-icon class="pp-btn-icon">{{isEditable ? 'close' : 'edit'}}</mat-icon>
+          </button>
+          <button class="pp-btn pp-btn-sm pp-btn-ghost"
+            matTooltip="Associate Tag / Asset"
+            (click)="openTagAssociate(selectedSubData)">
+            <img style="width:15px;height:15px;vertical-align:middle;"
+              [src]="selectedSubData?.tagId ? '/assets/Alert/common_icons/coaster.svg' : '/assets/Alert/common_icons/coaster-g.svg'"
+              alt="tag">
+          </button>
+        </div>
+      </div>
+
+      <!-- Item tags -->
+      <div class="pp-item-tags">
+        <span class="pp-tag" *ngIf="selectedSubData.itemMasterRoutineTypeName">
+          <mat-icon class="pp-tag-icon">label</mat-icon>
+          {{selectedSubData.itemMasterRoutineTypeName}}
+        </span>
+        <span class="pp-tag" *ngIf="selectedSubData.priorityName">
+          <mat-icon class="pp-tag-icon">flag</mat-icon>
+          {{selectedSubData.priorityName}} Priority
+        </span>
+        <span class="pp-tag" *ngIf="selectedSubData.quantity">
+          <mat-icon class="pp-tag-icon">inbox</mat-icon>
+          Qty: {{selectedSubData.quantity}}
+        </span>
+        <span class="pp-tag">
+          <mat-icon class="pp-tag-icon">schedule</mat-icon>
+          {{totalTasksCount}} Tasks
+        </span>
+      </div>
+
+      <!-- Completion bar -->
+      <div class="pp-completion" *ngIf="isRoutine">
+        <span class="pp-completion-label">Completion</span>
+        <div class="pp-completion-track">
+          <div class="pp-completion-fill" [style.width]="overallProgress + '%'"></div>
+        </div>
+        <span class="pp-completion-text">{{doneCount}}/{{totalTasksCount}} tasks done</span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="pp-tabs">
+        <div class="pp-tab" [class.active]="activeTab==='tasks'"    (click)="setTab('tasks')">
+          Tasks
+          <span class="pp-tab-badge" *ngIf="totalTasksCount">{{totalTasksCount}}</span>
+        </div>
+        <div class="pp-tab" [class.active]="activeTab==='overview'" (click)="setTab('overview')">Overview</div>
+        <div class="pp-tab" [class.active]="activeTab==='timeline'" (click)="setTab('timeline')">Timeline</div>
+      </div>
+
+      <!-- ─────────────── TASKS TAB ─────────────── -->
+      <ng-container *ngIf="activeTab==='tasks'">
+
+        <!-- Loading bar -->
+        <div class="pp-loading" *ngIf="loading">
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        </div>
+
+        <!-- Stat cards (view mode only) -->
+        <div class="pp-stats-row" *ngIf="isRoutine && !isEditable && !loading">
+          <div class="pp-stat-card">
+            <div class="pp-stat-number">{{totalTasksCount}}</div>
+            <div class="pp-stat-label">TOTAL TASKS</div>
+            <div class="pp-stat-sub">in this item</div>
+          </div>
+          <div class="pp-stat-card">
+            <div class="pp-stat-number blue">{{assignedCount}}</div>
+            <div class="pp-stat-label">ASSIGNED</div>
+            <div class="pp-stat-sub">ready to start</div>
+          </div>
+          <div class="pp-stat-card">
+            <div class="pp-stat-number orange">{{scheduledCount}}</div>
+            <div class="pp-stat-label">SCHEDULED</div>
+            <div class="pp-stat-sub">upcoming</div>
+          </div>
+          <div class="pp-stat-card">
+            <div class="pp-stat-number green">{{doneCount}}</div>
+            <div class="pp-stat-label">DONE</div>
+            <div class="pp-stat-sub">completed</div>
+          </div>
+        </div>
+
+        <!-- ── VIEW MODE TASK TABLE ────────────────────────────── -->
+        <ng-container *ngIf="isRoutine && !isEditable && !loading">
+          <div class="pp-task-list-header">
+            <span class="pp-task-list-title">TASK LIST</span>
+            <span class="pp-task-list-count">{{totalTasksCount}} tasks</span>
+            <div class="pp-task-list-controls">
+              <button class="pp-btn pp-btn-sm pp-btn-ghost" *ngIf="!isRoutine && isEditable" (click)="addTask()">
+                Add Task
+              </button>
+            </div>
+          </div>
+
+          <div class="pp-table-wrapper">
+            <table class="pp-task-table">
+              <thead>
+                <tr>
+                  <th>TASK NAME</th>
+                  <th>SEQ</th>
+                  <th>ITEM</th>
+                  <th>DEPARTMENT</th>
+                  <th>ASSIGNED TO</th>
+                  <th>LOCATION</th>
+                  <th>EXPECTED</th>
+                  <th>START</th>
+                  <th>END</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let task of allTasks">
+                  <td class="pp-task-name-cell">{{task.activityName}}</td>
+                  <td>{{task.sequenceLevel}}</td>
+                  <td>
+                    <span class="pp-dept-chip chip-dark">{{task.itemMasterName}}</span>
+                  </td>
+                  <td>
+                    <span class="pp-dept-chip" [ngClass]="getDeptColorClass(task.departmentName)">
+                      {{task.departmentName}}
+                    </span>
+                  </td>
+                  <td class="pp-link-cell"
+                    (click)="editTask(task)"
+                    [style.cursor]="task.requestStatusId !== 'RQ-CO' ? 'pointer' : 'default'">
+                    {{task.performerName}}
+                  </td>
+                  <td>{{task.destinationLocationName}}</td>
+                  <td>{{task.scheduleEnd   | date:'MM/dd/yyyy'}}</td>
+                  <td>{{task.scheduleStart | date:'MM/dd/yyyy'}}</td>
+                  <td>{{task.toDate        | date:'MM/dd/yyyy'}}</td>
+                  <td>
+                    <span class="pp-status-badge" [ngClass]="{
+                      'badge-assigned':   task.requestStatusId === 'RQ-CR',
+                      'badge-inprogress': task.requestStatusId === 'RQ-IP',
+                      'badge-done':       task.requestStatusId === 'RQ-CO',
+                      'badge-scheduled':  task.requestStatusId === 'RQ-SH'
+                    }">{{task.requestStatusName}}</span>
+                  </td>
+                  <td class="pp-actions-cell">
+                    <button class="pp-action-btn pp-action-check"
+                      matTooltip="Complete"
+                      [disabled]="task.requestStatusId === 'RQ-CO'"
+                      (click)="triggerTaskStatus(task, 'RQ-CO')">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                    <button class="pp-action-btn pp-action-edit"
+                      matTooltip="Assign"
+                      [disabled]="task.requestStatusId === 'RQ-CO'"
+                      (click)="editTask(task)">
+                      <mat-icon>person</mat-icon>
+                    </button>
+                    <button class="pp-action-btn pp-action-delete"
+                      matTooltip="Cancel"
+                      [disabled]="task.requestStatusId === 'RQ-CO'"
+                      (click)="triggerTaskStatus(task, 'RQ-CA')">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="!allTasks.length">
+                  <td colspan="11" class="pp-empty-row">No tasks found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container><!-- /view mode -->
+
+        <!-- ── EDIT / CREATE MODE ──────────────────────────────── -->
+        <ng-container *ngIf="isEditable">
+          <div class="pp-edit-section">
+
+            <!-- Plan selector (only when routine not yet assigned) -->
+            <div class="pp-plan-select" *ngIf="!isRoutine">
+              <div class="pp-plan-row">
+                <div class="pp-plan-field"
+                  *ngIf="selectedSubData?.itemMasterRoutineTypeId === null">
+                  <label class="pp-label">{{"Type"|translate}}</label>
+                  <mat-form-field appearance="outline" class="pp-form-field">
+                    <mat-select [formControl]="routineType"
+                      (selectionChange)="getRoutineList($event.value)">
+                      <mat-option *ngFor="let d of routineTypes" [value]="d.code">
+                        {{d.value | translate}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="pp-plan-field">
+                  <label class="pp-label">{{"Plans"|translate}}</label>
+                  <mat-form-field appearance="outline" class="pp-form-field">
+                    <mat-select [formControl]="routineId"
+                      (selectionChange)="getRoutineActivitys($event.value)">
+                      <mat-option>
+                        <ngx-mat-select-search
+                          [formControl]="planSearchControl"
+                          (ngModelChange)="applyPlanSearch($event)"
+                          [placeholderLabel]="'Search....'|translate"
+                          [noEntriesFoundLabel]="'No matching options'">
+                        </ngx-mat-select-search>
+                      </mat-option>
+                      <mat-option *ngFor="let d of routineList" [value]="d.id">
+                        {{d.name | translate}}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+            </div>
+
+            <!-- Editable task table -->
+            <angular-table-component
+              [id]="'production-plan-edit'"
+              [type]="'ng-table'"
+              [tableData]="activityDatas"
+              [columns]="!isRoutine
+                ? ['Task Name','SEQ','Items','Department','Role','Location','Expected Date','Start Date','End Date','edit']
+                : ['Task Name','SEQ','Item','Department','Role','Location','Expected Date','Start Date','End Date','edit']"
+              [columnData]="!isRoutine
+                ? ['activityName','sequenceLevel','activityCategoryId','departmentName','inchargeName','locationName','scheduleEnd','fromDate','toDate','edit']
+                : ['activityName','sequenceLevel','itemMasterName','departmentName','inchargeName','locationName','scheduleEnd','fromDate','toDate','edit']"
+              [selectionOption]="categoryItemList"
+              [menuButton]="moreOptions"
+              (triggerAction)="triggerAction($event)">
+            </angular-table-component>
+
+            <div class="pp-edit-footer" *ngIf="!isRoutine">
+              <button class="pp-btn pp-btn-outline-dark" mat-dialog-close>
+                {{"Cancel"|translate}}
+              </button>
+              <button class="pp-btn pp-btn-primary"
+                [disabled]="!isDeliveryDetail"
+                appDebounceClick [debounceTime]="500"
+                (debounceClick)="saveSalesRoutine()">
+                {{"Create"|translate}}
+              </button>
+            </div>
+          </div>
+        </ng-container><!-- /edit mode -->
+
+      </ng-container><!-- /tasks tab -->
+
+      <!-- ─────────────── OVERVIEW TAB ─────────────── -->
+      <ng-container *ngIf="activeTab==='overview'">
+        <div class="pp-overview-content" *ngIf="isRoutine && !loading; else overviewPlaceholder">
+
+          <!-- Summary stat cards -->
+          <div class="pp-stats-row">
+            <div class="pp-stat-card">
+              <div class="pp-stat-number">{{totalTasksCount}}</div>
+              <div class="pp-stat-label">TOTAL TASKS</div>
+              <div class="pp-stat-sub">in this item</div>
+            </div>
+            <div class="pp-stat-card">
+              <div class="pp-stat-number blue">{{assignedCount}}</div>
+              <div class="pp-stat-label">ASSIGNED</div>
+              <div class="pp-stat-sub">ready to start</div>
+            </div>
+            <div class="pp-stat-card">
+              <div class="pp-stat-number orange">{{inProgressCount}}</div>
+              <div class="pp-stat-label">IN PROGRESS</div>
+              <div class="pp-stat-sub">being worked on</div>
+            </div>
+            <div class="pp-stat-card">
+              <div class="pp-stat-number green">{{doneCount}}</div>
+              <div class="pp-stat-label">DONE</div>
+              <div class="pp-stat-sub">completed</div>
+            </div>
+          </div>
+
+          <!-- Two-column breakdown grid -->
+          <div class="pp-overview-grid">
+
+            <!-- Task Groups progress -->
+            <div class="pp-ov-section">
+              <div class="pp-ov-section-title">TASK GROUPS</div>
+              <div class="pp-ov-group-row" *ngFor="let grp of accordionActivities">
+                <div class="pp-ov-group-name" [title]="grp.title">{{grp.title}}</div>
+                <div class="pp-ov-progress-wrap">
+                  <div class="pp-ov-progress-track">
+                    <div class="pp-ov-progress-fill" [style.width]="grp.progress + '%'"></div>
+                  </div>
+                  <span class="pp-ov-pct">{{grp.progress}}%</span>
+                </div>
+                <span class="pp-ov-count">{{grp.completedCount}}/{{grp.totalCount}}</span>
+                <span class="pp-status-badge" [ngClass]="{
+                  'badge-done':       grp.status === 'Completed',
+                  'badge-inprogress': grp.status === 'InProgress',
+                  'badge-assigned':   grp.status === 'Assigned'
+                }">{{grp.status}}</span>
+              </div>
+              <div class="pp-ov-empty" *ngIf="!accordionActivities.length">No task groups found</div>
+            </div>
+
+            <!-- Department breakdown -->
+            <div class="pp-ov-section">
+              <div class="pp-ov-section-title">DEPARTMENT BREAKDOWN</div>
+              <div class="pp-ov-dept-row" *ngFor="let dept of departmentBreakdown">
+                <span class="pp-dept-chip pp-ov-dept-chip" [ngClass]="dept.colorClass" [title]="dept.name">
+                  {{dept.name}}
+                </span>
+                <div class="pp-ov-progress-wrap">
+                  <div class="pp-ov-progress-track">
+                    <div class="pp-ov-progress-fill" [style.width]="dept.pct + '%'"></div>
+                  </div>
+                  <span class="pp-ov-pct">{{dept.pct}}%</span>
+                </div>
+                <span class="pp-ov-count">{{dept.done}}/{{dept.total}}</span>
+              </div>
+              <div class="pp-ov-empty" *ngIf="!departmentBreakdown.length">No department data available</div>
+            </div>
+
+          </div><!-- /overview-grid -->
+        </div>
+
+        <ng-template #overviewPlaceholder>
+          <div class="pp-tab-placeholder">
+            <mat-icon class="pp-placeholder-icon">grid_view</mat-icon>
+            <div>{{loading ? 'Loading...' : 'Assign a plan to view the overview'}}</div>
+          </div>
+        </ng-template>
+      </ng-container><!-- /overview tab -->
+
+      <!-- ─────────────── TIMELINE TAB ─────────────── -->
+      <ng-container *ngIf="activeTab==='timeline'">
+        <div class="pp-timeline-content"
+          *ngIf="isRoutine && !loading && allTasks.length; else timelinePlaceholder">
+
+          <!-- Legend -->
+          <div class="pp-tl-legend">
+            <span class="pp-tl-legend-item">
+              <span class="pp-tl-legend-swatch" style="background:#43a047"></span> Completed (Actual)
+            </span>
+            <span class="pp-tl-legend-item">
+              <span class="pp-tl-legend-swatch" style="background:#fb8c00"></span> In Progress
+            </span>
+            <span class="pp-tl-legend-item">
+              <span class="pp-tl-legend-swatch" style="background:#1e88e5"></span> Assigned
+            </span>
+            <span class="pp-tl-legend-item">
+              <span class="pp-tl-legend-swatch" style="background:#90a4ae"></span> Scheduled
+            </span>
+          </div>
+
+          <!-- Google Timeline Chart -->
+          <div class="pp-tl-chart-wrap">
+            <google-chart
+              [type]="chartType"
+              [data]="timelineChartData"
+              [columns]="timelineChartColumns"
+              [options]="timelineChartOptions">
+            </google-chart>
+          </div>
+
+        </div>
+
+        <ng-template #timelinePlaceholder>
+          <div class="pp-tab-placeholder">
+            <mat-icon class="pp-placeholder-icon">timeline</mat-icon>
+            <div>{{loading ? 'Loading...' : 'Assign a plan with tasks to view the timeline'}}</div>
+          </div>
+        </ng-template>
+      </ng-container><!-- /timeline tab -->
+
+    </div><!-- /pp-content -->
+
+    <!-- No selection fallback -->
+    <ng-template #noSelection>
+      <div class="pp-content pp-no-selection">
+        <mat-icon class="pp-no-sel-icon">assignment</mat-icon>
+        <div>Select a manufacturing item to view details</div>
+      </div>
+    </ng-template>
+
+  </div><!-- /pp-main -->
+</div><!-- /pp-root -->

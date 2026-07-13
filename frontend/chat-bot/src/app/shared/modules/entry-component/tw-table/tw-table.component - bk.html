@@ -1,0 +1,186 @@
+<div class="tw-content1" [style.max-width.px]="this.width">
+    <div fxLayout="column" class="mat-elevation-z4 tw-manage-component" [ngClass.xs]="'components-container-xs'"
+        fxLayoutGap="5px" [style.max-height.px]="this.height" *ngIf="showTable">
+        <div class="tw-mat-table-overflow">
+            <table mat-table class="tw-table" [dataSource]="dataSource" matSort style="table-layout: inherit;">
+                <ng-container *ngFor="let col of TWDisplayedColumns" matColumnDef="{{col}}">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header [disabled]="sortColumn?.indexOf(col) > -1" class="tw-manage-table-header"
+                        [ngStyle]="{'width': col === 'ID' ? '7%' : ''}">
+                        
+                        <span *ngIf="!(iconHeader?.indexOf(col) > -1)">{{col}}</span>
+    
+                        <span *ngIf="col === 'Device' && component !== 'visitors' && component !== 'inpatient'">
+                            <img style="width:20px" src="/assets/Alert/common_icons/mob_coaster.svg" alt="device_img">
+                        </span>
+                        
+                        <span *ngIf="col === 'Device' && component !== 'visitors' && component === 'inpatient'">
+                            <img style="width: 24px; padding-top: 10px;" src="/assets/Alert/common_icons/coaster-header.svg" alt="device_img">
+                        </span>
+                        
+                        <span *ngIf="col === 'Gender' && component !== 'package'">
+                            <img style="width:30px" src="/assets/Alert/common_icons/gender_male_female.svg" alt="gender_img">
+                        </span>
+                        
+                        <span *ngIf="col === 'Gender' && component === 'package'">{{col | titlecase}}</span>
+                        
+                        <span *ngIf="col === 'Token No'">
+                            <img style="width:20px" src="/assets/Alert/common_icons/token.svg" alt="token_img">
+                        </span>
+                        
+                        <span *ngIf="col === 'Diabetic'">
+                            <img style="width:20px" src="/assets/Alert/common_icons/diabetic.svg" alt="diabetic_img">
+                        </span>
+
+                    </th>
+                    <ng-container>
+                        <td mat-cell style="padding-right: 20px;" *matCellDef="let element;let i = index;"
+                            (click)="enableAction && rowClick && component !== 'inpatient' && component !== 'staffRoutine' && component !== 'asset-management' &&
+                             component !== 'outpatient' && component !== 'ot' && component !== 'widget' && component !== 'medicalRecord' ? rowClickEvent(element) : ''"
+                            (dblclick)="enableAction && rowDbClick && component !== 'tag' ? rowDbClickEvent(element) : ''"
+                            [matTooltip]="enableAction && rowDbClick  && component !== 'tag' && col != 'isTagAssociated' ? 'Double Click To Edit' : ''
+                                        || col == 'Routine' ? element.routineName : '' || col == 'Device' ? element.tagId : '' "
+                            [ngClass]="eventColumn?.indexOf(col) > -1  && component !== 'tag' && element['reqDetailStatusId'] !== 'MR-REC' ? 'event-link' : ''"
+                            (click)="eventColumn?.indexOf(col) > -1  && element['reqDetailStatusId'] !== 'MR-REC' ? eventTrigger(col,element) : ''"
+                            [ngStyle]="{'color': element['Alert Type'] === 'Critical' && col === 'Alert Type' ? '#ED5135' :  
+                                        element['Alert Type'] === 'Reminder' && col === 'Alert Type' ? '#288EE9' : 
+                                        element['Alert Type'] === 'Warning' && col === 'Alert Type' ? '#FF7200' :
+                                        element['Alert Type'] === 'Info' && col === 'Alert Type' ? '#4BB1CF' : '' ,
+                                        'font-weight': col === 'Alert Type' ? '600' : '',
+                                        'text-align': col === 'Length of stay' || (col === 'Current Location' && component === 'medicalRecord') ? 'center' : '',
+                                        'width': col === 'Gender' || col === 'Age' || col === 'Id' ? '5%' : ''}"  (keydown.enter)="fixClick()">
+                                
+                            <span *ngIf="!(iconColumn?.indexOf(col) > -1)">{{element[col]}}</span>
+                            <span *ngIf="col === 'Record ID'">
+                                <img *ngIf="element['assetTagId'] === null" style="width:35px;"
+                                    src="/assets/Alert/common_icons/MR_grey.svg" alt="tag">
+                                <img *ngIf="element['assetTagId'] !== null" style="width:35px;"
+                                    src="/assets/Alert/common_icons/MR_green.svg" alt="tag"
+                                     (mouseover)= "matTooltipAction(element, component)" matTooltip="{{matTooltipVal.locationName}} {{matTooltipVal.floorName}}" (keydown.enter)="fixClick()">
+                            </span>
+                            <span *ngIf="col === 'Routine'">{{element['routineEventStatusName'] === null && element['routineStatus'] === 'QS-PE' ? element['routineStatusName'] : element['routineEventStatusName']}}</span>
+                            <span *ngIf="col === 'Gender' && component !== 'package'"
+                                [ngClass]="{'male': element.Gender == 'Male', 'female': element.Gender == 'Female'}"
+                                style="padding-right: 40px;">{{element[col] | slice:0:1}}</span>
+                                
+                            <span *ngIf="col === 'DOB' || col === 'Installation Date' || col === 'Requested Date' || col === 'Dispatched Date'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+                                                        
+                            <span *ngIf="col === 'Time'">{{element[col] | date: "dd-MM-yyyy, HH:mm"}}</span>
+                                
+                            <span *ngIf="col === 'Device'  && component !== 'asset-management' && component !== 'inpatient'">
+                                <span *ngIf="element['Device'] === null && element['tag_type'] === null">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+                                </span>
+                                <span *ngIf="element['Device'] === null && element['tag_type'] !== null && element['tag_type'] !== 'TT-MB'">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+                                </span>
+                                <span *ngIf="element['Device'] !== null && element['tag_type'] !== null && element['tag_type'] !== 'TT-MB'">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/coaster.svg" alt="coaster_img">
+                                </span>
+                                <span *ngIf="element['iotAlertStatus'] === 'Y' && element['tag_type'] !== null && element['tag_type'] !== 'TT-MB'">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/coaster-missing.svg" alt="coaster_img">
+                                </span>
+                                <span *ngIf="element['Device'] !== null && element['tag_type'] === 'TT-MB'">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/mobile_phone.svg" alt="coaster_img">
+                                </span>
+                                <span *ngIf="element['Device'] === null && element['tag_type'] === 'TT-MB'">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/mobile_phone-g.svg" alt="coaster_img">
+                                </span>
+                            </span>
+                                
+                            <span *ngIf="col === 'Device' && (component === 'asset-management' || component === 'inpatient')">
+                                <span *ngIf="element['Device'] === null">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+                                </span>
+                                <span *ngIf="element['Device'] !== null">
+                                    <img style="width:25px;" src="/assets/Alert/common_icons/coaster.svg" alt="coaster_img">
+                                </span>
+                            </span>
+                                
+                            <span *ngIf="col === 'isTagAssociated'">
+                                <img *ngIf="element[col] === true" style="width:25px;"
+                                    src="/assets/Alert/common_icons/noun_link_1832640.svg" alt="tag"
+                                     matTooltip="{{'Tag already Linked'|translate}}" />
+                                <img *ngIf="element[col] === false" style="width:25px;"
+                                    src="/assets/Alert/common_icons/noun_unlink_1561908.svg" alt="no-tag"
+                                     matTooltip="{{'Tag yet to be Linked'|translate}}" />
+                            </span>
+                                
+                            <span *ngIf="col === 'S.No'"> {{i+1}}</span>
+                                
+                            <span *ngIf="col === 'Rule'" matTooltip="Click To Edit" (click)="eventTrigger(col, element)" (keydown.enter)="fixClick()">
+                                <mat-icon style="color:gray">insert_link</mat-icon>
+                            </span>
+
+                            <span *ngIf="col === 'Nurse Call'">
+                                <span *ngFor="let alert of element[col]">
+                                <!-- <img *ngIf="element['Nurse Call'] === true" style="width:25px;cursor: pointer;" (click)="eventTrigger('nurse-call', element)" alt="nurse-call"
+                                     [matTooltip]="element['nurseAlertMessage']" src="/../../assets/Alert/IP/nurse-call.svg"> -->
+                                <img *ngIf="alert.eventCode === 'CE-CL'" style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert)" alt="nurse-call"
+                                        [matTooltip]="alert.message" src="/assets/Alert/IP/nurse-call.svg"  (keydown.enter)="fixClick()">
+                                <img *ngIf="alert.eventCode === 'CE-AD'" style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert)" alt="nurse-call"
+                                         [matTooltip]="alert.message" src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="alert.eventCode === 'CE-FD'" style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert)" alt="nurse-call"
+                                         [matTooltip]="alert.message" src="/assets/Alert/IP/food.svg" (keydown.enter)="fixClick()"> 
+                                <img *ngIf="alert.eventCode === 'CE-HK'" style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert)" alt="nurse-call"
+                                         [matTooltip]="alert.message" src="/assets/Alert/IP/housekeeping.svg" (keydown.enter)="fixClick()"> 
+                                <img *ngIf="alert.eventCode === 'CE-SO'" style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert)" alt="nurse-call"
+                                     [matTooltip]="alert.message" src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
+                                <img *ngIf="alert.eventCode === 'CE-MD'" style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert)" alt="nurse-call"
+                                     [matTooltip]="alert.message" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                                </span>
+                            </span>
+
+                            <span *ngIf="col === 'Alert'">
+                                <!-- <img *ngIf="element['isMovementAlert'] === true"  [matTooltip]="element['movementAlertMessage']"
+                                    style="width:25px;margin-right:5px" src="/../../assets/Alert/Inpatient/Moved-out-icon.svg" alt="Moved-out-icon">
+                                <img *ngIf="element['isFallAlert'] === true" [matTooltip]="element['fallAlertMessage']" alt="fall-risk"
+                                    style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', element)" src="/../../assets/Alert/Inpatient/Fall-risk-icon.svg">
+                                <img *ngIf="element['isMissingAlert'] === true" [matTooltip]="element['missingAlertMessage']"
+                                    style="width:23px;margin-right:5px" src="/../../assets/Alert/Inpatient/patient-missing.svg" alt="patient-missing">
+                                <img *ngIf="element['isGeofenceAlert'] === true"  [matTooltip]="element['geofenceAlertMessage']"
+                                    style="width:23px;margin-right:5px" src="/../../assets/Alert/Inpatient/patient-missing.svg" alt="patient-geofence"> -->
+
+                                <img *ngIf="element['isMovementAlert'] === true"  [matTooltip]="element['movementAlertMessage']"
+                                    style="width:25px;margin-right:5px" src="/assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
+                                <img *ngIf="element['isFallAlert'] === true"  [matTooltip]="element['fallAlertMessage']" alt="fall-risk"
+                                    style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', element)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="element['isMissingAlert'] === true"  [matTooltip]="element['missingAlertMessage']"
+                                    style="width:23px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
+                                <img *ngIf="element['isGeofenceAlert'] === true"  [matTooltip]="element['geofenceAlertMessage']"
+                                    style="width:23px;margin-right:5px" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                            </span>
+
+                            <span *ngIf="col === 'ID'">
+                                <mat-icon [ngStyle]="{'color': element[rowId] === this.rowClickId ? '#808080' : '#D3D3D3'}" class="ovi-fnt-sze17"
+                                    style="cursor: pointer;" (click)="rowClickEvent(element)" (keydown.enter)="fixClick()">play_arrow</mat-icon>
+                            </span>
+
+                            <span *ngIf="col === 'Idle'">
+                                <img *ngIf="element['Idle'] === true"  [matTooltip]="element['locationFromTime'] | date: 'yyyy-MM-dd HH:mm:ss'"
+                                    style="width:25px;margin-right:5px" src="/assets/Floorplan/TAT-AS.svg" alt="Idle">
+                            </span>
+
+                            <span *ngIf="col === 'Current Location' && component !== 'ot' && component !== 'medicalRecord'" style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                                {{element['currentLocationName']}}<span *ngIf="element['currentLocationName'] !== null && element['floorName'] !== null">, </span>{{element['floorName']}}
+                            </span>
+
+                            <span *ngIf="col === 'Current Location' && component === 'medicalRecord'" style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                                <span *ngIf="element['Current Location'] !== null"><img style="width:15px;margin-right:5px" src="/assets/Alert/common_icons/map_marker.svg" alt="Current Location"
+                                    [matTooltip]="element['currentLocationName']"></span>
+                                <span *ngIf="element['Current Location'] === null"><img style="width:15px;margin-right:5px" src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Current Location"></span>
+                            </span>
+
+                            <span *ngIf="col === 'Status' && (component === 'alert-config' || component === 'activities' ||  component === 'routine-management') ">{{element[col] === true ? 'Active' : 'Inactive'}}</span>
+
+                        </td>
+                    </ng-container>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="TWDisplayedColumns;sticky: true;" class="tw-manage-table-header-row"></tr>
+                <tr mat-row *matRowDef="let row; columns: TWDisplayedColumns; let i = index;"
+                    [ngClass]="{'tw-row-highlight' : row[rowId]  === this.rowClickId}"></tr>
+            </table>
+        </div>
+        <mat-paginator *ngIf="page" #Paginator [pageSizeOptions]="[50, 100, 150, 200]" [showFirstLastButtons]="true"
+            class="tw-paginator-sticky" style="border-radius: 5px;"></mat-paginator>
+    </div>
+</div>

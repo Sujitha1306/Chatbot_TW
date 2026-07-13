@@ -1,0 +1,51 @@
+<div class="toolbar-user-container">
+    <div [class.open]="isOpen"  class="toolbar-user-btn" >
+        <div id="output"  (click)="isOpen = !isOpen" (keydown.enter)="fixClick()"></div>
+            <!-- <div class="name" *ngIf="nowFacility" (click)="newCustomerFind()"  (click)="isOpen = !isOpen" class="mobile-view-show-cust" (keydown.enter)="fixClick()">{{nowCustomer}}</div> -->
+            <div (click)="newCustomerFind()" (click)="isOpen = !isOpen" class="tlbr-styl" *ngIf="activate_btn && activate_btn.indexOf('BT_MCFE') > -1" (keydown.enter)="fixClick()">
+            </div>
+    </div>
+    <div class="dropdown mat-elevation-z1 mng-ctrl-dropdown" [class.open]="isOpen" >
+        <div class="content" style="margin:0px 20px 0px 20px;">
+            <form [formGroup]="controlForm">
+                <div class="form-row">
+                    <div class="row-field">
+                        <div class="example-form mrgn-styl">
+                            <mat-form-field style="display: block;">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Customer'|translate" formControlName="customer" (click)="facilityFormClick()" (selectionChange)="customerChange($event.value)" matSelectSearch [errorStateMatcher]="matcher" (keydown.enter)="fixClick()">
+                                    <mat-option *ngFor="let customer of customerList"  [value]="customer.id">
+                                        {{customer.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="example-form">
+                            <mat-form-field style="display: block;">
+                                  <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Region'|translate" formControlName="region" (click)="facilityFormClick()" (selectionChange)="regionChange($event.value)" matSelectSearch [errorStateMatcher]="matcher" (keydown.enter)="fixClick()">
+                                    <mat-option *ngFor="let region of regionList" [value]="region.id">
+                                        {{region.name}}
+                                    </mat-option>
+                                </mat-select>
+
+                            </mat-form-field>
+                        </div>
+                        <div class="example-form">
+                            <mat-form-field style="display: block;">
+                                  <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Facility'|translate"  formControlName="facility" (click)="facilityFormClick()" (selectionChange)="facilityChange($event.value)" matSelectSearch [errorStateMatcher]="matcher" (keydown.enter)="fixClick()">
+                                    <mat-option *ngFor="let facility of facilityList" [value]="facility.id">
+                                        {{facility.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="input-footer algn-txt">
+                    <button mat-button class="cancle-btn" (click)="closeControl();">{{"Cancel"|translate}}</button>
+                    <button mat-button class="active-btn margin-r-1 mrgn-styl_" appDebounceClick (debounceClick)="facilitySave()" [debounceTime]="300" 
+                     cdkFocusInitial [disabled]="this.controlForm.invalid">{{"Ok"|translate}}</button>
+                  </div>
+               </form>
+        </div>
+    </div>
+</div>

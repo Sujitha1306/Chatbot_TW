@@ -1,0 +1,78 @@
+<div class="ovi-font-family" style="padding: 10px;height: 100%;">
+    <div style="height: calc(100% - 85px);">
+        <form [formGroup]="taskDetailsform" style="height: 100%;overflow-x: hidden;overflow-y: auto;">
+            <div>
+            <mat-label >{{"Activity"|translate}}</mat-label>
+            <div class="mat-custom-form-field-box">
+                <mat-form-field appearance="outline" style="width: calc(100% - 13px);">
+                    <input  matInput id="taskActivity" appTypeHit (typeHit)="searchActivityList($event)" [matAutocomplete]="autoAc"formControlName="activity" [readonly]="data.activityName">
+                    <mat-autocomplete autoActiveFirstOption [displayWith]="this.taskActivityEnabled === true ? getTaskActivityList.bind(taskActivityList) : ''" #autoAc="matAutocomplete">
+                        <mat-option *ngFor="let option of taskActivityList" [value]="option.id"(click)="getTaskActivityID(option.id)" (keydown.enter)="fixClick()">
+                                {{option.name}}
+                        </mat-option>
+                    </mat-autocomplete>
+                </mat-form-field>
+            </div>
+            </div>
+            <div class="mat-custom-form-field-box">
+                <mat-label >{{"Location"|translate}}</mat-label>
+                <mat-form-field appearance="outline" style="width: calc(100% - 13px);">
+                    <input  matInput id="taskLocation" appTypeHit (typeHit)="searchTaskLocationList($event)" [matAutocomplete]="autoLoc"formControlName="location" [readonly]="data.locationId">
+                    <mat-autocomplete autoActiveFirstOption [displayWith]="this.taskLocationEnabled === true ? getTaskLocationList.bind(taskLocationList) : ''" #autoLoc="matAutocomplete">
+                        <mat-option *ngFor="let option of taskLocationList" [value]="option.id">
+                            <div class="tot-wid-styl" (click)="getTaskLocationID(option.id)" (keydown.enter)="fixClick()">
+                                {{option.fullName}}
+                            </div>
+                        </mat-option>
+                    </mat-autocomplete>
+                </mat-form-field>
+            </div>
+            
+            <div class="form-group" style="width: calc(100% - 30px);">
+                <mat-label >{{"Time"|translate}}</mat-label>
+                <input type="datetime-local" formControlName="time" class="form-control"  (change)="setDropTime(null, $event)" >
+            </div>
+            <div class="form-group" style="width: calc(100% - 30px);">
+                <mat-label >{{"Description"|translate}}</mat-label>
+                <input  formControlName="description" class="form-control">
+            </div>
+            <div>
+            <mat-label>{{"Incharge Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+            <div class="mat-custom-form-field-box">
+                <mat-form-field appearance="outline" style="width: calc(100% - 13px);">
+                  <mat-select formControlName="taskInchargeType" (selectionChange)="getAssignedType($event.value)">
+                    <mat-option *ngFor="let data of taskInchargeTypeList" [value]="data.code">
+                      {{data.value}}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="taskDetailsform.controls.taskInchargeType.invalid">
+                    <span [hidden]="!taskDetailsform.controls['taskInchargeType'].errors.required">{{"Incharge Type is required."|translate}}</span>
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+            
+            <div>
+            <mat-label >{{"Incharge Value "|translate}}<span class="mandatory-field">*</span></mat-label>
+            <div class="mat-custom-form-field-box">
+                <mat-form-field appearance="outline"  style="width: calc(100% - 13px);">
+                    <input matInput appTypeHit (typeHit)="getSearchUser($event)" [matAutocomplete]="auto" autocomplete="off"formControlName="taskInchargeValue">
+                    <mat-autocomplete [displayWith]="userEnabled ? getUserList.bind(userNameList) : ''" #auto="matAutocomplete">
+                        <mat-option *ngFor="let option of userNameList" [value]="option.id" (click)="getuserDetails(option, $event)" (keydown.enter)="fixClick()">
+                            {{option.name}}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="taskDetailsform.controls.taskInchargeValue.invalid">
+                        <span [hidden]="!taskDetailsform.controls['taskInchargeValue'].errors.required">{{"Incharge Value is required."|translate}}</span>
+                        <span [hidden]="!taskDetailsform.controls['taskInchargeValue'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                    </mat-error>
+                </mat-form-field> 
+            </div>
+            </div>
+        </form>
+    </div>
+    <div class="button-group" style="margin-top:10px">
+        <button class="btn btn-secondary" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button  class="btn btn-primary" (click)="saveTaskDetails()">{{"Save"|translate}}</button>
+    </div>
+</div>

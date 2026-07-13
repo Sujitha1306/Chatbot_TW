@@ -1,0 +1,825 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;" *ngIf="true">
+    <div  class="ovi-pop-hdr" *ngIf="header">
+        <!-- <div class="ovi-prmry-wht-clr" style="height: 100%;display: flex; align-items: center;padding-left: 10px;justify-content: space-between;"> -->
+            <div *ngIf="!this.modifyId">{{"Create Porter Request"|translate}}</div>
+            <div *ngIf="this.modifyId">{{"Modify Porter Request"|translate}}</div>
+            <!-- <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon"
+                (click)="this.getPorterAdditionalExpanded(isPorterAdditionalExpanded)">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div> -->
+            <div mat-dialog-close (click)="this.getPorterAdditionalExpanded(isPorterAdditionalExpanded)"><mat-icon>highlight_off</mat-icon></div>
+        <!-- </div> -->
+    </div>
+    <div [ngStyle]="{
+      'height': this.mobheight ? 'calc(90vh - 25px)' : 'calc(100% - 140px)',
+      'overflow-y': this.mobheight ? 'auto' : 'scroll'}" style="overflow-x: hidden;">
+    <div [ngStyle]="{height: header ? 'calc(100% - 140px)' : 'calc(100% - 45px)'}" style="width: calc(100% - 0px); height: calc(100% - 100px);" class="porter-req-form mat-custom-inputs" [formGroup]="requestForm"
+    *ngIf="requestForm">
+        <div style="max-width: 1500px;">
+        <div style="background-color: #edf4f7;" class="porter-content-nav"  [ngClass]="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop) ? 'hdr-timeline' : ''">
+            <div style="width: 585px;height: 75px;display: flex; flex-direction: column;">
+                <mat-label class="ovi-lbl-text-size" style="padding-left: 12px; padding-top: 5px;">{{"Type"|translate}}</mat-label>
+                <div style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px; min-height: 50px; align-content: center; padding-left: 12px;">
+                    <button mat-button class="ovi-prmry-clr"   
+                        style="height: 40px; background: white; font-weight: 600; border-radius: 5px;"
+                        [ngClass]="{'ovi-prmry-bg-clr ovi-prmry-wht-clr': selectedType === o.code}"
+                        [disabled]="editAction" *ngFor="let o of porterRequestType;"
+                        (click)="setFormValue(o.code, 'request');getSelectedType(o.code,'req')"
+                        [value]="o.code">{{o.value | translate}}</button>
+                </div>
+            </div>
+            <div style="width: 280px;height: 75px;">
+                <mat-label class="ovi-lbl-text-size">{{"Request"|translate}}</mat-label>
+                <div class="pr-inpt-prefix-box-contr ">
+                    <div class="pr-inpt-prefix-box">
+                        <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_status.svg" alt="status"/>
+                    </div>
+                    <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                        <mat-select formControlName="status" (selectionChange)="statusChange($event.value)">
+                            <mat-option *ngFor="let request of selectedRequestStatus" value="{{request.code}}">
+                                {{request.value == ('Planned'|translate) ? ('For Later'|translate) : request.value == ('Assigned'|translate) ? ('Now'|translate) : request.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>                    
+            </div>
+        </div>
+        <div class="porter-content-nav-alternative" [ngClass]="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop) ? '' : ''">
+            <div class="">
+                <div style="width: 280px;">
+                    <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                    <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                        <mat-select formControlName="requestCategory" [disableOptionCentering]="true"
+                            [disabled]="editAction"
+                            (selectionChange)="setFormValue($event.value, 'request');getSelectedType($event.value,'req')">
+                            <mat-option *ngFor="let type of porterRequestType" value="{{type.code}}">
+                                {{type.value | translate}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="">
+                <div class="" style="width: 280px;">
+                    <mat-label class="ovi-lbl-text-size">{{"Request"|translate}}</mat-label>
+                    <div class="pr-inpt-prefix-box-contr ">
+                        <div class="pr-inpt-prefix-box">
+                            <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_status.svg" alt="status" />
+                        </div>
+                        <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                            <mat-select formControlName="status" (selectionChange)="statusChange($event.value)">
+                                <mat-option *ngFor="let request of selectedRequestStatus" value="{{request.code}}">
+                                    {{request.value == ('Planned'|translate) ? ('For Later'|translate) : request.value == ('Assigned'|translate) ? ('Now'|translate) : request.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
+            <div style="display: flex;flex-flow: row wrap;gap: 15px;padding-left: 15px;">
+                <div [ngClass]="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop) ? 'timeline' : ''" style="display: flex; flex-flow: row wrap;flex-direction: column;width: 100%;">
+                    <div class="" style="display: flex; flex-flow: row wrap;column-gap: 15px;" *ngIf="showPickup">
+                        <div *ngIf="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop)" [ngClass]="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop) ? 'timeline-item' : ''" class="">
+                            <span class="material-icons ovi-prmry-clr"  *ngIf="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                            this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop)">gps_fixed</span>
+                        </div>
+                        <div [ngClass]="!this.modifyId && sourceChildList.length !== 0 ? 'input-width' : 'location-width'">
+                            <div class="">
+                                <mat-label *ngIf="!modifyId && sourceChildList.length !== 0" class="ovi-lbl-text-size">{{"From"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-label *ngIf="!(!this.modifyId && sourceChildList.length !== 0)" class="ovi-lbl-text-size">{{"From"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <input #sourceauto  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'From'|translate" style="text-overflow: ellipsis;"
+                                        [readonly]="disableField" id="pickup" appTypeHit (typeHit)="searchFromLocation($event)"
+                                        [matAutocomplete]="sourcelocnew" autocomplete="off" formControlName="sourceId" [(ngModel)]="fromLocValue" [ngModelOptions]="{ standalone: true }"
+                                        #sourceId="matInput">
+                                    <button style="height: 35px;" type="button" mat-button *ngIf="(!modifyId || (modifyId && fromLocStatusList.includes(data.status))) && ((fromLocValue && this.locFromId !== null) || requestForm.controls.sourceId.disabled)" matSuffix mat-icon-button
+                                        aria-label="Clear" (click)="fromLocValue= '';requestForm.controls.sourceId.enable();clearChild('source')">
+                                        <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                                    </button>
+                                    <mat-autocomplete autoActiveFirstOption
+                                        [displayWith]="this.locFromId === null ? getSourceLocationList.bind(searchSourceLocList) : ''"
+                                        #sourcelocnew="matAutocomplete">
+                                        <ng-container *ngIf="searchSourceBedList?.length === 0 && searchSourceNonBedList?.length === 0">
+                                            <mat-option *ngFor="let option of searchSourceLocList" (onSelectionChange)="getSearchDetails(option,'pickup');requestForm.controls.sourceId.disable();
+                                                getAllLocationById(option, 'source')" [value]="option.id"
+                                                [ngStyle]="{display: locDestOption === option.id ? 'none' : 'block'}">
+                                                <div class="tot-wid-styl">{{option.fullName}}</div>
+                                            </mat-option>
+                                        </ng-container>
+                                        <mat-option *ngFor="let option of searchSourceBedList" (onSelectionChange)="getSearchDetails(option,'pickup');requestForm.controls.sourceId.disable();
+                                            getAllLocationById(option, 'source')" [value]="option.id"
+                                            [ngStyle]="{display: locDestOption === option.id ? 'none' : 'block'}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                        <mat-option *ngFor="let option of searchSourceNonBedList" (onSelectionChange)="getSearchDetails(option,'pickup');requestForm.controls.sourceId.disable();
+                                            getAllLocationById(option, 'source')" [value]="option.id"
+                                            [ngStyle]="{display: locDestOption === option.id ? 'none' : 'block'}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                        <div *ngIf="searchSourceBedList?.length > 0" class="loc-more ovi-lbl-text-size ovi-fnt-sze14" (click)="toggleShowMore('pickup')" type="button" 
+                                            (keydown.enter)="fixClick()" [ngStyle]="{'display': searchSourceNonBedList?.length === 0 ? 'block' : 'none'}">{{"See more"|translate}}</div>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="requestForm.controls.sourceId.invalid">
+                                        <span [hidden]="!requestForm.controls['sourceId'].errors.required">{{"From location is required"|translate}}.</span>
+                                        <span [hidden]="!requestForm.controls['sourceId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                    </mat-error>
+                                    <mat-hint *ngIf="!this.isSourceLoc">
+                                        <span style="color:red;">{{"From location is requird"|translate}}</span>
+                                    </mat-hint>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="!this.modifyId && sourceChildList.length !== 0">
+                            <div class="">
+                                <mat-label class="ovi-lbl-text-size">{{"Select Room"|translate}} <span *ngIf="selectFromRoom" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select formControlName="fromLocationId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Room/Bed'|translate" >
+                                        <mat-option [value]="'null'" (click)="getSearchDetails(null, 'source')" (keydown.enter)="fixClick()">None</mat-option>
+                                        <mat-option *ngFor="let option of sourceChildList" [value]="option.id"
+                                        (click)="getSearchDetails(option, 'source')" (keydown.enter)="fixClick()">
+                                            {{option.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="requestForm.controls.fromLocationId.invalid">
+                                        <span [hidden]="!requestForm.controls['fromLocationId'].errors.required">{{"Select Room is
+                                            required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="hideInputs.includes('comments') == false">
+                            <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                            <div class="">
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Others'|translate" 
+                                    [readonly]="(disableField || true) && !modifyId"
+                                        #comments="matInput" formControlName="comments" autocomplete="off">
+                                    <mat-error *ngIf="requestForm.controls.comments.invalid">
+                                        <span [hidden]="!requestForm.controls['comments'].errors.required">{{"Description is
+                                            required"|translate}}.</span>
+                                        <span [hidden]="!requestForm.controls['comments'].errors.pattern">
+                                            {{"Please enter only number and character"|translate}}
+                                        </span>
+                                        <span [hidden]="!requestForm.controls['comments'].errors.maxlength">{{"Maximmum
+                                            allowed characters are 16"|translate}} </span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="" style="display: flex; flex-flow: row wrap;column-gap: 15px;" *ngIf="(selectedType == 'PR-PA' || selectedType == 'PR-SE' || selectedType == 'PR-OT')">
+                        <div  *ngIf="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop)" [ngClass]="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop) ? 'timeline-item' : ''" class="">
+                            <span class="material-icons" style="cursor: pointer;" *ngIf="((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                            this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop)"
+                            [ngStyle]="{color: (!this.modifyId && this.locFromId !== null && this.locToId !== null &&
+                                requestForm.controls['sourceId'].value !== null && requestForm.controls['sourceId'].value !== '' &&
+                                requestForm.controls['destinationId'].value !== null && requestForm.controls['destinationId'].value !== '' &&
+                                (this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                                this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value)) ? '#0071af' : '#edf4f7'}"
+                            (click)="(!this.modifyId && this.locFromId !== null && this.locToId !== null &&
+                            requestForm.controls['sourceId'].value !== null && requestForm.controls['sourceId'].value !== '' &&
+                            requestForm.controls['destinationId'].value !== null && requestForm.controls['destinationId'].value !== '' &&
+                            (this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                            this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value)) ? swapLocation() : ''"  (keydown.enter)="fixClick()">swap_vertical_circle</span>
+                        </div>
+                        <div style="width: 280px;" *ngIf="typesOfPatientName.includes(selectedType)">
+                            <mat-label class="ovi-lbl-text-size">{{"Patient Name"|translate}}</mat-label>
+                            <div class="pr-inpt-prefix-box-contr ">
+                                <div class="pr-inpt-prefix-box">
+                                    <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_patient.svg" alt="patient"/>
+                                </div>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <input  matInput [readonly]="this.existPatient" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient Name'|translate"
+                                        id="patientName" appTypeHit (typeHit)="searchPatient($event)" [matAutocomplete]="patientId"
+                                        formControlName="patientId">
+                                    <mat-autocomplete autoActiveFirstOption
+                                        [displayWith]="this.selectedPatient == null ? getPatientList.bind(searchPatientlist) : ''"
+                                        #patientId="matAutocomplete">
+                                        <mat-option *ngFor="let option of searchPatientlist"
+                                            (click)="getSearchDetails(option, 'patient'); searchPorter(null,option.floorId, null, null, null, null, null)"
+                                            value="{{option.fullName}}" (keydown.enter)="fixClick()">
+                                            <div class="tot-wid-styl">{{option.fullName}}
+                                                <span *ngIf="option.mainidentifier !== null">( {{option.mainidentifier}}</span>
+                                                <span *ngIf="option.mainidentifier !== null && option.bedName === null"> )</span>
+                                                <span *ngIf="option.bedName !== null">, {{option.bedName}} )</span>
+                                            </div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="requestForm.controls.patientId.invalid">
+                                        <span [hidden]="!requestForm.controls['patientId'].errors.required">{{"Patient
+                                            Name is required"|translate}}.</span>
+                                        <span [hidden]="!requestForm.controls['patientId'].errors.requireMatch">{{"Please
+                                            select value
+                                            from the option"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="selectedType == 'PR-SE'">
+                            <mat-label class="ovi-lbl-text-size">{{"Service Group"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <div class="pr-inpt-prefix-box-contr ">
+                                <div class="pr-inpt-prefix-box">
+                                    <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_service_group.svg"  alt="service"/>
+                                </div>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select formControlName="serviceGroupId" (selectionChange)="getAvailableServices($event.value)" [disabled]="modifyId !== null">
+                                        <mat-option *ngFor="let group of serviceGroup" value="{{group.code}}" (click)="setServiceGroupPreference(group.code)" (keydown.enter)="fixClick()">
+                                            {{group.value | translate}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="requestForm.controls.serviceGroupId.invalid">
+                                        <span [hidden]="!requestForm.controls['serviceGroupId'].errors.required">{{"Service Group is required"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>                       
+                        <div style="width: 280px;" *ngIf="(selectedType == 'PR-PA' || selectedType == 'PR-OT' || selectedType == 'PR-SE')">
+                            <mat-label *ngIf="selectedType == 'PR-SE'" class="ovi-lbl-text-size">{{"Service"|translate}} <span *ngIf="this['assetCategory' + 'PR-SE'] === true" class="mandatory-field">*</span></mat-label>
+                            <mat-label *ngIf="selectedType != 'PR-SE' && selectedType != 'PR-OT'" class="ovi-lbl-text-size">{{"Service"|translate}} <span *ngIf="this['assetCategory' + 'PR-PA'] === true" class="mandatory-field">*</span></mat-label>
+                            <mat-label *ngIf="selectedType == 'PR-OT'" class="ovi-lbl-text-size">{{"Asset Needed"|translate}} </mat-label>
+                            <div class="pr-inpt-prefix-box-contr ">
+                                <div class="pr-inpt-prefix-box">
+                                    <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_service.svg"  alt="service"/>
+                                </div>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Service Name'|translate" formControlName="assetCategory"
+                                    [disabled]="modifyId !=null && multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value)"
+                                        (selectionChange)="getSelectedType($event.value,'asset'); setPorterCount($event.value, countClicked);getPoolName($event.value);">
+                                        <mat-option *ngFor="let asset of filterAssetType" [value]="asset.code">
+                                            {{asset.value|translate}}</mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="requestForm.controls.assetCategory.invalid">
+                                        <span [hidden]="!requestForm.controls['assetCategory'].errors.required">{{"Service is
+                                            required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="(this.fieldAvailablity === 'PF-LOC' ||
+                        this.fieldAvailablity === null) && this.fieldAvailablity !== 'PF-NO' && (selectedType == 'PR-SE' || (selectedType == 'PR-PA' && poolFloor.length))
+                        && requestForm.controls['serviceGroupId'].value !== 'SG-PH'">
+                            <mat-label class="ovi-lbl-text-size">{{"Floor"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                
+                            <div class="pr-inpt-prefix-box-contr ">
+                                <div class="pr-inpt-prefix-box">
+                                    <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_floor.svg"  alt="floor"/>
+                                </div>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select formControlName="poolLocationId"
+                                    (selectionChange)="searchPorter(null, null, fromTime, dropTime?.value, portGroup?.value, gender?.value, $event.value)">
+                                        <mat-option *ngFor="let floor of poolFloor" value="{{floor.code}}">
+                                            {{floor.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="requestForm.controls.poolLocationId.invalid">
+                                        <span [hidden]="!requestForm.controls['poolLocationId'].errors.required">{{"Floor is required"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="selectedType === 'PR-OT' && departmentList.length !== 0">
+                            <mat-label class="ovi-lbl-text-size">{{"Department"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <div class="pr-inpt-prefix-box-contr ">
+                                <div class="pr-inpt-prefix-box">
+                                    <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_floor.svg"  alt="floor"/>
+                                </div>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select formControlName="poolLocationId"
+                                    (selectionChange)="searchPorter(null, null, fromTime, dropTime?.value, portGroup?.value, gender?.value, $event.value)">
+                                        <mat-option *ngFor="let floor of departmentList" value="{{floor.code}}">
+                                            {{floor.value|translate}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="requestForm.controls.poolLocationId.invalid">
+                                        <span [hidden]="!requestForm.controls['poolLocationId'].errors.required">{{"Department is
+                                            required"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="" style="display: flex; flex-flow: row wrap;column-gap: 15px;align-items: center;">
+                        <div class="timeline-hide" *ngIf="(this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop">
+                            <span class="material-icons" style="color:red;">location_on</span>
+                        </div>
+                        <div [ngClass]="(!this.modifyId && destChildList.length !== 0 && locToId !== null &&
+                        requestForm.controls['destinationId'].value !== null && requestForm.controls['destinationId'].value !== '' &&
+                        requestForm.controls['destinationId'].value !== null && requestForm.controls['destinationId'].value !== '' &&
+                        ((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) && this.fieldAvailablity !== 'PF-NO' &&
+                        !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value))) ? 'input-width' : 'location-width'"  *ngIf="(this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) &&
+                        this.fieldAvailablity !== 'PF-NO' && !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value) && showDrop">
+                            <div class="">
+                                <mat-label *ngIf="selectedType != 'PR-SE' && !this.modifyId && destChildList.length !== 0" class="ovi-lbl-text-size">{{"To"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-label *ngIf="selectedType == 'PR-SE' && PorterFieldMandatory.length == 0 && !this.modifyId && destChildList.length !== 0" class="ovi-lbl-text-size">{{"To"|translate}}</mat-label>
+                                <mat-label *ngIf="selectedType == 'PR-SE' && PorterFieldMandatory.length != 0 && !this.modifyId && destChildList.length !== 0" class="ovi-lbl-text-size">{{"To"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-label *ngIf="selectedType != 'PR-SE' && !(!this.modifyId && destChildList.length !== 0)" class="ovi-lbl-text-size">{{"To"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-label *ngIf="selectedType == 'PR-SE' && PorterFieldMandatory.length == 0  && !(!this.modifyId && destChildList.length !== 0)" class="ovi-lbl-text-size">{{"To"|translate}}</mat-label>
+                                <mat-label *ngIf="selectedType == 'PR-SE' && PorterFieldMandatory.length != 0  && !(!this.modifyId && destChildList.length !== 0)" class="ovi-lbl-text-size">{{"To"|translate}} <span class="mandatory-field">*</span></mat-label>                                
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <input #destauto  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'To'|translate" style="text-overflow: ellipsis;" [readonly]="disableField"
+                                        id="drop" appTypeHit (typeHit)="searchToLocation($event)" [matAutocomplete]="destinationlocnew" autocomplete="off"
+                                        formControlName="destinationId" [(ngModel)]="toLocValue" [ngModelOptions]="{ standalone: true }" #destinationId="matInput">
+                                    <button style="height: 35px;" type="button" mat-button *ngIf="(!modifyId || (modifyId && toLocStatusList.includes(data.status))) && (toLocValue && this.locToId !== null)" matSuffix mat-icon-button
+                                        aria-label="Clear" (click)="toLocValue = '';requestForm.controls.destinationId.enable();clearChild('dest')">
+                                        <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                                    </button>
+                                    <mat-autocomplete autoActiveFirstOption
+                                        [displayWith]="this.locToId === null ? getDestinationLocationList.bind(searchDestLocList): '' "
+                                        #destinationlocnew="matAutocomplete">
+                                        <ng-container *ngIf="searchDestBedList?.length === 0 && searchDestNonBedList?.length === 0">
+                                            <mat-option *ngFor="let option of searchDestLocList" (onSelectionChange)="getSearchDetails(option, 'drop');requestForm.controls.destinationId.disable();
+                                                getAllLocationById(option, 'dest')" [value]="option.id"
+                                                [ngStyle]="{display: locSourceOption === option.id ? 'none' : 'block'}">
+                                                <div class="tot-wid-styl">{{option.fullName}}</div>
+                                            </mat-option>
+                                        </ng-container>
+                                        <mat-option *ngFor="let option of searchDestBedList" (onSelectionChange)="getSearchDetails(option,'drop');requestForm.controls.destinationId.disable();
+                                            getAllLocationById(option, 'dest')" [value]="option.id"
+                                            [ngStyle]="{display: locSourceOption === option.id ? 'none' : 'block'}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                        <mat-option *ngFor="let option of searchDestNonBedList" (onSelectionChange)="getSearchDetails(option,'drop');requestForm.controls.destinationId.disable();
+                                            getAllLocationById(option, 'dest')" [value]="option.id"
+                                            [ngStyle]="{display: locSourceOption === option.id ? 'none' : 'block'}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                        <div *ngIf="searchDestBedList?.length > 0" class="loc-more ovi-lbl-text-size ovi-fnt-sze14" (click)="toggleShowMore('drop')" type="button" 
+                                            (keydown.enter)="fixClick()" [ngStyle]="{'display': searchDestNonBedList?.length === 0 ? 'block' : 'none'}">{{"See more"|translate}}</div>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="requestForm.controls.destinationId.invalid">
+                                        <span [hidden]="!requestForm.controls['destinationId'].errors.required">{{"To location is required"| translate}}.</span>
+                                        <span [hidden]="!requestForm.controls['destinationId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                    </mat-error>
+                                    <mat-hint *ngIf="!this.isDestinationLoc">
+                                        <span style="color:red;">{{"To location is required"|translate}}.</span>
+                                    </mat-hint>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="!this.modifyId && destChildList.length !== 0 && locToId !== null &&
+                        requestForm.controls['destinationId'].value !== null && requestForm.controls['destinationId'].value !== '' &&
+                        requestForm.controls['destinationId'].value !== null && requestForm.controls['destinationId'].value !== '' &&
+                        ((this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) && this.fieldAvailablity !== 'PF-NO' &&
+                        !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value))">
+                            <div class="">
+                                <mat-label class="ovi-lbl-text-size">{{"Select Room"|translate}}  <span *ngIf="selectToRoom" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select formControlName="toLocationId" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Room/Bed'|translate">
+                                        <mat-option [value]="'null'" (click)="getSearchDetails(null, 'dest')" (keydown.enter)="fixClick()">None</mat-option>
+                                        <mat-option *ngFor="let option of destChildList" [value]="option.id"
+                                        (click)="getSearchDetails(option, 'dest')" (keydown.enter)="fixClick()">
+                                            {{option.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="requestForm.controls.toLocationId.invalid">
+                                        <span [hidden]="!requestForm.controls['toLocationId'].errors.required">{{'Select Room is
+                                            required'|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div [ngStyle]="{'margin-bottom' : !this.diasblePorterGender ? '12 px' : '-12px'}" *ngIf="hideInputs.includes('porterCount') == false || !diasblePorterGender">
+                        <mat-label class="ovi-lbl-text-size"  *ngIf="!this.diasblePorterGender">{{"Gender"|translate}}</mat-label>
+                        <div class="" style="display: flex; flex-flow: row wrap; column-gap: 20px; flex-direction: row; justify-content: center;">
+                            <div style="width: 280px;display: flex;column-gap: 10px;">
+                                <div class="" style="width: 130px; border: 1px solid rgba(0, 0, 0, 0.12); height: 39px; display: flex;flex-direction: column;" >
+                                    <div [ngStyle]="{'justify-content' : !this.diasblePorterGender ? '' : 'center'}" style="display: flex;align-items: center;padding-left: 2px;padding-top: 2px;">
+                                    <div *ngIf="!this.diasblePorterGender" style="width: 35px; display: flex; border-radius: 30px; height: 35px;justify-content: space-around; align-items: center;cursor: pointer;" [ngStyle] ="{'background' : 
+                                    requestForm.controls['gender'].value == 'Male' ? '#b8deff' : requestForm.controls['gender'].value == 'Female' ? '#ffcff4' : '#edf4f7'}"  
+                                    (click)="this.data?.status !== 'RQ-AR' && this.data?.status !== 'RQ-CR' && this.data?.status !== 'RQ-IP' && this.data?.status !== 'RQ-CO' ? getGender() : ''"  (keydown.enter)="fixClick()"
+                                     matTooltip= "{{requestForm.controls['gender'].value | translate}}" matTooltipClass="custom-tooltip">
+                                        <img *ngIf = "requestForm.controls['gender'].value == null" style="width: 20px;height: 20px;" src="./../../../../../assets/icons/pr_male.svg"  alt="male">
+                                        <mat-icon *ngIf="requestForm.controls['gender'].value" class="ovi-fnt-sze25" style="color: #474689;margin-top: -5px;">{{requestForm.controls['gender'].value == 'Male' ? 'male' : 'female'}}</mat-icon>
+                                    </div>
+                                    <div style="width: calc(100% - 40px);display: flex;">
+                                        <div style="width: 90px;">
+                                            <div style="display: flex;">
+                                                <button class="ovi-fnt-sze17" style="cursor: pointer; color: white; border: 5px solid #fcfff9; border-radius: 30px; font-weight: 600; height: 30px; width: 30px;"
+                                                [ngClass]="{'porter-limit-reached': requestForm.controls['porterCount'].value == 1,'ovi-prmry-bg-clr': requestForm.controls['porterCount'].value != 1 }"
+                                                (click)="getPorterCount('decrement');countClicked=true" [disabled]="editAction || hideInputs.includes('porterCount') == true">-</button>
+                                                <button class="ovi-prmry-clr ovi-fnt-sze18" style="background: transparent; border: 0px; height: 30px; font-weight: 800;">
+                                                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate"  #availablePorter="matInput" formControlName="porterCount"
+                                                        autocomplete="off"  [readonly]="true" class=" ovi-fnt-sze20">
+                                                </button>
+                                                <button class="ovi-fnt-sze16" style="cursor: pointer; color: white; border: 5px solid #fcfff9; border-radius: 30px; font-weight: 600; height: 30px;"
+                                                 [ngClass]="{'porter-limit-reached': requestForm.controls['porterCount'].value >= maxPorterLimit && autoAssign,
+                                                             'ovi-prmry-bg-clr': !(requestForm.controls['porterCount'].value >= maxPorterLimit && autoAssign) }"
+                                                (click)="getPorterCount('increment');countClicked=true" [disabled]="editAction || hideInputs.includes('porterCount') == true">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </div>
+                                    <div class="ovi-fnt-sze14" style="display: inline-block;" *ngIf="(requestForm.controls['porterCount'].value > this.searchPorterList.length && !this.autoAssign
+                                        && this.searchPorterList.length !== 0)">
+                                        <mat-hint *ngIf="requestForm.controls['porterCount'].value > this.searchPorterList.length && !this.autoAssign
+                                            && this.searchPorterList.length !== 0">
+                                            <span class="ovi-fnt-sze12" style="color:red;float: right;padding-top: 5px;">{{"Value exceeds"|translate}}.</span>
+                                        </mat-hint>
+                                    </div>                          
+                                </div>
+                                <div class="custom-checkbox" *ngIf="hideInputs.includes('isautoAssigned') == false">
+                                    <input id="status" type="checkbox" name="assignPorter" [disabled]="editAction" formControlName="isautoAssigned"
+                                    (click)="setFormValue(!autoAssign, 'assignPorter');getSelectedType(!autoAssign,'assign')" (keydown.enter)="fixClick()">
+                                    <label for="status">
+                                        <div class="status-switch" [attr.data-checked]="'Auto'|translate" [attr.data-unchecked]="'Manual'|translate"></div>
+                                    </label>
+                                </div>
+                            </div>                            
+                        </div>
+                        </div>
+                        <div style="width: 280px;" *ngIf="requestForm.controls.isautoAssigned.value == false">
+                            <mat-label class="ovi-lbl-text-size">{{"Porter Name"|translate}}</mat-label>
+                            <div class="pr-inpt-prefix-box-contr ">
+                                <div class="pr-inpt-prefix-box">
+                                    <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_status.svg"  alt="status"/>
+                                </div>
+                                <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                    <mat-select multiple appPlaceholder [showPlaceholder]="true" [placeholderText]="'Name'|translate" [disabled]="disableField" formControlName="porterId">
+                                        <mat-option #matOption *ngFor="let porter of searchPorterList"
+                                            (click)="getPorterDetails(porter, matOption);getPorterCount(null)" [value]="porter.id" (keydown.enter)="fixClick()">{{porter.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-hint *ngIf="this.searchPorterList.length !== 0 && this.porterCount !== this.porterNameCount && !this.autoAssign">
+                                        <span style="color:red;">*{{"Please select the options"|translate}}
+                                        </span>
+                                    </mat-hint>
+                                    <mat-hint *ngIf="this.searchPorterList.length === 0 && !this.autoAssign">
+                                        <span style="color:red;">{{"All Porters are busy"|translate}}</span>
+                                    </mat-hint>
+                                </mat-form-field>
+                            </div>
+                        </div>            
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex;flex-flow: row wrap;column-gap: 15px;padding-left: 15px;flex-direction: column;">
+                <div style="display: flex;flex-flow: row wrap;column-gap: 15px;" *ngIf = "!multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value)">
+                    <div style="width: 280px;" *ngIf="selectedType == 'PR-AT'">
+                        <mat-label class="ovi-lbl-text-size">{{"Asset Type"|translate}}</mat-label>
+                        <div class="pr-inpt-prefix-box-contr ">
+                            <div class="pr-inpt-prefix-box">
+                                <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_service_group.svg"  alt="service"/>
+                            </div>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Type'|translate" [disabled]="this.existAsset"
+                                    formControlName="assetCategory" (selectionChange)="getSelectedType($event.value,'asset')">
+                                    <mat-option [value]="defaultType">{{"All"|translate}}</mat-option>
+                                    <mat-option *ngFor="let asset of assetTypes" [value]="asset.code">{{asset.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div style="width: 280px;" *ngIf="selectedType == 'PR-AT'">
+                        <mat-label class="ovi-lbl-text-size">{{"Asset Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <div class="pr-inpt-prefix-box-contr ">
+                            <div class="pr-inpt-prefix-box">
+                                <img style="width: 30px; height: 30px;" src="./../../../../../assets/icons/pr_service_group.svg"  alt="service"/>
+                            </div>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input  matInput [readonly]="this.existAsset" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Name'|translate" id="assetName" appTypeHit
+                                    (typeHit)="searchAsset($event)" [matAutocomplete]="assetId" formControlName="assetId">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.selectedAsset == null ? getAssetList.bind(searchAssetList) : ''" #assetId="matAutocomplete">
+                                    <mat-option *ngFor="let option of searchAssetList" (click)="getSearchDetails(option, 'asset')" [value]="option.id" (keydown.enter)="fixClick()">
+                                        <div class="tot-wid-styl">
+                                            {{option.name}} 
+                                            <span *ngIf="option.identifier !== null">( {{option.identifier}} )</span>
+                                        </div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="requestForm.controls.assetId.invalid">
+                                    <span [hidden]="!requestForm.controls['assetId'].errors.required">{{"Asset Name is required"|translate}}.</span>
+                                    <span [hidden]="!requestForm.controls['assetId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>    
+                
+            </div>            
+        </div>
+        <div style="display: flex; flex-direction: column; padding-left: 15px;padding-top: 20px;" formArrayName="locations"
+            *ngIf="selectedType === 'PR-SE' && multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value)">
+            <div *ngFor="let obj of requestForm.get('locations')['controls']; let i=index" [formGroupName]="i">
+                <div *ngIf="modifyId" style="display: flex; flex-direction: row; column-gap: 15px;">
+                    <div class="" style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Location"|translate}} {{i+1}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" id="location" appTypeHit
+                                    (typeHit)="searchLocation($event)" formControlName="id" [readonly]="modifyId !=null"
+                                    [matAutocomplete]="locIds" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption #locIds="matAutocomplete"
+                                    [displayWith]="getLocationName.bind(this, i)">
+                                    <mat-option *ngFor="let option of searchLocList" value="{{option.id}}">
+                                        <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error>
+                                    <span>{{"Location is required"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="" style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'comments'|translate" formControlName="comments"
+                                    [readonly]="modifyId !=null">
+                                <mat-error>
+                                    <span>{{"Maximmum allowed characters are 30"|translate}} </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="requestForm.controls['serviceGroupId'].value === 'SG-MS'" style="display: flex;align-items: center;">
+                        <span>
+                            <mat-checkbox formControlName="priority" [disabled]="modifyId"></mat-checkbox>&nbsp;
+                            <mat-label class="ovi-lbl-text-size">{{"Priority"|translate}}</mat-label>
+                        </span>
+                    </div>
+                    <div style="width: 280px;display: flex; align-items: center;padding-top: 10px;" *ngIf="requestForm.controls['serviceGroupId'].value !== 'SG-MS'">
+                        <button mat-button (click)="pharmacyTask()" class="ovi-prmry-bg-clr ovi-prmry-wht-clr" style="font-weight: 600;float: right;" *ngIf="i == 0">{{"View more details"|translate}}</button>
+                    </div>
+                </div>
+                <div *ngIf="!modifyId" style="display: flex; flex-direction: row; column-gap: 15px;flex-wrap: wrap;">
+                    <div class="" style="width: 280px;" *ngIf="pharmacyType == 'TAT-PA' && requestForm.controls['serviceGroupId'].value == 'SG-PH'">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Patient Name" | translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input  matInput [readonly]="this.existPatient" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient Name'|translate"
+                                    id="patientName" appTypeHit (typeHit)="searchPatient($event, i)" [matAutocomplete]="patientId"
+                                    formControlName="id"  [(ngModel)]="this['pharmacypatientId' + i]" [ngModelOptions]="{ standalone: true }" [readonly]="this['pharaPatientId' + i]">
+                                <button style="height: 35px;" type="button" mat-button *ngIf="!modifyId && this['pharmacypatientId' + i]" matSuffix mat-icon-button
+                                    aria-label="Clear" (click)="this['pharmacypatientId' + i]= '';obj.get('id')?.enable();clearChild('pharaPatientId', i)">
+                                    <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                                </button>
+                                <mat-autocomplete autoActiveFirstOption [displayWith]="getPatientName.bind(this, i)"
+                                    #patientId="matAutocomplete">
+                                    <mat-option *ngFor="let option of searchPatientlist"
+                                        (click)="getSearchDetails(option, 'patient');handleOptionClick(i,option)"
+                                        value="{{option.id}}" (keydown.enter)="fixClick()">
+                                        <div class="tot-wid-styl">{{option.fullName}}
+                                            <span *ngIf="option.mainidentifier !== null">( {{option.mainidentifier}}</span>
+                                            <span *ngIf="option.mainidentifier !== null && option.bedName === null"> )</span>
+                                            <span *ngIf="option.bedName !== null">, {{option.bedName}} )</span>
+                                        </div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="obj.get('id')?.touched && obj.get('id')?.invalid">
+                                    <span *ngIf="obj.get('id')?.errors?.required" >
+                                        {{"Patient Name is required"|translate}}
+                                    </span>
+
+                                    <span *ngIf="obj.get('id')?.errors?.requireMatch" style="color:red;">
+                                        {{"Please select value from the option"|translate}}.
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="" style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Location"|translate}} {{i+1}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate"  id="location" appTypeHit
+                                    (typeHit)="searchLocation($event, i)" formControlName="locationId" [readonly]="modifyId != null || this['loc1' + i]"
+                                    [matAutocomplete]="locIds" autocomplete="off" [(ngModel)]="this['locationIds' + i]" [ngModelOptions]="{ standalone: true }">
+                                <button style="height: 35px;" type="button" mat-button *ngIf="!modifyId && this['locationIds' + i]" matSuffix mat-icon-button
+                                    aria-label="Clear" (click)="this['locationIds' + i] = '';obj.get('locationId')?.enable();clearChild('loc1', i)">
+                                    <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                                </button>
+                                <mat-autocomplete autoActiveFirstOption #locIds="matAutocomplete"
+                                    [displayWith]="getLocationName.bind(this, i)">
+                                    <mat-option *ngFor="let option of searchLocList" value="{{option.id}}" (click)="getLocValidation(option.id, i)">
+                                        <div class="alrt-wid-styl">{{option.fullName}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="obj.get('locationId')?.touched && obj.get('locationId')?.invalid">
+                                    <span *ngIf="obj.get('locationId')?.errors?.required" >
+                                        {{"Location is required"|translate}}
+                                    </span>
+
+                                    <span *ngIf="obj.get('locationId')?.errors?.requireMatch" style="color:red;" >
+                                        {{"Please select value from the option."|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="" style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Package / Comments"|translate}}<span class="mandatory-field" *ngIf="pharmacyType == 'TAT-PA' && requestForm.controls['serviceGroupId'].value == 'SG-PH'">*</span></mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Package / Comments'|translate" formControlName="externalIdentifier">
+                                <mat-error>
+                                    <span >{{"Package / Comments is required"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div style="width: 180px;">
+                        <div>
+                            <span>
+                                <mat-checkbox formControlName="priority" [disabled]="modifyId"></mat-checkbox>&nbsp;
+                                <mat-label class="ovi-lbl-text-size">{{"Priority"|translate}}</mat-label>
+                            </span>
+                            <span *ngIf="modifyId ==null">
+                                <button mat-mini-fab style="background-color: #FC8C91;margin-top: 10px;margin-left: 20px;"
+                                    *ngIf="requestForm.controls.locations.controls.length > 1"
+                                    (click)="removeLocation(i)">x</button>
+                                <button mat-mini-fab style="margin-left: 10px;margin-top: 20px;"
+                                    *ngIf="requestForm.controls.locations.controls.length-1 == i && maxLocLimit != i+1"
+                                    (click)="addLocation()">+</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="margin: 10px;overflow: auto;">
+            <mat-expansion-panel #panel [expanded]="isPorterAdditionalExpanded" (click)="isPorterAdditionalExpanded = panel.expanded" (keydown.enter)="fixClick()">
+                <mat-expansion-panel-header class="ovi-fnt-sze16"  style="background-color: #edf4f7;">
+                    <mat-panel-title > {{"Additional Details"|translate}} </mat-panel-title>
+                </mat-expansion-panel-header>
+                <div class="" style="display: flex; flex-flow: row wrap;column-gap: 15px;padding-top: 10px;">
+                    <div style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Porter Group"|translate}}</mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <mat-select #portGroup formControlName="poolName" [disableOptionCentering]="true"
+                                    [disabled]="this.porterGroup.length == 0 || disablePoolNameId"
+                                    (selectionChange)="searchPorter(null, null, fromTime, null, $event.value, requestForm.controls['gender']?.value,
+                                    requestForm.controls['poolLocationId']?.value)">
+                                    <mat-option *ngFor="let data of porterGroup" value="{{data.code}}">
+                                        {{data.value|translate}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="" style="width: 280px;" *ngIf="requestForm.controls['status'].value == 'RQ-PLN'">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Pickup"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input matInput type="datetime-local" id="datepicker"
+                                    [readonly]="!statusBasedFieldDisabled" formControlName="startTime"
+                                    appPlaceholder [showPlaceholder]="false" [placeholderText]="'Pickup'|translate"
+                                    (ngModelChange)="setDropTime(null, $event);dateTimeValidation($event,'pickup')"
+                                    (focusout)="searchPorter(null, null, $event.target.value, null, portGroup.value, gender.value,
+                                    requestForm.controls['poolLocationId']?.value)" />
+                                <mat-error *ngIf="requestForm.controls.startTime.invalid">
+                                    <span [hidden]="!requestForm.controls['startTime'].errors.required">{{"Pickup
+                                        Time
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                                <mat-hint *ngIf="this.pastPickupTime">
+                                    <span style="color:red;">*{{"Please choose current or future date and time"|translate}}</span>
+                                </mat-hint>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="" style="width: 280px;" *ngIf="requestForm.controls['status'].value == 'RQ-PLN'">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Drop"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <input #dropTime matInput type="datetime-local"
+                                    [readonly]="!statusBasedFieldDisabled" formControlName="endTime"  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Drop'|translate"
+                                    (ngModelChange)="dateTimeValidation($event,'drop')"
+                                    (focusout)="searchPorter(null, null, fromTime, $event.target.value, portGroup.value, gender.value,
+                                    requestForm.controls['poolLocationId']?.value)" />
+                                <mat-error *ngIf="requestForm.controls.endTime.invalid">
+                                    <span [hidden]="!requestForm.controls['endTime'].errors.required">{{"Drop Time
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                                <mat-hint *ngIf="this.pastDropTime">
+                                    <span style="color:red;">*{{"Please choose current or future date and time"|translate}}</span>
+                                </mat-hint>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class=""  style="width: 280px;" *ngIf="requestForm.controls['status'].value == 'RQ-PLN'">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Time Slot"|translate}}</mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <mat-select formControlName="duration" [disabled]="editAction"
+                                    (selectionChange)="setDropTime($event.value, null)">
+                                    <mat-option *ngFor="let duration of dropTimeDuration" value="{{duration.code}}">
+                                        {{duration.value}} Mins
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="(data.status === 'RQ-CO' && disableField)" class="" style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Rating"|translate}}</mat-label>
+                            <mat-form-field  style="width: 100%;top: 2px;" appearance="outline">
+                                <mat-select formControlName="rating">
+                                    <mat-option *ngFor="let rate of rateDetails" value="{{rate.code}}">
+                                        {{rate.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>  
+                    <div style="width: 280px;">
+                        <div class="">
+                            <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label>
+                            <mat-form-field style="width: 100%;top: 2px;" appearance="outline">
+                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" rows=1 formControlName="remarks"></textarea>
+                                <mat-error *ngIf="requestForm.controls.remarks.invalid">
+                                    <span [hidden]="!requestForm.controls['remarks'].errors.maxlength">{{"Maximmum allowed characters are 100"|translate}} </span>
+                                    <span [hidden]="!requestForm.controls['remarks'].errors.pattern"> {{"Please enter only number and character"|translate}} </span>
+                                </mat-error>
+                                <mat-hint *ngIf="requestForm.controls.remarks.invalid">
+                                    <span style="color:red;">{{"Maximmum allowed characters are 100"|translate}}</span>
+                                </mat-hint>
+                            </mat-form-field>
+                        </div>
+                    </div>                                      
+                </div>
+                <div class="" style="display: flex; flex-flow: row wrap;column-gap: 15px;padding-top: 10px;">
+                    <div class="" *ngIf="(!disablePorterPriority) || activate_btn.indexOf('BT_PRPRIORITY') > -1"  style="max-width: 280px;">
+                        <div class="">
+                            <mat-checkbox formControlName="priority" [checked]="this.isPriority"
+                                (change)="isPriorityEvent($event.checked)"></mat-checkbox>&nbsp;
+                            <mat-label class="ovi-lbl-text-size">{{"Priority"|translate}}</mat-label>
+                        </div>
+                    </div>
+                    <div class="" *ngIf="selectedType == 'PR-SE' && (!disablePorterRoundtrip || activate_btn.indexOf('BT_PRROUNDTRIP') > -1) &&
+                        (this.fieldAvailablity === 'PF-TO' || this.fieldAvailablity === null) && this.fieldAvailablity !== 'PF-NO' &&
+                        !multiLocationGroup?.includes(requestForm.controls['serviceGroupId'].value)"  style="max-width: 280px;">
+                        <div class="" >
+                            <mat-checkbox formControlName="isRoundTrip" [checked]="this.isRoundtrip"
+                                (change)="isRoundtripEvent($event.checked)"></mat-checkbox>&nbsp;
+                            <mat-label class="ovi-lbl-text-size">{{"Roundtrip"|translate}}</mat-label>
+                        </div>
+                    </div>
+                    <div class="" *ngIf="(selectedType != 'PR-SE' && !disablePorterRoundtrip)"  style="max-width: 280px;">
+                        <div class="">
+                            <mat-checkbox formControlName="isRoundTrip" [checked]="this.isRoundtrip"
+                                (change)="isRoundtripEvent($event.checked)"></mat-checkbox>&nbsp;
+                            <mat-label class="ovi-lbl-text-size">{{"Roundtrip"|translate}}</mat-label>
+                        </div>
+                    </div>
+                </div>
+                
+            </mat-expansion-panel>  
+        </div>
+    </div>
+    </div>
+    </div>
+    <div class="ovi-pop-ftr po-footer">
+        <div >
+            <button class="po-footer-btn" mat-dialog-close *ngIf="header" (click)="this.getPorterAdditionalExpanded(isPorterAdditionalExpanded)">{{"Cancel"|translate}}</button>
+            
+            <button class="po-footer-btn"
+                [ngStyle]="{color: isSourceLoc === false || isDestinationLoc === false || this.isSaved === true || requestForm?.invalid || this.pastDropTime || this.pastPickupTime ||
+                            (this.porterCount !== this.porterNameCount && !this.autoAssign) || (this.porterCount > this.maxPorterLimit) ? '#c2c2c2' : 'white'}"
+                [disabled]="isSourceLoc === false || isDestinationLoc === false || this.isSaved === true || requestForm?.invalid || this.pastDropTime || this.pastPickupTime ||
+                        (this.porterCount !== this.porterNameCount && !this.autoAssign) || (this.porterCount > this.maxPorterLimit) || 
+                        (this.pharmacyType === 'TAT-PA' && this.selectedType === 'PR-SE' && this.requestForm.get('serviceGroupId')?.value === 'SG-PH' && 
+                        (!requestForm.get('locations')?.valid))"
+                [debounceTime]="500" appDebounceClick *ngIf="!this.modifyId" (debounceClick)="sourceLocConfirmation ? confirmSourceLocation() : SaveRequest()">{{"Send Request"|translate}}
+            </button>
+            <button class="po-footer-btn"
+                [ngStyle]="{color: isSourceLoc === false || isDestinationLoc === false || this.isSaved === true || requestForm?.invalid || this.pastDropTime || this.pastPickupTime ||
+                            (this.porterCount !== this.porterNameCount && !this.autoAssign) || (this.porterCount > this.maxPorterLimit) ? '#c2c2c2' : 'white'}"
+                [disabled]="requestForm?.invalid || this.pastDropTime || isSaved || this.pastPickupTime || (this.porterCount !== this.porterNameCount && !this.autoAssign) || (this.porterCount > this.maxPorterLimit)"
+                [debounceTime]="500" appDebounceClick *ngIf="this.modifyId" (debounceClick)="requestForm.get('status')?.value === 'RQ-RAS' ? confirmReassigned() : UpdateRequest(data.requestId)">
+                {{"Update Request"|translate}}
+            
+            </button>
+            <button class="po-footer-btn"
+                [ngStyle]="{color: isSourceLoc === false || isDestinationLoc === false || this.isSaved === true || requestForm?.invalid || this.pastDropTime || this.pastPickupTime ||
+                            (this.porterCount !== this.porterNameCount && !this.autoAssign) || (this.porterCount > this.maxPorterLimit) ? '#c2c2c2' : 'white'}"
+                *ngIf="data.status === 'RQ-AS' && activate_btn && (activate_btn.indexOf('BT_WB_PRT_AR') > -1 || activate_btn.indexOf('BT_WB_PRT_CO') > -1)"
+                [disabled]="isSaved" appDebounceClick [debounceTime]="500" (debounceClick)="UpdateRequestStatus(data, 'RQ-AR')">
+                {{"Arrived"|translate}}
+            </button>
+            <button class="po-footer-btn"
+                [ngStyle]="{color: isSourceLoc === false || isDestinationLoc === false || this.isSaved === true || requestForm?.invalid || this.pastDropTime || this.pastPickupTime ||
+                    (this.porterCount !== this.porterNameCount && !this.autoAssign) || (this.porterCount > this.maxPorterLimit) ? '#c2c2c2' : 'white'}"
+                *ngIf="(data.status === 'RQ-AR' || data.status === 'RQ-IP') && activate_btn && (activate_btn.indexOf('BT_WB_PRT_AR') > -1 || activate_btn.indexOf('BT_WB_PRT_CO') > -1)"
+                [disabled]="isSaved" appDebounceClick [debounceTime]="500" (debounceClick)="UpdateRequestStatus(data, 'RQ-CO')">
+                {{"Complete"|translate}}
+            </button>
+        </div>
+    </div>
+</div>

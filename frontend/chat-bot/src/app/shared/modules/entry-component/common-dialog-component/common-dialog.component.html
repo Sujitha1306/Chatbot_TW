@@ -1,0 +1,108 @@
+<div class="ovi-font-family" style="height: 100%;">
+    <!-- <div [ngClass]="contentDetail['content'] == 'alerts' || contentDetail['content'] == 'calendar' ? 'dialog-header-noti' : 'dialog-header'" *ngIf="contentDetail['content'] == 'alerts' || contentDetail['content'] == 'calendar' || (contentDetail['content'] == 'floorplan' && contentDetail['header'] != false) || contentDetail['content'] == 'history' || contentDetail['content'] == 'webcam'|| contentDetail['content'] == 'layout'">
+        <span *ngIf="contentDetail['content'] == 'floorplan'">FLOOR PLAN VIEW</span>
+        <span *ngIf="contentDetail['content'] == 'history'"> {{"Movement History"|translate}}</span>
+        <span *ngIf="contentDetail['content'] == 'webcam'"> {{"Capture Image"|translate}}</span>
+        <span *ngIf="contentDetail['content'] == 'alerts'" class="ovi-fnt-sze14" style="color:whitesmoke;"> {{"Notification History"|translate}}</span>
+        <span *ngIf="contentDetail['content'] == 'calendar'" class="ovi-fnt-sze14" style="color:whitesmoke;"> {{"Calendar Taskview"|translate}}</span>
+        <span *ngIf="contentDetail['content'] == 'layout'" class="ovi-fnt-sze14" style="color:gray;"> {{"View Report"|translate}}</span>
+        <span [ngClass]="contentDetail['content'] == 'alerts' || contentDetail['content'] == 'calendar' ? 'hightlight-sty-noti' : 'hightlight-sty'">
+            <button mat-icon-button (click)="closeDialog()" style="width: 30px !important;height: 30px !important;">
+                <mat-icon style="line-height: 20px !important; vertical-align: unset;">highlight_off</mat-icon>
+            </button>
+        </span>       
+    </div> -->
+     <div class="ovi-pop-hdr" *ngIf="contentDetail['content'] == 'alerts' || contentDetail['content'] == 'calendar' || (contentDetail['content'] == 'floorplan' && contentDetail['header'] != false) || contentDetail['content'] == 'history' || contentDetail['content'] == 'webcam'|| contentDetail['content'] == 'layout'">
+        <div *ngIf="contentDetail['content'] == 'floorplan'">FLOOR PLAN VIEW</div>
+        <div *ngIf="contentDetail['content'] == 'history'"> {{"Movement History"|translate}}</div>
+        <div *ngIf="contentDetail['content'] == 'webcam'"> {{"Capture Image"|translate}}</div>
+        <div *ngIf="contentDetail['content'] == 'alerts'"> {{"Notification History"|translate}}</div>
+        <div *ngIf="contentDetail['content'] == 'calendar'"> {{"Calendar Taskview"|translate}}</div>
+        <div *ngIf="contentDetail['content'] == 'layout'"> {{"View Report"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="leaflet-content" *ngIf="contentDetail['content'] == 'floorplan'">
+        <tw-common-leaflet [leafRef]="'popup'" [blockSelect]="selectedBlock" [floorSelect]="selectedFloor"
+            [locFlr]="selectedLoc" [tagId]="tagId" [tagType]="tagType" [type]="type" [options]="contextOptions"
+            [reqTagDetail]="reqDetail" [reqType]="reqType"></tw-common-leaflet>
+    </div>
+    <div class="webcam-container" *ngIf="contentDetail['content'] == 'webcam'">
+        <video #video autoplay></video>
+        <button (click)="captureImage()">{{"Capture"|translate}}</button>
+        <canvas #canvas style="display:none;"></canvas>
+        <img *ngIf="imageData" [src]="imageData" alt="Captured Img" />    
+    </div>
+    <div *ngIf="contentDetail['content'] == 'form'" style="height:calc(100% - 100px);width:100%">
+        <app-form-component [formInput]="contentDetail"
+            (formInputUpdatedData)=formInputUpdatedData($event)></app-form-component>
+    </div>
+    <div *ngIf="contentDetail['content'] == 'alerts'" style="height:calc(100% - 100px);padding: 5px;">
+        <app-alert-management></app-alert-management>
+    </div>
+    <div *ngIf="contentDetail['content'] == 'layout'" style="height:calc(100% - 100px);padding: 5px;">
+        <div *ngIf="!layoutInfo.isActive" class="ovi-fnt-sze35" style="height: 100%;width: 100%;display: inline-flex;color: #cfcfcf;justify-content: center;">
+            Report not available
+        </div>
+        <div *ngIf="layoutInfo.isActive" style="height: 100%;width: 100%;">
+            <div style=" padding: 0px 15px 0px 5px;" *ngIf="layoutInfo.enableHeader">
+            <tw-layout-header-component *ngIf="contentDetail['content'] == 'layout'" [layout]="'dynamic'" [enableExcel]="layoutInfo.enableExcel" [enablePdf]="layoutInfo.enablePdf" [enableRefresh]="layoutInfo.enableRefresh" [pdfConfigSelected]="layoutInfo.pdfConfigSelected" 
+                [headerName] = "layoutInfo.headerName" [filterInputs]="layoutInfo.filterInputs" [dashboardId]="layoutInfo.dashboardId" (reportHeaderAction)="reportHeaderAction($event)" [type] = "contentDetail['content']"></tw-layout-header-component>
+            </div>
+            <div style="height:calc(100% - 95px);">
+                <app-gridster-layout *ngIf="contentDetail['content'] == 'layout'" [dashId]="" [resourceCode]="contentDetail['linkedResourceCode']" [dashData]="" 
+                [type]="'popup-report'"
+                [inputAction]="layoutInfo.inputAction" [showLayoutSetting]="layoutInfo.showLayoutSetting"></app-gridster-layout>
+            </div>        
+        </div>
+
+    </div>
+    <div *ngIf="contentDetail['content'] == 'calendar'" style="height:calc(100% - 100px);padding: 5px;">
+        <app-calendar [calendarInput]="contentDetail" (calendarUpdatedData)="calendarUpdatedData($event)"></app-calendar>
+    </div>
+    <div *ngIf="contentDetail['content'] == 'history'" style="height:calc(100% - 100px);width:100%">
+        <div style="padding-left: 20px;">
+                <div  id="porter-box1">{{"Performer"|translate}}</div>
+                <div id="porter-box2">
+                    <mat-form-field class="porter-select" appearance="none">
+                        <mat-select [showPlaceholder]="true" [placeholderText]="'Select Performer'|translate" [formControl]="performerId">
+                            <mat-option *ngFor="let performer of perfomerList" [value]="performer.id">
+                                {{performer.name}} ( {{performer.tagId}} )
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>&nbsp;&nbsp;
+            <button  mat-button class="active-btn margin-r-1" (click)="poterTrackHistory()"> {{"Go"|translate}} </button>
+        </div>
+
+        <div fxLayout="column" class="tw-manage-component porterhis" [ngClass.xs]="'components-container-xs'"
+            fxLayoutGap="5px">
+            <div style="overflow: auto;">
+                <table mat-table class="tw-table" [dataSource]="dataSourceViewHistory">
+                    <ng-container matColumnDef="blockName">
+                        <th  mat-header-cell *matHeaderCellDef class="tw-manage-table-header"> {{"Location"|translate}}</th>
+                        <td mat-cell *matCellDef="let element"> {{element['Location Name']}},{{element['Floor Name']}} </td>
+                    </ng-container>
+                    <ng-container matColumnDef="fromTime">
+                        <th  mat-header-cell *matHeaderCellDef class="tw-manage-table-header"> {{"From Time"|translate}} </th>
+                        <td mat-cell *matCellDef="let element"> {{element['From time'] | date: "hh:mm a, d MMM"}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="toTime">
+                        <th  mat-header-cell *matHeaderCellDef class="tw-manage-table-header"> {{"To Time"|translate}} </th>
+                        <td mat-cell *matCellDef="let element"> {{element['To Time'] | date: "hh:mm a, d MMM"}} </td>
+                    </ng-container>
+                    <ng-container matColumnDef="duration">
+                        <th  mat-header-cell *matHeaderCellDef class="tw-manage-table-header"> {{"Duration"|translate}} </th>
+                        <td mat-cell *matCellDef="let element">{{element['Duration']}}</td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"
+                        class="tw-manage-table-header-row"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+            </div>
+            <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons
+                class="tw-paginator-sticky"></mat-paginator>
+        </div>
+    </div>
+</div>

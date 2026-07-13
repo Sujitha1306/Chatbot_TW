@@ -1,0 +1,1549 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.configId">{{"Create Alert Rule"|translate}}</div>
+        <div *ngIf="data.configId">{{"Modify Alert Rule"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 135px);overflow: auto">
+        <mat-tab-group [formGroup]="alertRuleForm" (selectedTabChange)="tabClick($event)"
+            [selectedIndex]="selectedIndex" class="cust-tab">
+            <mat-tab  label="{{'Alert Configuration'|translate}}">
+                <ng-template mat-tab-label >{{"Alert Configuration"|translate}}</ng-template>
+                <div style="padding-top: 5px;overflow: hidden;">
+                    <div class="form-row">
+                        <div class="ovi-popup-title-text-size top-styl">{{"ALERT DETAILS"|translate}}</div>
+                    </div>
+                    <mat-divider class="divider"></mat-divider>
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Alert Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="name"
+                                        autocomplete="off">
+                                    <mat-error *ngIf="alertRuleForm.controls.name.invalid" class="error-txt-1">
+                                        <span [hidden]="!alertRuleForm.controls['name'].errors.required">{{"Alert Name
+                                            is required"|translate}}</span>
+                                        <span
+                                            [hidden]="!alertRuleForm.controls['name'].errors.specialCharacterValidation">{{"No
+                                            special chars allowed"|translate}}</span>
+                                        <span [hidden]="!alertRuleForm.controls['name'].errors.characterRange">{{"Min
+                                            3 to max 15 characters"|translate}}</span>
+                                        <span
+                                            [hidden]="!alertRuleForm.controls['name'].errors.whitespacevalidation">{{"No
+                                            white space at beginning or end"|translate}}</span>
+                                        <span [hidden]="!alertRuleForm.controls['name'].errors.maxLength">{{"Max
+                                            character length 15"|translate}}</span>
+                                        <span
+                                            [hidden]="!alertRuleForm.controls['name'].errors.characterPattern">{{"Numbers
+                                            not allowed"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Rule Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="pfRuleid" [disabled]="data.configId"
+                                    (selectionChange)="getAlertConfig($event.value)">
+                                    <mat-option *ngFor="let data of ruleTypes" [value]="data.id">
+                                        {{data.ruleName}} </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="alertRuleForm.controls.pfRuleid.invalid" class="error-txt-1">
+                                    <span [hidden]="!alertRuleForm.controls['pfRuleid'].errors.required">{{"Rule
+                                        Name
+                                        is required."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                        <div class="ovi-row-four-clmn  ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Alert Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="alertTypeId" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of alertTypes" [value]="data.code">
+                                        {{data.value}} </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="alertRuleForm.controls.alertTypeId.invalid" class="error-txt-1">
+                                    <span [hidden]="!alertRuleForm.controls['alertTypeId'].errors.required">{{"Alert Type
+                                        is required."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn  ovi-matfrmfld-drpdwn-top-box" *ngIf="this.pfRule[0]?.ruleCategoryId === 'RC-API'">
+                            <mat-label class="ovi-lbl-text-size">{{"Template Model"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="pfModelId" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of modelList" [value]="data.id">
+                                        {{data.name}} </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="alertRuleForm.controls.pfModelId.invalid" class="error-txt-1">
+                                    <span [hidden]="!alertRuleForm.controls['pfModelId'].errors.required">{{"Template Model
+                                        is required."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="data.configId">
+                                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <mat-select formControlName="status" [disableOptionCentering]="true">
+                                        <mat-option [value]="true">{{"Active"|translate}}</mat-option>
+                                        <mat-option [value]="false">{{"Inactive"|translate}}</mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="alertRuleForm.controls.status.invalid" class="error-txt-1">
+                                        <span
+                                            [hidden]="!alertRuleForm.controls['status'].errors.required">{{"Status
+                                            is required."|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                    </div>
+                    <div *ngIf="createAlert && this.pfRule[0]?.ruleTypeId !== 'RU-GO' &&
+                    this.pfRule[0]?.ruleTypeId !== 'RU-DEF' && this.pfRule[0]?.ruleTypeId !== 'RU-SE' && this.pfRule[0]?.ruleTypeId !== 'RU-DA' &&
+                     this.pfRule[0]?.ruleTypeId !== 'RU-SC' && this.pfRule[0]?.ruleTypeId !== 'RU-WO'">
+                        <div class="form-row">
+                            <div class="ovi-popup-title-text-size top-styl">{{"CREATE ALERT CONFIGURATION"|translate}}</div>
+                        </div>
+                        <mat-divider class="divider"></mat-divider>
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('porter_alert_type') > -1 || addScopeDetailsCreate.indexOf('porter_alert_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['porter_alert_type'].validator" class="ovi-lbl-text-size">
+                                        {{"Config Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['porter_alert_type'].validator" class="ovi-lbl-text-size">
+                                        {{"Config Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="porter_alert_type" [disabled]="data.configId"
+                                            [multiple]="porter_alert_typeMultiple ? true : false"
+                                            (selectionChange)="getScopeDetails($event.value)">
+                                            <mat-option *ngFor="let data of porter_alert_typeList" [value]="data.code">
+                                                {{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.porter_alert_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['porter_alert_type'].errors.required">{{"Config Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('dq_type') > -1 || addScopeDetailsCreate.indexOf('dq_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_type'].validator" class="ovi-lbl-text-size">
+                                        {{"DQ Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_type'].validator" class="ovi-lbl-text-size">
+                                        {{"DQ Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_type" [disabled]="data.configId"
+                                            [multiple]="dq_typeMultiple ? true : false"
+                                            (selectionChange)="getScopeDetails($event.value)">
+                                            <mat-option *ngFor="let data of dq_typeList" [value]="data.code">
+                                                {{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_type'].errors.required">{{"DQ Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('rule_alert_type') > -1 || addScopeDetailsCreate.indexOf('rule_alert_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['rule_alert_type'].validator" class="ovi-lbl-text-size">
+                                        {{"Movement Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['rule_alert_type'].validator" class="ovi-lbl-text-size">
+                                        {{"Movement Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="rule_alert_type" [disabled]="data.configId"
+                                            [multiple]="rule_alert_typeMultiple ? true : false"
+                                            (selectionChange)="getScopeDetails($event.value)">
+                                            <mat-option *ngFor="let data of rule_alert_typeList" [value]="data.code">
+                                                {{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.rule_alert_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['rule_alert_type'].errors.required">{{"Movement Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('routine_type') > -1 || addScopeDetailsCreate.indexOf('routine_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['routine_type'].validator" class="ovi-lbl-text-size">
+                                        {{"Routine Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['routine_type'].validator" class="ovi-lbl-text-size">
+                                        {{"Routine Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="routine_type" [disabled]="data.configId"
+                                            [multiple]="routine_typeMultiple ? true : false"
+                                            (selectionChange)="getScopeDetails($event.value);getRoutineType($event.value)">
+                                            <mat-option *ngFor="let data of routine_typeList" [value]="data.code">
+                                                {{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.routine_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['routine_type'].errors.required">{{"Routine Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('scope_id') > -1 || addScopeDetailsCreate.indexOf('scope_id') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['scope_id'].validator" class="ovi-lbl-text-size">
+                                        {{"Scope ID"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['scope_id'].validator" class="ovi-lbl-text-size">
+                                        {{"Scope ID"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="scope_id" [disableOptionCentering]="true" [disabled]="data.configId"
+                                            [multiple]="scope_idMultiple ? true : false"
+                                            (selectionChange)="getScopeId($event.value);createAlertConfig.indexOf('rule_alert_type') > -1 || addScopeDetailsCreate.indexOf('rule_alert_type') > -1 ?
+                                            '' : getScopeDetails($event.value)">
+                                            <mat-option *ngIf="alertRuleForm.controls['pfRuleid'].value === 13" [value]="'N/A'">{{"Not Applicable"|translate}}</mat-option>
+                                            <mat-option *ngFor="let data of scope_idList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.scope_id.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['scope_id'].errors.required">{{"Scope ID
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('dq_sub_type') > -1 || addScopeDetailsCreate.indexOf('dq_sub_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_sub_type'].validator" class="ovi-lbl-text-size">
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Health Package Type"|translate}} <span class="mandatory-field">*</span></span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU'">{{"Routine Type"|translate}} <span class="mandatory-field">*</span></span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RQ'">{{"Request type"|translate}} <span class="mandatory-field">*</span></span>
+                                    </mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_sub_type'].validator" class="ovi-lbl-text-size">
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Health Package Type"|translate}}</span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU'">{{"Routine Type"|translate}}</span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RQ'">{{"Request type"|translate}}</span>
+                                    </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_sub_type" [disableOptionCentering]="true" [disabled]="data.configId"
+                                            [multiple]="dq_sub_typeMultiple ? true : false"
+                                            (selectionChange)="getDQAlertData($event.value);">
+                                            <mat-option *ngFor="let data of dq_sub_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_sub_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_sub_type'].errors.required">
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Health Package Type is required"|translate}}</span>
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU'">{{"Routine Type is required"|translate}}</span>
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RQ'">{{"Request type is required"|translate}}</span></span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('category_type') > -1 || addScopeDetailsCreate.indexOf('category_type') > -1) &&
+                                alertRuleForm.controls.dq_type.value !== 'DQAT-RQ'">
+                                    <mat-label *ngIf="alertRuleForm.controls['category_type'].validator" class="ovi-lbl-text-size">{{"Category Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['category_type'].validator" class="ovi-lbl-text-size">{{"Category Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="category_type" [disableOptionCentering]="true" [disabled]="data.configId"
+                                            [multiple]="category_typeMultiple ? true : false"
+                                            (selectionChange)="getDQEvent($event.value);">
+                                            <mat-option *ngFor="let data of category_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.category_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['category_type'].errors.required"> {{"Category Type is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('category_type') > -1 || addScopeDetailsCreate.indexOf('category_type') > -1) &&
+                                (alertRuleForm.controls.dq_type.value === 'DQAT-RQ' && alertRuleForm.controls.dq_sub_type.value !== 'RQT-OT')">
+                                    <mat-label *ngIf="alertRuleForm.controls['category_type'].validator" class="ovi-lbl-text-size">{{"Category Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['category_type'].validator" class="ovi-lbl-text-size">{{"Category Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="category_type" [disableOptionCentering]="true" [disabled]="data.configId"
+                                            [multiple]="category_typeMultiple ? true : false"
+                                            (selectionChange)="getDQEvent($event.value);">
+                                            <mat-option *ngFor="let data of category_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.category_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['category_type'].errors.required"> {{"Category Type is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('service_grp') > -1 || addScopeDetailsCreate.indexOf('service_grp') > -1) &&
+                                (alertRuleForm.controls.dq_type.value === 'DQAT-RQ' && serviceExist)"> 
+                                    <mat-label *ngIf="alertRuleForm.controls['service_grp'].validator" class="ovi-lbl-text-size">{{"Service Group"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['service_grp'].validator" class="ovi-lbl-text-size">{{"Service Group"|translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="service_grp" [disableOptionCentering]="true" [disabled]="data.configId"
+                                            [multiple]="service_grpMultiple ? true : false">
+                                            <mat-option *ngFor="let data of service_grpList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.service_grp.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['service_grp'].errors.required"> {{"Service Group is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('pool_loc_cat') > -1 || addScopeDetailsCreate.indexOf('pool_loc_cat') > -1) &&
+                                (alertRuleForm.controls.dq_type.value === 'DQAT-RQ') && poolLoc"> 
+                                    <mat-label *ngIf="alertRuleForm.controls['pool_loc_cat'].validator && category === 'PR-SE'" class="ovi-lbl-text-size">{{"Floor"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['pool_loc_cat'].validator && category === 'PR-SE'" class="ovi-lbl-text-size">{{"Floor"|translate}} </mat-label>
+                                    <mat-label *ngIf="alertRuleForm.controls['pool_loc_cat'].validator && category === 'PR-OT'" class="ovi-lbl-text-size">{{"Department"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['pool_loc_cat'].validator && category === 'PR-OT'" class="ovi-lbl-text-size">{{"Department"|translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="pool_loc_cat" [disableOptionCentering]="true"
+                                            [multiple]="pool_loc_catMultiple ? true : false">
+                                            <mat-option *ngFor="let data of pool_loc_catList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.pool_loc_cat.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['pool_loc_cat'].errors.required"> {{"Pool Location Category is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('dq_event_type') > -1 || addScopeDetailsCreate.indexOf('dq_event_type') > -1) &&
+                                alertRuleForm.controls.category_type.value === 'DQCT-EV'">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_event_type'].validator" class="ovi-lbl-text-size">{{"Event Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_event_type'].validator" class="ovi-lbl-text-size">{{"Event Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_event_type" [disableOptionCentering]="true"
+                                            [multiple]="dq_event_typeMultiple ? true : false">
+                                            <mat-option *ngFor="let data of dq_event_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_event_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_event_type'].errors.required"> {{"Event Type is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('dq_role') > -1 || addScopeDetailsCreate.indexOf('dq_role') > -1 &&
+                                alertRuleForm.controls.dq_sub_type.value !== 'RQT-OT'">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_role'].validator" class="ovi-lbl-text-size">{{"Role"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_role'].validator" class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_role" [disableOptionCentering]="true"
+                                            [multiple]="dq_roleMultiple ? true : false">
+                                            <mat-option *ngFor="let data of dq_roleList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_role.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_role'].errors.required"> {{"Role is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('dq_routine') > -1 || addScopeDetailsCreate.indexOf('dq_routine') > -1) &&
+                                alertRuleForm.controls.category_type.value === 'DQCT-AT'">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_routine'].validator" class="ovi-lbl-text-size">
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Health Package"|translate}} <span class="mandatory-field">*</span></span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU'">{{"Routine"|translate}} <span class="mandatory-field">*</span></span>
+                                    </mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_routine'].validator" class="ovi-lbl-text-size">
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Health Package"|translate}}</span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU'">{{"Routine"|translate}}</span>
+                                    </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_routine" [disableOptionCentering]="true"
+                                            [multiple]="dq_routineMultiple ? true : false"
+                                            (openedChange)="openedChange($event);">
+                                            <mat-option *ngFor="let data of dq_routineList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_routine.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_routine'].errors.required">
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Health Package is required"|translate}}</span>
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU'">{{"Routine is required"|translate}}</span>
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('dq_activity_group') > -1 || addScopeDetailsCreate.indexOf('dq_activity_group') > -1) &&
+                                (alertRuleForm.controls.category_type.value === 'DQCT-AT' || alertRuleForm.controls.dq_sub_type.value === 'RQT-OT')">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_activity_group'].validator" class="ovi-lbl-text-size">
+                                        <span  *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Test Group"|translate}} <span class="mandatory-field">*</span></span>
+                                        <span  *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU' ||
+                                        alertRuleForm.controls.dq_sub_type.value === 'RQT-OT'">{{"Activity Group"|translate}} <span class="mandatory-field">*</span></span>
+                                    </mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_activity_group'].validator" class="ovi-lbl-text-size">
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Test Group"|translate}}</span>
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU' ||
+                                        alertRuleForm.controls.dq_sub_type.value === 'RQT-OT'">{{"Activity Group"|translate}}</span>
+                                    </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_activity_group" [disableOptionCentering]="true"
+                                            [multiple]="dq_activity_groupMultiple ? true : false">
+                                            <mat-option *ngFor="let data of dq_activity_groupList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_activity_group.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_activity_group'].errors.required">
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Test Group is required"|translate}}</span>
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU' ||
+                                                alertRuleForm.controls.dq_sub_type.value === 'RQT-OT'">{{"Activity Group is required"|translate}}</span>
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="(createAlertConfig.indexOf('dq_activity') > -1 || addScopeDetailsCreate.indexOf('dq_activity') > -1) &&
+                                (alertRuleForm.controls.category_type.value === 'DQCT-AT' || alertRuleForm.controls.dq_sub_type.value === 'RQT-OT')">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_activity'].validator" class="ovi-lbl-text-size">
+                                        <span  *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">Test <span class="mandatory-field">*</span></span>
+                                        <span  *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU' ||
+                                        alertRuleForm.controls.dq_sub_type.value === 'RQT-OT'">{{"Activity"|translate}} <span class="mandatory-field">*</span></span>
+                                    </mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_activity'].validator" class="ovi-lbl-text-size">
+                                        <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Test"|translate}}</span>
+                                        <span  *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU' ||
+                                        alertRuleForm.controls.dq_sub_type.value === 'RQT-OT'">{{"Activity"|translate}}</span>
+                                    </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_activity" [disableOptionCentering]="true"
+                                            [multiple]="dq_activityMultiple ? true : false">
+                                            <mat-option *ngFor="let data of dq_activityList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_activity.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_activity'].errors.required">
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-HP'">{{"Test is required"|translate}}</span>
+                                                <span *ngIf="alertRuleForm.controls.dq_type.value === 'DQAT-RU' ||
+                                                alertRuleForm.controls.dq_sub_type.value === 'RQT-OT'">{{"Activity is required"|translate}}</span>
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('dq_status') > -1 || addScopeDetailsCreate.indexOf('dq_status') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['dq_status'].validator" class="ovi-lbl-text-size">{{"Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['dq_status'].validator" class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="dq_status" [disableOptionCentering]="true"
+                                            [multiple]="dq_statusMultiple ? true : false">
+                                            <mat-option *ngFor="let data of dq_statusList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.dq_status.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['dq_status'].errors.required"> {{"Status is required"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('tag_type_id') > -1 || addScopeDetailsCreate.indexOf('tag_type_id') > -1
+                                    && alertRuleForm.controls['rule_alert_type'].value !== 'RAT-DS'">
+                                    <mat-label *ngIf="alertRuleForm.controls['tag_type_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Tag Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['tag_type_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Tag Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="tag_type_id" [disableOptionCentering]="true"
+                                            panelClass="panelMultiple" [multiple]="tag_type_idMultiple ? true : false">
+                                            <mat-option *ngFor="let data of tag_type_idList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.tag_type_id.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['tag_type_id'].errors.required">{{"Tag
+                                                Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('asset_type_id') > -1 || addScopeDetailsCreate.indexOf('asset_type_id') > -1
+                                    && alertRuleForm.controls['rule_alert_type'].value !== 'RAT-DS' && alertRuleForm.controls['scope_id'].value === 'TAT-AS'">
+                                    <mat-label *ngIf="alertRuleForm.controls['asset_type_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Asset Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['asset_type_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Asset Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="asset_type_id" [disableOptionCentering]="true"
+                                            panelClass="panelMultiple" [multiple]="asset_type_idMultiple ? true : false">
+                                            <mat-option *ngFor="let data of asset_type_idList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.asset_type_id.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['asset_type_id'].errors.required">{{"Asset
+                                                Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('tag_id') > -1 || addScopeDetailsCreate.indexOf('tag_id') > -1
+                                    && alertRuleForm.controls['rule_alert_type'].value !== 'RAT-DS'">
+                                    <mat-label *ngIf="alertRuleForm.controls['tag_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Tag ID"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['tag_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Tag ID"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="tag_id" [disableOptionCentering]="true"
+                                            panelClass="panelMultiple" [multiple]="tag_idMultiple ? true : false">
+                                            <mat-option *ngFor="let data of tag_idList" [value]="data.tagId">
+                                                {{data.tagId}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.tag_id.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['tag_id'].errors.required">{{"Tag
+                                                ID
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('event_type') > -1 || addScopeDetailsCreate.indexOf('event_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['event_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Event Type"|trnalsate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['event_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Event Type"|trnalsate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="event_type" (selectionChange)="getEventType($event.value)"
+                                            [multiple]="event_typeMultiple ? true : false" [disabled]="data.configId">
+                                            <mat-option *ngFor="let data of event_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.event_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['event_type'].errors.required">{{"Event
+                                                Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('location_category') > -1 || addScopeDetailsCreate.indexOf('location_category') > -1 &&
+                                alertRuleForm.controls['event_type'].value !== 'GET-OUT'">
+                                    <mat-label *ngIf="alertRuleForm.controls['location_category'].validator"
+                                        class="ovi-lbl-text-size">{{"Location Category"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['location_category'].validator"
+                                        class="ovi-lbl-text-size">{{"Location Category"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="location_category"
+                                            [multiple]="location_categoryMultiple ? true : false"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of location_categoryList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.location_category.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['location_category'].errors.required">{{"Location
+                                                Category is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('location_id') > -1 || addScopeDetailsCreate.indexOf('location_id') > -1 &&
+                                    alertRuleForm.controls['event_type'].value !== 'GET-OUT'">
+                                    <mat-label *ngIf="alertRuleForm.controls['location_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Location ID"|translate}}</mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['location_id'].validator"
+                                        class="ovi-lbl-text-size">{{"Location ID"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="location_id" id="location"
+                                        appTypeHit (typeHit)="getLocationSearch($event);" [matAutocomplete]="auto" autocomplete="off">
+                                        <mat-autocomplete autoActiveFirstOption
+                                            [displayWith]="this.locationIdEnabled === true ? getLocationIdList.bind(location_id) : ''"
+                                            #auto="matAutocomplete">
+                                            <mat-option *ngFor="let option of location_id" [value]="option.id">
+                                                <div class="alrt-wid-styl">{{option.name}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error *ngIf="alertRuleForm.controls.location_id.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['location_id'].errors.required">{{"Location
+                                                ID is required."|translate}}</span>
+                                                <span [hidden]="!alertRuleForm.controls['location_id'].errors.requireMatch">{{"Please select value
+                                                    from the option"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('location_type') > -1 || addScopeDetailsCreate.indexOf('location_type') > -1">
+                                <div *ngIf="alertRuleForm.controls['event_type'].value !== 'GET-OUT'">
+                                    <mat-label *ngIf="alertRuleForm.controls['location_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Location Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['location_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Location Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="location_type" [multiple]="location_typeMultiple ? true : false"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of location_typeList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.location_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['location_type'].errors.required">{{"Location
+                                                Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                    </div>
+                                    <div  *ngIf="alertRuleForm.controls['event_type'].value === 'GET-OUT'">
+                                        <mat-label *ngIf="alertRuleForm.controls['out_location_type'].validator"
+                                            class="ovi-lbl-text-size">{{"Location Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-label *ngIf="!alertRuleForm.controls['out_location_type'].validator"
+                                            class="ovi-lbl-text-size">{{"Location Type"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="out_location_type" [multiple]="false">
+                                            <mat-option *ngFor="let data of location_typeList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.out_location_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['out_location_type'].errors.required">{{"Location
+                                                Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('visit_type') > -1 || addScopeDetailsCreate.indexOf('visit_type') > -1 &&
+                                alertRuleForm.controls['scope_id'].value === 'TAT-PA'">
+                                    <mat-label *ngIf="alertRuleForm.controls['visit_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Visit Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['visit_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Visit Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="visit_type"
+                                            [multiple]="visit_typeMultiple ? true : false"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of visit_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.visit_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['visit_type'].errors.required">{{"Visit
+                                                Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('visit_event_type') > -1 || addScopeDetailsCreate.indexOf('visit_event_type') > -1 &&
+                                alertRuleForm.controls['visit_type'].value !== null && alertRuleForm.controls['visit_type'].value?.indexOf('VT-IP') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['visit_event_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Visit Event Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['visit_event_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Visit Event Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="visit_event_type"
+                                            [multiple]="visit_event_typeMultiple ? true : false">
+                                            <mat-option *ngFor="let data of visit_event_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.visit_event_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['visit_event_type'].errors.required">{{"Visit
+                                                Event Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('visit_status') > -1 || addScopeDetailsCreate.indexOf('visit_status') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['visit_status'].validator"
+                                        class="ovi-lbl-text-size">{{"Visit Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['visit_status'].validator"
+                                        class="ovi-lbl-text-size">{{"Visit Status"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="visit_status"
+                                            [multiple]="visit_statusMultiple ? true : false"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of visit_statusList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.visit_status.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['visit_status'].errors.required">{{"Visit Status is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('queue_status') > -1 || addScopeDetailsCreate.indexOf('queue_status') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['queue_status'].validator"
+                                        class="ovi-lbl-text-size">{{"Queue Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['queue_status'].validator"
+                                        class="ovi-lbl-text-size">{{"Queue Status"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="queue_status"
+                                            [multiple]="queue_statusMultiple ? true : false"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of queue_statusList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.queue_status.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['queue_status'].errors.required">{{"Queue Status is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('aid') > -1 || addScopeDetailsCreate.indexOf('aid') > -1 && aidDataFormat.length === 0">
+                                    <mat-label *ngIf="alertRuleForm.controls['aid'].validator" class="ovi-lbl-text-size">{{"Aid"|translate}} <span class="mandatory-field">*</span>
+                                    </mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['aid'].validator" class="ovi-lbl-text-size">{{"Aid"|translate}}
+                                    </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="aid" appPlaceholder [showPlaceholder]="true" [placeholderText]="'aid'|translate" autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.aid.invalid" class="error-txt-1">
+                                            <span [hidden]="!alertRuleForm.controls['aid'].errors.required">{{"Aid
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('ra_time_limit') > -1 || addScopeDetailsCreate.indexOf('ra_time_limit') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['ra_time_limit'].validator"
+                                        class="ovi-lbl-text-size">{{"Time Limit (Minutes)"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['ra_time_limit'].validator"
+                                        class="ovi-lbl-text-size">{{"Time Limit (Minutes)"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="ra_time_limit" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Time Limit'|translate" 
+                                          autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.ra_time_limit.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['ra_time_limit'].errors.required">{{"Time Limit
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('time_interval') > -1 || addScopeDetailsCreate.indexOf('time_interval') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['time_interval'].validator"
+                                        class="ovi-lbl-text-size">{{"Time Interval (Minutes)"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['time_interval'].validator"
+                                        class="ovi-lbl-text-size">{{"Time Interval (Minutes)"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="time_interval" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Time Interval'|translate" 
+                                          autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.time_interval.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['time_interval'].errors.required">{{"Time Limit
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('time_limit') > -1 || addScopeDetailsCreate.indexOf('time_limit') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['time_limit'].validator"
+                                        class="ovi-lbl-text-size">{{"Time Limit (Minutes)"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['time_limit'].validator"
+                                        class="ovi-lbl-text-size">{{"Time Limit (Minutes)"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="time_limit" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Time Limit'|translate" 
+                                          autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.time_limit.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['time_limit'].errors.required">{{"Time Limit
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('bed_value') > -1 || addScopeDetailsCreate.indexOf('bed_value') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['bed_value'].validator"
+                                        class="ovi-lbl-text-size">{{"Bed Value"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['bed_value'].validator"
+                                        class="ovi-lbl-text-size">{{"Bed Value"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="bed_value" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Bed Value'|translate" 
+                                           autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.bed_value.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['bed_value'].errors.required">{{"Bed
+                                                value
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('battery_level') > -1 || addScopeDetailsCreate.indexOf('battery_level') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['battery_level'].validator"
+                                        class="ovi-lbl-text-size">{{"Battery Level"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['battery_level'].validator"
+                                        class="ovi-lbl-text-size">{{"Battery Level"|translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="battery_level" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Battery Level'|translate" 
+                                          autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.battery_level.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['battery_level'].errors.required">{{"Battery
+                                                Level
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                            *ngIf="createAlertConfig.indexOf('routine_alert_type') > -1 || addScopeDetailsCreate.indexOf('routine_alert_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['routine_alert_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Routine Alert Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['routine_alert_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Routine Alert Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="routine_alert_type"
+                                            [multiple]="routine_alert_typeMultiple ? true : false"
+                                            (selectionChange)="getRoutineAlertType($event.value)">
+                                            <mat-option *ngFor="let data of routine_alert_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.routine_alert_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['routine_alert_type'].errors.required">{{"Routine group
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="createAlertConfig.indexOf('request_status') > -1 || addScopeDetailsCreate.indexOf('request_status') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['request_status'].validator"
+                                        class="ovi-lbl-text-size">{{"Request Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['request_status'].validator"
+                                        class="ovi-lbl-text-size">{{"Request Status"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="request_status"
+                                            [multiple]="request_statusMultiple ? true : false">
+                                            <mat-option *ngFor="let data of request_statusList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.request_status.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['request_status'].errors.required">{{"Request Status
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="createAlertConfig.indexOf('request_type') > -1 || addScopeDetailsCreate.indexOf('request_type') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['request_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Request Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['request_type'].validator"
+                                        class="ovi-lbl-text-size">{{"Request Type"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="request_type"
+                                            [multiple]="request_typeMultiple ? true : false">
+                                            <mat-option *ngFor="let data of request_typeList" [value]="data.code">
+                                                {{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.request_type.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['request_type'].errors.required">{{"Request Type
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('routine') > -1 || addScopeDetailsCreate.indexOf('routine') > -1 && this.isRoutine">
+                                    <mat-label *ngIf="alertRuleForm.controls['routine'].validator"
+                                        class="ovi-lbl-text-size">{{"Routine"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['routine'].validator"
+                                        class="ovi-lbl-text-size">{{"Routine"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="routine"
+                                            [multiple]="routineMultiple ? true : false"
+                                            (selectionChange)="getRoutineActivities($event.value)">
+                                            <mat-option *ngFor="let data of routineList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.routine.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['routine'].errors.required">{{"Routine
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('routine_activity') > -1 || addScopeDetailsCreate.indexOf('routine_activity') > -1 && this.isRoutine">
+                                    <mat-label *ngIf="alertRuleForm.controls['routine_activity'].validator"
+                                        class="ovi-lbl-text-size">{{"Routine Activity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['routine_activity'].validator"
+                                        class="ovi-lbl-text-size">{{"Routine Activity"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="routine_activity"
+                                            [multiple]="routine_activityMultiple ? true : false">
+                                            <mat-option *ngFor="let data of routine_activityList" [value]="data.routineActivityId">
+                                                {{data.activityName}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.routine_activity.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['routine_activity'].errors.required">{{"Routine Activity
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"
+                                *ngIf="createAlertConfig.indexOf('activity') > -1 || addScopeDetailsCreate.indexOf('activity') > -1 && this.isActivity">
+                                    <mat-label *ngIf="alertRuleForm.controls['activity'].validator"
+                                        class="ovi-lbl-text-size">{{"Activity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['activity'].validator"
+                                        class="ovi-lbl-text-size">{{"Activity"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="activity"
+                                            [multiple]="activityMultiple ? true : false">
+                                            <mat-option *ngFor="let data of activityList" [value]="data.id">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="alertRuleForm.controls.activity.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['activity'].errors.required">{{"Activity
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('sla_start') > -1 || addScopeDetailsCreate.indexOf('sla_start') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['sla_start'].validator"
+                                        class="ovi-lbl-text-size">{{"SLA Start (Minutes)"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['sla_start'].validator"
+                                        class="ovi-lbl-text-size">{{"SLA Start (Minutes)"|translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="sla_start" appPlaceholder [showPlaceholder]="false" [placeholderText]="'SLA Start'|translate" 
+                                          autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.sla_start.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['sla_start'].errors.required">{{"SLA Start
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('sla_end') > -1 || addScopeDetailsCreate.indexOf('sla_end') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['sla_end'].validator"
+                                        class="ovi-lbl-text-size">{{"SLA End (Minutes)"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['sla_end'].validator"
+                                        class="ovi-lbl-text-size">{{"SLA End (Minutes)"|translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="sla_end" appPlaceholder [showPlaceholder]="false" [placeholderText]="'SLA End'|translate" 
+                                             autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.sla_end.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['sla_end'].errors.required">{{"SLA End
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                                *ngIf="createAlertConfig.indexOf('reminder_time') > -1 || addScopeDetailsCreate.indexOf('reminder_time') > -1">
+                                    <mat-label *ngIf="alertRuleForm.controls['reminder_time'].validator"
+                                        class="ovi-lbl-text-size">{{"Reminder Time (Minutes)"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-label *ngIf="!alertRuleForm.controls['reminder_time'].validator"
+                                        class="ovi-lbl-text-size">{{"Reminder Time (Minutes)"|translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  formControlName="reminder_time" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reminder Time'|translate" 
+                                         autocomplete="off">
+                                        <mat-error *ngIf="alertRuleForm.controls.reminder_time.invalid" class="error-txt-1">
+                                            <span
+                                                [hidden]="!alertRuleForm.controls['reminder_time'].errors.required">{{"Routine
+                                                is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                        <div *ngIf="!(pfRule[0].ruleTypeId =='RU-SC' && alertRuleForm.controls.alertTypeId.value == 'AT-RE')">
+                        <div *ngIf="configDataFormat[0]?.sla_time && addScopeDetailsCreate.indexOf('sla_alert_config') > -1"
+                            class="ovi-row-gap">
+                            <div class="row-field-temp">
+                                <div  style="margin-top: 15%;">
+                                    <span class="ovi-fnt-sze11" >{{"SLA Time :"|translate}} </span>
+                                </div>
+                            </div>
+                            <div class="ovi-row-three-clmn ">
+                                    <div class="threshold-alert" style="margin-right: 57%;">
+                                        {{"Alert :"|translate}} {{sliderSlaAlert.value}}</div>
+                                    <span class="ovi-fnt-sze11" >{{configDataFormat[0].sla_time.alert.low}}</span>
+                                    <mat-slider #sliderSlaAlert min="{{configDataFormat[0].sla_time.alert.low}}" max="{{configDataFormat[0].sla_time.alert.high}}"
+                                    formControlName="sla_alert" [disabled]="configSla.checked === false"
+                                    (keydown.enter)="fixClick()" (click)="configSla.checked === true ? setConfigValue(sliderSlaEscalate.value, sliderSlaAlert.value, 'sla_escalate') : ''"
+                                        [thumbLabel]="true" [step]="step"></mat-slider>
+                                    <span  class="ovi-fnt-sze11" style=" padding-left: 10px;">{{configDataFormat[0].sla_time.alert.high}}</span>
+                                </div>
+                            <div class="ovi-row-three-clmn ">
+                                    <div class="threshold-alert" style="margin-right: 57%;">
+                                        {{"Escalate :"|transalte}} {{sliderSlaEscalate.value}}</div>
+                                    <span class="ovi-fnt-sze11" >{{configDataFormat[0].sla_time.escalate.low}}</span>
+                                    <mat-slider #sliderSlaEscalate [min]="sliderSlaAlert.value" max="{{configDataFormat[0].sla_time.escalate.high}}"
+                                    formControlName="sla_escalate" [disabled]="configSla.checked === false"
+                                    (keydown.enter)="fixClick()" (click)="configSla.checked === true"
+                                        [thumbLabel]="true" [step]="step"></mat-slider>
+                                    <span class="ovi-fnt-sze11" style=" padding-left: 10px;">{{configDataFormat[0].sla_time.escalate.high}}</span>
+                            </div>
+                            <div class="row-field-temp">
+                                <div  style="display: flex;margin-top: 25%;">
+                                    <span class="ovi-fnt-sze11" style=" padding-right: 10px;">{{"OFF"|translate}}</span>
+                                    <mat-slide-toggle #configSla formControlName="configSla"></mat-slide-toggle>
+                                    <span class="ovi-fnt-sze11" style=" padding-left: 10px;">{{"ON"|translate}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div *ngIf="configDataFormat[0]?.reminder_time  && addScopeDetailsCreate.indexOf('sla_alert_config') > -1"
+                            class="ovi-row-gap">
+                            <div class="row-field-temp">
+                                <div  style="margin-top: 15%;">
+                                    <span class="ovi-fnt-sze11" >{{"Reminder Time :"|translate}} </span>
+                                </div>
+                            </div>
+                            <div class="ovi-row-three-clmn ">
+                                    <div class="threshold-alert" style="margin-right: 57%;">
+                                        {{"Alert :"|translate}} {{sliderReminderAlert.value}}</div>
+                                    <span class="ovi-fnt-sze11">{{configDataFormat[0].reminder_time.alert.low}}</span>
+                                    <mat-slider #sliderReminderAlert [min]="sliderReminderEscalate.value" max="{{configDataFormat[0].reminder_time.alert.high}}"
+                                    formControlName="reminder_alert" [disabled]="configReminder.checked === false"
+                                    (keydown.enter)="fixClick()" (click)="configReminder.checked === true"
+                                        [thumbLabel]="true" [step]="step"></mat-slider>
+                                    <span class="ovi-fnt-sze11" style=" padding-left: 10px;">{{configDataFormat[0].reminder_time.alert.high}}</span>
+                            </div>
+                            <div class="ovi-row-three-clmn ">
+                                    <div class="threshold-alert" style="margin-right: 57%;">
+                                        {{"Escalate :"|translate}} {{sliderReminderEscalate.value}}</div>
+                                    <span class="ovi-fnt-sze11">{{configDataFormat[0].reminder_time.escalate.low}}</span>
+                                    <mat-slider #sliderReminderEscalate min="{{configDataFormat[0].reminder_time.escalate.low}}" max="{{configDataFormat[0].reminder_time.escalate.high}}"
+                                    formControlName="reminder_escalate" [disabled]="configReminder.checked === false"
+                                    (keydown.enter)="fixClick()" (click)="configReminder.checked === true ? setConfigValue(sliderReminderAlert.value, sliderReminderEscalate.value, 'reminder_alert') : ''"
+                                        [thumbLabel]="true" [step]="step"></mat-slider>
+                                    <span class="ovi-fnt-sze11" style="padding-left: 10px;">{{configDataFormat[0].reminder_time.escalate.high}}</span>
+                            </div>
+                            <div class="row-field-temp">
+                                <div  style="display: flex;margin-top: 25%;">
+                                    <span class="ovi-fnt-sze11" style=" padding-right: 10px;">{{"OFF"|translate}}</span>
+                                    <mat-slide-toggle #configReminder formControlName="configReminder"></mat-slide-toggle>
+                                    <span class="ovi-fnt-sze11" style=" padding-left: 10px;">{{"ON"|translate}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div *ngIf="(pfRule[0].ruleTypeId =='RU-SC' && alertRuleForm.controls.alertTypeId.value == 'AT-RE')">
+                            <div class="form-row" *ngIf="configDataFormat[0]?.reminder && addScopeDetailsCreate.indexOf('sla_alert_config') > -1" >
+                                <div class="ovi-popup-title-text-size top-styl">{{"REMINDER DETAILS"|translate}}</div>
+                            </div>
+                            <mat-divider class="divider"></mat-divider>
+                            <div *ngIf="configDataFormat[0]?.reminder && addScopeDetailsCreate.indexOf('sla_alert_config') > -1" class="ovi-row-gap">
+                                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Select Reminder Days"|translate}}<span class="mandatory-field">*</span> </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <mat-select formControlName="prior_dur" [multiple]="true">
+                                            <mat-option *ngFor="let data of configDataFormat[0]?.reminder['valid_link']" [value]="data">
+                                                {{data}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                        </div>
+                        <div formArrayName="deviceList" *ngIf="deviceDataFormat.length > 0">
+                            <mat-divider class="divider"></mat-divider>
+                            <div>
+                                <button mat-mini-fab style="float:right;margin-top: -30px;margin-right: 25px;"
+                                    (click)="addDevice(d)">+</button>
+                            </div>
+                            <div *ngFor="let obj of alertRuleForm.controls.deviceList.controls; let d=index">
+                                <div [formGroupName]="d">
+                                    <div class="ovi-row-gap">
+                                        <div *ngIf="deviceDataFormat.indexOf('tag_type_id') > -1"
+                                            class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                                <mat-label *ngIf="d == 0" class="ovi-lbl-text-size">{{"Tag Type*"|translate}}
+                                                </mat-label>
+                                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                    <mat-select formControlName="device_tag_type_id" required
+                                                        [multiple]="tag_type_idMultiple ? true : false"
+                                                        (selectionChange)="filterDeviceOptions($event.value)"
+                                                        [disabled]="this.alertRuleForm.controls['deviceList'].value[d]?.device_tag_type_id !== null">
+
+                                                        <mat-option *ngFor="let data of tag_type_idList" [value]="data.code"
+                                                        [ngStyle]="{display: deviceTypeOption.indexOf(data.code) > -1 ? 'none' : 'block'}">
+                                                            {{data.value}}
+                                                        </mat-option>
+                                                    </mat-select>
+                                                    <mat-error class="error-txt-1">
+                                                        <span>{{"Tag Type is required."|translate}}</span>
+                                                    </mat-error>
+                                                </mat-form-field>
+                                        </div>
+                                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="deviceDataFormat.indexOf('time') > -1">
+                                                <mat-label *ngIf="d ==0" class="ovi-lbl-text-size">{{"Time (Minutes)"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                    appearance="outline">
+                                                    <input matInput  formControlName="device_time" appPlaceholder [showPlaceholder]="false" [placeholderText]="'time'|translate" 
+                                                        required autocomplete="off">
+                                                    <mat-error class="error-txt-1">
+                                                        <span >{{"Time is required."|translate}}</span>
+                                                    </mat-error>
+                                                </mat-form-field>
+                                        </div>
+                                        <div *ngIf="deviceDataFormat.length > 0" >
+                                            <span>
+                                                <button mat-mini-fab color="primary"
+                                                    (click)="removeDevice(d, 'clear')"
+                                                    [ngStyle]="{'margin-top': d === 0 ? '50%' : '5%'}"
+                                                    style="background-color: #FC8C91;"> x
+                                                </button></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div *ngIf="createAlertConfig.indexOf('generate_task') > -1 || addScopeDetailsCreate.indexOf('generate_task') > -1">
+                                    <span class="act-space-around">
+                                        <mat-checkbox formControlName="generate_task" class="ovi-fnt-sze12" (change)="clearTask($event)">{{"Generate Task"|translate}}</mat-checkbox>
+                                    </span>
+                            </div>
+                            <div formArrayName="sosAidList" *ngIf="aidDataFormat.length > 0">
+                                <div style="display: flex; justify-content: flex-end;">
+                                    <button mat-mini-fab style="margin-top: -32px;margin-right: 25px;"
+                                        (click)="addAid(K)">+</button>
+                                </div>
+                                <div *ngFor="let obj of alertRuleForm.controls.sosAidList.controls; let k=index">
+                                    <div [formGroupName]="k">
+                                        <div class="ovi-row-gap-four-fld">
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="aidDataFormat.indexOf('event') > -1">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Event"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                        appearance="outline">
+                                                        <mat-select formControlName="event"
+                                                            [multiple]="eventMultiple ? true : false"
+                                                            (selectionChange)="filtersosAidOptions($event.value)"
+                                                            [disabled]="alertRuleForm.controls['sosAidList'].value[k].event?.value !== null"
+                                                            [required]="alertRuleForm.controls['sosAidList'].value[k].event?.value === null">
+                                                            <mat-option *ngFor="let data of sosAidList" [value]="data.code"
+                                                                (keydown.enter)="fixClick()" (click)="getEventValue(data.value, k)"
+                                                                [ngStyle]="{display: sosAidOption.indexOf(data.code) > -1 ? 'none' : 'block'}">
+                                                                {{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+
+                                                        <mat-error>
+                                                            <span >{{"Event is required."|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                            </div>
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="aidDataFormat.indexOf('aid') > -1">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Aitestd"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                        appearance="outline">
+                                                        <input matInput  formControlName="sosAid" appPlaceholder [showPlaceholder]="true" [placeholderText]="'aid'|translate" 
+                                                          required autocomplete="off">
+                                                        <mat-error class="error-txt-1">
+                                                            <span>{{"Aid is required."|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                            </div>
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="aidDataFormat.indexOf('location_id') > -1 &&
+                                                this.pfRule[0]?.ruleTypeId === 'RU-PC'">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Location"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                        <input matInput formControlName="aidLocationId" appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" 
+                                                        id="location" required appTypeHit (typeHit)="getLocationSearch($event);"
+                                                        [matAutocomplete]="auto" autocomplete="off">
+                                                        <mat-autocomplete autoActiveFirstOption
+                                                            [displayWith]="this.locationIdEnabled === true ? getLocationIdList.bind(location_id) : ''"
+                                                            #auto="matAutocomplete">
+                                                            <mat-option *ngFor="let option of location_id" [value]="option.id">
+                                                                <div class="alrt-wid-styl">{{option.name}}</div>
+                                                            </mat-option>
+                                                        </mat-autocomplete>
+                                                        <mat-error>
+                                                            <span *ngIf="alertRuleForm.controls['sosAidList'].value[k]?.aidLocationId === null ||
+                                                            alertRuleForm.controls['sosAidList'].value[k]?.aidLocationId === ''">{{"Location is required."|translate}}</span>
+                                                            <span *ngIf="alertRuleForm.controls['sosAidList'].value[k]?.aidLocationId !== null ||
+                                                            alertRuleForm.controls['sosAidList'].value[k]?.aidLocationId !== ''">{{"Please select value
+                                                                from the option"|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                            </div>
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="aidDataFormat.indexOf('audio_file') > -1">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Audio File"|translate}}</mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                        appearance="outline">
+                                                        <mat-select formControlName="audio_file"
+                                                            [multiple]="audio_fileMultiple ? true : false" (selectionChange)="audioPlay($event.value)">
+                                                            <mat-option *ngFor="let data of audio_fileList" [value]="data.code">
+                                                                {{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                        <mat-error class="error-txt-1">
+                                                            <span>{{"Audio File is required."|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                            </div>
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="aidDataFormat.indexOf('audio_volume') > -1">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Audio Volume"|translate}}</mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                        appearance="outline">
+                                                        <mat-select formControlName="audio_volume"
+                                                            [multiple]="audio_volumeMultiple ? true : false">
+                                                            <mat-option *ngFor="let data of audio_volumeList" [value]="data.code">
+                                                                {{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                        <mat-error class="error-txt-1">
+                                                            <span>{{"Audio Volume is required."|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                            </div>
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="aidDataFormat.indexOf('audio_loop') > -1">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Audio Loop"|translate}}</mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                        appearance="outline">
+                                                        <mat-select formControlName="audio_loop"
+                                                            [multiple]="audio_loopMultiple ? true : false">
+                                                            <mat-option *ngFor="let data of audio_loopList" [value]="data.code">
+                                                                {{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                        <mat-error class="error-txt-1">
+                                                            <span>{{"Audio Loop is required."|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                                </div>
+                                            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="aidDataFormat.indexOf('event') > -1 &&
+                                                alertRuleForm.controls.generate_task?.value === true">
+                                                    <mat-label *ngIf="k ==0" class="ovi-lbl-text-size">{{"Activity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err"
+                                                        appearance="outline">
+                                                        <mat-select formControlName="activityId"
+                                                            [multiple]="roleMultiple ? true : false">
+                                                            <mat-option *ngFor="let data of activityPcList" [value]="data.id">{{data.name}}</mat-option>
+                                                        </mat-select>
+                                                        <mat-error>
+                                                            <span >{{"Role is required."|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                            </div>
+                                            <div *ngIf="aidDataFormat.length > 0" >
+                                                <span><button mat-icon-button close-button class="ie-close-icon"
+                                                    (click)="removeAid(k, 'clear')"[ngStyle]="{'margin-top': k === 0 ? '20px' : ''}">
+                                                     <mat-icon  class="ovi-fnt-sze30" style="color: red;width: 30px;line-height: 12px;">highlight_off</mat-icon> </button></span>
+                                            </div>
+                                            </div>
+                                        </div>
+                                        <div class="ovi-row-gap" style="padding-bottom: 15px;">
+                                            <div class="ovi-row-four-clmn" *ngIf="aidDataFormat.indexOf('auto_assign') > -1 &&
+                                                alertRuleForm.controls.generate_task?.value === true">
+                                                <div  style="display: flex;margin-top: 10%;">
+                                                    <span class="ovi-lbl-text-size" style="padding-right: 15px;">{{"Auto Assign :"|translate}}</span>
+                                                    <span class="ovi-fnt-sze11" style="padding-right: 10px;">{{"OFF"|translate}}</span>
+                                                    <mat-slide-toggle #autoCloser formControlName="auto_assign"></mat-slide-toggle>
+                                                    <span class="ovi-fnt-sze11" style=" padding-left: 10px;">{{"ON"|translate}}</span>
+                                                </div>
+                                            </div>
+                                            <div class="ovi-row-four-clmn" *ngIf="aidDataFormat.indexOf('auto_complete') > -1 &&
+                                                alertRuleForm.controls.generate_task?.value === true">
+                                                <div  style="display: flex;margin-top: 10%;">
+                                                    <span class="ovi-lbl-text-size" style="padding-right: 15px;">{{"Auto Complete :"|translate}}</span>
+                                                    <span class="ovi-fnt-sze11"style=" padding-right: 10px;">{{"OFF"|translate}}</span>
+                                                    <mat-slide-toggle #autoComplete formControlName="auto_complete"></mat-slide-toggle>
+                                                    <span class="ovi-fnt-sze11" style=" padding-left: 10px;">{{"ON"|translate}}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <dynamic-create-alert-config *ngIf="(this.pfRule[0]?.ruleTypeId === 'RU-GO' ||
+                    this.pfRule[0]?.ruleTypeId === 'RU-DEF' || this.pfRule[0]?.ruleTypeId === 'RU-SE' ||
+                    this.pfRule[0]?.ruleTypeId === 'RU-TD' || this.pfRule[0]?.ruleTypeId === 'RU-DA' ||
+                    this.pfRule[0]?.ruleTypeId === 'RU-SC' || this.pfRule[0]?.ruleTypeId === 'RU-WO')"
+                    [alert]="this.alert" [ruleType]="this.pfRule[0]?.ruleTypeId" [alertType]="alertRuleForm.controls['alertTypeId']?.value" [ruleCategory]="this.pfRule[0]?.ruleCategoryId" [editData]="this.data"
+                    [selectedIndex]="this.selectedIndex" (footerEventAction)="footerEventAction($event)"></dynamic-create-alert-config>
+                    <div *ngIf="false">
+                        <div *ngIf="this.messageExist" class="form-row">
+                            <div >
+                                <div  style="display: flex; padding: 10px 0px 10px 0px;">
+                                    <mat-label class="ovi-lbl-text-size" style="width: 8%;">{{"Message Label:"|translate}}</mat-label>
+                                    <span readonly class="ovi-fnt-sze13 message-label">{{messageLabel}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div *ngIf="this.messageExist" class="form-row" >
+                            <div >
+                                    <mat-label class="ovi-lbl-text-size">{{"Message"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Message'|translate" rows=3
+                                            formControlName="messageFormat"></textarea>
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-row">
+                            <div class="ovi-popup-title-text-size top-styl">{{"CLOSE ALERT CONFIGURATION"|translate}}</div>
+                        </div>
+                        <mat-divider class="divider"></mat-divider>
+                        <div class="ovi-row-gap">
+                            <div class="row-field-3" *ngIf="false">
+                                    <mat-radio-group formControlName="close">
+                                        <div style="float: left; margin-top:25px;">
+                                            <mat-label style="padding-right: 30px;">{{"Auto Closer :"|translate}}</mat-label>
+                                            <mat-radio-button style="padding-right: 30px;"
+                                                *ngFor="let p of autoClose; let i = index" [value]="p.code"
+                                                [checked]="alertRuleForm.controls.close.value === p.code">
+                                                {p.value, select, Yes{yes} No {No}}</mat-radio-button>
+                                        </div>
+                                    </mat-radio-group>
+                            </div>
+                            <div class="row-field-4 ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Auto Closer Time (Minutes)"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <input matInput  formControlName="closeTime" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Time'|translate" autocomplete="off">
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Notification Configuration'|translate}}">
+                <ng-template mat-tab-label >{{"Notification Configuration"|translate}}</ng-template>
+                <div class="mat-tab-content-alert"  style="padding-top: 5px;">
+                    <div class="form-row">
+                        <div class="ovi-popup-title-text-size top-styl">{{"NOTIFICATION DETAILS"|translate}}</div>
+                    </div>
+                    <mat-divider class="divider"></mat-divider>
+                    <div *ngIf="false" style="float: right;">
+                        <span><button mat-mini-fab style="float:right;margin-top: -30px;margin-right: 45px;"
+                            (click)="addAlertEscalation()">+</button></span>
+                    </div>
+                    <div *ngIf="false" formArrayName="userList">
+                        <div *ngFor="let obj of alertRuleForm.controls.userList.controls; let i=index">
+                            <mat-divider *ngIf="alertRuleForm.controls.userList.controls.length > 1 && i > 0">
+                            </mat-divider>
+                            <br>
+                            <div [formGroupName]="i">
+                                <div class="ovi-row-gap">
+                                    <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label *ngIf="i == 0" class="ovi-lbl-text-size">{{"Channel"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                <mat-select formControlName="channelType" required (selectionChange)="validateRecipient($event.value)"
+                                                [disabled]="this.notificationId.indexOf(this.alertRuleForm.controls['userList'].value[i].pfAlertConfigRecipientId) > -1">
+                                                    <mat-option *ngFor="let data of channelType" [value]="data.code">
+                                                        {{data.value}} </mat-option>
+                                                </mat-select>
+                                                <mat-error class="error-txt-1">
+                                                    <span>{{"Channel is required."|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                    </div>
+                                    <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label *ngIf="i == 0" class="ovi-lbl-text-size">{{"Template"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                <mat-select formControlName="templateId" required
+                                                [disabled]="this.notificationId.indexOf(this.alertRuleForm.controls['userList'].value[i].pfAlertConfigRecipientId) > -1">
+                                                    <mat-option *ngFor="let data of templateList"
+                                                        [value]="data.id">{{data.name}} </mat-option>
+                                                </mat-select>
+                                                <mat-error class="error-txt-1">
+                                                    <span>{{"Template is required."|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                    </div>
+                                    <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label *ngIf="i == 0" class="ovi-lbl-text-size">{{"Recipient Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                                <mat-select formControlName="recipient_type" required
+                                                [disabled]="this.notificationId.indexOf(this.alertRuleForm.controls['userList'].value[i].pfAlertConfigRecipientId) > -1"
+                                                    (selectionChange)="getRecipientName(i, $event.value)">
+                                                    <mat-option *ngFor="let data of recipient_typeList"
+                                                        [value]="data.code">{{data.value}} </mat-option>
+                                                </mat-select>
+                                                <mat-error class="error-txt-1">
+                                                    <span>{{"Recipient Type is required."|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                    </div>
+                                    <div class="ovi-row-five-clmn ovi-matfrmfld-input-box-pdg">
+                                        <div  *ngIf="disableRecipientType.indexOf(this.alertRuleForm.controls['userList'].value[i].recipient_type) == -1">
+                                            <mat-label *ngIf="i == 0" class="ovi-lbl-text-size">{{"Recipient Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline"
+                                            [ngStyle]="{opacity : this.disableRecipientType.indexOf(this.alertRuleForm.controls['userList'].value[i].recipient_type) > -1 ? '40%' : ''}">
+                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" 
+                                                    [readonly]="this.notificationId.indexOf(this.alertRuleForm.controls['userList'].value[i].pfAlertConfigRecipientId) > -1"
+                                                    [required]="this.alertRuleForm.controls['userList'].value[i].recipient_type !== null &&
+                                                    this.disableRecipientType.indexOf(this.alertRuleForm.controls['userList'].value[i].recipient_type) === -1"
+                                                    formControlName="firstName" id="recipient" appTypeHit (typeHit)="searchUserNamelist($event, i)"
+                                                    [matAutocomplete]="auto" autocomplete="off">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.recipientEnabled === true ? getRecipientList.bind(userNameList) : ''"
+                                                    #auto="matAutocomplete">
+                                                    <mat-option *ngFor="let option of userNameList"
+                                                        (onSelectionChange)="getUserNameID(option.id, option.name)"
+                                                        [value]="option.id">
+                                                        <div class="alrt-wid-styl">{{option.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error class="error-txt-1">
+                                                    <span>{{"Recipient Name is required."|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div>
+                                            <span><button mat-icon-button close-button class="ie-close-icon"
+                                              (click)="removeAlertEscalation(i, 'clear')" [ngStyle]="{'margin-top': i === 0 ? '23px' : ''}">
+                                            <mat-icon class="icon-style ovi-fnt-sze30" style="color: red;">highlight_off</mat-icon> </button></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}} <span
+                                            class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="channelType"
+                                            (selectionChange)="validateRecipient($event.value)">
+                                            <mat-option *ngFor="let data of channelType" [value]="data.code">
+                                                {{data.value}} </mat-option>
+                                        </mat-select>
+                                        <mat-error class="error-txt-1">
+                                            <span>{{"Channel is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                            <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}
+                                        <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <mat-select formControlName="templateId" (selectionChange)="getTemplateName($event.value)">
+                                            <mat-option *ngFor="let data of templateList" [value]="data.id">{{data.name}} </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}} <span
+                                            class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select formControlName="recipient_type"
+                                            (selectionChange)="getRecipientName($event.value)">
+                                            <mat-option *ngFor="let data of recipient_typeList" [value]="data.code">{{data.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error class="error-txt-1">
+                                            <span>{{"Recipient Type is required."|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-five-clmn ovi-matfrmfld-input-box-pdg">
+                                <div  *ngIf="disableRecipientType.indexOf(this.alertRuleForm.controls['recipient_type'].value) == -1">
+                                    <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}} <span
+                                            class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" 
+                                        [required]="this.alertRuleForm.controls['recipient_type'].value !== null &&
+                                                    this.disableRecipientType.indexOf(this.alertRuleForm.controls['recipient_type'].value) === -1"
+                                         formControlName="firstName" id="recipient"
+                                            appTypeHit (typeHit)="searchUserNamelist($event)" [matAutocomplete]="auto" autocomplete="off">
+                                        <mat-autocomplete autoActiveFirstOption
+                                            [displayWith]="this.recipientEnabled === true ? getRecipientList.bind(userNameList) : ''"
+                                            #auto="matAutocomplete">
+                                            <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                                                <div class="alrt-wid-styl">{{option.name}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error class="error-txt-1">
+                                            <span>{{"Recipient Name is required."|translate}}</span>
+                                            <span
+                                                *ngIf="alertRuleForm.get('firstName').hasError('invalidRecipientNameSelection')">
+                                                {{"Please select a valid Recipient Name from the list."|translate}}
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center;height: 80px;">
+                                <span>
+                                    <button mat-button class="active-btn" [disabled]="alertRuleForm.invalid || alertRuleForm.controls['channelType'].value === null"
+                                    appDebounceClick [debounceTime]="300" (debounceClick)="addAlertEscalate()">{{"ADD"|translate}}</button>
+                                </span>
+                            </div>
+                        </div>
+                        <div *ngIf="templateName.length" classs="ovi-fnt-sze13" style="background: #eeeff1; padding: 10px; margin: 10px 0px;">
+                            <span class="ovi-font-family" [innerHTML]="this.templateName.length ? formatTemplate(templateName[0].templateSample) : ''"></span>
+                        </div>
+                        <div>
+                            <angular-table-component [id]="'Alert'" [type]="'ng-table'" [tableData]="alerNoticationData"
+                            [columns]="alerDisplayColumn"
+                            [columnData]="alerDataColumns"
+                            (triggerAction)="eventAction($event)">
+                            </angular-table-component>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr" *ngIf="selectedTab !== 1">
+        <button mat-button class="cancle-btn" style="margin-right: 5px;" mat-dialog-close >{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" (click)="selectTab(1)">{{"Next"|translate}}</button>
+    </div>
+    <div class="ovi-pop-ftr" *ngIf="selectedTab === 1">
+        <button mat-button class="cancle-btn" (click)="selectTab(0)">{{"Back"|translate}}</button>
+
+        <button mat-button *ngIf="!data.configId && this.pfRule[0]?.ruleTypeId !== 'RU-GO' &&
+        this.pfRule[0]?.ruleTypeId !== 'RU-DEF' && this.pfRule[0]?.ruleTypeId !== 'RU-SE' &&
+        this.pfRule[0]?.ruleTypeId !== 'RU-TD' && this.pfRule[0]?.ruleTypeId !== 'RU-DA' && 
+        this.pfRule[0]?.ruleTypeId !== 'RU-SC' && this.pfRule[0]?.ruleTypeId !== 'RU-WO'" class="active-btn" appDebounceClick
+        [disabled]="alertRuleForm.invalid"
+        (debounceClick)="saveAlertRule()" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+
+        <button mat-button *ngIf="!data.configId && (this.pfRule[0]?.ruleTypeId === 'RU-GO' ||
+        this.pfRule[0]?.ruleTypeId === 'RU-DEF' || this.pfRule[0]?.ruleTypeId === 'RU-SE' ||
+        this.pfRule[0]?.ruleTypeId === 'RU-TD' || this.pfRule[0]?.ruleTypeId === 'RU-DA' ||
+        this.pfRule[0]?.ruleTypeId === 'RU-SC' || this.pfRule[0]?.ruleTypeId === 'RU-WO')" class="active-btn"
+        [disabled]="!dynamicForm || this.alertRuleForm.controls['userList'].invalid"
+        appDebounceClick (debounceClick)="saveDynamicAlertRule()" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+
+        <button mat-button *ngIf="data.configId && this.pfRule[0]?.ruleTypeId !== 'RU-GO' &&
+        this.pfRule[0]?.ruleTypeId !== 'RU-DEF' && this.pfRule[0]?.ruleTypeId !== 'RU-SE' &&
+        this.pfRule[0]?.ruleTypeId !== 'RU-TD' && this.pfRule[0]?.ruleTypeId !== 'RU-DA' &&
+        this.pfRule[0]?.ruleTypeId !== 'RU-SC' && this.pfRule[0]?.ruleTypeId !== 'RU-WO'" class="active-btn"
+        [disabled]="alertRuleForm.invalid"
+        appDebounceClick (debounceClick)="updateAlertRule(data.configId)" [debounceTime]="600" cdkFocusInitial>{{"Update"|translate}}</button>
+
+        <button mat-button *ngIf="data.configId && (this.pfRule[0]?.ruleTypeId === 'RU-GO' ||
+        this.pfRule[0]?.ruleTypeId === 'RU-DEF' || this.pfRule[0]?.ruleTypeId === 'RU-SE' ||
+        this.pfRule[0]?.ruleTypeId === 'RU-TD' || this.pfRule[0]?.ruleTypeId === 'RU-DA' ||
+        this.pfRule[0]?.ruleTypeId === 'RU-SC' || this.pfRule[0]?.ruleTypeId === 'RU-WO')" class="active-btn"
+        [disabled]="!dynamicForm || this.alertRuleForm.controls['userList'].invalid"
+        appDebounceClick (debounceClick)="updateDynamicAlertRule(data.configId)" [debounceTime]="600" cdkFocusInitial>{{"Update"|translate}}</button>
+    </div>
+</div>

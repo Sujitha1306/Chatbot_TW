@@ -1,0 +1,284 @@
+<div style="overflow:hidden !important" class="custom-dialog-box">
+    <mat-toolbar class="input-header">
+        <div class="header-name" *ngIf="!this.data">{{"Create Layout"|translate}}</div>
+        <div class="header-name" *ngIf="this.data">{{"Modify Layout"|translate}}</div>
+        <button mat-icon-button mat-dialog-close>
+            <mat-icon class="ovi-fnt-sze21">highlight_off</mat-icon>
+        </button>
+    </mat-toolbar>
+    <div class="form-body-large-das mat-custom-form-field-box" [ngStyle]="{'height': tabClickedLabel === 'Config' ? 'calc(100% - 165px)' : '93%'}">
+        <mat-tab-group class="layout-tab" [ngStyle]="{'height': tabClickedLabel === 'Config' ? 'calc(100% - 0px)' : 'calc(100% - 55px)'}" (selectedTabChange)="tabClick($event)">
+            <mat-tab label="{{'Widgets'|translate}}" >
+                <ng-template mat-tab-label >{{"Widgets"|translate}}</ng-template>
+                <app-common-layout [dashId]="dashId" [type]="data?'update':'create'" (eventAction)="eventAction($event)" (updateSaveAction)="updateSaveAction($event)"></app-common-layout>
+            </mat-tab>
+            <mat-tab label="{{'Config'|translate}}"  *ngIf="this.data !== null">
+                <ng-template mat-tab-label >{{"Config"|translate}}</ng-template>
+                <div style="height: 100%; width: 100%;" [formGroup]="configForm">
+                    <div class="form-row" style="padding: 10px 0px 0px 10px;">
+                        <div class="ovi-popup-title-text-size top-styl">{{"FILTER INPUTS"|translate}}</div>
+                    </div>
+                    <!-- <mat-divider class="divider"></mat-divider> -->
+                    <div class="form-row block-3" style="margin: 10px;">
+                        <div [ngStyle]="{'padding-top' : configForm.value.enablePdf?'18px':none}" style="display: flex;">
+                            
+                            
+                            <div class="example-form">
+                                <span class="config-space-around">
+                                    <mat-checkbox formControlName="enableRefresh">{{"Enable Refresh"|translate}}</mat-checkbox>
+                                </span>
+                            </div>
+                            <div class="example-form">
+                                <span class="config-space-around">
+                                    <mat-checkbox formControlName="enableHeader">{{"Enable Header"|translate}}</mat-checkbox>
+                                </span>
+                            </div>
+                            <div class="example-form" *ngIf="showDept">
+                                <span class="config-space-around">
+                                    <mat-checkbox formControlName="enableDepartment">{{"Enable Department"|translate}}</mat-checkbox>
+                                </span>
+                            </div>
+                            <div class="example-form">
+                                <span class="config-space-around">
+                                    <mat-checkbox formControlName="enablePdf">{{"Enable Pdf"|translate}}</mat-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                        <div *ngIf="configForm.value.enablePdf">
+                            <span class="config-space-around">
+                                <div class="example-form">  
+                                    <mat-label class="ovi-lbl-text-size">{{"Select Layout Size"|translate}}:</mat-label>      
+                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Size'|translate" formControlName="layoutSize" required>
+                                            <mat-option *ngFor="let data of filterLayoutList" [value]="data.code">
+                                            {{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error class="error-txt-1">
+                                            {{"Select Input is required"|translate}}.
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="form-row block-3"  style="padding: 10px 0px 10px 10px;gap: 1%;">
+                    <div class="example-form">
+                        <span class="config-space-around">
+                            <mat-checkbox formControlName="enableExcel">{{"Enable Excel"|translate}}</mat-checkbox>
+                        </span>
+                    </div>
+                        <div class="row-field-10" *ngIf="configForm.value.enableExcel">
+                            <div class="example-form">
+                                <span class="config-space-around">
+                                <mat-label class="ovi-lbl-text-size">{{"Excel Sheet Order "|translate}}</mat-label>
+                
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <mat-select multiple appPlaceholder [showPlaceholder]="false"
+                                        (selectionChange)="onSelectionChange($event)" [placeholderText]="'Excel Sheet Order'|translate"
+                                        formControlName="sheetOrder">
+                                        <mat-option *ngFor="let data of activeWidgets" [value]="data.widgetName"
+                                            (keydown.enter)="fixClick()">
+                                            {{data.widgetName}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-error class="error-txt-1">
+                                        {{"sheet order is required"|translate}}.
+                                    </mat-error>
+                                </mat-form-field>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row-field-10">
+                            <span class="config-space-around">
+                                <div *ngIf="selectedOrder?.length > 0 && configForm.value.enableExcel" class="example-form">
+                                    <mat-label class="ovi-lbl-text-size"> {{ 'Selected Order' | translate }}</mat-label>
+                                    <div class="selected-order-container selected-order-list" style="padding: 8px 10px;">
+                                        <div class="order-item" *ngFor="let item of selectedOrder; let i = index">
+                                            <span class="order-number">{{ i + 1 }}.</span>
+                                            <span class="order-text">{{ item }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </span>
+                        </div>
+                     </div>
+                    <mat-divider class="divider"></mat-divider>
+                    <div class="form-row block-3" style="padding: 10px 0px 0px 10px;">
+                        <div class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Select Inputs"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Inputs'|translate"
+                                        formControlName="configName" required>
+                                        <mat-option *ngFor="let data of filterInputsList" [value]="data.name" (click)="bindInputs(data)" (keydown.enter)="fixClick()">
+                                            {{data.name}}</mat-option>
+                                    </mat-select>
+                                    <mat-error class="error-txt-1">
+                                        {{"Select Input is required"|translate}}.
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Label Name"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Label Name'|translate"
+                                        formControlName="configLabel" autocomplete="off">
+                                    <mat-error class="error-txt-1">
+                                        {{"Label is required"|translate}}.
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div *ngIf="configForm.controls.configName.value !== 'fromDate' && configForm.controls.configName.value !== 'toDate' && 
+                            configForm.controls.configName.value !== 'fromDateTime' && configForm.controls.configName.value !== 'toDateTime'" class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Default Value"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Default Value'|translate"
+                                        formControlName="configDefault" autocomplete="off">
+                                    <mat-error class="error-txt-1">
+                                        {{"Default Value is required"|translate}}.
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div *ngIf="configForm.controls.configName.value === 'fromDate' || configForm.controls.configName.value === 'toDate'"
+                            class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Default Value"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput [matDatepicker]="date" class="tw-input-date" style="padding: 0px;" appPlaceholder
+                                        [showPlaceholder]="false" [placeholderText]="''|translate" formControlName="configDefault" [max]="today">
+                                    <mat-datepicker-toggle matSuffix [for]="date"></mat-datepicker-toggle>
+                                    <mat-datepicker #date></mat-datepicker>
+                                    <mat-error class="error-txt-1">
+                                        {{"Default Value is required"|translate}}.
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div *ngIf="configForm.controls.configName.value === 'fromDateTime' || configForm.controls.configName.value === 'toDateTime'" class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Default Value"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput type="datetime-local" id="datepicker" class="tw-input-date" style="padding: 0px;"
+                                        appPlaceholder [showPlaceholder]="true" [placeholderText]="'From Date'|translate"
+                                        formControlName="configDefault" [max]="today">
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Input ID"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Input ID'|translate"
+                                        formControlName="configId" autocomplete="off">
+                                    <mat-error class="error-txt-1">
+                                        {{"Input ID is required"|translate}}.
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Sequence"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput type="number" min="1" max="20" maxlength="2" appPlaceholder [showPlaceholder]="false"
+                                        [placeholderText]="'Sequence'|translate" formControlName="configSeq" autocomplete="off">
+                    
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                    <div *ngIf="configForm.controls.configName.value === 'customFilter'" class="row-field-10">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Query Param" | translate}}</mat-label>
+                    
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <textarea matInput rows="6" placeholder="Enter JSON" formControlName="customFilter">
+                          </textarea>
+                    
+                                <mat-error *ngIf="configForm.controls.customFilter.hasError('required')">
+                                    {{"JSON is required" | translate}}
+                                </mat-error>
+                    
+                                <mat-error *ngIf="configForm.controls.customFilter.hasError('invalidJson')">
+                                    {{"Invalid JSON format" | translate}}
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                        <div *ngIf="configForm.controls.configName.value === 'Appterms'" class="row-field-10">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Appterms Group"|translate}}</mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="true"
+                                        [placeholderText]="'Select Appterms Group'|translate" formControlName="configTermsGroup" required>
+                                        <mat-option *ngFor="let data of apptermGroupList" [value]="data.code">
+                                            {{data.code}}</mat-option>
+                                    </mat-select>
+                                    <mat-error class="error-txt-1">
+                                        <span>{{"Select Appterms Group"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    
+                        <div style="display: flex; align-items: center;width:80px;">
+                            <div class="example-form">
+                                <span class="config-space-around">
+                                    <mat-checkbox formControlName="configRequired">{{"Is Required"|translate}}</mat-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                    
+                        <div style="display: flex; align-items: center;width:80px;">
+                            <div class="example-form">
+                                <span class="config-space-around">
+                                    <mat-checkbox formControlName="configVisibled">{{"Is Visible"|translate}}</mat-checkbox>
+                                </span>
+                            </div>
+                        </div>
+                    
+                         <div style="display: flex; align-items: center;width:80px;padding-bottom: 6px;">
+                            <button mat-button class="active-btn" appDebounceClick [debounceTime]="300" (debounceClick)="addInputs()"
+                            [disabled]="!configForm.controls['configName'].value">{{"Add"|translate}}</button>
+                        </div>
+                    
+                    </div>
+                    <div *ngIf="tableData.length" style="padding: 10px 5px 5px 10px;">
+                        <tw-table-component [component]="'config-layout'" [columns]="displayedColumns" [tableData]="tableData"
+                            [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                            (eventAction)="eventAction($event)" [rowClick]="false" [applyFilter]="null"
+                            [permissionControl]="permissionControl" [pagination]="null" [tableSize]="'104px'"></tw-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Layout'|translate}}"  *ngIf="!layoutTabDisp">
+                <ng-template mat-tab-label >{{"Layout"|translate}}</ng-template>
+                <div *ngIf="!layoutTabEnable" style="height: 100%; width: 100%;">
+                    <div *ngIf="configForm.controls.enableHeader.value" style="height: 18%; width: 98%;">
+                        <tw-layout-header-component [layout]="'dynamic'" [enableExcel]="configForm.controls.enableExcel.value" [enablePdf]="configForm.controls.enablePdf.value" [enableRefresh]="configForm.controls.enableRefresh.value"
+                        [filterInputs]="tableData" [dashboardId]=""  [pdfConfigSelected]="configForm.controls.layoutSize.value"></tw-layout-header-component>
+                    </div>
+                    <div [ngStyle]="{height: configForm.controls.enableHeader.value ? '82%' : '100%'}">
+                        <app-gridster-layout [dashId]="dashId" [resourceCode]="" [dashData]="" [type]="'popup'"></app-gridster-layout>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div class="input-footer" style="padding: 10px 0px 10px 0px;text-align: right !important;" *ngIf="tabClickedLabel === 'Config'">
+        <button mat-button class="cancle-btn" style="margin-right: 5px;" mat-dialog-close >{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" appDebounceClick [disabled]="configForm.value.enableHeader || configForm.value.enableDepartment? false : configForm.invalid"
+        (debounceClick)="saveInputs()" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+    </div>
+</div>

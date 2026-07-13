@@ -1,0 +1,30 @@
+<mat-nav-list #drawer [style.maxHeight]="(menu.open) ? '1200px': menu.parentId !== 2 ? '35px' : '70px'" class="sidemenu-divider" [ngClass]="{'secondaryMenu': secondaryMenu, 'primary': !secondaryMenu}">
+    <mat-list-item  *ngIf = "menu.subMenus?.length !== 0" (click)="menu.open = !menu.open;" [routerLinkActive]="['active']" (keydown.enter)="fixClick()">
+        <img class="sid-menu-icon" matListIcon  alt="Menus" src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+        <h3 matLine class="ovi-fnt-sze16" *ngIf="!iconOnly" appTooltip [tooltipText]="menu.name" placement="bottom-right" [style.color]="getColor(menu.parentId)">{{ menu.name }} </h3>
+        <mat-icon *ngIf="checkForChildMenu()" class="sidenav-dropdown-indicator rotate sidemenu"
+        [ngStyle]="{'margin-top': menu.open ? '10px' : '-10px'}" [ngClass]="{'indicateOpen':menu.open}"> expand_more</mat-icon>
+    </mat-list-item>
+
+    <mat-list-item class="sidemenu-divider" [ngStyle]="{height : menu.parentId === 2 ? '70px' : ''}" [routerLink]="[menu.link]" [routerLinkActive]="['active']"
+    *ngIf = "menu.link!=null && code !== 'ALL'" (click)="menu.open = !menu.open" (keydown.enter)="fixClick()">
+        <img class="sid-menu-icon" *ngIf="menu.checkUrl === false && menu.parentId !== 2" matListIcon  alt="Menus" src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+        <div *ngIf="menu.parentId === 2" class="new-menu ovi-font-family"><img style="padding: 5px;height: 25px;width: 40px;" class="ie-icon" *ngIf="menu.checkUrl === false && menu.parentId === 2"
+            appTooltip tooltipText={{menu.name}} placement="bottom-right" matListIcon  alt="Menus" src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+            <br><div class="ie-sub-title" style="margin: -5px;" *ngIf="menu.checkUrl === false && menu.parentId === 2">{{ menu.name }}</div>
+            </div><br>&nbsp;&nbsp;&nbsp;&nbsp;<mat-divider *ngIf="menu.parentId === 2"></mat-divider>
+        <img class="sid-menu-icon sid-menu-icon-indent" *ngIf="menu.checkUrl !== false" matListIcon  alt="Menus" src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+        <h3 matLine class="ovi-fnt-sze16" *ngIf="!iconOnly && menu.parentId !== 2" appTooltip [tooltipText]="menu.name" placement="bottom-right" [style.color]="getColor(menu.parentId)">{{ menu.name }} </h3>
+    </mat-list-item>
+
+    <mat-list-item class="sidemenu-divider" [routerLinkActive]="['active']"
+    [routerLink]="menu.link == '/ovitag/organization/floorplan' ? '/ovitag/organization/floor-plan' : menu.link == '/ovitag/dashboard/main' ? '/ovitag/dashboard' : [menu.link]"
+    *ngIf = "menu.link!=null && code === 'ALL'" (click) = "menu.open = !menu.open;toggleView();" (keydown.enter)="fixClick()">
+        <img *ngIf="menu.checkUrl === false" matListIcon  alt="Menus" src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+        <mat-icon *ngIf="menu.checkUrl !== false" matListIcon iconsmall></mat-icon>
+        <h3 matLine class="ovi-fnt-sze16"  *ngIf="!iconOnly" [style.color]="getColor(menu.parentId)" appTooltip [tooltipText]="menu.name" placement="bottom-right">{{ menu.name }} </h3>
+    </mat-list-item>
+
+    <cdk-sidemenu-item *ngFor="let submenu of menu?.subMenus" [code]="code" [menu]="submenu" [iconOnly]="iconOnly" [secondaryMenu]="true"> </cdk-sidemenu-item>
+
+</mat-nav-list>

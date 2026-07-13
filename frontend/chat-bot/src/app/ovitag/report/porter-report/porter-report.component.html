@@ -1,0 +1,1113 @@
+<div>
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <tw-layout-header-component [layout]="'static'" [filterInputs]="filterInputs" [reportList]="reportList"
+        [enableExcel]="reportData['enableexcel']" [enablePdf]="reportData['enablepdf']" [enableRefresh]="true"
+        (reportHeaderAction)="reportHeaderAction($event)"></tw-layout-header-component>
+    <mat-grid-list *ngIf="false" [formGroup]="reportForm" [cols]="8" rowHeight="50px" [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="1" class="arrow">
+            <div id="arrowbox"><span> {{"Porter"|translate}} </span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value"
+                    [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}">{{i.name}}</option>
+                </select>
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic
+                    Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1"
+            *ngIf="HCselected == 'porter-perf' || HCselected == 'porter-byward' || HCselected == 'porter-delay-byloc' || HCselected == 'porter-byloc' || HCselected == 'porter-jb-dtat' || HCselected == 'porter-jb-wtat' || HCselected == 'porter-ind-perf' || HCselected == 'othreq-move' || HCselected == 'asset-move' || HCselected == 'patientmove' || HCselected == 'porter-perf-trend' || HCselected == 'port-nav-data' || HCselected == 'porter-req-perf' || HCselected == 'porter-selfreq-summary' || HCselected == 'porter-waitlist' || HCselected == 'porter-daily-tat' || HCselected == 'port-esc-data' || HCselected == 'hk-summary' || HCselected == 'bk-summary' || HCselected == 'sc-summary' || HCselected == 'porter-req-det' || HCselected == 'porter-pharmacy' || HCselected == 'multi-porter'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" 
+                    class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate"
+                    [max]="today" />
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1"
+            *ngIf="HCselected == 'porter-req-summary' || HCselected == 'porter-req-summary-bycat'">
+            <div class="dateContainer" style="width: 101%;padding-top: 7px;">
+                <input type="datetime-local" id="datepicker" [class.disabled-content]="reportData['loading']"
+                     class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    formControlName="fromDateTime" [max]=maxDate (change)="inputChanged()" />
+                <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1"
+            *ngIf="HCselected == 'porter-req-summary' || HCselected == 'porter-req-summary-bycat'">
+            <div class="dateContainer" style="width: 101%;padding-top: 7px;">
+                <input type="datetime-local" id="datepicker" [class.disabled-content]="reportData['loading']"
+                     class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    formControlName="toDateTime" [max]=maxDate (change)="inputChanged()" />
+                <span class="floating-label  ovi-fnt-sze11" style="top: 1px;opacity: 1;">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1"
+            *ngIf="HCselected != 'porter-perf' && HCselected != 'porter-byward' && HCselected != 'porter-delay-byloc' && HCselected != 'porter-byloc' && HCselected != 'porter-jb-dtat' && HCselected != 'porter-jb-wtat' && HCselected != 'porter-ind-perf' && HCselected != 'othreq-move' && HCselected != 'porter-req-summary' && HCselected != 'asset-move' && HCselected != 'patientmove' && HCselected != 'porter-perf-trend' && HCselected != 'port-nav-data' && HCselected != 'porter-daily' && HCselected != 'porter-req-perf' && HCselected != 'porter-selfreq-summary' && HCselected != 'porter-req-summary-bycat' && HCselected !='porter-waitlist' && HCselected != 'porter-daily-tat' && HCselected != 'port-esc-data' && HCselected != 'hk-summary' && HCselected != 'bk-summary' && HCselected != 'sc-summary' && HCselected != 'porter-req-det' && HCselected != 'porter-pharmacy' && HCselected != 'multi-porter'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" 
+                    class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate"
+                    [max]="today" />
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <span class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1"
+            *ngIf="HCselected == 'porter-perf' || HCselected == 'porter-byward' || HCselected == 'porter-delay-byloc' || HCselected == 'porter-byloc' || HCselected == 'porter-jb-dtat' || HCselected == 'porter-jb-wtat' || HCselected == 'porter-ind-perf' || HCselected == 'othreq-move' || HCselected == 'asset-move' || HCselected == 'patientmove' || HCselected == 'porter-perf-trend' || HCselected == 'port-nav-data' || HCselected == 'porter-req-perf' || HCselected == 'porter-selfreq-summary' || HCselected == 'porter-waitlist' || HCselected == 'porter-daily-tat' || HCselected == 'port-esc-data' || HCselected == 'hk-summary' || HCselected == 'bk-summary' || HCselected == 'sc-summary' || HCselected == 'porter-req-det' || HCselected == 'porter-pharmacy' || HCselected == 'multi-porter'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" 
+                    class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}" (dateInput)="toDate = $event.value"
+                    (click)="picker.open()" formControlName="toDate" [max]="today" />
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="HCselected == 'porter-req-summary-bycat'">
+            <mat-form-field style="width: 120px;height: 54px;">
+                <mat-label style="padding-top: 10px;color: black;font-weight: 500;">{{"Type"|translate}}</mat-label>
+                <mat-select class="ovi-fnt-sze14" style="font-weight: 600;">
+                    <mat-option *ngFor="let type of ActivityCategory" [value]="type.code"
+                        (click)=selectedActivityCategory(type.code) (keydown.enter)="fixClick()" >
+                        {{type.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="HCselected == 'porter-daily-tat'">
+            <mat-form-field class="ovi-font-family ovi-fnt-sze14" style="width: 120px;height: 45px;">
+                <mat-label style="padding-top: 10px;color: black;font-weight: 500;">{{"Type"|translate}}</mat-label>
+                <mat-select [formControl]="selectedCategoryType" multiple>
+                    <mat-option *ngFor="let type of ActivityCategory" [value]="type.code">
+                        {{type.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="1" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon">
+                    <!-- HCselected == 'porter-req-summary-bycat'? selected['selectedId'] != HCselected && selected['fromDateTime'] == fromDateTime && selected['toDateTime'] == toDateTime?'disabled-content':'none': -->
+                    <div class="custom-button"
+                        [ngClass]="HCselected == 'porter-perf-trend'? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && selected['type'] == type && selected['selectedUser'] == selectedUser.value?'disabled-content':'none':
+                    HCselected == 'porter-daily-tat'? selected['selectedId'] == HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && selected['selectedCatType'] == selectedCategoryType.value ?'disabled-content':'none':
+                    HCselected == 'porter-req-summary'? selected['selectedId']== HCselected && selected['fromDateTime'] == fromDateTime && selected['toDateTime'] == toDateTime?'disabled-content':'none':
+                    HCselected == 'porter-req-summary-bycat'? selected['selectedId'] == HCselected && selected['fromDateTime'] == fromDateTime && selected['toDateTime'] == toDateTime && selected['selectedCat'] == selectedCategory.value?'disabled-content':'none':
+                    HCselected != 'porter-byward' && selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none'"
+                        (click)="getReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100" fxFlex.sm="100"  (keydown.enter)="fixClick()">
+                        {{"Get Insights"|translate}}
+                    </div>
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr"
+                     matTooltip="{{'Refresh'|translate}}" (click)="getReports(HCselected)"  (keydown.enter)="fixClick()">autorenew</i>
+            </div>
+            <div *ngIf="HCselected == 'porter-perf-trend'"
+                style="padding-left:40px;padding-right:7px;font-weight:bold;">{{"Grouped"|translate}} </div>
+            <div *ngIf="HCselected == 'porter-perf-trend'" style="padding-right:10px;font-weight:bold;"> {{"By"|translate}}</div>
+            <div *ngIf="HCselected == 'porter-perf-trend'">
+                <mat-button-toggle-group appearance="legacy" name="fontStyle" aria-label="Font Style">
+                    <mat-button-toggle value="D" (change)="type = $event.value" checked>{{"Day"|translate}}</mat-button-toggle>
+                    <mat-button-toggle value="M" (change)="type = $event.value">{{"Month"|translate}}</mat-button-toggle>
+                </mat-button-toggle-group>
+            </div>
+            <div class="excel-button1" width=100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px
+                    style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" 
+                    (click)="downloadExcel()" (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px
+                    style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon" 
+                    (click)="downloadPDF()" (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width=30px
+                    style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width=25px
+                    style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class="excel-button1" width=100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width=30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class="excel-button" width=100px *ngIf="!reportData['noRecords']">
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px
+                style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" 
+                (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px
+                style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" 
+               matTooltip="{{'Download as PDF'|translate}}" width=30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width=25px
+                style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class="excel-button" width=100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width=30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list>
+</div>
+<div class="ovi-font-family" *ngIf="!reportData['invalidDate']">
+    <div style="height: 60px;width: 100%;" *ngIf="false">
+        <div style="height: 100%;width: 25%;float: left;margin-left: 25px;">
+            <input type="text" class="ovi-fnt-sze15" style="height: 28px;margin-top: 14px;width: 80%;"
+                placeholder="Search for a location" #selectLoc (keyup)="getLocationlist($event)"
+                [matAutocomplete]="auto"><span
+                style="font-weight: 800;color: #133f8f;padding: 5px;cursor: pointer;margin-left: -1px;border: 0.3px solid #787373;"
+                *ngIf="selectLoc.value != ''" (click)="selectLoc.value = '';selectedLocation.value = null"  (keydown.enter)="fixClick()">x</span>
+            <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor="let location of locationlist" (click)="setLocationID(location.id)"  (keydown.enter)="fixClick()"
+                    value="{{location.fullName}}">
+                    {{location.fullName}}
+                </mat-option>
+            </mat-autocomplete>
+        </div>
+    </div>
+    <!-- cards -->
+    <!-- " HCselected == 'porter-req-summary' || HCselected == 'porter-req-summary-bycat'" -->
+    <!-- "reportData['showCard'] && HCselected == reportData['prevselected']" 
+    *ngIf="reportData['showCard'] && HCselected == reportData['prevselected'] || reportData['showCard'] && HCselected == 'porter-req-summary-bycat'-->
+    <mat-grid-list cols="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" [gutterSize]="'5px'"
+        *ngIf="reportData['showCard'] && HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary'" style="padding-bottom: 30px;">
+        <mat-grid-tile *ngFor="let tile of reportData['tileInfo']"  style="border-radius: 10px; display: flex;gap: 1%;height: 70%;border: 1px solid rgb(224 222 222);">
+            <mat-grid-tile-header class="ovi-fnt-sze13" style="font-weight: 600;color: white;height: 40px;background: rgb(30 143 200) !important;
+            top: 0px;z-index: 100;text-align: center;justify-content: center;"
+                *ngIf="tile.showHeader">{{tile.header}}</mat-grid-tile-header>
+          <span class="ovi-fnt-sze21" style="font-weight: bold; align-items: center; padding-top: 30px; justify-content: center; background: white; color: grey; display: flex; height: inherit;" *ngIf="!tile.islist && !tile.sideLabel">{{tile.content}}</span>
+        </mat-grid-tile>
+    </mat-grid-list>
+
+    <mat-grid-list cols="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" [gutterSize]="'5px'"
+        *ngIf="reportData['showCard'] && HCselected == reportData['prevselected'] && HCselected != 'porter-req-summary'" style="padding-bottom: 30px;">
+        <mat-grid-tile class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan"
+            [rowspan]="tile.rowspan" style="border-radius: 10px; display: flex;gap: 1%;">
+            <mat-grid-tile-header class="ovi-fnt-sze14" style="border-radius: 10px 10px 0px 0px; border: 1px solid white;font-weight: 600;color: white;height: 75px;background: rgb(30 143 200) !important;
+            top: 0px;z-index: 100;text-align: center;justify-content: center;"
+                *ngIf="tile.showHeader">{{tile.header}}</mat-grid-tile-header>
+            <mat-grid-tile-header class="ovi-fnt-sze22" style="font-weight: bold; align-items: center; padding-top: 33px; justify-content: center; background: white; color: grey; display: flex; height: inherit;" *ngIf="!tile.islist">{{tile.content}}</mat-grid-tile-header>
+            <div *ngIf="tile.islist">
+                <mat-list style="width: 100%;" *ngFor="let item of tile.listItemData;let i = index">
+                    <mat-list-item class="ovi-fnt-sze13" style="height:25px; text-align: left;"
+                        [ngStyle]="{'padding-top' : i == 0 ? '50px' : '0px'}">{{tile.listItemName[i]}} : <span
+                            style="font-weight: bold;">{{item}}</span></mat-list-item>
+                </mat-list>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+
+
+    <!--PORTER WAITLIST-->
+    <mat-grid-list cols="1" rowHeight="290px"
+        *ngIf="HCselected == 'porter-waitlist' && selected['selectedId'] == 'porter-waitlist'"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="hourlyWaitlist" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+
+    <div *ngIf="HCselected == 'porter-waitlist' && selected['selectedId'] == 'porter-waitlist'" class="list"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Waitlist Summary"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showWaitlistSumTable']">
+            <angular-table-component [tableData]="reportData['waitlistSumTable']"
+                [columns]="reportData['waitlistSumCol']"></angular-table-component>
+        </div>
+    </div>
+
+    <div *ngIf="HCselected == 'porter-waitlist' && selected['selectedId'] == 'porter-waitlist'" class="list"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Waitlist Detail"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showWaitlistDetTable']">
+            <angular-table-component [tableData]="reportData['waitlistDetTable']"
+                [columns]="reportData['waitlistDetCol']"></angular-table-component>
+        </div>
+    </div>
+
+    <!-- ASSET MOVEMENT SUMMARY -->
+    <mat-grid-list cols="2" rowHeight="300px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'asset-move' && selected['selectedId'] == 'asset-move'" style="padding-bottom: 20px;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="porterWaitlist" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;margin-top: 10px;"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div class="list"
+                style="padding-top: 0px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;height: 100%;width: 100%;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+                    [ngStyle]="headercolor && {'background':headercolor}">
+                    <span style="margin-left: 15px;">{{"Locationwise Movement Summary"|translate}}</span></mat-toolbar>
+                <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showLocTable']">
+                    <angular-table-component [tableData]="reportData['locationTable']"
+                        [columns]="reportData['locTableColumns']"></angular-table-component>
+                </div>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list cols="1" rowHeight="250px"
+        *ngIf="HCselected == 'asset-move' && selected['selectedId'] == 'asset-move'" style="padding-bottom: 20px;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="otherTimewiseMovement" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div class="list" *ngIf="HCselected == 'asset-move' && selected['selectedId'] == 'asset-move'"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter Individual Performance"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showPerformanceTable']">
+            <angular-table-component [tableData]="reportData['performanceTable']"
+                [columns]="reportData['performanceTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <div class="list" *ngIf="HCselected == 'asset-move' && selected['selectedId'] == 'asset-move'"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter - Hourly Idle Summary (in mins)"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showPorterTable']">
+            <angular-table-component [tableData]="reportData['PorterIdleTable']"
+                [columns]="reportData['PorterIdleTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <!-- <mat-grid-list class="asset-movement-summary" cols = 4 rowHeight="140px" style="width: 100%;padding-top:10px;padding-bottom: 10px;" *ngIf="selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile  class="list">  
+            <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">Asset and Porter Count</mat-grid-tile-header>
+            <mat-list style="width: 100%;">
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: 35px;">Number of Assets :  <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['numberOfAssets']}}</span></mat-list-item>
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: -10px;">Number of Porters : <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['numberOfPorters']}} </span></mat-list-item>
+            </mat-list>        
+            </mat-grid-tile>
+        <mat-grid-tile class="list">
+            <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">Asset Movement Details</mat-grid-tile-header>
+            <mat-list style="width: 100%;">
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: 35px;">No. Of Asset Movement : <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['assetMovementCount']}}</span></mat-list-item>
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: -10px;">No. Of Asset Movement Without Porter : <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['assetMovementCountwithoutPorter']}} </span></mat-list-item>
+            </mat-list> 
+        </mat-grid-tile>
+        <mat-grid-tile class="list">
+            <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">Porter Status Count</mat-grid-tile-header>
+            <mat-list style="width: 100%;">
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: 35px;height: 18px;padding-top: 15px;">Requested :  <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterRequested']}} </span></mat-list-item>
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: -5px;height: 18px;padding-top: 11px;">Rejected : <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterRejected']}} </span></mat-list-item>
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: -5px;height: 18px;padding-top: 11px;">Inprogress :  <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterInprogress']}} </span></mat-list-item>
+                <mat-list-item style="font-size: 13px; text-align: left; margin-top: -5px;height: 18px;padding-top:16px">Completed : <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterCompleted']}} </span></mat-list-item>
+            </mat-list>       
+        </mat-grid-tile>
+        <mat-grid-tile class="list"> 
+            <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">No. Of Assets In Common Area</mat-grid-tile-header>
+            <div style="font-weight:bold; font-size: 30px; margin-top: 10px;">{{reportData['commonAreaAssetCount']}}</div>        
+        </mat-grid-tile>
+        </mat-grid-list> -->
+    <!-- <mat-grid-list class="asset-movement-summary1" cols = 5 rowHeight="300px" style="width: 100%;padding-top:10px;padding-bottom: 10px;" [ngStyle] = "{display :selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-grid-tile class="list"  [colspan] = 2>  
+            <canvas id="assetMovementByType"></canvas>        
+        </mat-grid-tile>
+        <mat-grid-tile class="list"  [colspan] = 3>
+            <canvas id="assetMovementByTypeAndPorter" ></canvas> 
+            <canvas id="assetMovement"></canvas> 
+        </mat-grid-tile>
+    </mat-grid-list> -->
+    <!--  <div class="list" [ngStyle] = "{display :selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+        <canvas id="assetMovement"></canvas> 
+    </div> -->
+    <!-- PORTER PERFORMANCE SUMMARY -->
+
+    <mat-grid-list class="asset-movement-summary1" cols=6 rowHeight="200px" [gutterSize]="'10px'"
+        style="width: 100%;padding-top:10px;padding-bottom: 10px;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-perf' && !reportData['noRecords'] && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-grid-tile class="list" [colspan]=2 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="requestPatient" style="margin-bottom: 10px;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=2 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="requestAsset" style="margin-bottom: 10px;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=2 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="requestOthers" style="margin-bottom: 10px;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list class="asset-movement-summary1" cols=6 rowHeight="300px" [gutterSize]="'10px'"
+        style="width: 100%;padding-top:10px;padding-bottom: 10px;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-perf' && !reportData['noRecords'] && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-grid-tile class="list" [colspan]=3 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="avgCompletion"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=3 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="avgAttend"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list class="asset-movement-summary1" cols=2 rowHeight="300px" [gutterSize]="'10px'"
+        style="width: 100%;padding-top:10px;padding-bottom: 10px;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-perf' && !reportData['noRecords'] && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-grid-tile class="list" [colspan]=1 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="avgComplete"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=1 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="hrReq"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div class="list"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-perf' && !reportData['noRecords'] && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Locationwise Summary"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showLocTable']">
+            <angular-table-component [tableData]="reportData['locationwiseTable']"
+                [columns]="reportData['locwiseTableColumns']"></angular-table-component>
+        </div>
+    </div>
+    <mat-grid-list class="asset-movement-summary1" cols=6 rowHeight="300px" [gutterSize]="'10px'"
+        style="width: 100%;padding-top:10px;padding-bottom: 10px;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-byward' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] && !reportData['nullLocation'] ? 'block' : 'none'}">
+        <mat-grid-tile class="list" [colspan]=2 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="reqCountByCategory"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=4 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="timewiseReq"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+
+    <!-- <div class="list" [ngStyle]="{display :selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+        <canvas id="assetHourlyMovement"></canvas> 
+    </div> -->
+    <!--Patient Movement Summary-->
+    <mat-grid-list cols="2" rowHeight="300px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'patientmove' && selected['selectedId'] == 'patientmove'" style="padding-bottom: 20px;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" *ngIf="false" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="otherTimewiseMovement" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;margin-top: 10px;"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div class="list"
+                style="padding-top: 0px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;height: 100%;width: 100%;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+                    [ngStyle]="headercolor && {'background':headercolor}">
+                    <span style="margin-left: 15px;">{{"Daywise Summary"|translate}}</span></mat-toolbar>
+                <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showDateSumTable']">
+                    <angular-table-component [tableData]="reportData['DateSumTable']"
+                        [columns]="reportData['DateSumTableColumns']"></angular-table-component>
+                </div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;margin-top: 10px;"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div class="list"
+                style="padding-top: 0px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;height: 100%;width: 100%;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+                    [ngStyle]="headercolor && {'background':headercolor}">
+                    <span style="margin-left: 15px;">{{"Locationwise Movement Summary"|translate}}</span></mat-toolbar>
+                <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showLocTable']">
+                    <angular-table-component [tableData]="reportData['locationTable']"
+                        [columns]="reportData['locTableColumns']"></angular-table-component>
+                </div>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <!-- <mat-grid-list cols="1" rowHeight="190px" *ngIf="HCselected == 'patientmove' && selected['selectedId'] == 'patientmove'" style="padding-bottom: 20px;margin-right: 25px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2">
+            <canvas id="dateWiseSummary" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>  -->
+    <!-- <div class="list" [ngStyle] = "{display :selected['selectedId'] == 'patientmove' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+        <canvas id="porterMovement"></canvas> 
+    </div>
+    <div class="list" [ngStyle]="{display :selected['selectedId'] == 'patientmove' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+        <canvas id="porterTimewiseMovement"></canvas> 
+    </div> -->
+    <!--Other Request Movement-->
+    <mat-grid-list cols="2" rowHeight="300px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'othreq-move' && selected['selectedId'] == 'othreq-move'" style="padding-bottom: 20px;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="porterWaitlist" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;margin-top: 10px;"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div class="list"
+                style="padding-top: 0px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;height: 100%;width: 100%;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+                    [ngStyle]="headercolor && {'background':headercolor}">
+                    <span style="margin-left: 15px;">{{"Locationwise Movement Summary"|translate}}</span></mat-toolbar>
+                <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showLocTable']">
+                    <angular-table-component [tableData]="reportData['locationTable']"
+                        [columns]="reportData['locTableColumns']"></angular-table-component>
+                </div>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list cols="1" rowHeight="250px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'othreq-move' && selected['selectedId'] == 'othreq-move'" style="padding-bottom: 20px;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="otherTimewiseMovement" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div class="list" *ngIf="HCselected == 'othreq-move' && selected['selectedId'] == 'othreq-move'"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter Individual Performance"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showPerformanceTable']">
+            <angular-table-component [tableData]="reportData['performanceTable']"
+                [columns]="reportData['performanceTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <div class="list" *ngIf="HCselected == 'othreq-move' && selected['selectedId'] == 'othreq-move'"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter - Hourly Idle Summary (in mins)"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showPorterTable']">
+            <angular-table-component [tableData]="reportData['PorterIdleTable']"
+                [columns]="reportData['PorterIdleTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <!--Porter Request Summary-->
+    <div class="list" *ngIf="HCselected == 'porter-req-summary' && reportData['showPoolTable']" style="padding-bottom:20px;border-radius:10px;border:1px solid white;box-shadow:0px 3px 6px #00000029;margin-bottom:20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <mat-toolbar class="input-header block-1" style="
+                    height:35px;
+                    border-radius:10px 10px 0px 0px;" [ngStyle]="headercolor && {'background':headercolor}">
+                <span style="margin-left:15px;">
+                    Porter Request Summary
+                </span>
+            </mat-toolbar>
+            <div style="position:relative;width:100%;max-height:500px;overflow:auto;">
+                <div *ngIf="reportData['porterPoolTable']?.length > 0">
+                    <angular-table-component [tableData]="reportData['porterPoolTable']"
+                        [columns]="reportData['porterPoolColumns']" [tableSliceEnable]="true" [pageSize]="10">
+                    </angular-table-component>
+                </div>
+                <div *ngIf="!reportData['porterPoolTable'] || reportData['porterPoolTable']?.length === 0"
+                    style="padding:40px;text-align:center;font-size:16px;color:#777;">
+                    No Data Available
+                </div>
+            </div>
+        </div>
+    <mat-grid-list cols="2" rowHeight="300px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary'"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="porterWaitlist" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="requestCategorywiseSum" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+        
+    <mat-grid-list cols="1" rowHeight="300px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'porter-req-summary-bycat' && selected['selectedId'] == 'porter-req-summary-bycat'"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="porterWaitlist" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list cols="1" rowHeight="250px" [gutterSize]="'10px'"
+        *ngIf="(HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary') || (HCselected == 'porter-req-summary-bycat' && selected['selectedId'] == 'porter-req-summary-bycat')"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="otherTimewiseMovement" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list cols="2" rowHeight="250px" [gutterSize]="'10px'"
+        *ngIf="(HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary') || (HCselected == 'porter-req-summary-bycat' && selected['selectedId'] == 'porter-req-summary-bycat')"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="assetCaterywiseSum" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="poolwiseSum" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div *ngIf="HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary'" class="list"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Movement Summary"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showLocTable']">
+            <angular-table-component [tableData]="reportData['locationTable']" [columns]="reportData['locTableColumns']"
+                [tableSliceEnable]=true [pageSize]="10"></angular-table-component>
+        </div>
+    </div>
+
+    <div *ngIf="HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary'" class="list"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Datewise Summary"|translate}}</span></mat-toolbar>
+        <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showDatewiseTable']">
+            <angular-table-component [tableData]="reportData['dateWiseSummary']"
+                [columns]="reportData['datewiseTableCol']" [tableSliceEnable]=true
+                [pageSize]="10"></angular-table-component>
+        </div>
+    </div>
+
+    <div class="list"
+        *ngIf="HCselected == 'porter-req-summary-bycat' && selected['selectedId'] == 'porter-req-summary-bycat'"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Datewise Summary"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showDatewiseTable']">
+            <angular-table-component [tableData]="reportData['dateWiseSummary']"
+                [columns]="reportData['datewiseTableCol']" [tableSliceEnable]=true
+                [pageSize]="10"></angular-table-component>
+        </div>
+    </div>
+
+    <div class="list"
+        *ngIf="(HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary') || (HCselected == 'porter-req-summary-bycat' && selected['selectedId'] == 'porter-req-summary-bycat')"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter Individual Performance"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showPerformanceTable']">
+            <angular-table-component [tableData]="reportData['performanceTable']"
+                [columns]="reportData['performanceTableCol']" [tableSliceEnable]=true
+                [pageSize]="10"></angular-table-component>
+        </div>
+    </div>
+
+    <div class="list"
+        *ngIf="(HCselected == 'porter-req-summary-bycat' && selected['selectedId'] == 'porter-req-summary-bycat')"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter - Hourly Idle Summary (in mins)"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showPorterTable']">
+            <angular-table-component [tableData]="reportData['PorterIdleTable']"
+                [columns]="reportData['PorterIdleTableCol']" [tableSliceEnable]=true
+                [pageSize]="10"></angular-table-component>
+        </div>
+    </div>
+
+    <!--Porter Management Performance Trend-->
+    <mat-grid-list [cols]="8" rowHeight="50px" *ngIf="false" style="padding-bottom: 15px;">
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div style="height: 100%;width: 100%;float: left;">
+                <input type="text" class="ovi-fnt-sze15" style="height: 28px;margin-top: 14px;width: 80%;"
+                    placeholder="{{'Search User'|translate}}" (keyup)="getUserByTypeCheck($event)" [formControl]="userName"
+                    [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete">
+                    <mat-option *ngFor="let user of userList" (click)="setUserName(user.id)" value="{{user.name}}"  (keydown.enter)="fixClick()">
+                        {{user.name}}
+                    </mat-option>
+                </mat-autocomplete>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list cols=6 rowHeight="400px" [gutterSize]="'10px'"
+        style="width: 100%;padding-top:10px;padding-bottom: 10px;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-perf-trend' && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-grid-tile class="list" [colspan]=3 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="porterRequest"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=3 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="tatLineChart"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <!--Daily Porter Recommendation Report-->
+    <mat-grid-list cols=6 rowHeight="400px" [gutterSize]="'10px'"
+        style="width: 100%;padding-top:10px;padding-bottom: 10px;"
+        [ngStyle]="{display :selected['selectedId'] == 'porter-daily' && !reportData['loading']&& HCselected == reportData['prevselected']? 'block' : 'none'}">
+        <mat-grid-tile class="list" [colspan]=3 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="callToArrive"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]=3 style="border-radius: 10px; border: 1px solid white">
+            <canvas id="callToComplete"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list cols="2" rowHeight="300px" [gutterSize]="'10px'"
+        *ngIf="HCselected == 'porter-req-perf' && selected['selectedId'] == 'porter-req-perf'"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="reqToWait" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+            <canvas id="escalation" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <!-- <mat-grid-list cols="1" rowHeight="190px" *ngIf="HCselected == 'othreq-move' && selected['selectedId'] == 'othreq-move'" style="padding-bottom: 20px;margin-right: 25px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+        <mat-grid-tile class="list" [colspan]="1" [rowspan]="2">
+            <canvas id="dateWiseSummary" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>    -->
+    <!-- <div class="list" [ngStyle] = "{display :selected['selectedId'] == 'othreq-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+        <canvas id="otherMovement"></canvas> 
+    </div>
+    <div class="list" [ngStyle]="{display :selected['selectedId'] == 'othreq-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+        <canvas id="otherTimewiseMovement"></canvas> 
+    </div> -->
+    <!--PORTER SELF REQUEST-->
+    <div [ngStyle]="{display: reportData['showReqTab'] && HCselected == reportData['prevselected'] && HCselected == 'porter-selfreq-summary' && selected['selectedId'] == 'porter-selfreq-summary' ? 'block' : 'none'}"
+        style="padding-top: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;">
+        <div id="rep-style list"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"Porter TAT"|translate}}</div>
+        <angular-table-component [tableData]="reportData['selfReqTable']"
+            [columns]="reportData['selfReqTableCol']"></angular-table-component>
+    </div>
+    <!--Porter Daily TAT Report-->
+    <div class="ovi-font-family"
+        *ngIf="HCselected == 'porter-daily-tat' && selected['selectedId'] == 'porter-daily-tat'"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-accordion>
+            <div class="oflw-style" *ngIf="reportData['showArriveTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel [expanded]="isTargetingExp">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['High Arrival time']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['High Arrival time']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['arriveTable']"
+                            [columns]="reportData['arriveTableCol']" [id]="'porter-daily-tat-locHist'"
+                            (porterDetail)="getLocationHist($event)"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showCompTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['High Completion time']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['High Completion time']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['compTable']"
+                            [columns]="reportData['compTableCol']" [id]="'porter-daily-tat-locHist'"
+                            (porterDetail)="getLocationHist($event)"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showTatTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Higher TAT']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Higher TAT']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['tatTable']"
+                            [columns]="reportData['tatTableCol']" [id]="'porter-daily-tat-locHist'"
+                            (porterDetail)="getLocationHist($event)"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+
+            <div class="oflw-style" *ngIf="reportData['showIdleTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['High Idle']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['High Idle']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['idleTable']"
+                            [columns]="reportData['idleTableCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showHourlyTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['HourlyRequests']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['High Arrival time']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['hourlyTable']"
+                            [columns]="reportData['hourlyRequestCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showLeastReqTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Low request movement']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Low request movement']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['leastReqTable']"
+                            [columns]="reportData['leastReqTableCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showMostReqTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Most request movement']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Most request movement']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['mostReqTable']"
+                            [columns]="reportData['mostReqTableCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showPoolWiseTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Poolwise']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['High Arrival time']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['poolWiseTable']"
+                            [columns]="reportData['poolWiseTableCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showAcceptTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Accept to complete less than 3mins']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Accept to complete less than 3mins']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['acceptTable']"
+                            [columns]="reportData['acceptTableCol']" [id]="'porter-daily-tat-locHist'"
+                            (porterDetail)="getLocationHist($event)"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showSelfReqTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Self request more than 15mins']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Self request more than 15mins']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['selfReqTable']"
+                            [columns]="reportData['selfReqTableCol']" [id]="'porter-daily-tat-locHist'"
+                            (porterDetail)="getLocationHist($event)"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showPorterHighArrTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Porter High Arrival']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Porter High Arrival']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['porterHighArrTable']"
+                            [columns]="reportData['porterHighArrTableCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+            <div class="oflw-style" *ngIf="reportData['showporterHighTatTable']" style="margin-bottom: 10px;"
+                [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+                <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['repData']['header-name']['Porter High TAT']}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <!-- <div id = "rep-style" style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;" [ngStyle]="headercolor && {'background':headercolor}">{{reportData['repData']['header-name']['Porter High TAT']}}</div> -->
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['porterHighTatTable']"
+                            [columns]="reportData['porterHighTatTableCol']"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+        </mat-accordion>
+    </div>
+    <!--Porter Escalation by Category-->
+    <div
+        *ngIf="selected['selectedId'] == 'port-esc-data' && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+        <app-table-component [data]="reportData['catTable']" [id]="selected['selectedId']"></app-table-component>
+    </div>
+    <!--Porter Request Detail by Category-->
+    <div
+        *ngIf="selected['selectedId'] == 'porter-req-det' && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+        <app-table-component [data]="reportData['tableDat']" [id]="selected['selectedId']"></app-table-component>
+    </div>
+    <!--Porter Pharmacy Movement-->
+    <div
+        *ngIf="selected['selectedId'] == 'porter-pharmacy' && reportData['tableView'] && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+        <app-table-component [data]="reportData['tableData']" [id]="selected['selectedId']"></app-table-component>
+    </div>
+    <!--Multi Porter Details Report-->
+    <div
+        *ngIf="selected['selectedId'] == 'multi-porter' && reportData['tableView'] && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+        <app-table-component [data]="reportData['tableData']" [id]="selected['selectedId']"></app-table-component>
+    </div>
+    <!--House Keeping Summary & Blood Transport Summary &  Sample Collection Summary-->
+    <mat-grid-list cols="1" rowHeight="250px" [gutterSize]="'10px'"
+        *ngIf="(HCselected == 'hk-summary' && selected['selectedId'] == 'hk-summary') || (HCselected == 'bk-summary' && selected['selectedId'] == 'bk-summary') || (HCselected == 'sc-summary' && selected['selectedId'] == 'sc-summary')"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style list"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <canvas id="hourlyRequests" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div class="list"
+        *ngIf="(HCselected == 'hk-summary' && selected['selectedId'] == 'hk-summary') || (HCselected == 'bk-summary' && selected['selectedId'] == 'bk-summary') || (HCselected == 'sc-summary' && selected['selectedId'] == 'sc-summary')"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Datewise Summary"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showDatewiseTable']">
+            <angular-table-component [tableData]="reportData['datewiseTable']"
+                [columns]="reportData['datewiseTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <div class="list"
+        *ngIf="(HCselected == 'hk-summary' && selected['selectedId'] == 'hk-summary') || (HCselected == 'bk-summary' && selected['selectedId'] == 'bk-summary') || (HCselected == 'sc-summary' && selected['selectedId'] == 'sc-summary')"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter Individual Performance"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showPorterIndTable']">
+            <angular-table-component [tableData]="reportData['porterIndTable']"
+                [columns]="reportData['porterIndTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <div class="list"
+        *ngIf="(HCselected == 'hk-summary' && selected['selectedId'] == 'hk-summary') || (HCselected == 'bk-summary' && selected['selectedId'] == 'bk-summary') || (HCselected == 'sc-summary' && selected['selectedId'] == 'sc-summary')"
+        style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">
+            <span style="margin-left: 15px;">{{"Porter Detail"|translate}}</span></mat-toolbar>
+        <div style="position: relative;max-height: 500px;width: 100%;" *ngIf="reportData['showPorterDetailTable']">
+            <angular-table-component [tableData]="reportData['porterDetailTable']"
+                [columns]="reportData['porterDetailTableCol']"></angular-table-component>
+        </div>
+    </div>
+    <!-- TABLE-->
+    <div [ngStyle]="{display: reportData['showTable'] && HCselected == reportData['prevselected']? 'block' : 'none'}"
+        style="margin-top: 5px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;"
+        *ngIf="this.reportData['showTable']">
+        <div id="rep-style" *ngIf="HCselected == 'porter-ind-perf' && selected['selectedId'] == 'porter-ind-perf'"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"Porter Performance Summary"|translate}}</div>
+        <div id="rep-style"
+            *ngIf="HCselected == 'porter-req-summary' && selected['selectedId'] == 'porter-req-summary' && false"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"Porter Request Summary"|translate}}</div>
+        <div id="rep-style" *ngIf="HCselected == 'asset-move' && selected['selectedId'] == 'asset-move'"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"Asset Movement Summary"|translate}}</div>
+        <div id="rep-style" *ngIf="HCselected == 'othreq-move' && selected['selectedId'] == 'othreq-move'"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"List of Porter Request"|translate}}</div>
+        <div id="rep-style"
+            *ngIf="HCselected == 'porter-selfreq-summary' && selected['selectedId'] == 'porter-selfreq-summary'"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"Porter Request Summary"|translate}}</div>
+        <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']"
+            [tableSliceEnable]=true [pageSize]="10"></angular-table-component>
+    </div>
+    <!--PORTER INDIVIDUAL EFFICIENCY REPORT-->
+    <div [ngStyle]="{display: reportData['showPorterTable'] && HCselected == reportData['prevselected'] && HCselected == 'porter-ind-perf' && selected['selectedId'] == 'porter-ind-perf' ? 'block' : 'none'}"
+        style="padding-top: 10px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;">
+        <div id="rep-style"
+            style="height: 33px;padding-top: 5px;color: white;padding-left: 20px;border-radius: 10px 10px 0px 0px;"
+            [ngStyle]="headercolor && {'background':headercolor}">{{"Porter - Hourly Idle Summary (in mins)"|translate}}</div>
+        <angular-table-component [tableData]="reportData['PorterIdleTable']"
+            [columns]="reportData['PorterIdleTableCol']"></angular-table-component>
+    </div>
+    <!--Porter Delay by location-->
+    <div *ngIf="HCselected == 'porter-delay-byloc' && selected['selectedId'] == 'porter-delay-byloc'"
+        style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <div class="oflw-style list" *ngIf="reportData['showIPDelay_ByLocationTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px;"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['IPDelay_ByLocation']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['IPDelay_ByLocationTable']"
+                    [columns]="reportData['IPDelay_ByLocationTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+        <div class="oflw-style list" *ngIf="reportData['showIPOPDelay_ByLocationTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['IPOPDelay_ByLocation']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['IPOPDelay_ByLocationTable']"
+                    [columns]="reportData['IPOPDelay_ByLocationTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+        <div class="oflw-style list" *ngIf="reportData['showOPDelay_ByLocationTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['OPDelay_ByLocation']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['OPDelay_ByLocationTable']"
+                    [columns]="reportData['OPDelay_ByLocationTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+    </div>
+    <!--Porter by location-->
+    <div *ngIf="HCselected == 'porter-byloc' && selected['selectedId'] == 'porter-byloc'" style="padding-bottom: 20px;"
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <div class="oflw-style list" *ngIf="reportData['showIP_ByDateTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['IP_ByDate']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['IP_ByDateTable']"
+                    [columns]="reportData['IP_ByDateTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+        <div class="oflw-style list" *ngIf="reportData['showIP_ByLocationTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['IP_ByLocation']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['IP_ByLocationTable']"
+                    [columns]="reportData['IP_ByLocationTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+        <div class="oflw-style list" *ngIf="reportData['showOP_ByDateTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['OP_ByDate']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['OP_ByDateTable']"
+                    [columns]="reportData['OP_ByDateTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+        <div class="oflw-style list" *ngIf="reportData['showOP_ByLocationTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['OP_ByLocation']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['OP_ByLocationTable']"
+                    [columns]="reportData['OP_ByLocationTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+        <div class="oflw-style list" *ngIf="reportData['showService_ByLocationTable']"
+            style="margin-left: 5px;border-radius: 10px; border: 1px solid white"
+            [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <div id="rep-style"
+                style="height: 33px;color: #fff;padding: 0 16px;align-items: center;display: flex;border-radius: 10px 10px 0px 0px"
+                [ngStyle]="headercolor && {'background':headercolor}">
+                {{reportData['repData']['header-name']['Service_ByLocation']}}</div>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [tableData]="reportData['Service_ByLocationTable']"
+                    [columns]="reportData['Service_ByLocationTableCol']"
+                    [id]="'porter-daily-tat-locHist'"></angular-table-component>
+            </div>
+        </div>
+    </div>
+    <!--Porter daily report-->
+    <div *ngIf="(HCselected == 'porter-jb-dtat' || HCselected == 'porter-jb-wtat') && !reportData['loading'] "
+        style="padding-bottom: 20px;">
+        <mat-accordion>
+            <div class="oflw-style" style="margin-bottom: 10px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"
+                *ngFor="let header of reportData?.data?.headers;let i = index">
+                <mat-expansion-panel [expanded]="i == 0">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            <div>{{reportData['data']['header-name'][header]}}</div>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div style="position: relative;width: 100%;">
+                        <angular-table-component [tableData]="reportData['data'][header]"
+                            [id]="reportData['data']['header-name'][header]"></angular-table-component>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+        </mat-accordion>
+    </div>
+
+</div>
+<div *ngIf="reportData['noRecords'] && HCselected == reportData['prevselected'] && !reportData['nullLocation']"
+    style="text-align: center;margin: 2% 0 0 -7%;">{{"No Records"|translate}}</div>
+<div *ngIf="reportData['invalidDate']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">
+    {{reportData['invalidDateMessage']}}</div>
+<div *ngIf="reportData['nullLocation'] && HCselected == reportData['prevselected']"
+    style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Location Required"|translate}}</div>

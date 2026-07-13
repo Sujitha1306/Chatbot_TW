@@ -1,0 +1,385 @@
+// ─── Design tokens ────────────────────────────────────────────────────────────
+// Falls back gracefully when the app's CSS vars are not set
+:host {
+  --tdt-primary: var(--primary-bg-color, #1e3a5f);
+  --tdt-primary-light: var(--primary-bg-color-light, #2b5090);
+  --tdt-accent: #3b82f6;
+  --tdt-accent-subtle: #eff6ff;
+  --tdt-text: #1f2937;
+  --tdt-text-muted: #6b7280;
+  --tdt-border: #e5e9f0;
+  --tdt-row-odd: #ffffff;
+  --tdt-row-even: #f8fafd;
+  --tdt-row-hover: #eef4ff;
+  --tdt-row-active: #dce8ff;
+  --tdt-row-selected: #f0f0ff;
+  --tdt-header-height: 44px;
+  --tdt-row-height: 48px;
+  --tdt-radius: 12px;
+  --tdt-font: 12px;
+  --tdt-font-header: 11.5px;
+  display: block;
+}
+
+// ─── Wrapper ──────────────────────────────────────────────────────────────────
+.tdt-wrapper {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: var(--tdt-radius);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  max-height: calc(100vh - var(--tdt-size, 190px));
+}
+
+// ─── Scroll container ─────────────────────────────────────────────────────────
+.tdt-scroll-container {
+  overflow: auto;
+  flex: 1;
+
+  // Custom scrollbar (Chrome / Edge / Safari)
+  &::-webkit-scrollbar { width: 5px; height: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+    &:hover { background: #9ca3af; }
+  }
+}
+
+// ─── Table base ───────────────────────────────────────────────────────────────
+.tdt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+// ─── Header row ───────────────────────────────────────────────────────────────
+.tdt-header-row {
+  background: var(--tdt-primary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tdt-header-cell {
+  padding: 0 14px;
+  height: var(--tdt-header-height);
+  font-size: var(--tdt-font-header);
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  border-bottom: none;
+  white-space: nowrap;
+  background: var(--tdt-primary);
+
+  // Sort arrow override
+  ::ng-deep .mat-sort-header-arrow {
+    color: rgba(255, 255, 255, 0.65) !important;
+  }
+
+  ::ng-deep .mat-sort-header-stem,
+  ::ng-deep .mat-sort-header-pointer-left,
+  ::ng-deep .mat-sort-header-pointer-right,
+  ::ng-deep .mat-sort-header-pointer-middle {
+    background: rgba(255, 255, 255, 0.65) !important;
+  }
+
+  // Remove underline on sort header
+  ::ng-deep .mat-sort-header-container {
+    border-bottom: none !important;
+  }
+}
+
+.tdt-header-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  opacity: 0.85;
+}
+
+.tdt-header-img {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  object-fit: contain;
+}
+
+// ─── Data rows ────────────────────────────────────────────────────────────────
+.tdt-row {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid var(--tdt-border);
+
+  &:nth-child(odd)  { background: var(--tdt-row-odd); }
+  &:nth-child(even) { background: var(--tdt-row-even); }
+
+  &:hover {
+    background: var(--tdt-row-hover) !important;
+    transform: translateX(4px) scale(1);
+    box-shadow: inset 6px 0 0 var(--tdt-accent), 0 1px 1px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  &.tdt-row--active {
+    background: var(--tdt-row-active) !important;
+    box-shadow: inset 4px 0 0 var(--primary_shadowColor1);
+    border-radius: 4px;
+  }
+
+  &.tdt-row--selected {
+    background: var(--tdt-row-selected) !important;
+    box-shadow: inset 4px 0 0 #7c3aed;
+    border-radius: 4px;
+  }
+
+  &.tdt-row--clickable {
+    cursor: pointer;
+  }
+}
+
+// ─── Data cells ───────────────────────────────────────────────────────────────
+.tdt-body-cell {
+  padding: 0 14px;
+  height: var(--tdt-row-height);
+  font-size: var(--tdt-font);
+  color: var(--tdt-text);
+  border-bottom: none;
+  vertical-align: middle;
+
+  &.tdt-truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &.tdt-cell-link {
+    cursor: pointer;
+    color: var(--tdt-accent);
+    font-weight: 500;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ─── Checkbox column ──────────────────────────────────────────────────────────
+.tdt-select-cell {
+  width: 52px;
+  min-width: 52px;
+  padding: 0 6px 0 14px;
+  background: inherit;
+
+  // Checkbox color override for dark header
+  .tdt-header-row & {
+    ::ng-deep .mat-checkbox-frame { border-color: rgba(255, 255, 255, 0.6) !important; }
+    ::ng-deep .mat-checkbox-background { background-color: rgba(255, 255, 255, 0.15) !important; }
+  }
+}
+
+// ─── Badge pill ───────────────────────────────────────────────────────────────
+.tdt-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+.tdt-no-data-row {
+  pointer-events: none;
+}
+
+.tdt-no-data-cell {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.tdt-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  color: #d1d5db;
+  gap: 12px;
+}
+
+.tdt-empty-icon {
+  width: 52px;
+  height: 52px;
+  stroke: #d1d5db;
+}
+
+.tdt-empty-label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #9ca3af;
+  letter-spacing: 0.2px;
+}
+
+// ─── Paginator ────────────────────────────────────────────────────────────────
+.tdt-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--tdt-border);
+  background: #fff;
+}
+
+.tdt-paginator {
+  ::ng-deep .mat-paginator-container {
+    padding: 0 12px;
+    min-height: 44px;
+  }
+
+  ::ng-deep .mat-paginator-page-size-label,
+  ::ng-deep .mat-paginator-range-label {
+    font-size: 12px;
+    color: var(--tdt-text-muted);
+  }
+
+  ::ng-deep .mat-icon-button {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border-radius: 6px;
+    transition: background 0.12s;
+
+    &:hover:not([disabled]) { background: var(--tdt-accent-subtle); }
+  }
+}
+
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+.tdt-skeleton {
+  padding: 0;
+  overflow: hidden;
+}
+
+.tdt-skeleton-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: var(--tdt-header-height);
+  background: var(--tdt-primary);
+  padding: 0 14px;
+
+  .tdt-skeleton-cell {
+    height: 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    flex: 1;
+    animation: tdt-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+.tdt-skeleton-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: var(--tdt-row-height);
+  border-bottom: 1px solid var(--tdt-border);
+  padding: 0 14px;
+
+  &:nth-child(even) { background: var(--tdt-row-even); }
+
+  .tdt-skeleton-cell {
+    height: 10px;
+    border-radius: 5px;
+    flex: 1;
+    background: #e9ecef;
+    animation: tdt-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes tdt-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+// ─── Variant: compact ─────────────────────────────────────────────────────────
+.tdt-compact {
+  --tdt-header-height: 36px;
+  --tdt-row-height: 38px;
+  --tdt-font: 12px;
+}
+
+// ─── Variant: borderless (inside dialog / panel) ──────────────────────────────
+.tdt-borderless {
+  box-shadow: none;
+  border-radius: 7px 8px 0px 0px;
+}
+
+// ─── Sticky column background fix ─────────────────────────────────────────────
+// Material sets position:sticky but not background — inherit handles it per row
+.mat-column-__select {
+  background: inherit;
+}
+
+// ─── Inline bar cell ──────────────────────────────────────────────────────────
+.tdt-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.tdt-bar-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 99px;
+  background: #e9ecef;
+  overflow: hidden;
+  min-width: 48px;
+}
+
+.tdt-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tdt-bar-label {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tdt-text-muted);
+  min-width: 28px;
+  text-align: right;
+}
+
+// ─── Icon / image cell ────────────────────────────────────────────────────────
+.tdt-cell-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tdt-cell-mat-icon {
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.tdt-cell-img {
+  object-fit: contain;
+  vertical-align: middle;
+  display: block;
+}
+
+// ─── Row with custom colour (disables :nth-child alternating stripes) ──────────
+.tdt-row--colored {
+  &:nth-child(odd),
+  &:nth-child(even) { background: unset; }
+}
+
+// ─── Responsive: narrow screens ───────────────────────────────────────────────
+@media (max-width: 600px) {
+  .tdt-wrapper { border-radius: 0; }
+  .tdt-body-cell, .tdt-header-cell { padding: 0 8px; }
+}

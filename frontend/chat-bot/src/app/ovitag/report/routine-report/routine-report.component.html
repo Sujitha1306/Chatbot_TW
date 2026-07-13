@@ -1,0 +1,196 @@
+<div class="ovi-font-family">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <tw-layout-header-component [layout]="'static'" [filterInputs]="filterInputs" [reportList]="reportList" [enableExcel]="reportData['enableexcel']" [enablePdf]="reportData['enablepdf']" 
+    [enableRefresh]="true" (reportHeaderAction)="reportHeaderAction($event)"></tw-layout-header-component>
+    <mat-grid-list *ngIf="false" [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="2" class="arrow">
+            <div id="arrowbox"><span>{{"Routine"|translate}}</span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}" [selected]="i==0 ? true : null">{{i.name}}</option>
+                </select>
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'stf-routin-sumary' || HCselected == 'pat-routin-sumary' || HCselected == 'tasks-bywrd' || HCselected == 'tasks-bycategory' || HCselected == 'task-activity-compliance'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker"  class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'stf-routin-sumary' && HCselected != 'pat-routin-sumary' && HCselected != 'tasks-bywrd' && HCselected != 'tasks-bycategory' && HCselected != 'task-activity-compliance'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker"  class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'stf-routin-sumary' || HCselected == 'pat-routin-sumary' || HCselected == 'tasks-bywrd' || HCselected == 'tasks-bycategory' || HCselected == 'task-activity-compliance'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker"  class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <!-- [ngClass] = "HCselected == 'tasks-bywrd'?selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && selectedLocTemp == selectedLocation.value ? 'disabled-content' :'none':
+                    HCselected == 'tasks-bycategory'? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && selectedTempCat == selectedCategory.value && selectedTempTask == selectedTask.value?'disabled-content':'none':
+                    selected['selectedId'] == HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none'" -->
+                    <div class="custom-button" (click)="getRoutineReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100"  (keydown.enter)="fixClick()">
+                            {{"Get Insights"|translate}}
+                    </div>
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getRoutineReports(HCselected)" (keydown.enter)="fixClick()">autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()" (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()" (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()" (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list>
+</div>
+<!-- staff routine reports by role-->
+<div *ngIf = "HCselected == 'stf-routin-sumary' && false"  class="mat-custom-form-field-box">
+    <div class="block-3">
+        <div class="row-field-6">
+            <div class="example-form">
+                <mat-label class="ovi-lbl-text-size ovi-font-family ovi-fnt-sze18" style="font-weight: 600; color: #111414;">{{"Role :"|translate}}</mat-label>
+                <mat-form-field  class="ovi-font-family ovi-fnt-sze15" appearance="outline" style="margin-top: 10px;padding-left: 8px;width: 60%;">
+                    <mat-select [formControl]="RoleId" >
+                     <mat-option *ngFor="let Role of RoleList" [value]="Role.id" (click)="setrlidID(Role.id)"  (keydown.enter)="fixClick()" >
+                        {{Role.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Routine Report by Patient-->
+<mat-grid-list  [cols]="8" rowHeight="50px" *ngIf="HCselected == 'pat-routin-sumary' && false">
+    <mat-grid-tile class="oflw-style" [colspan]="2">
+        <div style="height: 100%;width: 100%;float: left;">
+            <input [class.disabled-content]="reportData['loading']"  class="ovi-font-family ovi-fnt-sze15" type="text"  placeholder="{{'Search Patient'|translate}}" (keyup)="getPatientsCheck($event)" style="height: 28px;margin-top: 14px;width: 80%;" [matAutocomplete]="auto">
+            <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor="let patient of patientList" (click)="setPatientName(patient.id)" value="{{patient.firstName}}"  (keydown.enter)="fixClick()">
+                {{patient.firstName}}
+                </mat-option>
+            </mat-autocomplete>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--patient tasks by ward-->
+<div style="height: 60px;width: 100%;" *ngIf = "HCselected == 'tasks-bywrd' && false">
+    <div style="height: 100%;width: 25%;float: left;margin-left: 10px;">
+        <input class="ovi-font-family ovi-fnt-sze15" type="text" style="height: 28px;margin-top: 14px;width: 80%;" placeholder="{{'Search for a location'|translate}}" #selectLoc (keyup)="getLocationlist($event)" [matAutocomplete]="auto"><span style="font-weight: 800;color: #133f8f;padding: 5px;cursor: pointer;margin-left: -1px;border: 0.3px solid #787373;" *ngIf="selectLoc.value != ''" (click)="selectLoc.value = '';getLocationlist()"  (keydown.enter)="fixClick()">x</span>
+        <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let location of locationlist" (click)="setLocationID(location.id)" value="{{location.fullName}}"  (keydown.enter)="fixClick()">
+        {{location.fullName}}
+        </mat-option>
+        </mat-autocomplete>
+    </div>
+</div>
+<!--Tasks Reports by Category-->
+<div *ngIf = "HCselected == 'tasks-bycategory' && false" class="mat-custom-form-field-box">
+    <div class="form-row block-3">
+        <div class="row-field-6">
+            <div class="example-form">
+                <mat-label class="ovi-lbl-text-size ovi-font-family ovi-fnt-sze18" style="font-weight: 600; color: #111414;">{{"Activity Category"|translate}}:</mat-label>
+                <mat-form-field appearance="outline" class ="ovi-font-family ovi-fnt-sze15" style="margin-top: 10px;padding-left: 8px;width: 60%;">
+                    <mat-select [formControl]="selectedCategory" (openedChange)="selectedTaskCategory($event)" multiple>
+                        <mat-option #allCatSelected value="All" (click)="onCategoryChange(true)"  (keydown.enter)="fixClick()">All</mat-option>
+                        <mat-option *ngFor="let category of activityCategoryList" [value]="category.code" (click)="onCategoryChange(false)"  (keydown.enter)="fixClick()">
+                        {{category.value}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="row-field-6" *ngIf="enableTask && false">
+            <div class="example-form">
+                <mat-label class="ovi-lbl-text-size ovi-font-family ovi-fnt-sze18" style="font-weight: 600; color: #111414;">{{"Task"|translate}}:</mat-label>
+                <mat-form-field appearance="outline" class="ovi-font-family ovi-fnt-sze15" style="margin-top: 10px;padding-left: 8px;width: 60%;">
+                    <mat-select [formControl]="selectedTask" multiple>
+                        <mat-option #allTaskSelected value="All" (click)="onTaskChange(true)"  (keydown.enter)="fixClick()">All</mat-option>
+                        <mat-option *ngFor="let task of taskActivitiesList" [value]="task.id" (click)="onTaskChange(false)"  (keydown.enter)="fixClick()">
+                        {{task.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- cards -->
+<mat-grid-list cols ="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" [gutterSize]="'5px'" *ngIf="reportData['showCard'] && HCselected == reportData['prevselected']" style="padding-bottom: 30px;">
+    <mat-grid-tile  class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan" style="border-radius: 10px; display: flex;gap: 1%;">
+        <mat-grid-tile-header id = "rep-style" class="ovi-font-family ovi-fnt-sze14" style="border-radius: 10px 10px 0px 0px; border: 1px solid white;font-weight: 600;color: white;height: 60px;background: rgb(41, 203, 151) !important;
+        top: 0px;z-index: 100;text-align: center;justify-content: center;" *ngIf="tile.showHeader">{{tile.header}}</mat-grid-tile-header>
+      <mat-grid-tile-header class="ovi-fnt-sze22" style="font-weight: bold; align-items: center; padding-top: 30px; justify-content: center; background: white; color: grey; display: flex; height: inherit;" *ngIf="!tile.islist">{{tile.content}}</mat-grid-tile-header>
+        <div *ngIf="tile.islist">
+            <mat-list style="width: 100%;" *ngFor = "let item of tile.listItemData;let i = index">
+                <mat-list-item class="ovi-fnt-sze13" style="height:25px;text-align: left;" [ngStyle] = "{'padding-top' : i == 0 ? '50px' : '0px'}">{{tile.listItemName[i]}} :  <span style="font-weight: bold;">{{item}}</span></mat-list-item>
+            </mat-list>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--Patient Routine Summary-->
+<mat-grid-list cols="2" rowHeight="300px" [gutterSize]="'10px'" *ngIf="(HCselected == 'pat-routin-sumary' && selected['selectedId'] == 'pat-routin-sumary' && !reportData['nullIdentifier']) || (HCselected == 'stf-routin-sumary' && selected['selectedId'] == 'stf-routin-sumary')" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+        <canvas id="hrlReq" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;margin-top: 10px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <div class="list" style="padding-top: 0px;border-radius: 10px;border: 1px solid white;box-shadow: 0px 3px 6px #00000029;height: 100%;width: 100%;" 
+        [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+            <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;" [ngStyle]="headercolor && {'background':headercolor}">
+                <span style="margin-left: 15px;">{{"Categorywise Summary"|translate}}</span></mat-toolbar>
+            <div style="position: relative;width: 100%;max-height: 500px;" *ngIf="reportData['showCatTable']">
+                <angular-table-component [tableData]="reportData['categoryTable']" [columns]="reportData['catTableCol']"></angular-table-component>
+            </div>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--Staff Routine Summary-->
+<div style="position: relative;width: 100%;max-height: 500px;" *ngIf="(selected['selectedId'] == 'stf-routin-sumary' || (HCselected == 'pat-routin-sumary' && !reportData['nullIdentifier']) || HCselected == 'task-activity-compliance') && reportData['showTable'] && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+    <app-table-component [data]="reportData['Table']"  [id]="selected['selectedId']"></app-table-component>
+</div>
+<div *ngIf="selected['selectedId'] == 'tasks-bywrd' || selected['selectedId'] == 'tasks-bycategory'" [ngStyle]="{display: reportData['showTable'] && HCselected == reportData['prevselected'] && (HCselected == 'tasks-bywrd' || HCselected == 'tasks-bycategory') && (selected['selectedId'] == 'tasks-bywrd' || selected['selectedId'] == 'tasks-bycategory') ? 'block' : 'none'}" 
+style="position: relative;width: 100%;max-height: 500px;padding-top: 10px;">
+    <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']"></angular-table-component>
+</div>
+<div *ngIf="reportData['nullIdentifier']&& HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Identifier Required"|translate}}</div>

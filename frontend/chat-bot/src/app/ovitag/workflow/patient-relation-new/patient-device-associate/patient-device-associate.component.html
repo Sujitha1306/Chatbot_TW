@@ -1,0 +1,144 @@
+<div class="pda-root ovi-font-family">
+
+  <!-- ── Header (compact) ── -->
+  <div class="pda-header">
+    <div class="pda-hdr-left">
+      <div class="pda-hdr-icon-wrap">
+        <mat-icon>devices</mat-icon>
+      </div>
+      <div class="pda-hdr-text">
+        <span class="pda-hdr-name">Manage Device</span>
+        <span class="pda-hdr-sub">{{ data?.fullName || 'Patient' }}</span>
+      </div>
+    </div>
+    <button class="pda-close-btn" (click)="onClose()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- ── Body ── -->
+  <div class="pda-body">
+
+    <div class="pda-loading" *ngIf="isLoading">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+
+    <ng-container *ngIf="!isLoading">
+
+      <!-- Has device: show current device + disassociate -->
+      <ng-container *ngIf="hasDevice">
+        <div class="pda-device-card">
+          <div class="pda-device-icon-wrap">
+            <img src="/assets/Alert/common_icons/coaster.svg" class="pda-device-img" alt="device">
+          </div>
+          <div class="pda-device-info">
+            <div class="pda-device-id">{{ deviceId }}</div>
+            <div class="pda-device-meta" *ngIf="data?.tag_type_name">
+              <span class="pda-device-chip">{{ data?.tag_type_name }}</span>
+            </div>
+            <div class="pda-battery-row" *ngIf="batteryPercentage !== null">
+              <mat-icon class="pda-bat-ic">battery_std</mat-icon>
+              <span class="pda-bat-val" [class.pda-bat-low]="batteryPercentage < 20">
+                {{ batteryPercentage }}% Battery
+              </span>
+              <div class="pda-bat-bar">
+                <div class="pda-bat-fill"
+                     [style.width.%]="batteryPercentage"
+                     [class.pda-bat-fill-low]="batteryPercentage < 20"
+                     [class.pda-bat-fill-mid]="batteryPercentage >= 20 && batteryPercentage < 50">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pda-disassoc-area">
+          <button class="pda-btn-disassociate"
+                  [disabled]="isSaving"
+                  appDebounceClick [debounceTime]="300"
+                  (debounceClick)="disassociate()">
+            <mat-icon>link_off</mat-icon>
+            Disassociate Device
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- No device: associate form -->
+      <div *ngIf="!hasDevice" [formGroup]="form">
+
+        <div class="pda-form-center">
+
+          <!-- Warning banner -->
+          <div class="pda-info-banner">
+            <mat-icon class="pda-banner-ic">sensors_off</mat-icon>
+            <span>No device is currently associated. Search and assign a device below.</span>
+          </div>
+
+          <!-- Form card -->
+          <div class="pda-form-card">
+
+            <div class="pda-field">
+              <label class="pda-lbl">Device ID <span class="pda-req">*</span></label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="pda-ff">
+                <mat-icon matPrefix class="pda-prefix-ic">search</mat-icon>
+                <input matInput formControlName="tagSerialNumber"
+                       appTypeHit (typeHit)="searchTags($event)"
+                       [matAutocomplete]="tagAuto"
+                       placeholder="Search Device ID..."
+                       autocomplete="off" cdkFocusInitial>
+                <mat-autocomplete #tagAuto="matAutocomplete" autoActiveFirstOption>
+                  <mat-option *ngFor="let tag of searchTagList" [value]="tag.tagId"
+                              (click)="selectTag(tag)">
+                    <div class="pda-tag-opt">
+                      <img src="/assets/Alert/common_icons/coaster.svg" class="pda-opt-img" alt="tag">
+                      <span class="pda-opt-id">{{ tag.tagId }}</span>
+                      <span class="pda-opt-bat" *ngIf="tag.batteryPercentage">
+                        {{ tag.batteryPercentage }}%
+                      </span>
+                    </div>
+                  </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="form.controls['tagSerialNumber'].hasError('required')">
+                  Device ID is required
+                </mat-error>
+                <mat-error *ngIf="form.controls['tagSerialNumber'].hasError('requireMatch')">
+                  Please select a valid device from the list
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <div class="pda-divider"></div>
+
+            <div class="pda-field pda-field-last">
+              <label class="pda-lbl">Comments</label>
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="pda-ff">
+                <textarea matInput formControlName="comments" rows="4" placeholder="Optional notes..."></textarea>
+              </mat-form-field>
+            </div>
+
+          </div><!-- /pda-form-card -->
+
+        </div><!-- /pda-form-center -->
+
+      </div>
+
+    </ng-container>
+
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="pda-footer">
+    <button class="pda-btn-ghost" (click)="onClose()">
+      {{ hasDevice ? 'Close' : 'Cancel' }}
+    </button>
+    <button *ngIf="!hasDevice" class="pda-btn-primary"
+            [disabled]="form.invalid || isSaving"
+            appDebounceClick [debounceTime]="300"
+            (debounceClick)="associate()">
+      <mat-spinner *ngIf="isSaving" diameter="14" class="pda-btn-spinner"></mat-spinner>
+      <mat-icon *ngIf="!isSaving">link</mat-icon>
+      {{ isSaving ? 'Saving…' : 'Associate Device' }}
+    </button>
+  </div>
+
+</div>

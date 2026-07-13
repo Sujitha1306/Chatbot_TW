@@ -1,0 +1,35 @@
+<div class="data-table-container">
+  <div class="data-table-header">
+    <span class="table-title">📋 Results · {{ filtered.length }} rows</span>
+    <input [(ngModel)]="search" placeholder="🔍 Search..." class="search-input" />
+  </div>
+
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th *ngFor="let col of columns"
+              (click)="sort(col)"
+              [class.text-right]="isNumeric(col)">
+            {{ formatLabel(col) }} <span class="sort-icon">↕</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of paged; let i = index"
+            [class.row-striped]="i % 2 === 1">
+          <td *ngFor="let col of columns"
+              [class.text-right]="isNumeric(col)">
+            {{ row[col] }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="data-table-footer">
+    <button (click)="page = page - 1" [disabled]="page <= 1" class="page-btn">← Prev</button>
+    <span>Page {{ page }} of {{ totalPages }}</span>
+    <button (click)="page = page + 1" [disabled]="page >= totalPages" class="page-btn">Next →</button>
+  </div>
+</div>

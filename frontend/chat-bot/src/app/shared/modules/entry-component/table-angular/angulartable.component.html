@@ -1,0 +1,577 @@
+<div *ngIf="type !== 'ng-table'" style="width: 100%;height: 100%;">
+    <div class="dash-table-header-label ovi-font-family" *ngIf="id == 'dashWid'">
+        <div class="dash-title">
+            <span style="font-weight: 600;" [ngStyle]="headerStyle?.['widget-header']">{{title}}</span>
+            <div *ngIf="headerStyle?.['widget-icon-name']?.['img'] || headerStyle?.['widget-icon-name']?.['icon']" [ngStyle]="headerStyle?.['widget-icon']">
+                <span *ngIf="headerStyle?.['widget-icon-name']?.['img'] !== ''">
+                  <img [src]="headerStyle?.['widget-icon-name']?.['img']" alt="icon" [ngStyle]="headerStyle?.['widget-inner-icon']">
+                </span>
+                <span *ngIf="headerStyle?.['widget-icon-name']?.['icon'] !== ''">
+                  <mat-icon [ngStyle]="headerStyle?.['widget-inner-icon']">{{headerStyle?.['widget-icon-name']?.icon}}</mat-icon>
+                </span>
+            </div>
+        </div>
+        <div style="width: calc(100% - 40%);">
+            <span *ngIf="enableExcel" style="width: calc(100% - 90%);">
+                <mat-icon class="ovi-fnt-sze21" style="float: right;padding-top: 1px;padding-right: 5px;cursor: pointer;"
+                    (click)="downloadExcel()" (keydown.enter)="fixClick()">description</mat-icon>
+            </span>
+            <span style="width: calc(100% - 90%);">
+                <mat-icon *ngIf="false" class="ovi-fnt-sze21" style="float: right;padding-top: 1px;padding-right: 5px;cursor: pointer;"
+                    (click)="isSearch = !isSearch;" (keydown.enter)="fixClick()">search</mat-icon>
+                <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" *ngIf="isSearch || true"
+                    style="height: 75%;width: 130px;border-bottom: 0.5px solid grey;float: right;margin-right: 5px; padding-top: 5px;"
+                    (keyup)="filterTable($event.target.value)" autocomplete="off">
+            </span>
+            <!-- <span *ngIf="filterBy && filterBy['enabled']" style="float: right; padding-right: 10px;">
+                <select #select class="custom-select-box" style="height: 27px;" (change)="changeType($event.target.value)">
+                    <option value="" selected disabled hidden>Select {{ filterBy['key'] }}</option>
+                    <option [value]="''">{{''}}</option>
+                    <option *ngFor="let value of filterBy['option']" [value]="value">{{value}}</option>
+                </select>
+            </span>             -->
+            <span *ngFor="let filterData of filters" style="width: calc(100% - 20%);">
+                <span *ngIf="filterData['enabled']">
+                    <select #select class="custom-select-box" style="float: right;height: 27px;margin-right: 5px;" [(ngModel)]="filterData['selected_value']"  [ngModelOptions]="{ standalone: true }" (ngModelChange)="sendToLayout(filterData['fetch_type'])">
+                        <option *ngIf="filterData['empty_option']" [ngValue]="''">{{''}}</option>
+                        <option *ngFor="let filter of filterData['resData']" [ngValue]="filterData['fetch_type'] === 'API'?filter[filterData['response_value']]:filter">
+                            {{ filterData['fetch_type'] === 'API'?filter[filterData['response_name']]:filter }}
+                        </option>
+                    </select>
+                </span>
+            </span>
+        </div>
+    </div>
+    <div style="width: 100%;" [ngStyle]="{height : id == 'dashWid' ? 'calc(100% - 58px)' : '99%'}">
+        <div fxLayout="column" class="tw-manage-component" [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px"
+            style="max-height: 100%;" [ngStyle]="{'box-shadow' : id == undefined ? '0px 0px 0px 0px' : ''}"
+            *ngIf="showTable && id!='report2' && id != 'dashWid'">
+            <div class="tw-mat-table-overflow">
+                <table mat-table class="tw-table angulartable-header" [dataSource]="dataSource" matSort style="table-layout: inherit;">
+                    <ng-container *ngFor="let col of HCDisplayedColumns" matColumnDef="{{col}}">
+                        <th mat-header-cell
+                            [hidden]="(id == 'mrfile-missing' && col == 'floor_id') || (id == 'mrfile-age' && col == 'floor_id')"
+                            *matHeaderCellDef mat-sort-header class="tw-manage-table-header">
+                            <span>{{col}}</span>
+                        </th>
+                        <ng-container *ngIf="col=='Location History' && id == 'porter-daily-tat-locHist'">
+                            <td mat-cell *matCellDef="let element">
+                                <span style="color: blue;text-decoration: underline;cursor: pointer;"
+                                    (click)="viewLocationHistory(element)" (keydown.enter)="fixClick()">{{"View Details"|translate}}</span>
+                            </td>
+                        </ng-container>
+                        <ng-container
+                            *ngIf="col!='Hourly Contacts' && col !='Action' && col !='Asset type' && col !='Utilization'">
+                            <td mat-cell
+                                [hidden]="(id == 'mrfile-missing' && col == 'floor_id') || (id == 'mrfile-age' && col == 'floor_id')"
+                                style="padding-right: 20px;" *matCellDef="let element;let i = index;">
+                                <span
+                                    (click)="(((id == 'mrfile-missing' && col == 'Last seen location') || (id == 'mrfile-age' && col == 'Lastseen location')) && element['floor_id'] != null && element['Tag serial no'] != null) ? getLastLocation(element) : ''"
+                                    [ngClass]="{'loc-text': ((id == 'mrfile-missing' && col == 'Last seen location') || (id == 'mrfile-age' && col == 'Lastseen location')) && element['floor_id'] != null && element['Tag serial no'] != null}" (keydown.enter)="fixClick()">{{element[col]}}</span>
+                            </td>
+                        </ng-container>
+                        <ng-container *ngIf="col=='Asset type'">
+                            <td mat-cell *matCellDef="let element">
+                                <span style="color: blue;">{{element[col]}}</span>
+                            </td>
+                        </ng-container>
+                        <ng-container *ngIf="col=='Utilization'">
+                            <td mat-cell *matCellDef="let element">
+                                <span>{{element[col]}}<span class="ovi-fnt-sze10"
+                                        style="color: blue;text-decoration: underline;padding-left: 2px;">
+                                        {{"View Details"|translate}}</span></span>
+                            </td>
+                        </ng-container>
+                        <ng-container *ngIf="col=='Hourly Contacts'">
+                            <td mat-cell class="ovi-fnt-sze12" style="flex-grow: 4;" *matCellDef="let element">
+                                <canvas id="{{element[col]}}" #empSD
+                                    style="padding-top: 5px;padding-bottom: 5px;height: 90px;"></canvas>
+                            </td>
+                        </ng-container>
+                        <ng-container *ngIf="col=='Action'">
+                            <td mat-cell *matCellDef="let element">
+                                <button  mat-button appDebounceClick
+                                    style="border-radius: 3px;background:#f33c3c;color:white;"
+                                    (debounceClick)="removeLocationBoundary(element.id)" [debounceTime]="300"
+                                    cdkFocusInitial> {{"Delete"|translate}}
+                                </button>
+                            </td>
+                        </ng-container>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="HCDisplayedColumns;sticky: true;" id="ang-table-header"
+                        class="tw-manage-table-header-row"></tr>
+                    <tr mat-row *matRowDef="let row; columns: HCDisplayedColumns; let i = index;"
+                        [ngStyle]="{background : id == 'mrfile-age' && row.Fileage == '>11' ? '#5CD6CC' : id == 'mrfile-age' && row.Fileage == '6 to 10' ? '#84D1FA' : id == 'mrfile-age' && row.Fileage == '1 to 5' ? '#8CEDCB' : '' }">
+                    </tr>
+                </table>
+            </div>
+            <mat-paginator *ngIf="page" #Paginator [pageSizeOptions]="[10, 20, 30, 40]" [showFirstLastButtons]="true" (page)="onPageChange($event)" [length]="pageLength"
+                class="tw-paginator-sticky" style="border-radius: 5px;" [pageSize]="pageSize"></mat-paginator>
+        </div>
+
+        <!-- dashboard table start -->
+        <div fxLayout="column" class="tw-manage-component" [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px"
+            style="max-height: 100%;" [ngStyle]="{'box-shadow' : id == undefined ? '0px 0px 0px 0px' : ''}"
+            *ngIf="showTable && id == 'dashWid'">
+            <div class="tw-mat-table-overflow" (scroll)="enableScroll ? onTableScroll($event) : null">
+                <table mat-table class="tw-table angulartable-header" [dataSource]="dataSource" matSort>
+                    <ng-container *ngFor="let col of HCDisplayedColumns;let i = index;" matColumnDef="{{col}}">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header [ngStyle]="styles['th']" class="tw-ng-table-header">
+                            <span>{{HCDisplayedLabel[i]}}</span>
+                        </th>
+                        <ng-container>
+                            <td mat-cell *matCellDef="let element;let i = index;" [ngStyle]="styles['tr']" class="tw-ng-table-cel">
+                                <!-- <span
+                                    [ngStyle]="{color:  (tableStyle.hasOwnProperty('colName') && tableStyle.colName == col) ? (tableStyle.hasOwnProperty('colValue') && tableStyle.colValue != null && tableStyle.colValue.hasOwnProperty(element[col])) ? tableStyle.colValue[element[col]] : (tableStyle.hasOwnProperty('colColor') && tableStyle.colColor != '') ? tableStyle.colColor : '' : ''}">{{element[col]}}</span> -->
+                                <span [ngStyle]="element.kpiStyle?.[col] || getTableStyle(col, element[col])">{{element[col]}}</span>
+                            </td>
+                        </ng-container>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="HCDisplayedColumns;sticky: true;" style="height: 45px;"></tr>
+                    <tr mat-row *matRowDef="let row; columns: HCDisplayedColumns; let i = index;"
+                        [ngStyle]="{background: (tableStyle.hasOwnProperty('rowValue') && tableStyle.rowValue != null && tableStyle.rowValue.hasOwnProperty(row[tableStyle.colName])) ? tableStyle.rowValue[row[tableStyle.colName]] : ''}">
+                    </tr>
+                </table>
+            </div>
+            <mat-paginator *ngIf="page" #Paginator [pageSizeOptions]="pageSizeOptions" [length]="pageLength" [pageSize]="pageSize" (page)="onPageChange($event)"
+                [showFirstLastButtons]="true" class="tw-paginator-sticky" style="border-radius: 5px;">
+            </mat-paginator>
+        </div>
+        <!-- dashboard table end -->
+
+        <div fxLayout="column" class="tw-manage-component transpose-container" [ngClass.xs]="'components-container-xs'"
+            fxLayoutGap="5px" *ngIf="showTable && id =='report2'">
+            <div class="tw-mat-table-overflow">
+                <table mat-table class="tw-table angulartable-header" [dataSource]="dataSource" matSort style="table-layout: inherit;">
+                    <ng-container *ngFor="let col of HCDisplayedColumns" matColumnDef="{{col}}">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header">
+                            <span>{{col}}</span>
+                        </th>
+                        <ng-container>
+                            <td mat-cell style="padding-right: 20px;" *matCellDef="let element;let i = index;">
+                                <span>{{element[col]}}</span>
+                            </td>
+                        </ng-container>
+                    </ng-container>
+                    <tr mat-row *matRowDef="let row; columns: HCDisplayedColumns; let i = index;"></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div *ngIf="showTable && type === 'ng-table'" style="width: 100%;height: 100%;">
+    <div fxLayout="column" class="tw-manage-component" [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px"
+        style="max-height: 100%;">
+        <div class="tw-mat-table-overflow">
+            <mat-table #table [dataSource]="dataSource" class="angulartable-header rowColour" matSort style="height: calc(100% - 70px);width: calc(100% - 1px);">
+                <ng-container *ngFor="let col of displayedData; let colIndex = index;"
+                    matColumnDef="{{displayedColumns[colIndex]}}">
+                    <mat-header-cell  *matHeaderCellDef class="manage-table-header" [ngStyle]="{'min-width': ['production-plan','production-group', 'entity-Assocaitions'].includes(id) && ['Task Name', 'Items', 'Identifying Type', 'Identifying Name'].includes(displayedColumns[colIndex]) ? '145px' : displayedColumns[colIndex] === 'Select' ? '20px' : ['manage-userpool', 'manage-userPoolLocation'].includes(id) && ['EditDelete', 'Delete'].includes(displayedColumns[colIndex]) ? '150px' : ['manage-userPoolLocation'].includes(id) && ['User Pool Location'].includes(displayedColumns[colIndex]) ? '500px' : '' , 'max-width': ['production-plan','production-group'].includes(id) && ['SEQ', 'SLA'].includes(displayedColumns[colIndex]) ? '45px' : displayedColumns[colIndex] === 'Select' ? '40px' : ['manage-userpool', 'manage-userPoolLocation'].includes(id) && ['EditDelete', 'Delete'].includes(displayedColumns[colIndex]) ? '155px' : ['manage-userPoolLocation'].includes(id) && ['User Pool Location'].includes(displayedColumns[colIndex]) ? '550px' :''}"
+                        style="justify-content: flex-start;"> 
+                        <span *ngIf="displayedColumns[colIndex] === 'Select' && ( id === 'entityAssetList')">
+                            <mat-checkbox (change)="$event ? masterToggle($event) : null" [checked]="isAllSelected()"
+                                [indeterminate]="selection.hasValue() && !isAllSelected()">
+                            </mat-checkbox>
+                        </span>
+                        <span mat-sort-header *ngIf="!['Select', 'edit', 'delete', 'Delete', 'EditDelete'].includes(displayedColumns[colIndex])">
+                            {{displayedColumns[colIndex] | translate}}
+                        </span>
+                    </mat-header-cell>
+                    <!-- <mat-header-cell  *matHeaderCellDef mat-sort-header class="manage-table-header" [ngStyle]="{'min-width': ['production-plan','production-group'].includes(id) && ['Task Name', 'Items'].includes(displayedColumns[colIndex]) ? '145px' : '', 'max-width': ['production-plan','production-group'].includes(id) && ['SEQ', 'SLA'].includes(displayedColumns[colIndex]) ? '45px' : ''}"
+                        style="justify-content: flex-start;">{displayedColumns[colIndex], select, Facility Id {{{"Facility Id"|translate}}} Facility Name {{{"Facility Name"|translate}}} Facility Topic Type {{{"Facility Topic Type"|translate}}} Action {{{"Action"|translate}}} Is Enable {{{"Is Enable"|translate}}} Name {{{"Name"|translate}}} Type {{{"Type"|translate}}} ID {{{"ID"|translate}}} Associated Date {{{"Associated Date"|translate}}} Dissociated Date {{{"Dissociated Date"|translate}}} Date {{{"Date"|translate}}} Status {{{"Status"|translate}}} Assigned Type {{{"Assigned Type"|translate}}} Assigned To {{{"Assigned To"|translate}}}  Preview {{{"Preview"|translate}}}
+                        TicketNo {{{"TicketNo"|translate}}} Title {{{"Title"|translate}}} Location {{{"Location"|translate}}} From Time {{{"From Time"|translate}}} To Time {{{"To Time"|translate}}} Duration {{{"Duration"|translate}}} Transfer Type {{{"Transfer Type"|translate}}} Details {{{"Details"|translate}}} Event Date {{{"Event Date"|translate}}} End Date {{{"End Date"|translate}}} Comments {{{"Comments"|translate}}} Role {{{"Role"|translate}}} locationValue {{{"locationValue"|translate}}} categoryValue {{{"categoryValue"|translate}}} isActive {{{"isActive"|translate}}} categoryValue {{{"categoryValue"|translate}}} Server Name {{{"Server Name"|translate}}} His billing Time {{{"His billing Time"|translate}}}
+                        Tag Enrolled Time {{{"Tag Enrolled Time"|translate}}} Tag Disassociated Time {{{"Tag Disassociated Time"|translate}}} Total TAT {{{"Total TAT"|translate}}} Last Checkout Time & Location {{{"Last Checkout Time & Location"|translate}}} Ticket Status{{{"Ticket Status"|translate}}} Form Status {{{"Form Status"|translate}}} Maintenance Type {{{"Maintenance Type"|translate}}}  Maintenance Status {{{"Maintenance Status"|translate}}} Performed By {{{"Performed By"|translate}}} Schedule Date {{{"Schedule Date"|translate}}} Resource Status{{{"Resource Status"|translate}}}Permission Status {{{"Permission Status"|translate}}} Event Context {{{"Event Context"|translate}}} Performed Date {{{"Performed Date"|translate}}} Frequency{{{"Frequency"|translate}}}
+                        First Name{{{"First Name"|translate}}} Last Name{{{"Last Name"|translate}}} Address{{{"Address"|translate}}} Gender{{{"Gender"|translate}}} Email{{{"Email"|translate}}} Phone No{{{"Phone No"|translate}}} Current State{{{"Current State"|translate}}} EventDate{{{"EventDate"|translate}}} Modified by{{{"Modified by"|translate}}} Modified on{{{"Modified on"|translate}}}Schedule Type{{{"Schedule Type"|translate}}} Start Date{{{"Start Date"|translate}}} Period{{{"Period"|translate}}} Owned Department{{{"Owned Department"|translate}}} Shift {{{"Shift"|translate}}} HealthTest Name{{{"HealthTest Name"|translate}}}Location Name{{{"Location Name"|translate}}} Created on{{{"Created on"|translate}}}Start{{{"Start"|translate}}}  Start Time{{{"Start Time"|translate}}} Completed At{{{"Completed At"|translate}}} End{{{"End"|translate}}} Auto Completed {{{"Auto Completed"|translate}}}
+                        Consult Time{{{"Consult Time"|translate}}} Duration{{{"Duration"|translate}}} Wait Time{{{"Wait Time"|translate}}} Review Date{{{"Review Date"|translate}}} Message{{{"Message"|translate}}} Created by{{{"Created by"|translate}}} Acknowledgement{{{"Acknowledgement"|translate}}} Batch Id {{{"Batch Id"|translate}}} Purchase Order Id {{{"Purchase Order Id"|translate}}} Supplier Name {{{"Supplier Name"|translate}}} ItemMaster Name {{{"ItemMaster Name"|translate}}} Expiry Date {{{"Expiry Date"|translate}}} Transaction Type {{{"Transaction Type"|translate}}} Qty {{{"Qty"|translate}}} Requested User Name {{{"Requested User Name"|translate}}} Delivery Status {{{"Delivery Status"|translate}}} Requested Quantity {{{"Requested Quantity"|translate}}}
+                        Allocated Quantity {{{"Allocated Quantity"|translate}}} Delivered Date {{{"Delivered Date"|translate}}} Used Department{{{"Used Department"|translate}}} Asset Type {{{"Asset Type"|translate}}} Department {{{"Department"|translate}}} Code {{{"Code"|translate}}} Resource Type {{{"Resource Type"|translate}}} Page {{{"Page"|translate}}} Permit All {{{"Permit All"|translate}}} Resource Name {{{"Resource Name"|translate}}} Resource Group Name {{{"Resource Group Name"|translate}}} Resource Code {{{"Resource Code"|translate}}} Identifying Id {{{"Identifying Id"|translate}}} Identifying Type {{{"Identifying Type"|translate}}} Identifying Name {{{"Identifying Name"|translate}}} Channel Name {{{"Channel Name"|translate}}} AlertDelete {{{"Delete"|translate}}} Template Name {{{"Template Name"|translate}}} Performer {{{"Performer" | translate}}}
+                        Item Id {{{"Item Id"|translate}}} Asset Type {{{"Asset Type"|translate}}} Asset Name {{{"Asset Name"|translate}}} Model Number {{{"Model Number"|translate}}} Item Name{{{"Item Name"|translate}}} Balanced Qty {{{"Balanced Qty"|translate}}}Batch Id{{{"Batch Id"|translate}}} Unit Cost{{{"Unit Cost"|translate}}} Ticket Id{{{"Ticket Id"|translate}}} Is Active {{{"Is Active"|translate}}} Instance Name {{{"Instance Name"|translate}}} Is Editable {{{"Is Enable"|translate}}} To{{{"To"|translate}}} Time{{{"Time"|translate}}} Attachment{{{"Attachment"|translate}}}  Version {{{"Version" | translate}}} File Name {{{"File Name"| translate}}} Location Type {{{"Location Type" | translate}}}  Location Category {{{"Location Category" | translate}}} Resources Name {{{"Resources Name" | translate}}}  Activity Name {{{"Activity Name"|translate}}} Event Name {{{"Event Name"|translate}}} Task Name {{{"Task Name" | translate}}}
+                        Criticality Type {{{"Criticality Type"|translate}}} Activity {{{"Activity"|translate}}} Assign Type {{{"Assign Type"|translate}}} Assign To {{{"Assign To"|translate}}} Role/Category {{{"Role/Category"}}} Identifier Type {{{"Identifier Type" | translate}}} Identifier Name {{{"Identifier Name" | translate}}} Quantity {{{"Quantity"|translate}}} Expected Date {{{"Expected Date"|translate}}} Role/User {{{"Role/User" | translate }}} Category {{{"Category" | translate}}} Description {{{"Description" | translate}}} Asset Id {{{"Asset Id" | translate}}} Event Time {{{"Event Time" | translate}}} Updated By {{{"Updated By" | translate}}} Item Type {{{"Item Type" | translate}}} Consumable ID {{{"Consumable ID" | translate}}} Consumable Name {{{"Consumable Name" | translate}}} Implant ID {{{"Implant ID" | translate}}} Implant Name {{{"Implant Name" | translate}}} Set Code {{{"Set Code" | translate}}} Items {{{"Items" | translate}}}
+                        Set Name {{{"Set Name" | translate}}} Set Status {{{"Set Status" | translate}}} Document Type{{{"Document Type"|translate}}} Document Name{{{"Document Name"|translate}}} Created Time{{{"Created Time"|translate}}} Modified Time{{{"Modified Time"|translate}}} Set GroupName {{{"Set GroupName" | translate}}} Name {{{"Name" | translate}}} S.No {{{"S.No" | translate}}} Department Name{{{"Department Name" | translate}}} Requested Date {{{"Requested Date" | translate}}} Quantitys {{{"Quantitys" | translate}}} Purshase Order{{{"Purshase Order" | translate}}} Purshase Request No{{{"Purshase Request No" | translate}}} Level {{{"Level" | translate}}} Edit Status {{{"Edit Status" | translate}}} Recipient Type {{{"Recipient Type" | translate}}} Recipient Name {{{"Recipient Name" | translate}}} Channel Type {{{"Channel Type" | translate}}} Approval Capacity {{{"Approval Capacity" | translate}}} Approval Status {{{"Approval Status" | translate}}}
+                        Cost{{{"Cost"|translate}}}  Remarks {{{"Remarks" | translate}}} Action Type {{{"Action Type" | translate}}} Return {{{"Return" | translate}}} Sub Category {{{"Sub Category" | translate}}} Link Group {{{"Link Group" | translate}}} Link Code {{{"Link Code" | translate}}} Link Name {{{"Link Name" | translate}}} From Location {{{"From Location"| translate}}}  To Location{{{"To Location"| translate}}} KPI Name{{{"KPI Name"| translate}}} Target{{{"Target"| translate}}} Achieved{{{"Achieved"| translate}}} Last Updated {{{"Last Updated"| translate}}} Formula{{{"Formula"| translate}}} Frequency{{{"Frequency"| translate}}} Item Master{{{"Item Master"| translate}}} Item {{{"Item" | translate}}} Item No {{{"Item No" | translate}}} SEQ {{{"SEQ" | translate}}} Scope {{{"Scope" | translate}}} Activity Rule {{{"Activity Rule" | translate}}} Rule Group {{{"Rule Group" | translate}}} Step Type {{{"Step Type" | translate}}} SLA {{{"SLA" | translate}}}
+                        Column Name {{{"Column Name" | translate}}}  Condition {{{"Condition" | translate}}} Value {{{"Value" | translate}}}  Type {{{"Type"|translate}}} Style{{{"Style"|translate}}} Schedule Time{{{"Schedule Time"|translate}}} Include {{{"Include" | translate}}} Asset Serial No {{{"Asset Serial No" | translate}}} Mustering Duration {{{'Mustering Duration'|translate}}}  Assembly Point {{{'Assembly Point' | translate}}} Routine Type {{{'Routine Type' | translate}}} Routine {{{'Routine' | translate}}} }
+                    </mat-header-cell> -->
+                    <mat-cell *matCellDef="let element  let rowIndex = index" (click)="rowClick(element, rowIndex, displayedColumns[colIndex]); isTableEditColumn && ['Assign To', 'Asset Serial No'].includes(displayedColumns[colIndex]) ? actionTrigger(displayedColumns[colIndex], element, id) : null"     (dblclick)="rowDbClickEvent(element)" [ngStyle]="{'min-width': ['production-plan','production-group', 'entity-Assocaitions'].includes(id) && ['Task Name', 'Items', 'Identifying Type', 'Identifying Name'].includes(displayedColumns[colIndex]) ? '140px' : displayedColumns[colIndex] === 'Select' ? '20px' :['manage-userpool', 'manage-userPoolLocation'].includes(id) && ['EditDelete', 'Delete'].includes(displayedColumns[colIndex]) ? '145px' : ['manage-userPoolLocation'].includes(id) && ['User Pool Location'].includes(displayedColumns[colIndex]) ? '500px' : '' , 'max-width': ['production-plan','production-group'].includes(id) && ['SEQ', 'SLA'].includes(displayedColumns[colIndex]) || displayedColumns[colIndex] === 'Select' ? '40px' : ['manage-userpool', 'manage-userPoolLocation'].includes(id) && ['EditDelete', 'Delete', 'Actions'].includes(displayedColumns[colIndex]) ? '150px' : ['manage-userPoolLocation'].includes(id) && ['User Pool Location'].includes(displayedColumns[colIndex]) ? '550px' : '', 'color' : (['Assign To', 'Asset Serial No'].includes(displayedColumns[colIndex]) && ['entityAssetList','ROU-ASM', 'manageRoutine'].includes(id)) ? 'blue' : ''}" [matMenuTriggerFor]="(['Assign To'].includes(displayedColumns[colIndex]) && ['entityAssetList','ROU-ASM', 'manageRoutine'].includes(id)) ? editContainer : null ">
+                        <span *ngIf="(displayedColumns[colIndex] != 'Assigned To' || !['production-group'].includes(id)) && (displayedColumns[colIndex] != 'Options' || !['activitesApprovelMatrix'].includes(id))  && displayedColumns[colIndex] != 'Assigned Type' && displayedColumns[colIndex] !== 'edit' && (displayedColumns[colIndex] !== 'Recipient Type' || !['approvelMatrix'].includes(id))  && displayedColumns[colIndex] !== 'Set Name' && displayedColumns[colIndex] !== 'Resource Group Name' && (displayedColumns[colIndex] !== 'Resources Name' && id != permissionGroup ) && (displayedColumns[colIndex] !== 'Status'&& id != assetTransfer) && displayedColumns[colIndex] !== 'Associated Date'&& displayedColumns[colIndex] !== 'Dissociated Date'&& displayedColumns[colIndex] !== 'Event Date' && displayedColumns[colIndex] !== 'End Date'&& displayedColumns[colIndex] !== 'From Time'&& displayedColumns[colIndex] !== 'To Time' && displayedColumns[colIndex] !== 'Include'
+                       && displayedColumns[colIndex] !== 'Date' && displayedColumns[colIndex] !== 'Items' && displayedColumns[colIndex] !== 'Expected Date' && displayedColumns[colIndex] !== 'Preview'  && displayedColumns[colIndex] !== 'Edit' && displayedColumns[colIndex] !== 'Action' && displayedColumns[colIndex] !== 'isActive' && displayedColumns[colIndex] !== 'Is Editable' && displayedColumns[colIndex] !== 'Schedule Date' && displayedColumns[colIndex] !== 'Performed Date'&& displayedColumns[colIndex] !== 'Start Date' && displayedColumns[colIndex] !== 'Review Date' && displayedColumns[colIndex] !== 'Created on' && displayedColumns[colIndex] !== 'Ispermit All' && displayedColumns[colIndex] !== 'Assign Type' && displayedColumns[colIndex] !=='Last Updated' && displayedColumns[colIndex] !=='Target' && displayedColumns[colIndex] !==  'Linked Date Time'
+                       && displayedColumns[colIndex] !== 'Expiry Date' && displayedColumns[colIndex] !== 'Transaction Type' && displayedColumns[colIndex] !== 'Requested Quantity'  && displayedColumns[colIndex] !== 'Ticket Id' && displayedColumns[colIndex] !== 'Event Time' && displayedColumns[colIndex] !== 'Allocated Quantity' && displayedColumns[colIndex] !== 'Created on'  && displayedColumns[colIndex] !== 'Modified on' && displayedColumns[colIndex] !== 'Delivered Date' && displayedColumns[colIndex] !== 'Requested Date'&& displayedColumns[colIndex] !=='Identifier' && displayedColumns[colIndex] !=='Latest Value' && (displayedColumns[colIndex] !== 'Status' || id == 'permissionResources') || (displayedColumns[colIndex] !== 'Status' && id == 'permissionGroup') && displayedColumns[colIndex] !== 'AlertDelete'
+                       && displayedColumns[colIndex] !== 'Item Id'  && displayedColumns[colIndex] !== 'View' && (displayedColumns[colIndex] !== 'Recipient Type' || !['approvelMatrix'].includes(id))  && displayedColumns[colIndex] !== 'Set Name' && displayedColumns[colIndex] !== 'Resource Group Name' && (displayedColumns[colIndex] !== 'Resources Name' && id != permissionGroup ) && displayedColumns[colIndex] !== 'Item Name'&& displayedColumns[colIndex] !== 'Unit Cost'&& displayedColumns[colIndex] !== 'Attachment'" 
+                        class="table-text"[ngStyle]="['Remarks', 'Identifying Type'].includes(displayedColumns[colIndex]) && !['ticketHistory'].includes(id) ? {'white-space': 'nowrap','overflow': 'hidden','text-overflow': 'ellipsis','display': 'inline-block'}:''" [ngClass]="{'text-over-dot': ['Item'].includes(displayedColumns[colIndex])}" appTooltip tooltipText="{{ ['Item', 'Identifying Type', 'Identifying Name'].includes(displayedColumns[colIndex]) ? element[col] : ''}}" placement="bottom">{{element[col]}}</span>
+                        <span *ngIf="(displayedColumns[colIndex] === 'Status' || displayedColumns[colIndex] === 'isActive')&& id != 'door-history' && id != 'monitortable1' && id != 'monitortable2' && id != 'schedule' && component != 'Resource Map' && component != 'GroupMap' && id != 'customer-role' && component != 'item-asset-link' && component != 'task-history' && id != 'approvelMatrix' && id != 'Ticket' && id != 'production-plan' && id != 'production-group' && id !='ticketHistory' && id != 'entityAssetList' && id != 'manageRoutine'" class="table-text">
+                            {{element[col] === true ? 'Active' : 'inActive'}}</span>
+                            <span *ngIf="displayedColumns[colIndex] === 'Status' && (id === 'Ticket' || id === 'entityAssetList')" class="table-text">{{element[col]}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'edit' && !['RQ-CO', 'RQ-SH'].includes(element.requestStatusId)" class="edit-col">
+                            <button mat-icon-button [matMenuTriggerFor]="['production-group'].includes(id) ? statusMenu : menu" (click)="rowClick(element)">
+                                <mat-icon class="activity-edit1" style="padding: 0;">more_horiz</mat-icon>
+                            </button>
+                            <mat-menu #menu="matMenu">
+                                <button *ngFor="let menu of menuButton" mat-menu-item>
+                                    <span style="display: inline-block;width: 100%;" 
+                                    (click)="actionTrigger(menu.type, element, menu.value)"  (keydown.enter)="fixClick()">{{menu.name}}</span>
+                                </button>
+                            </mat-menu>
+                            <mat-menu #statusMenu="matMenu" class="custom-menu">
+                                <button *ngIf="['RQ-CR', 'RQ-PEN'].includes(element.requestStatusId)" class="option-menu-btn" mat-menu-item
+                                  (click)="actionTrigger('status', element, 'RQ-IP');" (keydown.enter)="fixClick()">
+                                  <span class="material-icons status-menu-icon" style="color: #FB8C00">published_with_changes</span>In Progress</button>
+                                <button *ngIf="['RQ-IP'].includes(element.requestStatusId)" class="option-menu-btn" mat-menu-item
+                                  (click)="actionTrigger('status', element, 'RQ-CO');" (keydown.enter)="fixClick()">
+                                  <span class="material-icons status-menu-icon" style="color: #2E7D32">done</span>Complete</button>
+                            </mat-menu>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Select'">
+                            <mat-checkbox (change)="checkboxEvent($event, 'row', element)" [checked]="selection.isSelected(element)" [disabled]="!element.Isalready && id === 'entityAssetList'">
+                            </mat-checkbox>
+                        </span>
+                        <mat-menu #editContainer="matMenu" (closed)="onMenuClosed()" class="tw-routine-menu-template ovi-font-family">
+                            <app-edit-template matMenuContent *ngIf="editMenuData && displayedColumns[colIndex] == selectedHeaderCol && element[identifyingKey] == selectedRowId"
+                                (click)="$event.stopPropagation()" [editContainer]="editContainer" [editTemplateData]="editMenuData"></app-edit-template>
+                        </mat-menu>
+                        <span *ngIf="displayedColumns[colIndex] === 'Recipient Type' && id === 'approvelMatrix'">
+                            {{ element.identifyingType === 'RT-RO' ? 'Role' :  'User'}}
+                        </span>    
+                        <span *ngIf="displayedColumns[colIndex] === 'Associated Date' || displayedColumns[colIndex] === 'Dissociated Date'">
+                            {{element[col] | date: 'dd/MM/yyyy hh:mm a' }} 
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Last Updated'">
+                             {{ element[col] | date:"dd MMM yyyy hh:mm:ss a" }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Resources Name' && component === 'GroupMap' && (displayedColumns[colIndex] === 'Resources Name' && element.resourceGroupId == null)">
+                            {{ element.resourceGroupId === null ? element.resourceName : element.resourceGroupName }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Date' &&  id !== 'InventoryExpenses'|| displayedColumns[colIndex] === 'From Time'|| displayedColumns[colIndex] === 'To Time' || displayedColumns[colIndex] === 'Event Time' || displayedColumns[colIndex] === 'Created on' || displayedColumns[colIndex] === 'Modified on' || displayedColumns[colIndex] ==='Linked Date Time'">
+                            {{element[col] | date: "hh:mm a, d MMM" }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Start Date' && id === 'entityAssetList'" class="tw-routine-dat">
+                            <span> {{ element[col] | date: 'dd MMM yyyy' }}</span>
+                            <span>
+                               <span class="material-icons ovi-fnt-sze18 tw-routine-dat-colr" (click)="openDatepicker(datePicker, element)">today</span>
+                            </span>
+                            <input #datePickerInput [matDatepicker]="datePicker" (dateChange)="actionTrigger(displayedColumns[colIndex], element, $event.value)"
+                                style="opacity:0; width:0; height:0; position:absolute; pointer-events:none;">
+                            <mat-datepicker #datePicker></mat-datepicker>
+                        </span>
+                         <span *ngIf="displayedColumns[colIndex] === 'Schedule Date' ||displayedColumns[colIndex] === 'Performed Date' || displayedColumns[colIndex] ==='Event Date'|| displayedColumns[colIndex] === 'End Date'|| (displayedColumns[colIndex] === 'Start Date' && id !== 'entityAssetList') || (displayedColumns[colIndex] === 'Date' &&  id === 'InventoryExpenses')">
+                            {{ element[col] | date: 'dd/MM/yyyy' }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Assigned Type' && id === 'production-group'">
+                            {{ element[col] === 'RT-DT' ? 'Department' : element[col] === 'RT-US' ? 'User' : 'Role'}}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Assigned To' && ['production-group'].includes(id)" 
+                        style="color: blue;cursor: pointer;" (click)="actionTrigger('Assigned To', element, null)">
+                            {{ element[col]}}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Ticket Id'">
+                            <a href="javascript:void(0)" style="color: blue; text-decoration: none;" [debounceTime]="500"
+                             appDebounceClick (debounceClick)="actionTrigger('TicketId', element, null)">
+                              {{element[col] }}
+                            </a>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Identifier'">
+                        <ng-container *ngIf="element.editPermission; else plainText">
+                            <a href="javascript:void(0)" style="color: blue; text-decoration: none;"[debounceTime]="500"
+                             appDebounceClick (debounceClick)="actionTrigger('edit', element, null)">
+                            {{ element[col] }}
+                            </a>
+                        </ng-container>
+                        <ng-template #plainText>
+                            {{ element[col] }}
+                        </ng-template>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Resource Group Name' || (displayedColumns[colIndex] === 'Resources Name' && element.resourceGroupId !== null)">
+                            <a href="javascript:void(0)" style="color: blue;" (click)="actionTrigger('ResourceGroupName', element, null)">
+                             {{ element.resourceGroupId === null ? element.resourceName : element.resourceGroupName }}
+                            </a>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Set Name' && component === 'setSchedule' || id === 'set-Tamplate'">
+                            <a href="javascript:void(0)" style="color: blue; text-decoration: none;" (click)="actionTrigger('SetName', element, null)">
+                                {{ element.entityName}}
+                               </a>
+                        </span>
+                         <span *ngIf="displayedColumns[colIndex] === 'Options' && id === 'activitesApprovelMatrix'">
+                           {{ element?.options | json }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Attachment'">
+                            <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" appTooltip tooltipText="{{'Preview'|translate}}" placement="bottom" (click)="actionTrigger('attachment', element, null)"  (keydown.enter)="fixClick()">launch</mat-icon>
+                        </span>
+                         <span *ngIf="(displayedColumns[colIndex] === 'Delete' || displayedColumns[colIndex] === 'delete') && ['userPool', 'entityAssetList', 'entity-Assocaitions', 'schedule-report', 'manage-userPoolLocation', 'test-location-mapping'].includes(id)">
+                             <mat-icon appTooltip tooltipText="Delete" placement="bottom"  (click)="actionTrigger('delete', element, '')" class=" ovi-fnt-sze20" style="padding-top: 9px;color: #ff0000; margin-left: 8px;" (keydown.enter)="fixClick()">delete</mat-icon>
+                        </span>
+                        <span *ngIf="(displayedColumns[colIndex] === 'Action' && id !== 'connectivityDetails') && (id === 'linkedasset' || id === 'assetItems')">
+                            <mat-icon appTooltip tooltipText="Delete" placement="bottom"  (click)="actionTrigger('delete', element, '')" class=" ovi-fnt-sze20" style="padding-top: 9px;color: #ff0000; margin-left: 8px;" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                        </span>
+                         <span *ngIf="(displayedColumns[colIndex] === 'Action' && id === 'connectivityDetails')">
+                            <mat-icon appTooltip tooltipText="Delete" placement="bottom"  (click)="deleteTrigger( element,rowIndex )" class=" ovi-fnt-sze20" style="padding-top: 9px;color: #ff0000; margin-left: 8px;" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Is Editable'">
+                            <button  mat-button [ngClass]="element.is_enable_but === true ? 'gw-task-active' : 'gw-task-inactive'" [disabled]="element.is_editable === false" 
+                            (click)="element.is_enable_but=!element.is_enable_but;actionTrigger('task', element, element.is_enable_but)">
+                                <input type="button" [ngClass]="element.is_enable_but === true ? 'task-true' : 'task-false'" value="{{element.is_enable_but === true ? 'Enable' : 'Disable'}}" 
+                                (onclick)="element.is_enable_but=!element.is_enable_but;actionTrigger('task', element, element.is_enable_but)">
+                            </button>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Expiry Date'">{{element.expiryDate | date: 'dd/MM/yyyy'}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Requested Quantity' && id !== 'schedule'">{{element.deliveryDetails[0]?.requestedQuantity}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Allocated Quantity' && id !== 'schedule'">{{element.deliveryDetails[0]?.allocatedQuantity}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Delivered Date' && id !== 'schedule'">{{element.deliveryDetails[0]?.deliveredDatetime | date: 'dd/MM/yyyy'}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Requested Date' && id !== 'schedule'">{{element.deliveryDetails[0]?.deliveredDatetime | date: 'dd/MM/yyyy'}}</span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && id === 'schedule'">{{element[col]}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && id === 'customer-role'"> {{element[col] === 'Add' ? 'New' : element[col]}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' &&(id === 'door-history'|| id==='ticketHistory' || id === 'monitortable1' || id === 'monitortable2')">{{element[col]}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Requested Quantity' && id === 'schedule'">{{element[col]}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Allocated Quantity' && id === 'schedule'">{{element[col]}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Delivered Date' && id === 'schedule'">{{element[col] | date : "dd-MM-yyyy  hh:mm"}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Requested Date' && id === 'schedule'">{{element[col] | date : "dd-MM-yyyy  hh:mm"}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Expected Date'">{{element[col] | date: 'dd/MM/yyyy' }}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Review Date'" class="custom-reviewdate">
+                            <span *ngIf="idCheck !== element.healthTestId" style="margin-right: 10px;">{{ element.reviewDate | date: "hh:mm a, d MMM" }}</span>
+                            <mat-form-field *ngIf="enableedit && idCheck == element.healthTestId" class="example-full-width form-field"
+                                appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" type="datetime-local" id="reviewpicker" [(ngModel)]="reviewDate"  [ngModelOptions]="{ standalone: true }"
+                                    (change)="actionTrigger('completeReviewDate', element, $event);">
+                            </mat-form-field>
+                            <span>
+                                <img class="ovi-prmry-clr" style="cursor: pointer;"  alt="edit" src="assets/Alert/common_icons/edit.svg" height="15px" width="15px"
+                                    (click)="editIconClick(element)"  (keydown.enter)="fixClick()">
+                            </span>
+                        </span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'Edit' && id !== 'inventory'">
+                            <!-- <button  mat-button appDebounceClick style="border-radius: 3px;background:#f33c3c;color:white; line-height:22px;padding: 0 5px;font-size:10px;min-width: 40px"
+                            (click)="actionTrigger('edit', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Edit"|translate}}
+                            </button> -->
+                            <mat-icon *ngIf="id != 'Ticket' " class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom" (click)="actionTrigger('edit', element, null)"  (keydown.enter)="fixClick()">edit</mat-icon>
+                            <!-- <mat-icon *ngIf="id ==='Ticket' && element.editPermission" class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom" (click)="actionTrigger('edit', element, null)"  (keydown.enter)="fixClick()">edit</mat-icon> -->
+                            <!-- <mat-icon class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'report'|translate}}" placement="bottom" (click)="actionTrigger('report', element, null)" (keydown.enter)="fixClick()">description</mat-icon> -->
+                              <mat-icon *ngIf="id==='Ticket'"class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'View'|translate}}" placement="bottom" (click)="actionTrigger('view', element, null)" (keydown.enter)="fixClick()">visibility</mat-icon>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'View' && id !== 'inventory'">
+                            <!-- <button  mat-button appDebounceClick style="border-radius: 3px;background:#f33c3c;color:white; line-height:22px;padding: 0 5px;font-size:10px;min-width: 40px"
+                            (click)="actionTrigger('edit', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Edit"|translate}}
+                            </button> -->
+                            <mat-icon *ngIf="id != 'Ticket' " class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom" (click)="actionTrigger('edit', element, null)"  (keydown.enter)="fixClick()">edit</mat-icon>
+                            <!-- <mat-icon *ngIf="id ==='Ticket' && element.editPermission" class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom" (click)="actionTrigger('edit', element, null)"  (keydown.enter)="fixClick()">edit</mat-icon> -->
+                            <!-- <mat-icon class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'report'|translate}}" placement="bottom" (click)="actionTrigger('report', element, null)" (keydown.enter)="fixClick()">description</mat-icon> -->
+                              <mat-icon *ngIf="id==='Ticket'"class="ovi-prmry-clr  ovi-fnt-sze20"
+                                appTooltip tooltipText="{{'View'|translate}}" placement="bottom" (click)="actionTrigger('view', element, null)" (keydown.enter)="fixClick()">visibility</mat-icon>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Edit' && id === 'inventory'">
+                            <button *ngIf="element.transactionTypeName === 'IN'"  mat-button appDebounceClick class=" ovi-fnt-sze10" style="border-radius: 3px;background:#f33c3c;color:white; line-height:22px;padding: 0 5px;min-width: 40px"
+                            (click)="actionTrigger('edit', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Edit"|translate}}
+                            </button>
+                        </span>
+                       <span *ngIf="(displayedColumns[colIndex] === 'editDelete' &&  (id === 'approvelMatrix' || id === 'department' || id === 'FormStatus'|| id === 'patient-relaiton-management')) || (displayedColumns[colIndex] === 'Actions' && id === 'activitesApprovelMatrix')"style="display:flex; align-items:center;">
+                            <span>
+                                <img appTooltip tooltipText="Edit" placement="bottom" class="ovi-prmry-clr" style="cursor: pointer;" alt="edit"
+                                    src="assets/Alert/common_icons/edit.svg" height="18px" width="18px"
+                                    (click)="id === 'FormStatus' ? actionTrigger('edit', element, null) : actionTrigger('appEdit', element, id)"  (keydown.enter)="fixClick()">
+                            </span>
+                            <button  class="action-btn" style="color: #ff0000;" mat-icon-button (click)="id === 'FormStatus' ? actionTrigger('delete', element, '') : actionTrigger('appDelete', element, id)">
+                                <mat-icon appTooltip tooltipText="Delete" placement="bottom" class="ovi-fnt-sze20"
+                                    style="padding: 0px; margin-left: 8px;">delete_outline</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="col ==='editRemove' &&  (id =='formBuilder')" style="display: flex;align-items: center;">
+                            <span>
+                                <img appTooltip tooltipText="Edit" placement="bottom" class="ovi-prmry-clr" style="cursor: pointer;"  alt="edit"  src="assets/Alert/common_icons/edit.svg" height="18px" width="18px"
+                                (click)="actionTrigger('manage', element, null)"  (keydown.enter)="fixClick()">
+                            </span>
+                            <button class="action-btn" style="color: #ff0000;" mat-icon-button (click)="actionTrigger('delete', element, '')">
+                                <mat-icon appTooltip tooltipText="Delete" placement="bottom" class="ovi-fnt-sze20" style="padding: 0px; margin-left: 8px;">delete_outline</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="col ==='EditDelete' &&  (id =='manage-userpool')" style="display: flex;align-items: center;">
+                            <span>
+                                <img appTooltip tooltipText="Edit" placement="bottom" class="ovi-prmry-clr" style="cursor: pointer;"  alt="edit"  src="assets/Alert/common_icons/edit.svg" height="18px" width="18px"
+                                (click)="actionTrigger('edit', element, null)"  (keydown.enter)="fixClick()">
+                            </span>
+                            <button class="action-btn" style="color: #ff0000;" mat-icon-button (click)="actionTrigger('delete', element, '')">
+                                <mat-icon appTooltip tooltipText="Delete" placement="bottom" class="ovi-fnt-sze20" style="padding: 0px; margin-left: 8px;">delete_outline</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="col ==='print'&& element['maintenanceTypeId']==='AMT-PMS'&& element['status']!='RQ-CA'">
+                            <button  mat-button appDebounceClick class="ovi-fnt-sze10" style="border-radius: 3px;background:#f33c3c;color:white; line-height:22px;padding: 0 5px;min-width: 40px;margin-right:10px"
+                            (click)="actionTrigger('print', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Print"|translate}}
+                            </button>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Batch Id'&& id === 'Manage Inventory'">{{element.deliveryDetails[0]?.batchId}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Item Name'&& id === 'Manage Inventory'">{{element.deliveryDetails[0]?.itemMasterName}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Unit Cost'&& id === 'Manage Inventory'">{{element.deliveryDetails[0]?.unitCost}}</span>
+                        <span *ngIf="col ==='manage' && component =='manageHoliday'">
+                            <button  mat-button appDebounceClick *ngIf="element.typeId != 'HT-WKL'" class="ovi-fnt-sze10" style="border-radius: 3px;background:#65a95b;color:white; line-height:22px;padding: 0 5px;min-width: 40px;margin-right:10px"
+                            (click)="actionTrigger('manage', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Manage"|translate}}
+                            </button>
+                            <button  mat-button appDebounceClick class="ovi-fnt-sze10" style="border-radius: 3px;background:#f33c3c;color:white; line-height:22px;padding: 0 5px;min-width: 40px"
+                            (click)="actionTrigger('delete', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Delete"|translate}}
+                            </button>
+                        </span>
+                        <span *ngIf="col ==='History'">
+                            <button  mat-button appDebounceClick class="ovi-fnt-sze10" style="border-radius: 3px;background:#65a95b;color:white;line-height: 23px;padding: 0 10px;margin-right:10px"
+                            (click)="actionTrigger('view', element, null)" [debounceTime]="300" cdkFocusInitial> {{"View History"|translate}}
+                            </button>
+                            <button  mat-button class="ovi-fnt-sze10" appDebounceClick style="border-radius: 3px;background:#f33c3c;color:white; line-height:23px;padding: 0 5px; min-width: 45px"
+                            (click)="actionTrigger('preview', element, null)" [debounceTime]="300" cdkFocusInitial> {{"Preview"|translate}}
+                            </button>
+                        </span>
+                        <span *ngIf="col ==='PreviewHistory'" style="display: flex;column-gap: 15px;">
+                            <img *ngIf="element.id != null" src="../../../../../assets/icons/view-history.svg" alt="History" appTooltip tooltipText="{{'View History'|translate}}" placement="bottom" (click)="actionTrigger('view', element, null)" style="width: 30px;"  (keydown.enter)="fixClick()">
+                            <!-- <mat-icon style="color: #65a95b;" appTooltip tooltipText="View History" placement="bottom" (click)="actionTrigger('view', element, null)">history</mat-icon> -->
+                            <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" appTooltip tooltipText="{{'Edit / Preview'|translate}}" placement="bottom" (click)="actionTrigger('preview', element, null)"  (keydown.enter)="fixClick()">launch</mat-icon>
+                            <mat-icon class="ovi-fnt-sze20" style="color: #f33c3c;" appTooltip tooltipText="{{'Delete'|translate}}" placement="bottom" (click)="actionTrigger('delete', element, null)"  (keydown.enter)="fixClick()">delete</mat-icon>
+                        </span>
+                        <span *ngIf="col ==='viewHistory'" style="display: flex;column-gap: 15px;">
+                            <img *ngIf="element.id != null" src="../../../../../assets/icons/view-history.svg" alt="History" appTooltip tooltipText="{{'View History'|translate}}" placement="bottom" (click)="actionTrigger('view', element, null)" style="width: 30px;"  (keydown.enter)="fixClick()">
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Target' && element?.target != null">
+                        <a href="javascript:void(0)" style="color: blue; text-decoration: none;" (click)="actionTrigger('Edit', element, null)">
+                            {{ element?.valueType === 'currency' ? (element?.unitOfMeasure + ' ' + element?.target) : (element?.target + ' ' + element?.unitOfMeasure) }}
+                        </a>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Achieved' && element?.achieve != null">
+                        {{ element?.valueType === 'currency' ? (element?.unitOfMeasure + ' ' + element?.achieve) : (element?.achieve + ' ' + element?.unitOfMeasure) }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Latest Value' && element?.latestValue != null">
+                        {{ element?.valueType === 'currency' ? (element?.unitOfMeasure + ' ' + element?.latestValue) : (element?.latestValue + ' ' + element?.unitOfMeasure) }}
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Transaction Type'">
+                            <sapn style="font-weight: bold;" [ngStyle]="{color: element[col] === 'IN' ? 'green' : 'red'}">{{element[col]}}</sapn>
+                        </span>
+                        <span *ngIf="(displayedColumns[colIndex] === 'Action' && id !== 'linkedasset' && id !== 'assetItems' && id !== 'connectivityDetails') || ( displayedColumns[colIndex] == 'IsAction' && element.hasOwnProperty('requestId') && component === 'setSchedule')">
+                           <!-- <span style="text-decoration: underline; font-weight:600; cursor: pointer;"
+                           (click)="actionTrigger(null, element, null)">Edit</span> -->
+                           <button mat-icon-button [matMenuTriggerFor]="component === 'setSchedule' ? menu2 : menu1" 
+                           (click)="id ==='facility' || id ==='server' || id ==='job' || id ==='task' ? rowClick(element) : id === 'set-schedule' ? actionTrigger(displayedColumns[colIndex], element, '') : ''">
+                                <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                            </button>
+                            <mat-menu  #menu1="matMenu" class="gw-menu">
+                                <button *ngFor="let menu of menuButton" mat-menu-item (click)="actionTrigger(menu.type, element, menu.value);">
+                                    <span style="display: inline-block;width: 100%;">{{menu.name}}</span>
+                                </button>
+                            </mat-menu>
+                            <mat-menu #menu2="matMenu" class="gw-menu">
+                                <button *ngFor="let menu of menuButton" mat-menu-item (click)="actionTrigger('StatusAction', element, menu.value);">
+                                    <span  style="display: inline-block;width: 100%;">{{menu.value}}</span>
+                                </button>
+                            </mat-menu>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && component === 'Resource Map'">
+                            <span style="font-weight: 600;" [ngStyle]="{'color': element[col] === true && element.id !== null ? '#0082ea' : element[col] === false && element.id !== null ? '#e30000' : '#008600'}">
+                                {{element[col] === true && element.id !== null ? 'exist' : element[col] === false && element.id !== null ? 'delete' : 'New'}}</span>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Ispermit All' && component === 'Resource Map'">{{element[col] === true ? 'Yes' : 'No'}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && component === 'GroupMap'">
+                            <span style="font-weight: 600;" [ngStyle]="{'color': element[col] === true && element.roleMapId !== null ? '#0082ea' : element[col] === false && element.roleMapId !== null ? '#e30000' : element[col] === false && element.roleMapId == null ? '#e30000' : '#008600'}">
+                                {{element[col] === true && element.roleMapId !== null ? 'exist' : element[col] === false && element.roleMapId !== null ? 'delete' :  element[col] === false && element.roleMapId == null ? 'delete' : 'New'}}</span>
+                        </span>
+                        <span *ngIf="(col === 'removeEdite' && id === 'set-schedule')" style="display: flex;align-items: center;">
+                            <span *ngIf="!element.hasOwnProperty('removeEdite')">
+                                <img appTooltip tooltipText="Edit" [ngStyle]="{'opacity':element.hasOwnProperty('isEditeDisable') && element.isEditeDisable ? '0.6' : '1' }" placement="bottom" class="ovi-prmry-clr" style="cursor: pointer;"
+                                    src="assets/Alert/common_icons/edit.svg"  alt="edit"  height="18px" width="18px"
+                                    (click)="element.hasOwnProperty('isEditeDisable') && element.isEditeDisable ? '' : actionTrigger('manage', element, null)"  (keydown.enter)="fixClick()">
+                            </span>
+                            <button class="action-btn ovi-prmry-clr"  mat-icon-button (click)="actionTrigger('delete', element, '')">
+                                <mat-icon appTooltip tooltipText="Delete" placement="bottom" class="ovi-fnt-sze20"
+                                    style="padding: 0px; margin-left: 8px;">delete_outline</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="['AlertDelete', 'Delete'].includes(displayedColumns[colIndex]) && !['userPool','Sub-order', 'itemLink', 'entityAssetList', 'manage-userPoolLocation'].includes(id)">
+                            <button *ngIf="id === 'Alert' ? !element.isDeletable : id == 'permissionResources' ?  element.resourceGroupMapIsActive || element.resourceGroupMapIsActive === null : id == 'permissionGroup' ?  element.isActive : false" class="action-btn" style="color: #ff0000;" mat-icon-button
+                                (click)="actionTrigger('delete', element, '')">
+                                <mat-icon class="ovi-fnt-sze16" style="padding: 0px; height: fit-content; width: fit-content;">delete_outline</mat-icon>
+                            </button>
+                            <button *ngIf="id === 'Alert' ? element.isDeletable : id == 'permissionResources' ? !element.resourceGroupMapIsActive && element.resourceGroupMapIsActive !== null : id == 'permissionGroup' ? !element.isActive : false" class="action-btn ovi-prmry-clr"  mat-icon-button
+                                (click)="actionTrigger('undo', element, '')">
+                                <mat-icon class="ovi-fnt-sze16" style="padding: 0px; height: fit-content; width: fit-content;">undo</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Delete' && ['itemLink', 'Sub-order'].includes(id)">
+                            <button *ngIf="element.status" class="action-btn" style="color: #ff0000;" mat-icon-button
+                                (click)="actionTrigger('delete', element, '')">
+                                <mat-icon class="ovi-fnt-sze16" style="padding: 0px; height: fit-content; width: fit-content;">delete_outline</mat-icon>
+                            </button>
+                            <button *ngIf="!element.status && element.id" class="action-btn ovi-prmry-clr"  mat-icon-button
+                                (click)="actionTrigger('undo', element, '')">
+                                <mat-icon class="ovi-fnt-sze16" style="padding: 0px; height: fit-content; width: fit-content;">undo</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="(col === 'editeDelete' && id === 'schedule') || (col === 'deleteEdite' && id === 'set-resource' && !element.hasOwnProperty('isDelEdit'))" style="display: flex;align-items: center;">
+                            <span *ngIf="element.hasOwnProperty('canBeBooked') && !element.canBeBooked && element.canBeBooked != null" [matMenuTriggerFor]="menu">
+                                <mat-icon class="ovi-fnt-sze18" style="cursor: pointer;padding-top: 10px;"
+                                    [ngStyle]="{'color' : element.hasOwnProperty('isWarning') ? '#ffa500' : '#ff0000'}">event</mat-icon>
+                                <mat-menu #menu="matMenu">
+                                    <button *ngFor="let menu of menuButton" mat-menu-item>
+                                        <span style="display: inline-block;width: 100%;"
+                                            (click)="actionTrigger(menu.type, element, menu.value)"  (keydown.enter)="fixClick()">{{menu.name}}</span>
+                                    </button>
+                                </mat-menu>
+                            </span>
+                            <span *ngIf="element.hasOwnProperty('canBeBooked') && (element.canBeBooked || element.canBeBooked == null)" 
+                                  (click)="element.hasOwnProperty('canBeBooked') && element.canBeBooked ?  actionTrigger('scheduleAllow', element, null) : '' " (keydown.enter)="fixClick()">
+                                <mat-icon class="ovi-fnt-sze18" style="cursor: pointer;padding-top: 10px;"
+                                 [ngStyle]="{'color' : element.hasOwnProperty('canBeBooked') && element.canBeBooked ? '#008000' : 'gray'}">event</mat-icon>
+                            </span>
+                            <span style="padding-left: 5px;">
+                                <img appTooltip tooltipText="Edit" [ngStyle]="{'filter': element.hasOwnProperty('isEditeDisable') && element.isEditeDisable || (element.hasOwnProperty('requestStatusValue') && element.requestStatusValue == 'Delivered') ? 'grayscale(100%)' : 'none',}" 
+                                placement="bottom" style="cursor: pointer;"  alt="edit" 
+                                    src="assets/Alert/common_icons/edit.svg" height="18px" width="18px"
+                                    (click)="element.hasOwnProperty('isEditeDisable') && element.isEditeDisable || (element.hasOwnProperty('requestStatusValue') && element.requestStatusValue == 'Delivered') ? '' : actionTrigger('manage', element, null)"  (keydown.enter)="fixClick()">
+                            </span>
+                            <button class="action-btn ovi-prmry-clr" mat-icon-button (click)="element.hasOwnProperty('requestStatusValue') && element.requestStatusValue == 'Delivered' ? '' : actionTrigger('delete', element, '')">
+                                <mat-icon appTooltip tooltipText="Delete" placement="bottom" [ngClass]="element.hasOwnProperty('requestStatusValue') && element.requestStatusValue == 'Delivered' ? 'ovi-grey-clr' : 'ovi-prmry-clr'"
+                                    class="ovi-fnt-sze20" style="padding: 0px;margin-left: 5px;">delete_outline</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="col === 'Delete' && ['resourceTamplate', 'con-resourceTamplate','imp-resourceTamplate', 'set-Tamplate', 'set-schedule'].includes(id)">
+                            <button class="action-btn" style="color: #ff0000;" mat-icon-button (click)="actionTrigger('delete', element, '')">
+                                <mat-icon appTooltip tooltipText="Delete" placement="bottom" class="ovi-fnt-sze20" 
+                                    style="padding: 0px; margin-left: 8px;">delete_outline</mat-icon>
+                            </button>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && component === 'item-asset-link'">
+                            <span style="font-weight: 600;" [ngStyle]="{'color': !element[col] ? '#ff0000' : '#0082ea'}">{{element[col] !== true ? 'Unlink' : 'Linked'}}</span>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && component === 'task-history'">
+                            <span>{{element[col]}}</span>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Assign Type'">{{element[col] === 'RT-RO' ? 'Role' : element[col] === 'RT-DT' ? 'Department' : element[col] === 'RT-US' ? 'User' : ''}}</span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Status' && ['production-plan','production-group'].includes(id)" style="font-weight: 600;"
+                              [ngStyle]="{'color': element.requestStatusId === 'RQ-CR' ? '#1e8fc8' : element.requestStatusId === 'RQ-IP' ? '#FB8C00' : 
+                                    element.requestStatusId === 'RQ-CO' ? '#2E7D32' : element.requestStatusId === 'RQ-PEN' ? '#D9512C' : 
+                                    element.requestStatusId === 'RQ-CA' ? '#f00' : '#6b6b6bde'} " >{{element[col]}}</span>
+                        <span *ngIf="['production-plan', 'production-plan-edit'].includes(id) && displayedColumns[colIndex] === 'Items'" style="min-width: 130px;">
+                            <select class="mat-select-custom-category" [(ngModel)]="element.deliveryDetailId"  [ngModelOptions]="{ standalone: true }"
+                                (change)="actionTrigger('select', element, $event.target.value)">
+                                <option *ngFor="let option of (selectionOption[element.activityCategoryId]
+                        				? selectionOption[element.activityCategoryId] : selectionOption.empty)" [value]="option.id"> {{ option.name }}
+                                </option>
+                            </select>
+                        </span>
+                        <span *ngIf="displayedColumns[colIndex] === 'Include'">
+                            <span *ngIf="element[col]" class="include-col" style="color: #007300">
+                                <span class="material-icons ovi-fnt-sze14" style="padding: 0;">done</span>Yes</span>
+                            <span *ngIf="!element[col]" class="include-col" style="color: #d70000">
+                                <span class="material-icons ovi-fnt-sze14" style="padding: 0;">do_not_disturb</span>No</span>
+                        </span>
+                        <!-- <span class="table-text">{{element[col]}}</span> -->
+                    </mat-cell>
+                </ng-container>
+                <mat-header-row *matHeaderRowDef="displayedColumns" class="manage-table-header-row"
+                    style="min-height: 40px;height: 40px !important;"></mat-header-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"
+                    style="min-height: 40px;" [ngClass]="{'tw-row-highlight' : (id === 'entityAssetList' || id === 'ROU-ASM' || id === 'manageRoutine' ) && selectedRowId === row[identifyingKey]}">
+                </mat-row>
+            </mat-table>
+            <mat-paginator *ngIf="!['facility','server','job','task','TAT','audit','pv-complete','production-plan','production-plan-edit','production-group'].includes(id) && ispaginator" [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons></mat-paginator>
+            <mat-paginator *ngIf="id === 'audit'" #Paginator [pageSizeOptions]="pageSizeOptions"
+            [showFirstLastButtons]="true" class="tw-paginator-sticky" style="border-radius: 5px;">
+            </mat-paginator>
+        </div>
+    </div>
+</div>

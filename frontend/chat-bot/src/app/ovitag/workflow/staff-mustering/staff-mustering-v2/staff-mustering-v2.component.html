@@ -1,0 +1,631 @@
+<div class="ms-root ovi-font-family">
+
+  <mat-tab-group
+    class="ms-tabs"
+    [selectedIndex]="selectedTabIndex"
+    (selectedTabChange)="tabChanged($event)">
+
+    <!-- ══════════════════════════════════════════ -->
+    <!--  TAB 1 — STAFF MUSTERING                  -->
+    <!-- ══════════════════════════════════════════ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="ms-tab-ic">people_alt</mat-icon>
+        <span>{{'Staff Mustering' | translate}}</span>
+      </ng-template>
+
+      <div class="ms-scroll">
+
+        <!-- ─── NORMAL STATE: Emergency Command Panel ──── -->
+        <ng-container *ngIf="!hide">
+          <div class="ms-cmd">
+            <div class="ms-cmd-left">
+              <div class="ms-cmd-badge">
+                <mat-icon>emergency_share</mat-icon>
+              </div>
+              <div class="ms-cmd-info">
+                <div class="ms-cmd-title">Emergency Control Panel</div>
+                <div class="ms-cmd-sub">Select an emergency type to trigger the mustering procedure immediately.</div>
+              </div>
+            </div>
+            <div class="ms-cmd-right">
+              <div class="ms-cmd-label">Choose Emergency Type</div>
+              <div class="ms-cmd-types">
+                <button
+                  class="ms-cmd-type"
+                  *ngFor="let r of routines"
+                  (click)="eventType(r)"
+                  [class.ms-cmd-sel]="typeOfEmergency === r.name">
+                  <div class="ms-cmd-type-ic">
+                    <mat-icon>notifications_active</mat-icon>
+                  </div>
+                  <span>{{ r.name }}</span>
+                  <mat-icon class="ms-cmd-type-chk" *ngIf="typeOfEmergency === r.name">check_circle</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- ─── CONFIRMATION OVERLAY ───────────────────── -->
+        <div class="ms-overlay" *ngIf="enableCard && !isInitiated">
+          <div class="ms-dlg">
+
+            <!-- Close -->
+            <button class="ms-dlg-close" (click)="enableCard = false">
+              <mat-icon>close</mat-icon>
+            </button>
+
+            <!-- Hero -->
+            <div class="ms-dlg-hd">
+              <div class="ms-dlg-icon-wrap">
+                <div class="ms-dlg-icon-ring">
+                  <mat-icon>warning</mat-icon>
+                </div>
+              </div>
+              <h2 class="ms-dlg-ttl">Initiate Emergency Muster</h2>
+              <div class="ms-dlg-emg-badge">
+                <mat-icon>bolt</mat-icon>
+                <span>{{ typeOfEmergency }}</span>
+              </div>
+            </div>
+
+            <div class="ms-dlg-divider"></div>
+
+            <!-- Form body -->
+            <div class="ms-dlg-form">
+
+              <!-- Two-column: Incident Locations | Comments -->
+              <div class="ms-dlg-form-cols">
+
+                <!-- Incident Locations -->
+                <div class="ms-dlg-field">
+                  <label class="ms-dlg-lbl">
+                    Incident Location(s) <span class="ms-dlg-req">*</span>
+                  </label>
+                  <mat-form-field appearance="outline" class="ms-dlg-ff">
+                    <mat-icon matPrefix class="ms-dlg-ff-pfx">location_on</mat-icon>
+                    <mat-select
+                      multiple
+                      [(ngModel)]="selectedIncidentLocations"
+                      placeholder="Select affected location(s)">
+                      <mat-option *ngFor="let b of locationCard" [value]="b.floorId">{{ b.title }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <!-- Comments -->
+                <div class="ms-dlg-field">
+                  <label class="ms-dlg-lbl">Comments / Additional Information</label>
+                  <div class="ms-dlg-textarea-wrap">
+                    <mat-icon class="ms-dlg-textarea-ic">chat_bubble_outline</mat-icon>
+                    <textarea
+                      class="ms-dlg-textarea"
+                      [(ngModel)]="musterComment"
+                      maxlength="500"
+                      placeholder="Provide incident details or any other relevant information..."></textarea>
+                    <span class="ms-dlg-char-count">{{ musterComment.length }}/500</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Warning -->
+              <div class="ms-dlg-warn-box">
+                <div class="ms-dlg-warn-icon-wrap">
+                  <mat-icon>error</mat-icon>
+                </div>
+                <div class="ms-dlg-warn-txt">
+                  <span>All designated personnel will be alerted immediately.</span>
+                  <span class="ms-dlg-warn-red">Only proceed if this is a genuine emergency.</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="ms-dlg-footer">
+              <button class="ms-dlg-btn-cancel" (click)="enableCard = false">
+                <mat-icon>close</mat-icon>
+                <span>Cancel</span>
+              </button>
+              <button
+                class="ms-dlg-btn-cta"
+                (click)="toggleInitiate()"
+                [disabled]="initiated || selectedIncidentLocations.length === 0">
+                <mat-icon>{{ initiated ? 'check_circle' : 'warning' }}</mat-icon>
+                <span>{{ initiated ? 'Emergency Initiated' : 'Initiate Emergency Muster' }}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ─── EMERGENCY ACTIVE: Alert Banner (UNCHANGED) ── -->
+        <div class="ms-alert-bar" *ngIf="isInitiated">
+          <div class="ms-alert-left">
+            <div class="ms-pulse-wrap">
+              <span class="ms-pulse-ring"></span>
+              <span class="ms-pulse-core"></span>
+            </div>
+            <div class="ms-alert-info">
+              <span class="ms-alert-type">{{ typeOfEmergency }}</span>
+              <span class="ms-alert-meta">
+                Started at {{ actualTime | date:'h:mm a' }}
+                <span class="ms-dot-sep">·</span>
+                <span class="ms-alert-timer">{{ emergencyDuration }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="ms-alert-right">
+            <button class="ms-alert-status" [matMenuTriggerFor]="emgMenu">
+              <span class="ms-live-dot"></span>
+              {{ statusText }}
+              <mat-icon>expand_more</mat-icon>
+            </button>
+            <button class="ms-alert-refresh"
+              (click)="getMustering()"
+              (keydown.enter)="getMustering()"
+              appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom">
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <mat-menu #emgMenu="matMenu">
+              <button mat-menu-item (click)="completeEmergency()">
+                <mat-icon class="mc-ok">check_circle_outline</mat-icon>
+                <span>Complete Emergency</span>
+              </button>
+              <button mat-menu-item (click)="cancelEmergency()">
+                <mat-icon class="mc-err">cancel</mat-icon>
+                <span>Cancel Emergency</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!--  TOP DASHBOARD SECTION                                -->
+        <!--  Map (70%) + Summary & Performance Cards (30%)        -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <div class="ms-dashboard">
+
+          <!-- Left: Three Map (70%) -->
+          <div class="ms-dashboard-left">
+            <div class="ms-map-hero">
+              <div class="ms-map-hero-hd">
+                <div class="ms-map-hero-title-wrap">
+                  <div class="ms-map-hero-ic">
+                    <mat-icon>location_city</mat-icon>
+                  </div>
+                  <div>
+                    <div class="ms-map-hero-nm">Campus Live View</div>
+                    <div class="ms-map-hero-sub">Real-time personnel tracking across campus</div>
+                  </div>
+                </div>
+                <div class="ms-map-live-badge">
+                  <span class="ms-map-live-dot"></span>
+                  Live
+                </div>
+              </div>
+              <div class="ms-map-hero-body">
+                <!-- <app-three-map></app-three-map> -->
+                 <app-live-tracking [requestId]="routinesid" [requestType]="'mustering'"></app-live-tracking>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Summary + Performance (30%) -->
+          <div class="ms-dashboard-right">
+
+            <!-- ── Mustering Summary Card ── -->
+            <div class="ms-summary-card">
+              <div class="ms-summary-hd">
+                <span class="ms-summary-title">MUSTERING SUMMARY</span>
+              </div>
+
+              <!-- Loading skeleton -->
+              <div class="ms-summary-skeleton" *ngIf="userCountsLoading">
+                <div class="ms-skel-row" *ngFor="let _ of [0,1,2,3]">
+                  <div class="ms-skel-ic"></div>
+                  <div class="ms-skel-lines">
+                    <div class="ms-skel-val"></div>
+                    <div class="ms-skel-lbl"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Error state -->
+              <div class="ms-summary-error" *ngIf="userCountsError && !userCountsLoading">
+                <mat-icon>error_outline</mat-icon>
+                <span>Could not load data.
+                  <span class="ms-retry-link" (click)="loadUserCounts()">Retry</span>
+                </span>
+              </div>
+
+              <!-- Data -->
+              <div class="ms-summary-body" *ngIf="!userCountsLoading && !userCountsError">
+                <div class="ms-sum-cols">
+
+                  <!-- ── Left column ──────────────────────── -->
+                  <div class="ms-sum-col">
+
+                    <div class="ms-sum-kpi">
+                      <div class="ms-sum-kpi-ic ms-kpi-c-blue">
+                        <mat-icon>badge</mat-icon>
+                      </div>
+                      <div class="ms-sum-kpi-info">
+                        <div class="ms-sum-kpi-lbl">Total IDs Issued</div>
+                        <div class="ms-sum-kpi-val ms-kpi-v-blue">{{ topSummaryCards[0].value }}</div>
+                      </div>
+                    </div>
+
+                    <div class="ms-sum-kpi-sep"></div>
+
+                    <div class="ms-sum-kpi">
+                      <div class="ms-sum-kpi-ic ms-kpi-c-blue">
+                        <mat-icon>how_to_reg</mat-icon>
+                      </div>
+                      <div class="ms-sum-kpi-info">
+                        <div class="ms-sum-kpi-lbl">Number of People Checked In Today</div>
+                        <div class="ms-sum-kpi-val ms-kpi-v-blue">{{ topSummaryCards[3].value }}</div>
+                      </div>
+                    </div>
+
+                    <div class="ms-sum-kpi-sep"></div>
+
+                    <div class="ms-sum-kpi">
+                      <div class="ms-sum-kpi-ic ms-kpi-c-blue">
+                        <mat-icon>domain</mat-icon>
+                      </div>
+                      <div class="ms-sum-kpi-info">
+                        <div class="ms-sum-kpi-lbl">Number of People in Campus Now</div>
+                        <div class="ms-sum-kpi-val ms-kpi-v-blue">{{ peopleInBuilding.total }}</div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Column separator -->
+                  <div class="ms-sum-col-sep"></div>
+
+                  <!-- ── Right column ─────────────────────── -->
+                  <div class="ms-sum-col">
+
+                    <div class="ms-sum-kpi">
+                      <div class="ms-sum-kpi-ic ms-kpi-c-green">
+                        <mat-icon>where_to_vote</mat-icon>
+                      </div>
+                      <div class="ms-sum-kpi-info">
+                        <div class="ms-sum-kpi-lbl">Number of People at Safe Assembly Points</div>
+                        <div class="ms-sum-kpi-val ms-kpi-v-green">{{ topSummaryCards[1].value }}</div>
+                      </div>
+                    </div>
+
+                    <div class="ms-sum-kpi-sep"></div>
+
+                    <!-- Visitors row with inline sub-metric -->
+                    <div class="ms-sum-kpi">
+                      <div class="ms-sum-kpi-ic ms-kpi-c-purple">
+                        <mat-icon>person_pin</mat-icon>
+                      </div>
+                      <div class="ms-sum-kpi-info">
+                        <div class="ms-sum-kpi-lbl">Visitors - Total Today</div>
+                        <div class="ms-sum-kpi-val ms-kpi-v-purple">{{ topSummaryCards[3].value }}</div>
+                        <div class="ms-sum-kpi-sub-row">
+                          <span class="ms-sum-kpi-sub-lbl">In Campus Now</span>
+                          <span class="ms-sum-kpi-sub-val ms-kpi-v-blue">{{ peopleInBuilding.visitors }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="ms-sum-kpi-sep"></div>
+
+                    <div class="ms-sum-kpi">
+                      <div class="ms-sum-kpi-ic ms-kpi-c-orange">
+                        <mat-icon>apartment</mat-icon>
+                      </div>
+                      <div class="ms-sum-kpi-info">
+                        <div class="ms-sum-kpi-lbl">Number of Staff in Buildings (Now)</div>
+                        <div class="ms-sum-kpi-val ms-kpi-v-orange">{{ peopleInBuilding.employees }}</div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Mustering Performance Card ── -->
+            <div class="ms-perf-card">
+              <div class="ms-perf-hd">
+                <div class="ms-perf-hd-ic">
+                  <mat-icon>speed</mat-icon>
+                </div>
+                <div class="ms-perf-hd-txt">
+                  <div class="ms-perf-title">Mustering Performance</div>
+                  <div class="ms-perf-sub">Employees reached Safe Assembly Point in</div>
+                </div>
+              </div>
+
+              <div class="ms-perf-tbl">
+
+                <!-- Table header -->
+                <div class="ms-perf-thead">
+                  <span class="ms-perf-th-label">Time (Min)</span>
+                  <span class="ms-perf-th-pct">%</span>
+                  <span class="ms-perf-th-cnt">Count</span>
+                </div>
+
+                <!-- Row: 3 Minutes or Less -->
+                <div class="ms-perf-trow">
+                  <span class="ms-perf-ttime">0 Minutes </span>
+                  <span class="ms-perf-tbadge ms-pb-green">0</span>
+                  <span class="ms-perf-tcnt">0</span>
+                </div>
+
+                <!-- Row: 5 Minutes -->
+                <div class="ms-perf-trow">
+                  <span class="ms-perf-ttime">0 Minutes</span>
+                  <span class="ms-perf-tbadge ms-pb-orange">0%</span>
+                  <span class="ms-perf-tcnt">0</span>
+                </div>
+
+                <!-- Row: 7 Minutes -->
+                <div class="ms-perf-trow">
+                  <span class="ms-perf-ttime">0 Minutes</span>
+                  <span class="ms-perf-tbadge ms-pb-blue">0%</span>
+                  <span class="ms-perf-tcnt">0</span>
+                </div>
+
+                <!-- Row: Not Reached Yet -->
+                <div class="ms-perf-trow">
+                  <span class="ms-perf-ttime">Not Reached Yet</span>
+                  <span class="ms-perf-tbadge ms-pb-red">2%</span>
+                  <span class="ms-perf-tcnt">20</span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!--  PEOPLE IN BUILDING SECTION                           -->
+        <!-- ══════════════════════════════════════════════════════ -->
+          <!-- Safe Assembly Points -->
+          <div class="ms-card ms-slide-up" *ngIf="assemblyPoints.length > 0">
+            <div class="ms-card-hd">
+              <div class="ms-card-hd-ic green"><mat-icon>where_to_vote</mat-icon></div>
+              <div class="ms-card-hd-txt">
+                <div class="ms-card-title">Safe Assembly Points</div>
+                <div class="ms-card-sub">Personnel who have reached designated muster areas</div>
+              </div>
+            </div>
+            <div class="ms-card-bd">
+              <div class="ms-sap-grid">
+                <div class="ms-sap-card" *ngFor="let item of assemblyPoints">
+                  <div class="ms-sap-hdr">
+                    <div class="ms-sap-hdr-ic">
+                      <mat-icon>where_to_vote</mat-icon>
+                    </div>
+                    <div class="ms-sap-hdr-info">
+                      <div class="ms-sap-hdr-name">{{ item.locationName }}</div>
+                      <div class="ms-sap-hdr-sub">Assembly Point</div>
+                    </div>
+                    <div class="ms-sap-badge" [class.active]="(item.count || 0) > 0">
+                      <span class="ms-sap-badge-dot"></span>
+                      {{ (item.count || 0) > 0 ? 'Active' : 'Awaiting' }}
+                    </div>
+                  </div>
+                  <div class="ms-sap-body">
+                    <div class="ms-sap-count-row">
+                      <span class="ms-sap-big-n">{{ item.count || 0 }}</span>
+                      <div class="ms-sap-count-meta">
+                        <span class="ms-sap-count-lbl">Personnel</span>
+                        <span class="ms-sap-count-sub">Accounted For</span>
+                      </div>
+                    </div>
+                    <div class="ms-sap-progress-area">
+                      <div class="ms-sap-progress-track">
+                        <div class="ms-sap-progress-fill" [style.width.%]="(item.count || 0) > 0 ? 100 : 0"></div>
+                      </div>
+                      <span class="ms-sap-progress-note">
+                        {{ (item.count || 0) > 0 ? 'Personnel checked in at this point' : 'No check-ins yet' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <div class="ms-pib-section" *ngIf="locationCard.length > 0">
+
+          <div class="ms-pib-sec-hd">
+            <div class="ms-pib-sec-hd-left">
+              <div class="ms-pib-sec-title">People In Building</div>
+              <div class="ms-pib-sec-sub">Live headcount of all personnel currently inside the facility</div>
+            </div>
+            <label class="ms-pib-search">
+              <mat-icon>search</mat-icon>
+              <input type="text" placeholder="Search location...">
+            </label>
+          </div>
+
+          <!-- Location cards grid -->
+          <div class="ms-loc-scroll">
+            <div class="ms-loc-card" *ngFor="let b of locationCard; let i = index">
+
+              <!-- Row 1: Icon + Name -->
+              <div class="ms-lc-hd">
+                <div class="ms-lc-ic" [ngClass]="'ms-lc-ic-' + (i % 6)">
+                  <mat-icon>apartment</mat-icon>
+                </div>
+                <div class="ms-lc-nm">{{ b.title }}</div>
+              </div>
+
+              <!-- Row 2: Total Count -->
+              <div class="ms-lc-total-row">
+                <span class="ms-lc-total">{{ b.count }}</span>
+                <span class="ms-lc-total-lbl">Total Inside</span>
+              </div>
+
+              <!-- Row 3: Visitors + Employees -->
+              <div class="ms-lc-stats">
+                <div class="ms-lc-stat">
+                  <mat-icon>person_pin</mat-icon>
+                  <span class="ms-lc-stat-n">{{ b.visitorCount }}</span>
+                  <span class="ms-lc-stat-l">Visitors</span>
+                </div>
+                <div class="ms-lc-stat">
+                  <mat-icon>badge</mat-icon>
+                  <span class="ms-lc-stat-n">{{ b.employeeCount }}</span>
+                  <span class="ms-lc-stat-l">Employees</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <!--  EMERGENCY-ONLY SECTIONS: SAP + Table                 -->
+        <!-- ══════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="isInitiated">
+
+         
+
+          <!-- Mustering Assignments Table -->
+          <div class="ms-card ms-slide-up ms-table-card">
+            <div class="ms-card-hd">
+              <div class="ms-card-hd-ic blue"><mat-icon>assignment_ind</mat-icon></div>
+              <div class="ms-card-hd-txt">
+                <div class="ms-card-title">Mustering Assignments</div>
+                <div class="ms-card-sub">Tracked personnel and their assigned assembly points</div>
+              </div>
+            </div>
+            <tw-header-new-component
+              [type]="'new'"
+              [component]="'musteringHistory'"
+              [permission]="null"
+              [rowFilter]="null"
+              [selectDropdown]="null"
+              [selectedName]="null"
+              [locationId]="null"
+              [dateFilter]="null"
+              [selectedView]="null"
+              (selectedViewAction)="null"
+              (headerEventAction)="headerEventAction($event)"
+              [manageAction]="null"
+              [groupFilter]="[]">
+            </tw-header-new-component>
+            <angular-table-component
+              [id]="'staffMusteringV2'"
+              [type]="'ng-table'"
+              [tableData]="sapData"
+              [columns]="displayColumns"
+              [columnData]="sapColumns"
+              (triggerAction)="eventAction($event)"
+              [applyFilter]="applyFilterValue">
+            </angular-table-component>
+          </div>
+
+        </ng-container>
+
+        <!-- ─── NORMAL STATE: Footer + Empty state ────────── -->
+        <ng-container *ngIf="false">
+          <div class="ms-pg-footer">
+            <svg class="ms-pgf-city" viewBox="0 0 1000 72" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,72 L0,50 L28,50 L28,32 L40,32 L40,22 L50,22 L50,32 L62,32 L62,50 L90,50 L90,40 L105,40 L105,33 L113,33 L113,40 L128,40 L128,50 L158,50 L158,36 L172,36 L172,26 L182,20 L192,26 L192,36 L210,36 L210,50 L240,50 L240,44 L255,44 L255,34 L263,34 L263,44 L280,44 L280,50 L310,50 L310,40 L325,40 L325,28 L337,28 L337,40 L355,40 L355,50 L385,50 L385,38 L400,38 L400,26 L412,20 L424,26 L424,38 L445,38 L445,50 L475,50 L475,44 L490,44 L490,34 L498,34 L498,44 L515,44 L515,50 L545,50 L545,40 L560,40 L560,28 L572,28 L572,40 L590,40 L590,50 L620,50 L620,38 L635,38 L635,26 L647,20 L659,26 L659,38 L680,38 L680,50 L710,50 L710,44 L725,44 L725,34 L733,34 L733,44 L750,44 L750,50 L780,50 L780,40 L795,40 L795,28 L807,28 L807,40 L825,40 L825,50 L855,50 L855,36 L870,36 L870,26 L880,20 L890,26 L890,36 L910,36 L910,50 L940,50 L940,44 L955,44 L955,34 L963,34 L963,44 L980,44 L980,50 L1000,50 L1000,72 Z"/>
+            </svg>
+            <div class="ms-pgf-content">
+              <div class="ms-pgf-shield">
+                <mat-icon>verified_user</mat-icon>
+              </div>
+              <span>Stay Prepared. Stay Safe.</span>
+            </div>
+          </div>
+
+          <div class="ms-empty" *ngIf="!routines || routines.length === 0">
+            <mat-icon>pending</mat-icon>
+            <div class="ms-empty-title">Loading mustering data...</div>
+            <div class="ms-empty-sub">Please wait while configuration is loaded.</div>
+          </div>
+        </ng-container>
+
+      </div>
+    </mat-tab>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!--  TAB 2 — HISTORY                          -->
+    <!-- ══════════════════════════════════════════ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="ms-tab-ic">history</mat-icon>
+        <span>{{'History' | translate}}</span>
+      </ng-template>
+
+      <div class="ms-scroll">
+        <div class="ms-card ms-table-card">
+          <div class="ms-card-hd">
+            <div class="ms-card-hd-ic blue"><mat-icon>history</mat-icon></div>
+            <div class="ms-card-hd-txt">
+              <div class="ms-card-title">Mustering History</div>
+              <div class="ms-card-sub">Past emergency mustering events and outcomes</div>
+            </div>
+          </div>
+          <tw-header-new-component
+            [type]="'new'"
+            [component]="'staffMustering-history'"
+            [permission]="null"
+            [dateFilter]="selectedDate"
+            [rowFilter]="null"
+            [selectDropdown]="null"
+            [selectedName]="null"
+            [locationId]="null"
+            [selectedView]="null"
+            [manageAction]="null"
+            (selectedViewAction)="null"
+            (headerEventAction)="headerEventAction($event)"
+            [groupFilter]="[]">
+          </tw-header-new-component>
+          <tw-table-component
+            [component]="'staffMustering'"
+            [eventColumn]="eventColumn"
+            [columns]="historyColumns"
+            [dateTimeColumns]="dateTimeColumn"
+            [tableData]="tableData"
+            [iconHeader]="iconHeader"
+            [iconColumn]="iconColumn"
+            [sortColumn]="sortColumn"
+            [rowId]="'Id'"
+            [rowClick]="true"
+            (rowClickAction)="rowClick($event)"
+            (eventAction)="eventAction($event)"
+            [permissionControl]="permissionControl"
+            [pagination]="[{pageSize: pageSize, pageStart: pageStart, length: pageLength}]">
+          </tw-table-component>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!--  TAB 3 — MAP                              -->
+    <!-- ══════════════════════════════════════════ -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="ms-tab-ic">map</mat-icon>
+        <span>{{'Map' | translate}}</span>
+      </ng-template>
+
+      <div class="ms-map-wrap">
+        <app-common-dialog
+          *ngIf="floorData"
+          [injectdata]="floorData"
+          [editable]="floorData.editable">
+        </app-common-dialog>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

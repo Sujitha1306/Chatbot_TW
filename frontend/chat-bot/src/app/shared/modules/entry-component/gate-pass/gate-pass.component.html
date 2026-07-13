@@ -1,0 +1,374 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div class="custom-dialog-box ovi-font-family">
+    <mat-toolbar class="input-header">
+        <div class="header-name" style="width: 100%;">
+            {{!data?.gatePassStatusId? 'Gate Pass': data?.gatePassStatusId === 'ATE-GISD'
+            ? 'Exit Approval Gate Pass': (data?.gatePassStatusId === 'ATE-GEXP' || data?.gatePassStatusId === 'ATE-GENP')? 'Entry Approval Gate Pass': 'Gate Pass'}}
+        </div>
+        <div class="header-close">
+            <button mat-icon-button mat-dialog-close class="close-button ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </div>
+    </mat-toolbar>
+    <div class="form-height-pass" style="overflow-y: auto;overflow-x: hidden;height:calc(100% - 150px); background-color: #edf4f7; padding: 10px 20px;" id="printData">
+        <div class="ovi-fnt-sze18" style="height: 20px;text-align: center;font-weight: 600;"> GATE PASS</div>
+        <div style="display: flex;justify-content: space-between;">
+            <div class="ovi-fnt-sze12" style="display: flex; flex-direction: column; gap: 3px;">
+                <span class="pass-sub-headings">{{"Date"|translate}}: <span style="font-weight: 400;">{{date}}</span></span>
+                <span class="pass-sub-headings">{{"Time"|translate}}: <span style="font-weight: 400;">{{time}}</span></span>
+            </div>
+            <div style="display: flex; gap:5px; align-items: center;">
+                <img alt="customer-logo" style="height: 40px;" src="{{customerLogo}}">
+                <div style="display: flex; flex-direction: column; font-weight: 600;">
+                    <span class="ovi-fnt-sze14">{{customerName}}</span>
+                    <span class="ovi-fnt-sze11">{{facilityName}}</span>
+                </div>
+            </div>
+        </div>
+        <div *ngIf = !this.data.isTemp style="padding: 10px 0;">
+            <div style="display: flex; width: 100%;">
+                <div style="width: 50%;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="ovi-fnt-sze14" style="font-weight: 600;">{{"From"|translate}}</span>
+                        <span class="ovi-fnt-sze12">{{data.homeLocationName}}</span>
+                    </div>
+                </div>
+                <div style="width: 50%;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="ovi-fnt-sze14" style="font-weight: 600;">{{"To"|translate}}</span>
+                        <span class="ovi-fnt-sze12">{{data.assignedLocationName}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="!this.data.isTemp" style="display: flex; gap: 5px; padding: 10px 0;">
+            <span class="ovi-fnt-sze14" style="font-weight: 600;">{{"Comments"|translate}} : </span>
+            <span class="ovi-fnt-sze12">{{"comments"|translate}}</span>
+        </div>
+        <div  *ngIf="!this.data.isTemp"  style="height: 160px; ">
+            <mat-table #table [dataSource]="dataSourceIdentifier">
+                <!-- Position Column -->
+                <ng-container matColumnDef="assetSerialNumber">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%; background: #ffff !important; color: black !important;font-weight: 600 !important;
+                     justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0 0 0 15px !important;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Asset No"|translate}}
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze12"
+                        style="padding: 0px 6px 0px 15px !important;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit">
+                        {{element.assetSerialNumber}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="assetName">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%; background: #ffff !important; color: black !important;font-weight: 600 !important
+                    ;justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Asset Name"|translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze12"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit"> {{element.assetName}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="assetType">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%; background: #ffff !important;
+                    color: black !important;font-weight: 600 !important;
+                    justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Asset Type"|translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze12"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit;"> {{element.assetType}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="transferType">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-font-family ovi-fnt-sze14"
+                        style="width:25%; background: #ffff !important;
+                    color: black !important;font-weight: 600 !important;
+                    justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Current State"|translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze12"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{element.transferType}}
+                    </mat-cell>
+                </ng-container>
+                <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="manage-table-header-row"
+                    style="top: 0px;
+                position: sticky;z-index: 100;background: #EEEFF1 0% 0% no-repeat padding-box !important;min-height: 48px !important;display: flex;
+                border-width: 0;border-bottom-width: 1px;border-style: solid;align-items: center;box-sizing: border-box;border-bottom-color: rgba(0, 0, 0, 0.12);">
+                </mat-header-row>
+                <mat-row *matRowDef="let row; columns: displayedColumns;" style="display: flex;border-width: 0;border-bottom-width: 1px;border-style: solid;align-items: center;box-sizing: border-box;min-height: 48px;
+                border-bottom-color: rgba(0, 0, 0, 0.12);background: inherit;">
+                </mat-row>
+            </mat-table>
+        </div>
+        <div *ngIf="this.data.isTemp"  style="height: 160px;margin-top: 30px;">
+            <mat-table #table [dataSource]="temporaryAsset" class="mat mat-tbl-styl" style="height: 100%; overflow:auto;
+            width: 96%;margin-left: 2%;margin-right: 2%;background: white;display: block">
+                <ng-container matColumnDef="assetSerialNumber">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                    color: black !important;font-weight: bold !important;
+                     justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0 0 0 15px !important;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Asset No"|translate}}
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 15px !important;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit">
+                        {{element.assetSerialNumber}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="assetName">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                    color: black !important;font-weight: bold !important;justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Asset Name"|translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit"> {{element.assetName}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="assetType">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                    color: black !important;font-weight: bold !important;
+                    justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Asset Type"|translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit;"> {{element.assetType}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="costType">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                    color: black !important;font-weight: bold !important;
+                    justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                    {{"Type"|translate}} </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit;"> {{element.costType}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="ownedBy">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                    color: black !important;font-weight: bold !important;
+                     justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Owned"|translate}}
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit">
+                        {{element.ownedBy}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="assignedBy">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                    color: black !important;font-weight: bold !important;
+                    ;justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                    cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                        {{"Used"|translate}}  </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                    flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit"> {{element.assignedBy}}
+                    </mat-cell>
+                </ng-container>
+                
+                <mat-header-row *matHeaderRowDef="temporaryDisplayedColumns ; sticky: true" class="manage-table-header-row"
+                    style="top: 0px;
+                position: sticky;z-index: 100;background: #EEEFF1 0% 0% no-repeat padding-box !important;min-height: 48px !important;display: flex;
+                border-width: 0;border-bottom-width: 1px;border-style: solid;align-items: center;box-sizing: border-box;border-bottom-color: rgba(0, 0, 0, 0.12);">
+                </mat-header-row>
+                <mat-row *matRowDef="let row; columns:temporaryDisplayedColumns ;" style="display: flex;border-width: 0;border-bottom-width: 1px;border-style: solid;align-items: center;box-sizing: border-box;min-height: 48px;
+                border-bottom-color: rgba(0, 0, 0, 0.12);background: inherit;">
+                </mat-row>
+            </mat-table>
+        </div>
+        <div  [formGroup]="statusForm" class="no-print" style="padding:10px;width: fit-content;" *ngIf="data.isTemp">
+            <div class="mat-custom-form-field-box " style="display:flex;align-items: baseline;">
+                <mat-label class="ovi-lbl-text-size ovi-fnt-sze14" style=" color: black !important;font-weight: bold !important;">{{"Status"|translate}}</mat-label>
+                <div class="example-form" style="padding:10px">
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate" formControlName="status">
+                            <mat-option *ngIf=" this.data.assetTransferTypeId === 'ATT-AT'" [value]="'OnBoard'">{{"Onboard"|translate}}</mat-option>
+                            <mat-option *ngIf=" this.data.assetTransferTypeId === 'ATT-ON'" [value]="'Returned'">{{"Return"|translate}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+              </div>
+            </div>
+          </div>
+        <div  *ngIf="this.data.isTemp && temporaryDetails.length > 0"  style="height: 160px; margin-top: 30px;">
+            <mat-table #newTable [dataSource]="temporaryBasicDetails" class="mat mat-tbl-styl" 
+                style="height: 100%; overflow: auto; width: 96%; margin-left: 2%; margin-right: 2%; 
+                background: white; display: block">
+                
+
+                <ng-container matColumnDef="status">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:100%; background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                        color: black !important; font-weight: bold !important;
+                        justify-content: flex-start !important; border: none;  display: flex; align-items: center; padding: 0 0 0 15px !important;
+                        cursor: inherit; outline: 0;  overflow: hidden; word-wrap: break-word; min-height: inherit;">
+                        {{"Status"|translate}}
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 15px !important; color: rgba(0, 0, 0, 0.87);
+                        flex: 1; display: flex;justify-content: flex-start !important; align-items: center; overflow: hidden; word-wrap: break-word; min-height: inherit;">
+                        {{element.status}}
+                    </mat-cell>
+                </ng-container>
+        
+                <ng-container matColumnDef="commissionedDate">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                        style="width:100%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                        color: black !important; font-weight: bold !important;
+                        justify-content: flex-start !important; border: none;  display: flex; align-items: center; padding: 0;
+                        cursor: inherit; outline: 0;  overflow: hidden; word-wrap: break-word; min-height: inherit;">
+                        {{"Commissioned Date"|translate}}
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px; color: rgba(0, 0, 0, 0.87);
+                        flex: 1; display: flex; justify-content: flex-start !important;align-items: center; overflow: hidden; word-wrap: break-word; min-height: inherit;">
+                        {{element.commissionedDate}}
+                    </mat-cell>
+                </ng-container>
+
+                <ng-container matColumnDef="retiredDate">
+                    <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style  ovi-fnt-sze14"
+                        style="width:100%; background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                        color: black !important; font-weight: bold !important;
+                        justify-content: flex-start !important; border: none;  display: flex; align-items: center; padding: 0;
+                        cursor: inherit; outline: 0;  overflow: hidden; word-wrap: break-word; min-height: inherit;">
+                        {{"Retired Date"|translate}}
+                    </mat-header-cell>
+                    <mat-cell *matCellDef="let element" class="tbl-width  ovi-fnt-sze14"
+                        style="padding: 0px 6px 0px 0px; color: rgba(0, 0, 0, 0.87);
+                        flex: 1; display: flex; justify-content: flex-start !important; align-items: center; overflow: hidden; word-wrap: break-word; min-height: inherit;">
+                        {{element.retiredDate}}
+                    </mat-cell>
+                </ng-container>
+        
+                <mat-header-row *matHeaderRowDef="temporaryBasicColumns; sticky: true" class="manage-table-header-row"
+                    style="top: 0px; position: sticky; z-index: 100; background: #EEEFF1 0% 0% no-repeat padding-box !important; 
+                    min-height: 48px !important; display: flex; border-width: 0; border-bottom-width: 1px; 
+                    border-style: solid; align-items: center; box-sizing: border-box; 
+                    border-bottom-color: rgba(0, 0, 0, 0.12);">
+                </mat-header-row>
+        
+                <mat-row *matRowDef="let row; columns: temporaryBasicColumns;" 
+                    style="display: flex; border-width: 0; border-bottom-width: 1px; border-style: solid; 
+                    align-items: center; box-sizing: border-box; min-height: 48px;
+                    border-bottom-color: rgba(0, 0, 0, 0.12); background: inherit;">
+                </mat-row>
+            </mat-table>
+        </div>
+        
+
+          
+        <div *ngIf="linkedAssetDataSource.length != 0 && this.data.isTemp" >
+        <div  style="height: 45px;width: 100%;margin-top: 6px;">
+            <span class="ovi-fnt-sze16" style="font-weight: bold;margin-left: 12px;width: 15%;float: left;">{{"Linked Assets"|translate}} :</span>
+        </div>
+        <mat-table #table [dataSource]="linkedAssetDataSource" class="mat mat-tbl-styl" style="width: 96%;margin-left: 2%;margin-right: 2%;background: white;display: block">
+            <ng-container matColumnDef="assetSerialNumber">
+                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                    style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                color: black !important;font-weight: bold !important;
+                 justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0 0 0 15px !important;
+                cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                    {{"Asset No"|translate}}
+                </mat-header-cell>
+                <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                    style="padding: 0px 6px 0px 15px !important;color: rgba(0, 0, 0, 0.87);
+                flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit">
+                    {{element.assetSerialNumber}}
+                </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="assetName">
+                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                    style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                color: black !important;font-weight: bold !important;
+                justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                    {{"Asset Name"|translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                    style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit"> {{element.assetName}}
+                </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="assetType">
+                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-fnt-sze14"
+                    style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                color: black !important;font-weight: bold !important;
+                justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                    {{"Asset Type"|translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element" class="tbl-width  ovi-fnt-sze14"
+                    style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit;"> {{element.assetType}}
+                </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="assetTransferStatus">
+                <mat-header-cell *matHeaderCellDef class="mat-sort-header-button cus-tab-style ovi-font-family ovi-fnt-sze14"
+                    style="width:25%;background: #EEEFF1 0% 0% no-repeat padding-box !important;
+                color: black !important;font-weight: bold !important;
+                justify-content: flex-start !important;border: none;display: flex;align-items: center;padding: 0;
+                cursor: inherit;outline: 0;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                    {{"Current State"|translate}} </mat-header-cell>
+                <mat-cell *matCellDef="let element" class="tbl-width ovi-fnt-sze14"
+                    style="padding: 0px 6px 0px 0px;color: rgba(0, 0, 0, 0.87);
+                flex: 1;display: flex;align-items: center;overflow: hidden;word-wrap: break-word;min-height: inherit;">
+                    {{element.assetTransferStatus}}
+                </mat-cell>
+            </ng-container>
+            <mat-header-row *matHeaderRowDef="assetDisplayedColumns; sticky: true" class="manage-table-header-row"
+                style="top: 0px;
+            position: sticky;z-index: 100;background: #EEEFF1 0% 0% no-repeat padding-box !important;min-height: 48px !important;display: flex;
+            border-width: 0;border-bottom-width: 1px;border-style: solid;align-items: center;box-sizing: border-box;border-bottom-color: rgba(0, 0, 0, 0.12);">
+            </mat-header-row>
+            <mat-row *matRowDef="let row; columns:assetDisplayedColumns;" style="display: flex;border-width: 0;border-bottom-width: 1px;border-style: solid;align-items: center;box-sizing: border-box;min-height: 48px;
+            border-bottom-color: rgba(0, 0, 0, 0.12);background: inherit;">
+            </mat-row>
+        </mat-table>
+         </div>
+    </div>
+    <div class="input-footer" style="display: flex; justify-content: space-between;">
+        <div>
+            <button mat-button class="active-btn" appDebounceClick [debounceTime]="300" cdkFocusInitial
+                (debounceClick)="printPass()" id="printPass">{{"Print"|translate}}</button>
+        </div>
+        <div>
+            <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+            <button *ngIf="data?.gatePassStatusId == null" mat-button class="active-btn" appDebounceClick
+                [debounceTime]="300" cdkFocusInitial (debounceClick)="savePass()" [disabled]="data?.hideButton">{{"Save"|translate}}</button>
+            <button *ngIf="['ATE-GISD', 'ATE-GEXP', 'ATE-GENP'].includes(data?.gatePassStatusId)" mat-button class="active-btn" appDebounceClick
+                [debounceTime]="300" cdkFocusInitial (debounceClick)="authorizeGatePass()" [disabled]="data?.hideButton">
+                 {{"Authorize"|translate}}
+            </button>
+        </div>
+    </div>
+</div>

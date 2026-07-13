@@ -1,0 +1,160 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div  *ngIf="!data">{{"Create Ticket"|translate}} </div>
+        <div  *ngIf="data">{{"Modify Ticket"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+        </div>
+
+
+        <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"  style="overflow: auto;height:calc(100% - 155px);"[formGroup]="ticketForm">
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Select Customer"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Customer'|translate" formControlName="customerId"[disableOptionCentering]="true">
+                                    <mat-option *ngFor="let cust_list of customerList" [value]="cust_list.id">
+                                        {{cust_list.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name">
+                            </mat-form-field>
+                    </div>
+                
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Select location"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field"appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select location'|translate" formControlName="locationId" [disableOptionCentering]="true"
+                                    required>
+                                    <mat-option *ngFor="let block_list of blockList" [value]="block_list.id">
+                                        {{block_list.name}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="ticketForm.controls.locationId.invalid">
+                                    {{"location is required."|translate}}
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Priority"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field"appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Priority'|translate" formControlName="ticketPriorityId"[disableOptionCentering]="true">
+                                    <mat-option *ngFor="let priorList of ticketPriorityList" [value]="priorList.code">
+                                        {{priorList.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Phone"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone'|translate" formControlName="phone"
+                                    [errorStateMatcher]="matcher" autocomplete="off">
+                                <mat-error *ngIf="ticketForm.controls.phone.invalid">
+                                    <span [hidden]="!ticketForm.controls['phone'].errors.required">
+                                        {{"Phone number is required."|translate}}
+                                    </span>
+                                    <span [hidden]="!ticketForm.controls['phone'].errors.pattern">
+                                        {{"Invalid Phone number"|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Email"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Email'|translate" formControlName="email"
+                                    [errorStateMatcher]="matcher" autocomplete="off">
+                                <mat-error *ngIf="ticketForm.controls.email.invalid">
+                                    <span [hidden]="!ticketForm.controls['email'].errors.required">
+                                        {{"E-mail is required."|translate}}
+                                    </span>
+                                    <span [hidden]="!ticketForm.controls['email'].errors.email">
+                                        {{"Invalid E-mail"|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Subject"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Subject'|translate" formControlName="title">
+                            </mat-form-field> 
+                    </div>
+                  
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" formControlName="Description">
+                            </mat-form-field>
+                    </div>
+                
+                    <div class="ovi-row-two-clmn">
+                        <mat-label class="ovi-lbl-text-size">{{'Attachments'|translate}}</mat-label>
+                        <div class="upload-container">
+                            <input type="file" id="fileInput" #fileInput
+                                (change)="handleFileSelect($event); fileInput.value = ''"
+                                style="display:none" />
+
+                            <div class="upload-area" (click)="!imageData.length && fileInput.click()">
+                                <div class="upload-dropzone" *ngIf="!imageData.length">
+                                    <div class="upload-dropzone-content">
+                                        <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                                        <span class="upload-text">{{"Drop files here or click to browse"|translate}}</span>
+                                        <span class="upload-hint">{{"Supports: All file types"|translate}}</span>
+                                        <button mat-stroked-button class="upload-btn" (click)="$event.stopPropagation(); fileInput.click()">
+                                            <mat-icon>file_upload</mat-icon>
+                                            {{"Browse Files"|translate}}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="file-preview-container" *ngIf="imageData.length > 0">
+                                    <div class="file-preview-card" *ngFor="let imgObj of imageData;let index = index">
+                                        <div class="file-preview-thumb">
+                                            <img [src]="imgObj.file" *ngIf="imgObj.mimeType?.includes('image')"
+                                                (click)="lightboxView(imgObj)" alt="preview" />
+                                            <div class="file-pdf-icon" *ngIf="imgObj.mimeType?.includes('pdf')"
+                                                (click)="lightboxView(imgObj)">
+                                                <mat-icon>picture_as_pdf</mat-icon>
+                                                <span>PDF</span>
+                                            </div>
+                                            <div class="file-generic-icon"
+                                                *ngIf="!imgObj.mimeType?.includes('image') && !imgObj.mimeType?.includes('pdf')">
+                                                <mat-icon>insert_drive_file</mat-icon>
+                                            </div>
+                                            <label class="preview-overlay" (click)="setReplaceIndex(index); $event.stopPropagation()"
+                                                for="fileInput" title="{{'Change'|translate}}">
+                                                <mat-icon class="overlay-icon">camera_alt</mat-icon>
+                                                <span class="overlay-text">{{"Change"|translate}}</span>
+                                            </label>
+                                        </div>
+                                        <div class="file-preview-info">
+                                            <span class="file-preview-name">{{imgObj.fileName || 'File'}}</span>
+                                        </div>
+                                        <button type="button" class="file-remove-btn"
+                                            (click)="cancelFile(index); $event.stopPropagation()" matTooltip="{{'Delete'|translate}}">
+                                            <mat-icon>close</mat-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!data" class="active-btn" [disabled]="ticketForm.invalid || isDisabled"
+            appDebounceClick (debounceClick)="saveTicket()" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+        <button mat-button *ngIf="data" class="active-btn" [disabled]="ticketForm.invalid || isDisabled"
+            appDebounceClick (debounceClick)="updateTicket(data)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+    </div>
+</div>

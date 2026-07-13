@@ -1,0 +1,21 @@
+    <div appWindowResize (resized)="onWindowResized($event)" (resizedWidth)="onWindowResizedWidth($event)" [component]="'pop-up'"
+    [style.height.px]="popHeight">
+    <mat-toolbar *ngIf="this.data" class="input-header block-1" style="height: 35px;">
+        <div class="header-name close-align-map" style="text-overflow: ellipsis;"> {{"Current Location"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+            <mat-icon class="icon-style">highlight_off</mat-icon>
+        </button></div>
+    </mat-toolbar>
+    <div class="leaflet-view" style="overflow: auto;" [ngStyle] ="{height: existPrivateUser ? 'calc(100% - 90px)' : 'calc(100% - 145px)'}">
+        <div class="geo-search-container" *ngIf="data && this.data['type'] == 'latlong'">
+            <span><input #autocompleteInput id="autocomplete" type="text" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search for places...'|translate" class="search-box" /></span>
+            <span><button class="clear-btn" onclick="document.getElementById('autocomplete').value = ''">X</button></span>              
+        </div>
+        <div id="locationMap" class="leaflet-map-size"></div>
+    </div>
+    <div class="block-7 input-footer-pad" style="width: 97%;padding-top: 0px;">
+        <button mat-button class="cancle-btn" style=" margin-right: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" appDebounceClick style="margin-top: 0px;"
+        [debounceTime]="500" (debounceClick)="commitLatLongClose(this.searchLatLang)" *ngIf="commitLatLong.length > 0">{{"GET LOCATION"|translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,456 @@
+<mat-drawer-container style="height: 100% !important;">
+<div class="loading-spinner" *ngIf="onLoading">
+  <div class="spinnerload">
+    <div class="spin1"></div>
+    <div class="spin2"></div>
+    <div class="spin3"></div>
+  </div>
+</div>
+<div *ngIf="!isMultiLoc" style="width: 100%; height: 100%;display: flex;flex-direction: column; background-color: #edf4f7;"
+    class="ovi-font-family">
+
+    <div class="main-header" style="display: flex ; font-weight: 600; height: 10vh; font-size: 5vh; color: white; align-items: center; padding-left: 2vw; width: calc(100vw - 2vw); justify-content: space-between;"
+    [style.--mainHeaderColor]="mainHeaderColor">
+        <div style="text-overflow: ellipsis;overflow: hidden; white-space: nowrap; ">
+            <span *ngIf="locationName && !isNew">{{locationName}}</span>
+            <div *ngIf="!isNew" style="font-size: 1.8vh; font-weight: 800;">{{"Last updated"|translate}}:
+                <span style="padding: 0 0.5vh">{{refreshDetail.lastUpdate | date:'hh:mm:ss a'}}</span>
+            </div>
+        </div>
+        <div *ngIf="isNew" style="font-weight: 800;" [style.font-size]="((locationName?.length || 0) + 73) > 100 ? '4vh' : '5vh'">{{locationName}}</div>
+        <div>
+            <div style="display: flex;" (click)="showOption = !showOption" (keydown.enter)="fixClick()">
+                <img class="dis-menu-icon" style="width: 5vw; height: 6vh;cursor: pointer;"
+                    src="/assets/icons/three-dots-vertical.svg" alt="vertical-icon">
+            </div>
+        </div>
+    </div>
+    <div *ngIf="!isNew" class="dis-top-pat-container" style="border-radius: 2vh; margin: 3vh 2vw 1.5vh 2vw; width: calc(100vw - 5vw); height: calc(100vh - 45vh); background-color: var(--contentBgColor); padding-left: 2vh; box-shadow: 0px 0px 8px -3px;"
+    [style.--contentBgColor]="contentBgColor">
+        <div style="display: flex ; flex-direction: column; justify-content: space-evenly;height: 100%;" *ngIf="inprogressList.length">
+            <div class="dis-top-pat-name" style="color: var(--contentTextColor); font-size: 14vh;font-weight: 600;text-overflow: ellipsis;overflow: hidden; white-space: nowrap; width: 100%;"
+            [style.--contentTextColor]="contentTextColor">
+                <!-- {{inprogressList[0]['patientName']}} -->
+                {{ getMask(inprogressList[0]['uhid']) }}
+            </div>
+            <div style="display: flex ; justify-content: space-between; align-items: center;">
+                <div>
+                    <!-- <div class="dis-top-pat-uhid" style="color: #565656; font-size: 7vh;">
+                        {{inprogressList[0]['uhid']}}
+                    </div> -->
+                    <div [ngClass]="inprogressList[0]['queueStatusId'] == 'QS-IP' ? 'dis-ip-pat-status' : 'dis-rg-pat-status'"
+                        class="dis-top-pat-status" style=" font-size: 10vh;font-weight: 600;"
+                        [style.--contentStatusRGColor]="contentStatusRGColor" [style.--contentStatusIPColor]="contentStatusIPColor">
+                        {{inprogressList[0]['patientStatusName']}}
+                    </div>
+                </div>
+                <div [ngClass]="inprogressList[0]['queueStatusId'] == 'QS-IP' ? 'dis-ip-pat-token' : 'dis-rg-pat-token'"
+                    class= "dis-top-pat-token" style="display: inline-flex ; font-size: 16vh; font-weight: 600; align-items: center; margin-right: 3vw;"
+                    [style.--contentTokenBgColor]="contentTokenBgColor" [style.--contentStatusRGColor]="contentStatusRGColor" [style.--contentStatusIPColor]="contentStatusIPColor">
+                    {{inprogressList[0]['visitTokenNo']}}
+                </div>
+            </div>
+        </div>
+        <div class="dis-top-no-pat" *ngIf="inprogressList.length == 0" style="display: flex ; align-items: center; height: 100%; color: #e6e6e6; font-size: 12vh; justify-content: space-around;">
+            {{"We do 100+ Health Checkups Daily"|translate}}.
+        </div>
+    </div>
+    <div *ngIf="!isNew" class="dis-bottom-pat-container" style="margin: 1.5vh 2vw 2vh 2vw; overflow: auto;height: 25vh;">
+        <div class="dis-bottom-pat-list"
+            style="padding : 2px; display: flex; width: calc(100vw - 5vw); height: 22vh;background-color: edf4f7; gap: 2vh;">
+            <div *ngFor="let patient of waitingList" class="dis-patient-wait-card">
+                <div [ngClass]="patient['queueStatusId'] == 'QS-WT' ? 'dis-wt-pat-status' : patient['queueStatusId'] == 'QS-RG' ? 'dis-rg-pat-status' : patient['queueStatusId'] == 'QS-IP' ? 'dis-ip-pat-status': 'dis-ne-pat-status'"
+                    style="font-size: 4vh;display: flex; justify-content: space-between;">
+                    <div>{{patient.visitTokenNo}}</div>
+                    <div>{{patient.patientStatusName}}</div>
+                </div>
+                <div style="color: #565656; font-size: 4vh;">
+                    <!-- <div style="text-overflow: ellipsis;overflow: hidden; white-space: nowrap; width: 100%;">{{patient.patientName}}</div>
+                    <div style="font-size: 3vh;">
+                        {{patient.uhid}}
+                    </div> -->
+                    <div style="text-overflow: ellipsis;overflow: hidden; white-space: nowrap; width: 100%;">
+                        {{ getMask(patient.uhid) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="isNew" class="tv-container">
+        <div class="slider-wrapper">
+            <div class="slider">
+                <mat-card class="current-card">
+                    <div class="room room-label" style="visibility: hidden;">ROOM: {{ inprogressList[0]?.testLocationId }}</div>
+                    <div class="card-header">
+                        <img src="assets/Alert/common_icons/apollo-dial.svg" alt="logo" class="logo left-logo" />
+                        <img src="assets/Alert/common_icons/apollo-finance.svg" alt="logo" class="logo right-logo" />
+                    </div>
+                    <div style="margin-top: 0vh;display: flex;flex-direction: column; align-items: center;">
+                        <div class="new-dis-top-pat-container"
+                            style="border-radius: 2vh; margin: 8vh 0vw 1.5vh; width: calc(100vw - 5vw); height: calc(100vh - 60vh); background-color: var(--contentBgColor); padding-left: 2vh; box-shadow: 0px 0px 8px -3px;"
+                            [style.--contentBgColor]="contentBgColor">
+                            <div style="display: flex ; flex-direction: column; justify-content: space-evenly;height: 100%;"
+                                *ngIf="inprogressList.length">
+                                <div class="new-dis-top-pat-name"
+                                    style="color: var(--contentTextColor); font-size: 14vh;font-weight: 600;text-overflow: ellipsis;overflow: hidden; white-space: nowrap; width: 100%;"
+                                    [style.--contentTextColor]="contentTextColor">
+                                    {{ getMask(inprogressList[0]['uhid']) }}
+                                </div>
+                                <div style="display: flex ; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div [ngClass]="inprogressList[0]['queueStatusId'] == 'QS-IP' ? 'dis-ip-pat-status' : 'dis-rg-pat-status'"
+                                            class="new-dis-top-pat-status" style=" font-size: 10vh;font-weight: 600;"
+                                            [style.--contentStatusRGColor]="contentStatusRGColor"
+                                            [style.--contentStatusIPColor]="contentStatusIPColor">
+                                            {{inprogressList[0]['patientStatusName']}}
+                                        </div>
+                                    </div>
+                                    <div [ngClass]="inprogressList[0]['queueStatusId'] == 'QS-IP' ? 'dis-ip-pat-token' : 'dis-rg-pat-token'"
+                                        class="new-dis-top-pat-token"
+                                        style="display: inline-flex ; font-size: 16vh; font-weight: 600; align-items: center; margin-right: 3vw;"
+                                        [style.--contentTokenBgColor]="contentTokenBgColor"
+                                        [style.--contentStatusRGColor]="contentStatusRGColor"
+                                        [style.--contentStatusIPColor]="contentStatusIPColor">
+                                        {{inprogressList[0]['visitTokenNo']}}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="new-dis-top-no-pat" *ngIf="inprogressList.length == 0"
+                                style="display: flex ; align-items: center; height: 100%; color: #e6e6e6; font-size: 10vh; justify-content: space-around;">
+                                {{"We do 100+ Health Checkups Daily"|translate}}.
+                            </div>
+                        </div>
+                        <div class="new-dis-bottom-pat-container" style="margin: 1vh 0vw 2vh 0vw; overflow: auto;height: 25vh;">
+                            <div class="new-dis-bottom-pat-list"
+                                style="padding : 2px; display: flex; width: calc(100vw - 4.5vw); height: 22vh;background-color: edf4f7; gap: 2vh;">
+                                <div *ngFor="let patient of waitingList" class="dis-patient-wait-card-new">
+                                    <div [ngClass]="patient['queueStatusId'] == 'QS-WT' ? 'dis-wt-pat-status' : patient['queueStatusId'] == 'QS-RG' ? 'dis-rg-pat-status' : patient['queueStatusId'] == 'QS-IP' ? 'dis-ip-pat-status': 'dis-ne-pat-status'"
+                                        style="font-size: 4vh;display: flex; justify-content: space-between;">
+                                        <div>{{patient.visitTokenNo}}</div>
+                                        <div>{{patient.patientStatusName}}</div>
+                                    </div>
+                                    <div style="color: #565656; font-size: 4vh;">
+                                        <div style="text-overflow: ellipsis;overflow: hidden; white-space: nowrap; width: 100%;">
+                                            {{ getMask(patient.uhid) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </mat-card>
+                <div *ngIf="isNew" style="font-size: 2vh;font-weight: 800; float: right;color: #6b584b; margin-right: 5px;">{{"Last updated"|translate}}:
+                    <span style="padding: 0 0.5vh">{{refreshDetail.lastUpdate | date:'hh:mm:ss a'}}</span>
+                </div>
+                <div style="font-size: 1.8vh;font-weight: 800; float: left;color: #6b584b; margin-top: 2px;">
+                    <div style="margin-left: 10px;">{{"FOR ONLINE APPOINTMENTS" | translate}}</div>
+                    <div style="display: flex; margin-left: 10px;margin-top: -2px;">
+                        <img src="assets/Alert/common_icons/apollo-helpline.svg" alt="logo" class="right-logo help-icon" />
+                        &nbsp;&nbsp;<span style="margin-top: 2px;">040 2360 6666</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ovi-dis-slider" *ngIf="false">
+        <div class="dis-slider-container">
+            <div class="dis-slider-counter">
+                <span id="dis-current-slide"></span>
+            </div>
+            <div class="dis-slider-wrapper">
+                <div class="dis-slider" style="background-color: red;">
+                    <div class="dis-slide">
+
+                    </div>
+                    <div class="dis-slide-overlay">
+                        {{"hi"|translate}}
+
+                    </div>
+                    <div class="dis-slide-content">
+                        {{"Hi Rahul"|translate}}
+                    </div>
+
+                </div>
+                <div class="dis-slider" style="background-color: green;">
+                    <div class="dis-slide">
+
+                    </div>
+                    <div class="dis-slide-overlay">
+                        {{"hi"|translate}}
+
+                    </div>
+                    <div class="dis-slide-content">
+                        {{"Hi Rahul"|translate}}
+                    </div>
+
+                </div>
+                <div class="dis-slider" style="background-color: blue;">
+                    <div class="dis-slide">
+
+                    </div>
+                    <div class="dis-slide-overlay">
+                        {{"hi"|translate}}
+
+                    </div>
+                    <div class="dis-slide-content">
+                        {{"Hi suresh"|translate}}
+                    </div>
+
+                </div>
+                <div class="dis-slider" style="background-color: yellow;">
+                    <div class="dis-slide">
+
+                    </div>
+                    <div class="dis-slide-overlay">
+                        {{"hi"|translate}}
+
+                    </div>
+                    <div class="dis-slide-content">
+                        {{"Hi Rahul"|translate}}
+                    </div>
+
+                </div>
+                <div class="dis-slider" style="background-color: orange;">
+                    <div class="dis-slide">
+
+                    </div>
+                    <div class="dis-slide-overlay">
+                        {{"hi"|translate}}
+
+                    </div>
+                    <div class="dis-slide-content">
+                      {{"kumar"|translate}}
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<div *ngIf="isMultiLoc" class="ovi-font-family"
+    style="width: 100%; height: 100%; display: flex; flex-direction: column; background-color: #edf4f7;">
+    <div class="top-bar main-header" [style.--mainHeaderColor]="mainHeaderColor">
+        <div style="text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">{{title}}</div>
+        <div style="display: flex; align-items: center">
+            <div style="font-size: 2.8vh; font-weight: 600;">{{"Last updated"|translate}}:<span style="padding: 0 0.5vh">{{refreshDetail.lastUpdate | date:'hh:mm:ss a'}}</span></div>
+            <div style="min-width: 20px; margin-top: -8px; position: relative;">
+                <button mat-icon-button [matMenuTriggerFor]="filterMenu">
+                    <img matTooltip="Filter" src="assets/Alert/common_icons/filter_funnel.svg" alt="filter"
+                        style="width:18px;height:18px;filter: invert(1);cursor: pointer;">
+                </button>            
+                <span *ngIf="getSelectedCount() > 0" class="filter-count">
+                    {{ getSelectedCount() }}
+                </span>
+            </div>
+            <mat-menu #filterMenu="matMenu" class="filter-menu" (closed)="onMenuClose()">
+                <div class="menu-container">
+                    <button mat-menu-item *ngFor="let data of visitTypes">
+                        <mat-checkbox [checked]="isSelected(data.code)" (click)="$event.stopPropagation()"
+                            (change)="onCheckboxChange($event, data.code)">
+                            {{ data.value | translate }}
+                        </mat-checkbox>
+                    </button>
+                </div>
+            </mat-menu>
+            <div style="display: flex;" (click)="showOption = !showOption" (keydown.enter)="fixClick()">
+                <img class="dis-menu-icon" style="width: 5vw; height: 6vh;cursor: pointer;"
+                    src="/assets/icons/three-dots-vertical.svg" alt="vertical-icon">
+            </div>
+        </div>
+    </div>
+    <div *ngIf="viewType === 'list'" style="display: flex; gap: 3vh; padding: 1vh 3vh 0; ">
+        <mat-card *ngFor="let col of [].constructor(colCount)" class="loc-card-box header-card" [style.--subHeaderColor]="subHeaderColor"
+            style="flex: 1; text-align: center; font-weight: 600;">
+            <div style="display: flex; align-items: center;" [ngStyle]="{'justify-content': type === 'token' && !viewStatus ? 'space-around' : 'space-between'}">
+                <span class="card-token-num-row" [ngStyle]="{'font-size': type === 'token' ? '4.7vh' : '2.7vh'}" style="border: none;">{{"Token"|translate}}</span>
+                <span *ngIf="type == 'token'" [ngStyle]="{'width': !viewStatus ? '15%' : ''}">&nbsp;&nbsp;</span>
+                <span class="card-location-text" [ngStyle]="{'font-size': type === 'token' ? '4.7vh' : '2.7vh'}">{{type == 'token' ? 'Bill Counter' : 'Location'}} </span>
+                <span *ngIf="type == 'token' && viewStatus" [ngStyle]="{'width': !viewStatus ? '15%' : ''}">&nbsp;&nbsp;</span>
+                <span [ngStyle]="{'visibility': !viewStatus && type !== 'token' ?  'hidden' : '', 'display': !viewStatus && type === 'token' ?  'none' : '', 'font-size': type === 'token' ? '4.7vh' : '2.7vh'}" 
+                class="card-status-text-row" style="border: none;">{{"Status"|translate}}</span>
+            </div>
+        </mat-card>
+    </div>
+     <!-- 'background': loc.queueStatusId === 'QS-RG' ? '#e6f9f8' :
+                                                                      loc.queueStatusId === 'QS-WT' ? '#f8f8f8' :
+                                                                      loc.queueStatusId === 'QS-IP' ? '#e5f3fb' :
+                                                                      loc.queueStatusId === 'QS-PE' || loc.queueStatusId === 'QS-NE'? '#fff1e3' : '#e5f9ed'} -->
+    <div style="flex: 1; height: 100%;">
+        <div class="card-grid" [style.--columns]="colCount" [style.--rows]="rowCount" [class.flipping]="isFlipping">
+            <ng-container *ngIf="viewType === 'card'">
+                <mat-card *ngFor="let loc of paginatedList()" class="loc-card-box"
+                    [ngStyle]="{'box-shadow': loc.queueStatusId === 'QS-RG' ? '0px 0px 0.1vh 0.2vh #00aba1' : loc.queueStatusId === 'QS-WT' ? 'rgb(35 55 74 / 52%) 0px 0px 0.1vh 0.2vh' :
+                                                                      loc.queueStatusId === 'QS-IP' ? '0px 0px 0.1vh 0.2vh #1e8fc8' : loc.queueStatusId === 'QS-PE' || 
+                                                                      loc.queueStatusId === 'QS-NE'? '0px 0px 0.1vh 0.2vh #FF8812' : '0px 0px 0.1vh 0.2vh #00000029'}">
+                    <div style="width: 100%;">
+                        <div *ngIf="showUhid" [style.--uhid]="uhidTextSize" class="card-uhid-num">{{getMask(loc.uhid)}}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="card-token-num" [style.--token]="tokenNumTextSize"
+                                 [ngStyle]="{'color': loc.queueStatusId === 'QS-RG' ? '#00aba1' : loc.queueStatusId === 'QS-WT' ? '#595d60' :
+                                loc.queueStatusId === 'QS-IP' ? '#1e8fc8' : loc.queueStatusId === 'QS-NE'? '#FF8812' :
+                                loc.queueStatusId === 'QS-PE' ? '#f25454' : '#00000029'}">
+                                {{loc.tokenNo}}
+                            </span>
+                            <span class="card-status-text" [style.--status]="statusTextSize"
+                                [ngStyle]="{'color': loc.queueStatusId === 'QS-RG' ? '#00aba1' : loc.queueStatusId === 'QS-WT' ? '#595d60' :
+                                            loc.queueStatusId === 'QS-IP' ? '#1e8fc8' : loc.queueStatusId === 'QS-NE'? '#FF8812' :
+                                            loc.queueStatusId === 'QS-PE' ? '#f25454' : '#00000029'}">
+                                  {{loc.queueStatusId === 'QS-RG' ? 'GO' : loc.queueStatusId === 'QS-WT' ? 'WAIT' :
+                                loc.queueStatusId
+                                === 'QS-IP' ? 'IN' :
+                                loc.queueStatusId === 'QS-PE' ? 'TBA' : loc.queueStatusId === 'QS-NE' ? 'NEXT' : ''}}
+                            </span>
+                        </div>
+                        <div class="card-location-text">{{loc.locationName}}</div>
+                    </div>
+                </mat-card>
+            </ng-container>
+            <ng-container *ngIf="viewType === 'list'">
+                <mat-card *ngFor="let loc of paginatedList()" class="loc-card-box"
+                    [ngStyle]="{'box-shadow': loc.queueStatusId === 'QS-RG' ? '0px 0px 0.1vh 0.2vh #00aba1' : loc.queueStatusId === 'QS-WT' ? '#797e82 0px 0px 0.1vh 0.2vh' :
+                                        loc.queueStatusId === 'QS-IP' ? '0px 0px 0.1vh 0.2vh #1e8fc8' : loc.queueStatusId === 'QS-NE'? '0px 0px 0.1vh 0.2vh #FF8812' : loc.queueStatusId === 'QS-PE' ? '0px 0px 0.1vh 0.2vh #f25454' : '0px 0px 0.1vh 0.2vh #00000029'}">
+                    <div *ngIf="type != 'token'" style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="card-token-num-row" [style.--token]="tokenNumTextSize" [ngStyle]="{'color': loc.queueStatusId === 'QS-RG' ? '#00aba1' : loc.queueStatusId === 'QS-WT' ? '#595d60' :
+                                                                         loc.queueStatusId === 'QS-IP' ? '#1e8fc8' : loc.queueStatusId === 'QS-NE'? '#FF8812' :
+                                                                         loc.queueStatusId === 'QS-PE' ? '#f25454' : '#00000029'}">
+                                {{loc.tokenNo}}
+                            </span>
+                            <span></span>
+                            <span class="card-location-text" [style.--locTextSize]="locationTextSize">
+                                <div></div>
+                                <div style="text-overflow: ellipsis; overflow: hidden; color: #595d60;">{{loc.locationName}}</div>
+                            </span>
+                            <span></span>
+                            <span class="card-status-text-row" [style.--status]="statusTextSize" [ngStyle]="{'color': loc.queueStatusId === 'QS-RG' ? '#00aba1' : loc.queueStatusId === 'QS-WT' ? '#595d60' :
+                                loc.queueStatusId === 'QS-IP' ? '#1e8fc8' : loc.queueStatusId === 'QS-NE'? '#FF8812' :
+                                loc.queueStatusId === 'QS-PE' ? '#f25454' : '#00000029','visibility': !viewStatus ?  'hidden' : ''}">
+                                {{loc.queueStatusName}}
+                            </span>
+                        </div>
+                    </div>
+                    <div *ngIf="type == 'token'" style="width: 100%;">
+                        <div style="display: flex;align-items: center;" [ngStyle]="{'justify-content': !viewStatus ? 'space-around' : 'space-between'}">
+                            <!-- <mat-icon *ngIf="this[loc?.tokenNo] == true" style="cursor: pointer;">volume_up</mat-icon>
+                            <mat-icon *ngIf="this[loc?.tokenNo] == false" style="cursor: pointer;" (click)="!isSpeaking ? playAudioAgain([loc]) : ''">volume_off</mat-icon> -->
+                            <span class="card-token-num-row-bill" [style.--token]="billTokenNumTextSize" [ngStyle]="{'color': loc.queueStatusId === 'QS-RG' ? '#00aba1' : loc.queueStatusId === 'QS-WT' ? '#595d60' :
+                                                                         loc.queueStatusId === 'QS-IP' ? '#1e8fc8' : loc.queueStatusId === 'QS-NE'? '#FF8812' :
+                                                                         loc.queueStatusId === 'QS-PE' ? '#f25454' : '#00000029'}">
+                                {{loc.tokenNo}}
+                            </span>
+                            <span class="card-token-divider" [ngStyle]="{'padding': !viewStatus ? '6% 0vh' : '2% 0vh', 'width': !viewStatus ? '15%' : ''}">&nbsp;&nbsp;</span>
+                            <span class="card-location-text-bill" [style.--locTextSize]="billLocationTextSize">
+                                <div style="text-overflow: ellipsis; overflow: hidden; color: #595d60;">{{loc.locationName}}</div>
+                            </span>
+                            <span *ngIf="viewStatus" class="card-token-divider" [ngStyle]="{'padding': !viewStatus ? '6% 0vh' : '2% 0vh', 'width': !viewStatus ? '15%' : ''}">&nbsp;&nbsp;</span>
+                            <span *ngIf="viewStatus" class="card-status-text-row-bill" [style.--status]="billStatusTextSize" [ngStyle]="{'color': loc.queueStatusId === 'QS-RG' ? '#00aba1' : loc.queueStatusId === 'QS-WT' ? '#595d60' :
+                                                                         loc.queueStatusId === 'QS-IP' ? '#1e8fc8' : loc.queueStatusId === 'QS-NE'? '#FF8812' :
+                                                                         loc.queueStatusId === 'QS-PE' ? '#f25454' : '#00000029'}">
+                                {{loc.queueStatusName}}
+                            </span>
+                        </div>
+                    </div>
+                </mat-card>
+            </ng-container>
+        </div>
+    </div>
+    <div style="position: relative;">
+        <span *ngIf="runningText" class="request-text" [style.--textColor]="runTextColor">{{runningText}}</span>
+    </div>
+    <div class="token-footer">
+        <div class="page-label">Showing {{ pageLabel }} tokens</div>
+        <div class="dot-container">
+            <span class="dot" *ngFor="let page of pageArray" [class.active]="currentPage === page"
+                (click)="goToPage(page)"  (keydown.enter)="fixClick()"></span>
+        </div>
+        <div></div>
+    </div>
+</div>
+<div class="dis-menu-option ovi-font-family" style="float: right; height: 22vh; box-shadow: 0px 0px 8px -3px;border-radius: 0.5vh; right: 2vw;  display: flex ; width: 15vw; min-width: 130px; background: white; position: relative; top: -92vh;" *ngIf="showOption">
+    <div style="padding: 0px 10px; color: #565656; display: flex ; flex-direction: column; justify-content: space-evenly;">
+        <div class="dis-opt-list" (click)="refresh()" (keydown.enter)="fixClick()">
+            <span class="dis-opt-list-icon"><img style="width: 2vw; height: 3vh; filter:invert(15%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(60%);" src="/assets/icons/room-refresh.svg" alt="refresh-icon"></span>
+            <span>{{"Refresh"|translate}}</span>
+        </div>
+        <div class="dis-opt-list" (click)="changeRoom()"  (keydown.enter)="fixClick()" 
+            *ngIf="locationList.length">
+            <span class="dis-opt-list-icon"><img style="width: 2vw; height: 3vh;" src="/assets/icons/room-change.svg" alt="room-change.svg"></span>
+            <span>{{"Change Room"|translate}}</span>
+        </div>
+        <div class="dis-opt-list" (click)="multiLocationView()"  (keydown.enter)="fixClick()"
+            *ngIf="!isMultiLoc && locationList.length">
+            <span class="dis-opt-list-icon"><span class="material-icons" style="padding: 0;font-size: 3.6vh;width: 2vw; height: 3vh;">dns</span></span>
+            <span>{{"Central View"|translate}}</span>
+        </div>
+        <div class="dis-opt-list" (click)="isPopupOpen = true; showOption = false" (keydown.enter)="fixClick()">
+            <span class="dis-opt-list-icon"><span class="material-icons" style="padding: 0;font-size: 3.6vh;width: 2vw; height: 3vh;">settings</span></span>
+            <span>{{"Config"|translate}}</span>
+        </div>
+        <div class="dis-opt-list" (click)="logout()"  (keydown.enter)="fixClick()">
+            <span class="dis-opt-list-icon"><img style="width: 2vw; height: 3vh; filter:invert(15%) sepia(70%) saturate(493%) hue-rotate(171deg) brightness(100%) contrast(100%);" src="/assets/icons/room-logout.svg" alt="room-logout.svg"></span>
+            <span>{{"Logout"|translate}}</span>
+        </div>
+    </div>
+</div>
+<div *ngIf="isPopupOpen" class="popup-overlay ovi-font-family" [formGroup]="configForm">
+  <div class="popup-box">
+    <div class="config-header">
+        <span class="material-icons popup-out" (click)="isPopupOpen = false">keyboard_backspace</span>
+      <span>{{"Config"|translate}}</span>
+    </div>
+    <div class="config-container ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+         <div style="display: flex; align-items: center">
+            <span class="config-label">{{"Title"|translate}}:</span>
+            <span class="ovi-matfrmfld-input-box-pdg">
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                    <input matInput type="text" class="config-num-input" formControlName="title"/>
+                </mat-form-field>
+            </span>
+        </div>
+        <div style="display: flex; align-items: center">
+            <span class="config-label">{{"Column"|translate}}:</span>
+            <span class="ovi-matfrmfld-input-box-pdg">
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                    <input matInput type="number" class="config-num-input" formControlName="column"/>
+                    <div matSuffix class="ovi-schl-custom-select">
+                    <span (click)="updateColCount(-1, 'column')" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                        <span (click)="updateColCount(1, 'column')" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                    </div>
+                </mat-form-field>
+            </span>
+        </div>
+        <div style="display: flex; align-items: center">
+            <span class="config-label">{{"Row"|translate}}:</span>
+             <span class="ovi-matfrmfld-input-box-pdg">
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                    <input matInput type="number" class="config-num-input" formControlName="row"/>
+                     <div matSuffix class="ovi-schl-custom-select">
+                    <span (click)="updateColCount(-1, 'row')" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                        <span (click)="updateColCount(1, 'row')" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                    </div>
+                </mat-form-field>
+            </span>
+        </div>
+         <div style="display: flex; align-items: center">
+            <span class="config-label">{{"Comments"|translate}}:</span>
+             <span class="ovi-matfrmfld-textarea-top-box" style="width: 100%;">
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <textarea input matInput formControlName="runningText" rows=3></textarea>
+                </mat-form-field>
+            </span>
+        </div>
+    </div>
+    <div class="config-footer">
+        <button mat-button class="cancle-btn" style=" margin-right: 5px; background: #13c7b7;"
+            (click)="isPopupOpen = false">{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" style="background: #13c7b7;"
+          appDebounceClick (debounceClick)="updatedConfig()" [debounceTime]="300">{{"Update"|translate}}
+        </button>
+    </div>
+  </div>
+</div>
+</mat-drawer-container>

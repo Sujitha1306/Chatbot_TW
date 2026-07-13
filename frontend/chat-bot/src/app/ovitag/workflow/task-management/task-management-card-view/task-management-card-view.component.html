@@ -1,0 +1,525 @@
+<div class="card-view-container ovi-font-family">
+
+  <!-- Mobile overlay backdrop -->
+  <div class="panel-backdrop"
+       *ngIf="!isMenuCollapsed"
+       (click)="toggleMenu()"></div>
+
+  <!-- Left Panel: Task List -->
+  <div class="task-list-panel" [class.panel-collapsed]="isMenuCollapsed">
+    <div class="panel-content">
+      <div class="qr-scan-hint" (click)="toggleQrScanner()">
+        <mat-icon class="qr-scan-icon">qr_code_scanner</mat-icon>
+        <span class="qr-scan-text">Tap to scan QR code</span>
+      </div>
+
+      <div class="task-count-bar">
+        <span class="task-count-label">Tasks</span>
+        <span class="task-count-numbers">{{ tableData.length }} / {{ totalCount }}</span>
+        <span class="task-count-loaded" *ngIf="tableData.length < totalCount">({{ totalCount - tableData.length }} more)</span>
+      </div>
+
+    </div>
+
+    <div class="task-list-scroll" #taskListScroll (scroll)="onTaskListScroll()">
+      <lazy-loader *ngIf="loading && !loadMoreLoading"></lazy-loader>
+
+        <div *ngIf="!loading && filteredTasks.length === 0" class="no-tasks">
+          <mat-icon>assignment</mat-icon>
+          <span>No tasks found</span>
+        </div>
+
+        <div *ngFor="let task of filteredTasks"
+             class="task-card"
+             [class.task-card-selected]="selectedTask?.requestId === task.requestId"
+             (click)="selectTask(task)">
+          <div class="task-card-header">
+            <span class="task-order-no">{{ task.deliveryRequestIdentifier }}</span>
+            <span class="status-badge" [ngClass]="getStatusClass(task)">
+              {{ task.requestStatusName }}
+            </span>
+          </div>
+          <div class="task-item-name">{{ task.itemMasterName }}</div>
+          <div class="task-meta">
+            <span class="task-activity" *ngIf="task.activityName">
+              <mat-icon class="meta-icon">work_outline</mat-icon>
+              {{ task.activityName }}
+            </span>
+            <span class="task-assignee" *ngIf="task.performerName">
+              <mat-icon class="meta-icon">person_outline</mat-icon>
+              {{ task.performerName }}
+            </span>
+          </div>
+          <div class="task-dates" *ngIf="task.fromDate || task.toDate">
+            <mat-icon class="meta-icon">event</mat-icon>
+            <span *ngIf="task.fromDate">{{ task.fromDate | date:'dd MMM yyyy' }}</span>
+            <span *ngIf="task.toDate"> &ndash; {{ task.toDate | date:'dd MMM yyyy' }}</span>
+          </div>
+        </div>
+
+        <div class="load-more-indicator" *ngIf="loadMoreLoading">
+          <mat-spinner diameter="20"></mat-spinner>
+          <span>Loading more tasks...</span>
+        </div>
+
+        <div class="all-loaded" *ngIf="!loadMoreLoading && !loading && filteredTasks.length > 0 && filteredTasks.length >= totalCount">
+          <span>All tasks loaded</span>
+        </div>
+    </div>
+  </div>
+
+  <!-- Toggle button -->
+  <button class="panel-toggle-btn" (click)="toggleMenu()"
+          [matTooltip]="isMenuCollapsed ? 'Click to expand' : 'Click to collapse'">
+    <mat-icon>{{ isMenuCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+  </button>
+
+  <!-- Right Panel: Task Detail -->
+  <div class="task-detail-panel">
+
+    <!-- QR Scanner Overlay -->
+    <div class="qr-scanner-overlay" *ngIf="showQrScanner">
+      <div class="qr-scanner-box">
+        <div class="qr-scanner-header">
+          <span>Scan QR Code</span>
+          <button mat-icon-button (click)="toggleQrScanner()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="qr-scanner-body">
+          <video #qrVideo class="qr-video"></video>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanning loader -->
+    <div class="qr-scan-loader" *ngIf="qrScanLoading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Processing scan...</span>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!selectedTask && !showQrScanner && !qrScanLoading" class="no-selection">
+      <mat-icon>touch_app</mat-icon>
+      <p>Select a task from the list to view details</p>
+    </div>
+
+    <!-- Task detail content -->
+    <ng-container *ngIf="selectedTask">
+      <div class="detail-body-row">
+        <div class="detail-content">
+
+        <!-- Detail Header -->
+        <div class="detail-header">
+          <div class="detail-title">
+            <div class="detail-order-no clickable" (click)="openSalesOrder()" matTooltip="View Sales Order">{{ selectedTask.deliveryRequestIdentifier }}</div>
+            <div class="detail-item-name">{{ selectedTask.itemMasterName }}</div>
+          </div>
+          <div class="detail-header-actions">
+            <span class="status-badge-lg" [ngClass]="getStatusClass(selectedTask)">
+              {{ selectedTask.requestStatusName }}
+            </span>
+            <button mat-icon-button matTooltip="Reassign Task" (click)="reassignTask()">
+              <mat-icon>swap_horiz</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable body -->
+        <div class="detail-scroll">
+
+          <!-- Tab bar at top -->
+          <div class="tab-bar">
+            <button class="tab-btn" [class.active]="activeTab === 'summary'" (click)="activeTab = 'summary'">
+              <mat-icon>summary</mat-icon>
+              Task Summary
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'document'" (click)="activeTab = 'document'">
+              <mat-icon>description</mat-icon>
+              Document
+              <span class="tab-count" *ngIf="documents.length">({{ documents.length }})</span>
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'forms'" (click)="activeTab = 'forms'">
+              <mat-icon>dynamic_form</mat-icon>
+              Form
+            </button>
+            <button class="tab-btn" [class.active]="activeTab === 'activity'" (click)="switchToActivityTab()">
+              <mat-icon>timeline</mat-icon>
+              Activity Log
+              <span class="tab-count" *ngIf="activityLog.length">({{ activityLog.length }})</span>
+            </button>
+          </div>
+
+          <!-- Task Summary Tab -->
+          <ng-container *ngIf="activeTab === 'summary'">
+
+          <!-- Task Info Grid -->
+          <div class="detail-section">
+            <div class="section-title">Task Summary</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Activity</label>
+                <span>{{ selectedTask.activityName || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Category</label>
+                <span>{{ selectedTask.activityCategoryName || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Item Type</label>
+                <span>{{ selectedTask.typeName || '—' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Requested Date</label>
+                <span>{{ selectedTask.deliveryRequestDatetime | date:'dd MMM yyyy, HH:mm' }}</span>
+              </div>
+              <div class="info-item">
+                <label>From Date</label>
+                <span>{{ selectedTask.fromDate | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="info-item">
+                <label>To Date</label>
+                <span>{{ selectedTask.toDate | date:'dd MMM yyyy' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Assigned Type</label>
+                <span>{{ getPerformerTypeName(selectedTask.performerType) }}</span>
+              </div>
+              <div class="info-item">
+                <label>Assigned To</label>
+                <span>{{ selectedTask.performerName || '—' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Details (from API) -->
+          <ng-container *ngIf="detailLoading">
+            <div class="detail-loader">
+              <mat-spinner diameter="28"></mat-spinner>
+              <span>Loading details...</span>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="taskDetail && !detailLoading">
+            <div class="detail-section"
+                 *ngIf="taskDetail.description || taskDetail.comments || taskDetail.purchaser || taskDetail.requestUserDepartmentName">
+              <div class="section-title">Order Details</div>
+              <div class="info-grid">
+                <div class="info-item" *ngIf="taskDetail.purchaser">
+                  <label>Purchaser</label>
+                  <span>{{ taskDetail.purchaser }}</span>
+                </div>
+                <div class="info-item" *ngIf="taskDetail.requestUserDepartmentName">
+                  <label>Department</label>
+                  <span>{{ taskDetail.requestUserDepartmentName }}</span>
+                </div>
+                <div class="info-item" *ngIf="taskDetail.requestedByUserName">
+                  <label>Requested By</label>
+                  <span>{{ taskDetail.requestedByUserName }}</span>
+                </div>
+                <div class="info-item info-item-full" *ngIf="taskDetail.description">
+                  <label>Description</label>
+                  <span>{{ taskDetail.description }}</span>
+                </div>
+                <div class="info-item info-item-full" *ngIf="taskDetail.comments">
+                  <label>Comments</label>
+                  <span>{{ taskDetail.comments }}</span>
+                </div>
+              </div>
+            </div>
+
+          </ng-container>
+
+          <!-- Document Section (card list in summary) -->
+          <div class="detail-section">
+            <div class="section-title">Documents</div>
+            <ng-container *ngIf="documents.length === 0 && !documentsLoading">
+              <div class="empty-state">
+                <mat-icon>description</mat-icon>
+                <span>No documents attached</span>
+              </div>
+            </ng-container>
+            <div class="doc-card-list" *ngIf="documents.length > 0">
+              <div *ngFor="let doc of documents" class="doc-card" (click)="openDocumentPreview(doc)">
+                <span class="doc-type-badge" [ngClass]="getDocTypeClass(doc)">{{ getDocTypeShortCode(doc) }}</span>
+                <div class="doc-card-info">
+                  <span class="doc-card-name">{{ doc.fileName || doc.fileUrl }}</span>
+                  <span class="doc-card-type">{{ doc.documentTypeName }}<span *ngIf="getDocSizeText(doc)"> · {{ getDocSizeText(doc) }}</span></span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="documentsLoading" class="detail-loader">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Loading documents...</span>
+            </div>
+          </div>
+
+          </ng-container><!-- /Task Summary Tab -->
+
+          <!-- Document Tab -->
+          <div class="tab-panel" *ngIf="activeTab === 'document'">
+            <div class="doc-add-bar" *ngIf="showDocForm">
+              <mat-form-field appearance="outline" class="doc-add-field">
+                <mat-label>Document Type</mat-label>
+                <mat-select [(ngModel)]="newDocType">
+                  <mat-option *ngFor="let dt of documentTypes" [value]="dt.code">
+                    {{ dt.value }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="doc-add-field">
+                <mat-label>Document Name</mat-label>
+                <input matInput [(ngModel)]="newDocName" autocomplete="off">
+              </mat-form-field>
+              <div class="doc-add-file">
+                <button mat-raised-button class="doc-file-btn" [class.btn-disabled]="!newDocType || newDocType === 'DT-LI'"
+                  [disabled]="!newDocType || newDocType === 'DT-LI'">
+                  <input type="file" #docFileInput
+                    (change)="onDocFileSelect($event)" [disabled]="!newDocType || newDocType === 'DT-LI'" />
+                  Choose File
+                </button>
+                <span class="doc-file-info" *ngIf="docFileInfo">{{ docFileInfo }}</span>
+              </div>
+              <div class="doc-add-actions">
+                <button mat-raised-button class="doc-add-btn" [disabled]="!canAddDoc || !newDocType" (click)="addDocument()">
+                  Add
+                </button>
+                <button mat-button class="doc-cancel-btn" (click)="showDocForm = false; resetDocForm()">
+                  Cancel
+                </button>
+              </div>
+            </div>
+            <button *ngIf="!showDocForm" mat-button class="toggle-doc-form-btn" (click)="showDocForm = true">
+              Add Document
+            </button>
+
+            <ng-container *ngIf="documents.length === 0 && !documentsLoading">
+              <div class="empty-state">
+                <mat-icon>description</mat-icon>
+                <span>No documents attached</span>
+              </div>
+            </ng-container>
+            <div *ngFor="let doc of documents" class="document-row">
+              <div class="doc-row-left">
+                <span class="doc-type-badge" [ngClass]="getDocTypeClass(doc)">{{ getDocTypeShortCode(doc) }}</span>
+                <div class="doc-row-info">
+                  <span class="doc-row-name">
+                    {{ doc.fileName || doc.fileUrl }}
+                  </span>
+                  <span class="doc-row-type">
+                    {{ doc.documentTypeName }}
+                    <span class="doc-row-size" *ngIf="getDocSizeText(doc)">{{ getDocSizeText(doc) }}</span>
+                  </span>
+                </div>
+              </div>
+              <div class="doc-row-actions">
+                <button mat-icon-button matTooltip="Preview" (click)="openDocumentPreview(doc)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Download" (click)="downloadDocument(doc)">
+                  <mat-icon>download</mat-icon>
+                </button>
+                <button mat-icon-button matTooltip="Delete" (click)="deleteDocument(doc)">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </div>
+            </div>
+            <div *ngIf="documentsLoading" class="detail-loader">
+              <mat-spinner diameter="20"></mat-spinner>
+              <span>Loading documents...</span>
+            </div>
+          </div>
+
+          <!-- Form Tab -->
+          <div class="tab-panel" *ngIf="activeTab === 'forms'">
+            <ng-container *ngIf="formsLoading">
+              <div class="detail-loader">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>Loading forms...</span>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="!formsLoading">
+              <div class="form-add-row">
+                <mat-form-field appearance="outline" class="form-select-field">
+                  <mat-label>Select Form</mat-label>
+                  <mat-select [(value)]="selectedFormTemplateId">
+                    <mat-option *ngFor="let ft of formTemplates" [value]="ft.id">
+                      {{ ft.name }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <button mat-raised-button class="add-form-btn" [disabled]="!selectedFormTemplateId" (click)="addForm()">
+                  Add
+                </button>
+              </div>
+
+              <div *ngIf="forms.length === 0" class="empty-state">
+                <mat-icon>assignment</mat-icon>
+                <span>No forms attached</span>
+              </div>
+              <div *ngFor="let form of forms" class="form-row">
+                <div class="form-row-left">
+                  <mat-icon class="form-row-icon">dynamic_form</mat-icon>
+                  <div class="form-row-info">
+                    <span class="form-row-name">{{ form.name }}</span>
+                    <span class="form-row-meta">
+                      {{ form.createdUser || '' }}{{ form.createdUser && form.createdOn ? ' · ' : '' }}{{ form.createdOn | date:'dd MMM yyyy' }}
+                    </span>
+                  </div>
+                </div>
+                <div class="form-row-right">
+                  <span class="form-status-chip" [class.status-draft]="form.entityFormStatusId === 'EFS-DR'"
+                        [class.status-complete]="form.entityFormStatusId === 'EFS-CR'">
+                    {{ form.entityFormStatusName }}
+                  </span>
+                  <button mat-icon-button matTooltip="View History" (click)="viewFormHistory(form)">
+                    <mat-icon>history</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Edit" (click)="openForm(form)">
+                    <mat-icon>open_in_new</mat-icon>
+                  </button>
+                  <button mat-icon-button matTooltip="Delete" (click)="deleteForm(form)">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Activity Log Tab -->
+          <div class="tab-panel" *ngIf="activeTab === 'activity'">
+            <ng-container *ngIf="activityLogLoading">
+              <div class="detail-loader">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>Loading activity...</span>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="!activityLogLoading">
+              <div *ngIf="activityLog.length === 0" class="empty-state">
+                <mat-icon>timeline</mat-icon>
+                <span>No activity recorded</span>
+              </div>
+              <div *ngFor="let event of activityLog" class="activity-item">
+                <div class="activity-dot" [ngClass]="event.statusId === 'RQ-CO' ? 'dot-complete' :
+                   event.statusId === 'RQ-IP' ? 'dot-inprogress' :
+                   event.statusId === 'RQ-CR' ? 'dot-created' : 'dot-default'">
+                </div>
+                <div class="activity-content">
+                  <span class="activity-status">{{ event.statusName || event.name }}</span>
+                  <span class="activity-user" *ngIf="event.createdUser">{{ event.createdUser }}</span>
+                  <span class="activity-time">{{ event.eventTime | date:'dd MMM yyyy hh:mm a' }}</span>
+                  <span class="activity-comment" *ngIf="event.comments">— {{ event.comments }}</span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+        </div><!-- /detail-scroll -->
+      </div><!-- /detail-content -->
+
+      <!-- Document Preview Panel -->
+      <div class="doc-preview-panel" [class.fullscreen]="isPreviewFullscreen" *ngIf="selectedPreviewDoc" #previewPanel>
+        <div class="doc-preview-header">
+          <div class="doc-preview-title">
+            <mat-icon class="doc-preview-file-icon">insert_drive_file</mat-icon>
+            <div class="doc-preview-info">
+              <span class="doc-preview-name">{{ selectedPreviewDoc.fileName || selectedPreviewDoc.documentTypeName }}</span>
+              <span class="doc-preview-type">{{ selectedPreviewDoc.documentTypeName }}</span>
+            </div>
+          </div>
+          <div class="doc-preview-header-actions">
+            <button mat-icon-button matTooltip="Zoom out" (click)="zoomOut()" [disabled]="zoomLevel <= 0.5">
+              <mat-icon>zoom_out</mat-icon>
+            </button>
+            <span class="zoom-level-label" (click)="resetZoom()" matTooltip="Reset zoom">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+            <button mat-icon-button matTooltip="Zoom in" (click)="zoomIn()" [disabled]="zoomLevel >= 4">
+              <mat-icon>zoom_in</mat-icon>
+            </button>
+            <button mat-icon-button [matTooltip]="isPreviewFullscreen ? 'Exit fullscreen' : 'Fullscreen'" (click)="togglePreviewFullscreen()">
+              <mat-icon>{{ isPreviewFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+            </button>
+            <button mat-icon-button class="doc-preview-close-btn" (click)="closeDocumentPreview()" matTooltip="Close preview">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="doc-preview-body" (wheel)="onPreviewWheel($event)">
+          <!-- Loading spinner -->
+          <div *ngIf="previewLoading" class="doc-preview-loader">
+            <mat-spinner diameter="36"></mat-spinner>
+          </div>
+
+          <div *ngIf="!previewLoading"
+               class="doc-preview-zoom-wrapper"
+               [style.transform]="'scale(' + zoomLevel + ')'"
+               [style.paddingBottom.%]="zoomLevel > 1 ? (zoomLevel - 1) * 100 : 0"
+               [style.paddingRight.%]="zoomLevel > 1 ? (zoomLevel - 1) * 100 : 0">
+          <ng-container [ngSwitch]="previewTypeKey">
+            <iframe *ngSwitchCase="'pdf'" [src]="previewSafeUrl" class="doc-preview-iframe" frameborder="0"></iframe>
+            <img *ngSwitchCase="'image'" [src]="previewSafeUrl" class="doc-preview-image" alt="Document preview"/>
+            <pre *ngSwitchCase="'text'" class="doc-preview-text">{{ previewTextContent }}</pre>
+            <div *ngSwitchCase="'excel'" class="doc-preview-placeholder">
+              <mat-icon>table_chart</mat-icon>
+              <span>Excel preview not available</span>
+              <button mat-button class="doc-preview-dl-btn" (click)="downloadDocument(selectedPreviewDoc)">
+                <mat-icon>download</mat-icon> Download
+              </button>
+            </div>
+            <div *ngSwitchCase="'word'" class="doc-preview-placeholder">
+              <mat-icon>description</mat-icon>
+              <span>Word preview not available</span>
+              <button mat-button class="doc-preview-dl-btn" (click)="downloadDocument(selectedPreviewDoc)">
+                <mat-icon>download</mat-icon> Download
+              </button>
+            </div>
+            <div *ngSwitchCase="'ppt'" class="doc-preview-placeholder">
+              <mat-icon>slideshow</mat-icon>
+              <span>PowerPoint preview not available</span>
+              <button mat-button class="doc-preview-dl-btn" (click)="downloadDocument(selectedPreviewDoc)">
+                <mat-icon>download</mat-icon> Download
+              </button>
+            </div>
+            <div *ngSwitchCase="'video'" class="doc-preview-placeholder">
+              <mat-icon>videocam</mat-icon>
+              <span>Video preview not available</span>
+              <button mat-button class="doc-preview-dl-btn" (click)="downloadDocument(selectedPreviewDoc)">
+                <mat-icon>download</mat-icon> Download
+              </button>
+            </div>
+            <div *ngSwitchCase="'audio'" class="doc-preview-placeholder">
+              <mat-icon>audiotrack</mat-icon>
+              <span>Audio preview not available</span>
+              <button mat-button class="doc-preview-dl-btn" (click)="downloadDocument(selectedPreviewDoc)">
+                <mat-icon>download</mat-icon> Download
+              </button>
+            </div>
+            <div *ngSwitchDefault class="doc-preview-placeholder">
+              <mat-icon>description</mat-icon>
+              <span>Preview not available for this file type</span>
+              <button mat-button class="doc-preview-dl-btn" (click)="downloadDocument(selectedPreviewDoc)">
+                <mat-icon>download</mat-icon> Download
+              </button>
+            </div>
+          </ng-container>
+          </div><!-- /zoom-wrapper -->
+        </div>
+      </div>
+
+    </div><!-- /detail-body-row -->
+
+      <!-- Bottom Action Bar -->
+      <div class="action-bar">
+        <button mat-raised-button class="rework-btn" (click)="reworkTask()">
+          <mat-icon>replay</mat-icon>
+          Rework
+        </button>
+        <button mat-raised-button class="pass-btn" *ngIf="selectedTask.requestStatusId !== 'RQ-CO'" (click)="passTask()">
+          <mat-icon>check_circle_outline</mat-icon>
+          Pass
+        </button>
+      </div>
+    </ng-container>
+
+  </div><!-- /task-detail-panel -->
+
+</div>

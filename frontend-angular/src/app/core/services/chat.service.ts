@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs';
 import { ChatMessage, Conversation } from '../../shared/models/chat.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
-import { FacilityService } from './facility.service';
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -26,8 +25,7 @@ export class ChatService {
   private currentAbortController: AbortController | null = null;
 
   // Removed shared tokenBuffer state
-
-  constructor(private auth: AuthService, private zone: NgZone, private facilitySvc: FacilityService) {}
+  constructor(private auth: AuthService, private zone: NgZone) {}
 
   getCurrentMessages(): ChatMessage[] {
     return this.messagesSubject.value;
@@ -242,7 +240,6 @@ export class ChatService {
           question,
           user_id: user?.id || 'TW', 
           session_id: this.activeConvId || 'default',
-          filters: this.facilitySvc.getActiveFilters(),
         }),
       });
 

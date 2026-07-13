@@ -1,0 +1,47 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div style="margin-left: 10px;">{{data?.type === 'porter' ? ('Rating' | translate) :('Remarks' | translate)}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+     
+     <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 90px);">
+        <div [formGroup]="remarkForm">
+        <div class="ovi-row-gap" style="max-width: 400px; ">
+                <div *ngIf="data?.type !== 'porter'" class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Action Type"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Action Type'|translate"  formControlName="actionTypeId">
+                            <mat-option *ngFor="let o of actionTypeList" [value]="o.code">{{o.value}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div *ngIf="data?.type === 'porter'" class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{ "Rating" | translate }}</mat-label>
+                    <div style="display:flex;flex-direction: row">
+                        <div style="margin-left:10px !important" *ngFor="let rating of ratingStar ; index as i">
+                            <mat-icon fontSet="material-icons" class="star"
+                                [ngClass]="{ filled: i < remarkForm.get('rating')?.value }"
+                                (click)="setRating(i+1)" (keydown.enter)="fixClick()">star</mat-icon>
+                        </div>
+                    </div>
+                </div>
+                <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size"> {{ data?.type === 'porter' ? ('Comments' | translate) :('Remarks' | translate) }}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="data?.type === 'porter' ? ('Comments' | translate) : ('Remarks' | translate)"
+                         formControlName="remarks" rows=4></textarea>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="data?.type !== 'porter'" mat-button class="active-btn" appDebounceClick
+        (debounceClick)="updateRemarks()" [debounceTime]="300" cdkFocusInitial>{{'Update'|translate}}</button>
+        <button *ngIf="data?.type === 'porter'" mat-button class="active-btn" appDebounceClick
+        (debounceClick)="updateRemarks()" [disabled]="!remarkForm.get('rating')?.value" [debounceTime]="300"
+        cdkFocusInitial>{{'Save'|translate}}</button>
+    </div>
+</div>

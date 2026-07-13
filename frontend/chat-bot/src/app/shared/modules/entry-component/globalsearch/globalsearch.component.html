@@ -1,0 +1,205 @@
+<div class="global-serach-container">
+    <div class="ovi-font-family" style="display: flex; justify-content: flex-end; padding: 0px 6px;align-items: center;">
+        <span [class.filterExpanded]="isFilterExp" [class.focused-no-right-border]="isInputFocused && !isMenuOpen"
+            [class.focused-all-border]="isMenuOpen" class="search-filter-box"
+            [ngClass]="{'ovi-prmry-bg-clr ovi-prmry-wht-clr': keys !== null && isFilterExp}"
+            [matMenuTriggerFor]="menu" (menuOpened)="onMenuOpen()" (menuClosed)="onMenuClose()">
+            <div *ngIf="isFilterExp" style="display: flex; align-items: center;">
+                <span class="selected-opt-text">{{displayValue}}</span>
+                <span class="material-icons" [ngStyle]="{'color': keys !== null ? '#ffff' : '#4d4d4d'}"
+                    style="padding: 0;"> arrow_drop_down </span>
+            </div>
+        </span>
+        <input #searchValue matInput class="searchBox" [formControl]="seachCtrl"
+            #autocompleteTrigger="matAutocompleteTrigger" [matAutocomplete]="auto" autofocus
+            (keyup)="inputText(searchValue.value)" (search)="clearDropdown(searchValue.value)"
+            [class.expanded]="isExpanded" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter input to search (Min 4 chars)'|translate" (focus)="onInputFocus()"
+            (blur)="onInputBlur()">
+            <img  src="../../../../../assets/Alert/common_icons/search_icn.svg" alt="dashboard" class="ovi-img-size" (click)="expandSearchBox()" (keydown.enter)="fixClick()">
+        <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)" autoActiveFirstOption
+            class="custom-dash-search-autocomplete">
+            <mat-option *ngIf="isShowSearch" style="display: none;"></mat-option>
+            <div class="search-result ovi-font-family" *ngIf="searchlist && !this.searchClose">
+                <div *ngIf="searchlist != 'empty'" style="max-height: 410px;">
+                    <div
+                        style="max-height: 400px;overflow-x: hidden; overflow-y: auto; background: #ecf4f7; padding: 3px 8px;">
+                        <div class="option-container" *ngFor="let option of searchlist;let index = index">
+                            <div *ngIf="keys === 'GST-AS'">
+                                <div>
+                                    <div style="display: flex;justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap:5px">
+                                            <mat-icon class="option-icon">work_outline</mat-icon>
+                                            <span class="global-search-title">{{option.name}}</span>
+                                        </div>
+                                        <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;" (click)="$event.stopPropagation();getCurrentLoc(option,index, null);" (keydown.enter)="fixClick()">
+                                            <mat-icon class="ovi-fnt-sze15" style="padding: 1px;" [ngStyle]="{'color': option.tagId?'#3A7AFE':'#6d6f73','cursor':option.tagId?'pointer':'default'}"> place</mat-icon>
+                                        </div>
+                                        <span *ngIf="option['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                            {{option['currentLoc']}}
+                                        </span>
+                                    </div>
+                                    <div class="golbal-sub-text">
+                                        <div class="sub-text">{{"Asset Serial No"|translate}}: <span class="option-text">&nbsp;
+                                                {{option.assetSerialNumber}}</span></div>
+                                        <div class="sub-text">{{"Asset Type"|translate}}: <span class="option-text">&nbsp;
+                                                {{option.assetType}}</span></div>
+                                        <div class="sub-text">{{"Asset Category"|translate}}: <span class="option-text">&nbsp;
+                                                {{option.assetCategory}}</span>
+                                            <span class="option-text view-map-cont" (click) = "$event.stopPropagation();getCurrentLoc(option,index, 'map');" *ngIf="option.tagId" (keydown.enter)="fixClick()"> &nbsp; view map</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="keys === 'GST-MR'">
+                                <div>
+                                    <div style="display: flex;justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap:5px">
+                                            <img height="22px" width="22px"  alt="health-check" 
+                                                src="../../../../../assets/Alert/common_icons/health-check.png" />
+                                            <span class="global-search-title">{{option.patientName}}</span>
+                                        </div>
+                                        <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;" (click)="$event.stopPropagation();getCurrentLoc(option,index, null);" (keydown.enter)="fixClick()">
+                                            <mat-icon class="ovi-fnt-sze15" style="padding: 1px;" [ngStyle]="{'color': option.tagId?'#3A7AFE':'#6d6f73','cursor':option.tagId?'pointer':'default'}"> place</mat-icon>
+                                        </div>
+                                        <span *ngIf="option['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                            {{option['currentLoc']}}
+                                        </span>
+                                    </div>
+                                    <div class="golbal-sub-text">
+                                        <div class="sub-text">{{"UHID"|translate}}: <span
+                                                class="option-text">&nbsp;{{option.uhid}}</span></div>
+                                        <div class="sub-text"> {{"Mobile Number"|translate}}: <span
+                                            class="option-text">&nbsp;{{option.mobileNumber}}</span></div>
+                                        <div class="sub-text">{{"Tag Id"|translate}}: <span *ngIf="option.tagId"
+                                                class="option-text">&nbsp;{{option.tagId || 'InActive'}}</span>
+                                            <span class="option-text view-map-cont" (click) = "$event.stopPropagation();getCurrentLoc(option,index, 'map');" *ngIf="option.tagId" (keydown.enter)="fixClick()"> &nbsp; view map</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="keys === 'GST-TA'">
+                                <div>
+                                    <div style="display: flex;justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap:5px">
+                                            <img height="22px" width="22px"  alt="hospital" 
+                                                src="../../../../../assets/Alert/common_icons/hospital tag.svg" />
+                                            <span class="global-search-title">{{option.tagId}}</span>
+                                        </div>
+                                        <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;" (click)="$event.stopPropagation();getCurrentLoc(option,index, null);" (keydown.enter)="fixClick()">
+                                            <mat-icon class="ovi-fnt-sze15" style="padding: 1px;" [ngStyle]="{'color': option.tagId?'#3A7AFE':'#6d6f73','cursor':option.tagId?'pointer':'default'}"> place</mat-icon>
+                                        </div>
+                                        <span *ngIf="option['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                            {{option['currentLoc']}}
+                                        </span>
+                                    </div>
+                                    <div class="golbal-sub-text">
+                                        <div class="sub-text">{{"Tag Type"|translate}}: <span class="option-text">&nbsp;
+                                                {{option.tagTypeId}}</span>
+                                            <span class="option-text view-map-cont" (click) = "$event.stopPropagation();getCurrentLoc(option,index, 'map');" *ngIf="option.tagId" (keydown.enter)="fixClick()"> &nbsp; view map</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="keys === 'GST-PA'" (click)="patientSummaryInfo(option)">
+                                <div>
+                                    <div style="display: flex;justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap:5px">
+                                            <img height="26px" width="26px"  alt="Patient" 
+                                                src="../../../../../assets/Alert/common_icons/patient new.svg" />
+                                            <span class="global-search-title">{{option.name}}</span>
+                                        </div>
+                                        <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;" (click)="$event.stopPropagation();getCurrentLoc(option,index, null);" (keydown.enter)="fixClick()">
+                                            <mat-icon class="ovi-fnt-sze15" style="padding: 1px;" [ngStyle]="{'color': option.tagId?'#3A7AFE':'#6d6f73','cursor':option.tagId?'pointer':'default'}"> place</mat-icon>
+                                        </div>
+                                        <span *ngIf="option['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                            {{option['currentLoc']}}
+                                        </span>
+                                    </div>
+                                    <div class="golbal-sub-text">
+                                        <div class="sub-text">{{"Main Identifier Id"|translate}}: <span class="option-text">&nbsp;
+                                                {{option.mainidentifier}}</span></div>
+                                        <div class="sub-text">{{"gender"|translate}}: &nbsp;<span class="material-icons ovi-fnt-sze16"
+                                                [ngStyle]="{'color': option.gender === 'Male' ? '#5e98b3' : '#df6b9c'}"
+                                                style="padding: 0px;">
+                                                {{option.gender === 'Male' ? 'male' : option.gender === 'Female' ?
+                                                'female' : ''}}</span>
+                                        </div>
+                                        <div class="sub-text">{{"Last Visit Type"|translate}}: <span class="option-text">&nbsp;
+                                                {{option.lastVisitDate | date: "dd-MM-yyyy, HH:mm"}}</span>
+                                            <span class="option-text view-map-cont" (click) = "$event.stopPropagation();getCurrentLoc(option,index, 'map');" *ngIf="option.tagId" (keydown.enter)="fixClick()"> &nbsp; view map</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="keys === 'GST-US'">
+                                <div>
+                                    <div style="display: flex;justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap:5px">
+                                            <mat-icon class="option-icon">person</mat-icon>
+                                            <span class="global-search-title">{{option.name}}</span>
+                                        </div>
+                                        <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;" (click)="$event.stopPropagation();getCurrentLoc(option,index, null);" (keydown.enter)="fixClick()">
+                                            <mat-icon class="ovi-fnt-sze15"  style="padding: 1px;" [ngStyle]="{'color': option.tagId?'#3A7AFE':'#6d6f73','cursor':option.tagId?'pointer':'default'}"> place</mat-icon>
+                                        </div>
+                                        <span *ngIf="option['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                            {{option['currentLoc']}}
+                                        </span>
+                                    </div>
+                                    <div class="golbal-sub-text">
+                                        <div class="sub-text">{{"User Id"|translate}}: <span class="option-text"> &nbsp;
+                                                {{option.id}}</span></div>
+                                        <div class="sub-text">
+                                            {{"User Tag Id"|translate}}: 
+                                            <span class="option-text"> &nbsp;{{option.tagId}}</span>
+                                            <span class="option-text view-map-cont" (click) = "$event.stopPropagation();getCurrentLoc(option,index, 'map');" *ngIf="option.tagId" (keydown.enter)="fixClick()"> &nbsp; view map</span>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="searchlist != 'empty'" class="ovi-lbl-text-size tl-br-styl" appDebounceClick
+                    (debounceClick)="globalSearch(searchlist[0]);" [debounceTime]="300" (click)="searchValue.value=''" (keydown.enter)="fixClick()"
+                    style="display: flex;justify-content: center;align-items: center;">
+                    <a [ngClass]="searchlist != 'empty' ? 'tl-br-styl_1 search-data cur-ptr' : ''">
+                        <small >{{"More"|translate}}</small></a>
+                </div>
+                <div class="tl-br-styl_2 ovi-lbl-text-size" *ngIf="searchlist == 'empty' && clearSearch == true">
+                    {{"Your search returned no matches"|translate}}.
+                </div>
+            </div>
+        </mat-autocomplete>
+
+        <mat-menu #menu="matMenu">
+            <div>
+                <button mat-menu-item *ngFor="let filter of filterOptionsNew" (click)="selected(filter)"
+                    (mouseenter)="onHover(true)" (mouseleave)="onHover(false)"
+                    [ngClass]="{'highlight-global-opt': !isHighlightHovered && (displayValue && displayValue.includes(filter.value))}"
+                    class="golbal-fiter">
+                    <span style="display: flex;">
+                        <mat-icon *ngIf="filter.code === 'GST-AS'"
+                            [ngClass]="{'icon-background': !isHighlightHovered && (displayValue && displayValue.includes(filter.value))}"
+                            style="margin-right: 10px;" class="option-icon">work_outline</mat-icon>
+                        <mat-icon *ngIf="filter.code === 'GST-US'"
+                            [ngClass]="{'icon-background': !isHighlightHovered && (displayValue && displayValue.includes(filter.value))}"
+                            style="margin-right: 10px;" class="option-icon">person</mat-icon>
+                        <img *ngIf="filter.code === 'GST-MR'"  alt="health-check" 
+                            [ngClass]="{'icon-background': !isHighlightHovered && (displayValue && displayValue.includes(filter.value))}"
+                            style="margin-right: 10px;" height="20px" width="20px"
+                            src="../../../../../assets/Alert/common_icons/health-check.png" />
+                        <img *ngIf="filter.code === 'GST-PA'"  alt="patient" 
+                            [ngClass]="{'icon-background': !isHighlightHovered && (displayValue && displayValue.includes(filter.value))}"
+                            style="margin-right: 10px;" height="20px" width="20px"
+                            src="../../../../../assets/Alert/common_icons/patient new.svg" />
+                        <img *ngIf="filter.code === 'GST-TA'"  alt="hospital" 
+                            [ngClass]="{'icon-background': !isHighlightHovered && (displayValue && displayValue.includes(filter.value))}"
+                            style="margin-right: 10px;" height="20px" width="20px"
+                            src="../../../../../assets/Alert/common_icons/hospital tag.svg" />
+                    </span>
+                    {{filter.value}}</button>
+            </div>
+        </mat-menu>
+    </div>
+</div>

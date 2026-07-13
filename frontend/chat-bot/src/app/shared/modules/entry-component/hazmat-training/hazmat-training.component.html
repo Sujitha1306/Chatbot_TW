@@ -1,0 +1,256 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!this.data" >{{"Create Activity"|translate}} </div>
+        <div *ngIf="this.data" >{{"Modify Activity"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 145px);">
+        <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+            <mat-tab label="{{'Hazard Config'|translate}}">
+                <ng-template mat-tab-label >{{"Hazard Config"|translate}}</ng-template>
+                    <div class="ovi-row-gap" [formGroup]="activitiesForm" style="height: 400px;overflow: auto;">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Activity Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity Name'|translate" autocomplete="off" formControlName="name">
+                                        <mat-error *ngIf="activitiesForm.controls.name.invalid">
+                                            <span [hidden]="!activitiesForm.controls['name'].errors.required">{{"Activity Name
+                                                is required"|translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Hazard Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hazard Type'|translate" formControlName="hazardType" [disableOptionCentering]="true"
+                                        [disabled]="this.data?.configValue">
+                                            <mat-option *ngFor="let data of hazardTypeList" [value]="data.code" (click)="getConfigValidation(data.code)" (keydown.enter)="fixClick()">{{data.value}}</mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="activitiesForm.controls.hazardType.invalid" class="error-txt-1">
+                                            <span 
+                                                [hidden]="!activitiesForm.controls['hazardType'].errors.required">{{"Hazard Type
+                                                is required"|translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate" formControlName="roleIds" [disableOptionCentering]="true" multiple>
+                                        <mat-option *ngFor="let data of roleList" [value]="data.id">
+                                            {{data.name}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Min"|translate}} <span *ngIf="this['min' + 'Mandatory']" class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput (keyup)="minExceed = false;maxExceed = false;" (mouseleave)="minMaxValidation('min');"
+                                          appPlaceholder [showPlaceholder]="false" [placeholderText]="'Min'|translate" autocomplete="off" formControlName="min">
+                                        <mat-hint *ngIf="minExceed == true">
+                                            <span style="color:red;">{{"*Min should be lesser than Max"|translate}}.</span>
+                                        </mat-hint>
+                                        <mat-error *ngIf="activitiesForm.controls.min.invalid" class="error-txt-1">
+                                            <span [hidden]="!activitiesForm.controls['min'].errors.required">{{"Min value is required"|translate}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['min'].errors.min">{{"Minimum value is"|translate}} {{this['min' + 'Min']}}</span>
+                                            <span [hidden]="!activitiesForm.controls['min'].errors.max">{{"Maximum value is"|translate}} {{this['min' + 'Max']}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Max"|translate}} <span *ngIf="this['max' + 'Mandatory']" class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput (keyup)="minExceed = false;maxExceed = false;" (mouseleave)="minMaxValidation('max');"
+                                          appPlaceholder [showPlaceholder]="false" [placeholderText]="'Max'|translate" autocomplete="off" formControlName="max">
+                                        <mat-hint *ngIf="maxExceed == true">
+                                            <span style="color:red;">{{"*Max should be greater than Min"|translate}}.</span>
+                                        </mat-hint>
+                                        <mat-error *ngIf="activitiesForm.controls.max.invalid" class="error-txt-1">
+                                            <span [hidden]="!activitiesForm.controls['max'].errors.required">{{"Max value is required"|translate}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['max'].errors.min">{{"Minimum value is"|translate}} {{this['max' + 'Min']}}</span>
+                                            <span [hidden]="!activitiesForm.controls['max'].errors.max">{{"Maximum value is"|translate}} {{this['max' + 'Max']}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Units"|translate}} <span *ngIf="this['units' + 'Mandatory']" class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Units'|translate" autocomplete="off" formControlName="units" maxlength="10">
+                                        <mat-error *ngIf="activitiesForm.controls.units.invalid" class="error-txt-1">
+                                            <span [hidden]="!activitiesForm.controls['units'].errors.required">{{"units is required"}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['units'].errors.maxlength">{{"Maximum allowed digits are 10"|translate}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['units'].errors.min">{{"Minimum value is"|translate}} {{this['units' + 'Min']}}</span>
+                                            <span [hidden]="!activitiesForm.controls['units'].errors.max">{{"Maximum value is"|translate}} {{this['units' + 'Max']}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Alarm Level"|translate}} <span *ngIf="this['alarmLevel' + 'Mandatory']" class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput (keyup)="validateAlarm($event.target.value);" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Alarm Level'|translate" autocomplete="off"
+                                             formControlName="alarmLevel">
+                                        <mat-hint>
+                                            <span *ngIf="alarmExceed == true" style="color:red;">{{"Values should not be exceed more than four"|translate}}.&nbsp;</span>
+                                            <span *ngIf="alarmLevelExceed" style="color:red;">{{"Values should be lesser than Max and greater than Min"|translate}}.&nbsp;</span>
+                                        </mat-hint>
+                                        <mat-error *ngIf="activitiesForm.controls.alarmLevel.invalid" class="error-txt-1">
+                                            <span [hidden]="!activitiesForm.controls['alarmLevel'].errors.required">{{"Alarm Level is required"|translate}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['alarmLevel'].errors.min">{{"Minimum value is"|translate}} {{this['alarmLevel' + 'Min']}}</span>
+                                            <span [hidden]="!activitiesForm.controls['alarmLevel'].errors.max">{{"Maximum value is"|translate}} {{this['alarmLevel' + 'Max']}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Proximity Detect Level"|translate}}</mat-label>
+                                    <div>
+                                        <span class="ovi-fnt-sze12">0</span>
+                                        <mat-slider #sliderRange min="0" max="500" style="width: calc(100% - 75px);" (change)="centimeterChanged();"
+                                        formControlName="rssiRange" [thumbLabel]="true" [step]="step"></mat-slider>
+                                        <span class="ovi-fnt-sze12" style="padding-left: 10px;">500 cm</span>
+                                    </div>
+                                    <span class="ovi-fnt-sze12" style="margin-left: 18%;font-weight: 600;">{{sliderRange.value}} cm ({{meters}} m)</span>
+                            </div>
+                            <div class="ovi-row-three-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"UWB Beacon Seperation Distance"|translate}}</mat-label>
+                                    <div>
+                                        <span class="ovi-fnt-sze12">300</span>
+                                        <mat-slider #sliderMrssiRange min="300" max="1500" style="min-width: 100px;width: calc(100% - 90px);" (change)="centimeterChanged();"
+                                        formControlName="mrssiRange" [thumbLabel]="true" [step]="step"></mat-slider>
+                                        <span  class="ovi-fnt-sze12" style="padding-left: 10px;">1500 cm</span>
+                                    </div>
+                                    <span  class="ovi-fnt-sze12" style="margin-left: 18%;font-weight: 600;">{{sliderMrssiRange.value}} cm ({{mrssi}} m)</span>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="isActive"[disableOptionCentering]="true"
+                                    [disabled]="this.data?.configValue">
+                                        <mat-option *ngFor="let data of statusList" [value]="data.code">
+                                            {{data.value}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Hazard"|translate}} <span *ngIf="this['hazard' + 'Mandatory']" class="mandatory-field">*</span></mat-label>
+                                    <div class="act-radio-button">
+                                        <mat-radio-group formControlName="hazard">
+                                            <mat-radio-button class="hazmat-radio" *ngFor="let o of hazardList" [value]="o.code">
+                                                {o.value, select, Min {{{"Min"|translate}}} Max {{{"Max"|translate}}}}</mat-radio-button>
+                                        </mat-radio-group>
+                                </div>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="isOxygenMinMax === true">
+                                    <mat-label class="ovi-lbl-text-size">{{"Oxygen Min"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput (keyup)="minOxygenExceed = false;maxOxygenExceed = false;" (mouseleave)="minMaxOxygenValidation('minOxygen');"
+                                          appPlaceholder [showPlaceholder]="false" [placeholderText]="'Oxygen Min'|translate" autocomplete="off" formControlName="minOxygen">
+                                        <mat-hint *ngIf="minOxygenExceed == true">
+                                            <span style="color:red;">{{"*Oxygen Min should be lesser than Oxygen Max"|translate}}.</span>
+                                        </mat-hint>
+                                        <mat-error *ngIf="activitiesForm.controls.minOxygen.invalid" class="error-txt-1">
+                                            <span [hidden]="!activitiesForm.controls['minOxygen'].errors.required">{{"Oxygen Min value is required"|translate}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['minOxygen'].errors.min">{{"Minimum value is 10"|translate}}</span>
+                                            <span [hidden]="!activitiesForm.controls['minOxygen'].errors.max">{{"Maximum value is 20"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="isOxygenMinMax === true">
+                                    <mat-label class="ovi-lbl-text-size">{{"Oxygen Max"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput (keyup)="minOxygenExceed = false;maxOxygenExceed = false;" (mouseleave)="minMaxOxygenValidation('maxOxygen');"
+                                          appPlaceholder [showPlaceholder]="false" [placeholderText]="'Oxygen Max'|translate" autocomplete="off"formControlName="maxOxygen">
+                                        <mat-hint *ngIf="maxOxygenExceed == true">
+                                            <span style="color:red;">{{"*Oxygen Max should be greater than Oxygen Min"|translate}}.</span>
+                                        </mat-hint>
+                                        <mat-error *ngIf="activitiesForm.controls.maxOxygen.invalid" class="error-txt-1">
+                                            <span [hidden]="!activitiesForm.controls['maxOxygen'].errors.required">{{"Oxygen Max value is required"|translate}}.</span>
+                                            <span [hidden]="!activitiesForm.controls['maxOxygen'].errors.min">{{"Minimum value is 11"|translate}}</span>
+                                            <span [hidden]="!activitiesForm.controls['maxOxygen'].errors.max">{{"Maximum value is 21"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-matfrmfld-brdrds-right ovi-row-three-clmn">
+                                <div style="display: inline-flex;width: 100%;">
+                                    <div class="ovi-matfrmfld-brdrds-right ovi-matfrmfld-drpdwn-top-box" style="width: 20%;padding-right: 10px;">
+                                        <div class="ovi-lbl-text-size" style="width: max-content;">{{"RAYE Flare"|translate}} </div>
+                                        <div style="display: flex;margin-top: -21px;margin-bottom: 12px;">
+                                            <div class="filter-item-box filter-box1-box2" style="padding-right: 10px;">
+                                                <div id="filter-box11">{{"R"|translate}}</div>
+                                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 25px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="r" (keyup)="validate_r_a_y_e($event.target.value, 'r');">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="filter-item-box filter-box1-box2" style="padding-right: 10px;">
+                                                <div id="filter-box11">{{"A"|translate}}</div>
+                                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 25px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="a" (keyup)="validate_r_a_y_e($event.target.value, 'a');">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="filter-item-box filter-box1-box2" style="padding-right: 10px;">
+                                                <div id="filter-box11">{{"Y"|translate}}</div>
+                                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 25px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="y" (keyup)="validate_r_a_y_e($event.target.value, 'y');">
+                                                </mat-form-field>
+                                            </div>
+                                            <div class="filter-item-box filter-box1-box2" style="padding-right: 10px;">
+                                                <div id="filter-box11">{{"E"|translate}}</div>
+                                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 25px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="e" (keyup)="validate_r_a_y_e($event.target.value, 'e');">
+                                                </mat-form-field>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div  class="ovi-fnt-sze10">
+                                    <mat-hint *ngIf="rExceed || aExceed || yExceed || eExceed">
+                                        <span style="color:red;">{{"*Value should be lesser than Max and greater than Min."|translate}}</span>
+                                    </mat-hint>
+                                    <mat-error *ngIf="activitiesForm.controls.r.invalid" class="error-txt-1">
+                                        <span [hidden]="!activitiesForm.controls['r'].errors.required">{{"R is required."|translate}}</span>
+                                    </mat-error>
+                                    <mat-error *ngIf="activitiesForm.controls.a.invalid" class="error-txt-1">
+                                        <span [hidden]="!activitiesForm.controls['a'].errors.required">{{"A is required."|translate}}</span>
+                                    </mat-error>
+                                    <mat-error *ngIf="activitiesForm.controls.y.invalid" class="error-txt-1">
+                                        <span [hidden]="!activitiesForm.controls['y'].errors.required">{{"Y is required."|translate}}</span>
+                                    </mat-error>
+                                    <mat-error *ngIf="activitiesForm.controls.e.invalid" class="error-txt-1">
+                                        <span [hidden]="!activitiesForm.controls['e'].errors.required">{{"E is required."|translate}}</span>
+                                    </mat-error>
+                                    <mat-error *ngIf="activitiesForm.controls.r.invalid || activitiesForm.controls.a.invalid || activitiesForm.controls.y.invalid || activitiesForm.controls.e.invalid" class="error-txt-1">
+                                        <span [hidden]="!activitiesForm.controls['r'].errors.pattern || !activitiesForm.controls['a'].errors.pattern || !activitiesForm.controls['y'].errors.pattern || !activitiesForm.controls['e'].errors.pattern">{{"please enter numbers only"|translate}}.</span>
+                                    </mat-error> 
+                                </div>
+                            </div>
+                        <div class="box-13" *ngIf="this.data?.configValue" style="width: 97%;">
+                                <mat-label class="ovi-lbl-text-size">{{"Hazard Config"|translate}} *</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hazard Config'|translate" rows=6 readonly
+                                        formControlName="configValue"></textarea>
+                                </mat-form-field>
+                        </div>
+                    </div>
+            </mat-tab>
+            <mat-tab *ngIf="!this.data?.mapType" label="{{'Location Config'|translate}}" [disabled]="this.activitiesForm.invalid">
+                <ng-template mat-tab-label >{{"Location Config"|translate}}</ng-template>
+                <app-hazmat-map *ngIf="selectedTabIndex === 1" [hazardType]="activitiesForm.controls['hazardType'].value" 
+                [hazardActivity]="activitiesForm.controls" [mrssi]="this.activitiesForm.controls['mrssiRange'].value"
+                [configValue]="this.data?.configValue ? this.data?.configValue : this.mapData"
+                [valRAYE]="valRAYE" [openActivities]="false" (createStatus)="createStatus($event)"></app-hazmat-map>      
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button *ngIf="selectedTabIndex === 0" mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="selectedTabIndex === 1" mat-button class="active-btn"  (click)="selectTab(0)">{{"Back"|translate}}</button>
+        <button *ngIf="selectedTabIndex === 0 && !this.data?.mapType" mat-button class="active-btn" [disabled]="this.activitiesForm.invalid || 
+        (minExceed || maxExceed || alarmExceed || alarmLevelExceed || minOxygenExceed || maxOxygenExceed || rExceed || aExceed || yExceed || eExceed)" 
+        (click)="selectTab(1)">{{"Next"|translate}}</button>
+        <button *ngIf="selectedTabIndex === 1 && !this.data?.configValue" mat-button class="active-btn" [disabled]="this.activitiesForm.invalid || !this.enableCreate"
+        appDebounceClick (debounceClick)="createConfig()" [debounceTime]="300">{{"Create"|translate}}</button>
+        <button *ngIf="selectedTabIndex === 1 && this.data?.configValue" mat-button class="active-btn" [disabled]="this.activitiesForm.invalid || !this.enableCreate"
+        appDebounceClick (debounceClick)="updateConfig()" [debounceTime]="300">{{"Update"|translate}}</button>
+        <button *ngIf="selectedTabIndex === 0 && this.data?.configValue && this.data?.mapType" mat-button class="active-btn" [disabled]="!this.activitiesForm.dirty"
+        appDebounceClick (debounceClick)="updatemrssi();" [debounceTime]="300">{{"Save"|translate}}</button>
+    </div>
+</div>

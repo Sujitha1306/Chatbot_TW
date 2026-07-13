@@ -1,0 +1,156 @@
+<ng-container *ngIf="menuOpen && !existPrivateUser">
+  <div *ngIf="!selectedAction" class="ovitag-menu-rail ovi-font-family">
+    <div class="ovitag-menu-list">
+      <div *ngFor="let menulist of menu" class="sid-container">
+        <div *ngIf="menulist.code != 'MN_ALL'" class="sid-nav-top-shell">
+          <div class="sid-nav-top" [ngClass]="{
+              'sid-nav-top-ext-sdb-txt': selectedAction,
+              'sid-nav-icn-bg-ext-hghl': selectedAction && selectedMenuId === menulist.id
+            }">
+            <div *ngIf="menulist.link === null" class="sid-nav-icn-bg-wth" [id]="menulist.code" role="button"
+              tabindex="0" (keydown.enter)="fixClick()" (click)="selectMenu(menulist)"
+              (mouseover)="!selectedAction ? menuonHover(menulist) : null; onHoverMenu(menulist.id)"
+              (mouseleave)="!selectedAction ? menuonHover(null) : null; onHoverMenu(null)" [ngClass]="{
+                'sid-nav-icn-bg-mlt': mouseOvermenu === menulist.id,
+                'sid-nav-icn-bg-mlt-clk sid-nav-icn-bg-wht': selectedMenuId == menulist.id && mouseOvermenu !== menulist.id,
+                'sid-nav-icn-bg': mouseOvermenu !== menulist.id || selectedMenuId !== menulist.id && selectedAction,
+                'hover-icon': hoveredMenuId === menulist.id && selectedAction
+              }" [ngStyle]="{
+                left: selectedMenuId == menulist.id && mouseOvermenu !== menulist.id ? '4px' : '70px',
+                height: mouseOvermenu !== menulist.id ? 'auto' : '25px'
+              }">
+              <img class="ovi-img-size-colr" [class.active]="mouseOvermenu === menulist.id"
+                src="/assets/Menus/{{ menulist.iconName }}.svg" alt="menulist" (error)="handleImgError($event)" />
+              <div *ngIf="mouseOvermenu === menulist.id && !selectedAction" (click)="selectMenu(menulist)"
+                (keydown.enter)="fixClick()">
+                <div matLine class="menu-hover-box ovi-font-family">
+                  {{ menulist.name | translate }}
+                  <!-- <span class="menu-text">
+                    <img class="sid-nav-rgt-icn" src="/assets/Alert/ovi-chevron-right.svg" alt="chevron-right" />
+                  </span> -->
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="menulist.link !== null" class="sid-nav-icn-bg-wth"
+              routerLinkActive="customerName === 'kyn' ? 'kyn-nav-select' : 'nav-select'" [routerLink]="[menulist.link]"
+              id="hnav" role="button" tabindex="0" (keydown.enter)="fixClick()" (click)="selectLinkedMenu(menulist)"
+              (mouseover)="!selectedAction ? menuonHover(menulist) : null; onHoverMenu(menulist.id)"
+              (mouseleave)="!selectedAction ? menuonHover(null) : null; onHoverMenu(null)" [ngClass]="{
+                'sid-nav-icn-bg-mlt': mouseOvermenu === menulist.id,
+                'sid-nav-icn-bg-mlt-clk sid-nav-icn-bg-wht': selectedMenuId == menulist.id && mouseOvermenu !== menulist.id,
+                'sid-nav-icn-bg': mouseOvermenu !== menulist.id && selectedMenuId !== menulist.id && selectedAction,
+                'hover-icon': hoveredMenuId === menulist.id && selectedAction
+              }" [ngStyle]="{
+                left: selectedMenuId == menulist.id && mouseOvermenu !== menulist.id ? '4px' : '70px',
+                height: mouseOvermenu !== menulist.id ? 'auto' : '25px'
+              }">
+              <img class="ovi-img-size-colr" src="/assets/Menus/{{ menulist.iconName }}.svg" alt="menulist"
+                (error)="handleImgError($event)" />
+              <div *ngIf="mouseOvermenu === menulist.id && !selectedAction" (click)="selectMenu(menulist)"
+                (keydown.enter)="fixClick()">
+                <div matLine class="menu-hover-box ovi-font-family justify-start">
+                  {{ menulist.name | translate }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ovitag-menu-footer">
+      <div class="sid-nav-btm">
+        <div class="sid-nav-icn-bg-btm" role="button" tabindex="0" (click)="selectMenu(profileMenu)"
+          (keydown.enter)="fixClick()">
+          <img class="ovi-img-size" src="/assets/Alert/user.svg" alt="user" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!selectedAction && menuClickedCode?.length && !isProfileMenuOpen()" class="ovitag-rail-flyout ovi-font-family">
+    <ng-container *ngFor="let selectedMenu of menuClickedCode">
+      <div class="ovitag-rail-flyout-title">
+        <span class="flyout-title-icon">
+          <img src="/assets/Menus/{{ selectedMenu.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
+        </span>
+        <span>{{ selectedMenu.name | translate }}</span>
+        <!-- <mat-icon *ngIf="selectedMenu?.name === menuCode">chevron_right</mat-icon> -->
+      </div>
+      <cdk-sidebar-menu *ngIf="selectedMenu.code === menuCode" [code]="selectedMenu.code"
+        [menName]="selectedMenu.name | translate">
+      </cdk-sidebar-menu>
+    </ng-container>
+  </div>
+
+  <div *ngIf="!selectedAction && isProfileMenuOpen()" class="ovitag-profile-rail-menu ovi-font-family">
+    <cdk-sidebar-menu [code]="profileMenu.code" [menName]="'Profile' | translate"></cdk-sidebar-menu>
+  </div>
+
+  <div *ngIf="selectedAction" class="ovitag-menu-expanded ovi-font-family">
+    <!-- <div class="ovitag-expanded-brand">
+      <div class="brand-mark">
+        <img src="/assets/Alert/common_icons/1TW_Logo.svg" alt="logo" />
+      </div>
+      <div class="brand-copy">
+        <span class="brand-title">Ovitag</span>
+        <span class="brand-subtitle">Navigation</span>
+      </div>
+    </div> -->
+
+    <div class="ovitag-menu-list ovitag-expanded-list">
+      <div *ngFor="let menulist of menu" class="sid-container">
+        <div *ngIf="menulist.code != 'MN_ALL'" class="expanded-menu-shell" (mouseenter)="onHoverMenu(menulist.id)"
+          (mouseleave)="onHoverMenu(null)">
+          <div class="expanded-menu-row-wrap">
+            <div class="expanded-menu-row" role="button" tabindex="0" (keydown.enter)="fixClick()"
+              (click)="selectLinkedMenu(menulist)" [ngClass]="{
+                'expanded-menu-row-active': selectedMenuId == menulist.id,
+                'expanded-menu-row-hover': hoveredMenuId === menulist.id
+              }" [routerLink]="!hasChildMenus(menulist) && menulist.link ? [menulist.link] : null"
+              [class.cursor-pointer]="menulist.link || hasChildMenus(menulist)">
+              <span class="expanded-menu-icon">
+                <img src="/assets/Menus/{{ menulist.iconName }}.svg" alt="menulist" (error)="handleImgError($event)" />
+              </span>
+              <div matLine class="ovi-font-family expanded-menu-name">
+                {{ menulist.name | translate }}
+              </div>
+              <mat-icon *ngIf="hasChildMenus(menulist)" class="expanded-menu-chevron"
+                [class.chevron-open]="isSubmenuOpen(menulist)">
+                expand_more
+              </mat-icon>
+            </div>
+            <div *ngIf="isSubmenuOpen(menulist)" class="ovitag-inline-submenu">
+              <cdk-sidebar-menu [code]="menulist.code" [menName]="menulist.name | translate"></cdk-sidebar-menu>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ovitag-menu-expanded-footer">
+      <div *ngIf="isProfileMenuOpen()" class="ovitag-profile-menu">
+        <cdk-sidebar-menu [code]="profileMenu.code" [menName]="'Profile' | translate"></cdk-sidebar-menu>
+      </div>
+      <div class="expanded-profile-card">
+        <div class="sid-new-btm-cont" role="button" tabindex="0" (click)="selectMenu(profileMenu)"
+          (keydown.enter)="selectMenu(profileMenu)">
+          <span class="profile-avatar">
+            <img src="/assets/Alert/user.svg" alt="user" />
+          </span>
+          <div style="padding-left: 5px;">
+            <span class="ovi-font-family sid-btm-usrnme-txt">{{ userName | titlecase }}</span>
+            <br />
+            <span class="ovi-font-family sid-btm-usr-txt">{{ user }}</span>
+          </div>
+        </div>
+        <mat-icon role="button" tabindex="0" [class.chevron-open]="isProfileMenuOpen()"
+          (click)="selectMenu(profileMenu)" (keydown.enter)="selectMenu(profileMenu)">
+          expand_more
+        </mat-icon>
+      </div>
+      <span class="ovi-font-family ovi-cmp-lbl-txt">&copy; {{ currentYear }} Trackerwave</span>
+    </div>
+  </div>
+</ng-container>

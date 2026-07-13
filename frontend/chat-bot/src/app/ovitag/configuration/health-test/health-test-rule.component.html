@@ -1,0 +1,194 @@
+<div  class="popup-container">
+    <mat-toolbar class="popup-header">
+        <div class="popup-title" appTooltip tooltipText="data.name" placement="bottom">{{data.name}} {{ 'TestRules' | translate }}</div>
+        <div class="popup-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon" style="float: right;">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div class="popup-input-container mat-custom-form-field-box form-height-tes popup-margin">
+        <div [formGroup]="testRuleForm">
+            <div class="form-row block-3">
+                <div class="row-field-cht" style="width:90%">
+                    <div class="example-form ">
+                        <mat-label class="ovi-lbl-text-size">{{"Test Type"| translate }}</mat-label><br>
+                        <div>
+                            <mat-radio-group class="example-radio-group" formControlName="ruleTestTypeId">
+                                <mat-radio-button (click)="chkTestType('health_test_group', 'desTestType')"
+                                    value="health_test_group" [checked]='true' (keydown.enter)="fixClick()">{{"Group"| translate }}</mat-radio-button>&nbsp;
+                                <mat-radio-button (click)="chkTestType('health_test', 'desTestType')"
+                                    value="health_test" (keydown.enter)="fixClick()">{{"Test"| translate }}</mat-radio-button>
+                                </mat-radio-group>
+                        </div>
+                    </div>
+                </div>
+                <div class="row-field-cht">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Test / Group"| translate }} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Test / Group'|translate" formControlName="ruleTestId"
+                                [errorStateMatcher]="matcher">
+                                <mat-option *ngFor="let healthTest of healthTestDetails" [value]="healthTest.id">
+                                    {{healthTest.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="testRuleForm.controls.ruleTestId.invalid">
+                                <span [hidden]="!testRuleForm.controls['ruleTestId'].errors.required">{{"Test /
+                                    Group is
+                                    required."| translate }}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-cht">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Rule Group"| translate }} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Rule Group'|translate" formControlName="ruleGroup"
+                                [errorStateMatcher]="matcher">
+                                <mat-option *ngFor="let rule of ruleGroups" [value]="rule">
+                                    {rule, select, 1{1} 2{2} 3{3} 4{4} 5{5} 6{6} 7{7} 8{8} 9{9} 10{10}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="testRuleForm.controls.ruleGroup.invalid">
+                                <span [hidden]="!testRuleForm.controls['ruleGroup'].errors.required">{{"Rule Group
+                                    is
+                                    required."| translate }}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-cht">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Predecessor"| translate }} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Predecessor'|translate" formControlName="isBefore"
+                                [errorStateMatcher]="matcher">
+                                <mat-option *ngFor="let predecessor of predecessorType" [value]="predecessor.code">
+                                    {{predecessor.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="testRuleForm.controls.isBefore.invalid">
+                                <span [hidden]="!testRuleForm.controls['isBefore'].errors.required">{{"Predecessor
+                                    is
+                                    required."| translate }}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-cht">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Duration"| translate }}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Duration'|translate" formControlName="duration"
+                                autocomplete="off">
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-cht">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Gender"| translate }}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gender'|translate" formControlName="gender">
+                                <mat-option *ngFor="let gender of genderList" [value]="gender.value">
+                                    {{gender.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-cht">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Diabetic"| translate }}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Diabetic'|translate" formControlName="isDiabetic">
+                                <mat-option *ngFor="let diabetic of diabeticType" [value]="diabetic.code">
+                                    {{diabetic.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="input-footer"  style="text-align: right !important;">
+            <!-- <button mat-button class="active-btn margin-r-1" *ngIf="isDelete === true"
+            (click)="deleteTestRule(true)">Delete</button> -->
+            <button mat-button class="cancle-btn" style="margin-right: 5px;" mat-dialog-close>{{"Cancel"| translate }}</button>
+            <button mat-button class="active-btn margin-r-1" appDebounceClick [disabled]="testRuleForm.invalid"
+            (debounceClick)="createTestRule()" [debounceTime]="300" cdkFocusInitial>{{"Add"| translate }}</button>
+        </div>
+
+        <div class="custom-table block-4" [ngClass.xs]="'components-container-xs'">
+            <div class="mat-elevation-z4 manage-component" style="overflow: auto;">
+                <table mat-table [dataSource]="dataSource" matSort>
+                    <!-- <ng-container matColumnDef="select">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+                        </th>
+                        <td mat-cell *matCellDef="let data">
+                            <mat-checkbox [checked]="data.checked" (change)="onSelectedEvent($event, data)">
+                            </mat-checkbox>
+                        </td>
+                    </ng-container> -->
+
+                    <ng-container matColumnDef="test">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header"> {{"Test /
+                            Group"| translate }}
+                        </th>
+                        <td mat-cell *matCellDef="let data"> {{data.ruleTestName}}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="predecessor">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+                            {{"Predecessor"| translate }}
+                        </th>
+                        <td mat-cell *matCellDef="let data"> {{data.isBeforeName}}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="duration">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">{{" Duration"| translate }}
+                        </th>
+                        <td mat-cell *matCellDef="let data"> {{data.duration}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="gender">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+                            {{"Gender"| translate }}
+                        </th>
+                        <td mat-cell *matCellDef="let data"> {{data.gender}}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="diabetic">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+                            {{"Diabetic"| translate }}
+                        </th>
+                        <td mat-cell *matCellDef="let data"> {{data.isDiabeticName}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="rules">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+                            {{"Rules"| translate }}
+                        </th>
+                        <td mat-cell *matCellDef="let data"> {{data.ruleGroup}} </td>
+                    </ng-container>
+
+                     <ng-container matColumnDef="select">
+                        <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+                        </th>
+                        <td mat-cell *matCellDef="let data">
+                            <mat-icon matSuffix style="color: #E65100;font-size: 20px;cursor: pointer;" appTooltip tooltipText="{{'Delete'|translate}}" appDebounceClick
+                                (debounceClick)="deleteTestRule(data)" [debounceTime]="300"
+                                cdkFocusInitial>delete</mat-icon>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"
+                        class="manage-table-header-row">
+                    </tr>
+                    <tr mat-row *matRowDef="let data; columns: displayedColumns;"
+                        [ngClass]="{'highlight' : data.id === selectedName}"></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>

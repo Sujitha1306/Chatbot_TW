@@ -1,0 +1,20 @@
+<div class="header-label ovi-font-family">
+    <span style="position: relative; right: 0; padding-right: 10px;">
+        <span  *ngIf="showMinimize" [ngClass]="{'show': showMinimize == true, 'hide': showMinimize != true}"
+            class="lbl-style" (click)="sendToParentAction('Minimize')" (keydown.enter)="fixClick()"><i class="material-icons">fullscreen_exit</i></span>
+        <span class="lbl-style_1" [ngStyle]="headerStyle?.['widget-header']" *ngIf="navigate == null">{{title}}</span>  
+        <span class="lbl-style_1" appTooltip tooltipText="{{'Click to view more details'|translate}}" placement="bottom" [ngStyle]="headerStyle?.['widget-header']" [ngClass] = "navigate?.header?.type ? 'lbl-style_navigate': ''" *ngIf="navigate?.header?.type" (click)="onNavigate(navigate.header)" style="cursor: pointer;" (keydown.enter)="fixClick()">{{title}}</span>  
+    </span>
+    <span style="float: right; padding-right: 10px;">
+        <span *ngFor="let filterData of widDetail">
+            <span *ngIf="filterData['enabled']">
+                <select #select class="custom-select-box" style="height: 27px;margin-right: 5px;" [(ngModel)]="filterData['selected_value']"  [ngModelOptions]="{ standalone: true }" (ngModelChange)="sendToLayout(widDetail)">
+                    <option *ngIf="filterData['empty_option']" [ngValue]="''">{{''}}</option>
+                    <option *ngFor="let filter of filterData['resData']" [ngValue]="filter[filterData['response_value']]">
+                        {{ filter[filterData['response_name']] }}
+                    </option>
+                </select>
+            </span>
+        </span>
+    </span>
+</div>

@@ -1,0 +1,193 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+  <div class="ovi-pop-hdr">
+    <div>{{"Manage Token"|translate}}</div>
+    <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+  </div>
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="tokenForm"
+    style="height: calc(100% - 80px);overflow:auto">
+    <div class="ovi-row-gap">
+      <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate"
+            formControlName="name">
+          <mat-error *ngIf="tokenForm.controls.name.invalid" class="error-txt-1">
+            <span [hidden]="!tokenForm.controls['name'].errors.pattern">
+              {{"Please enter text Only"|translate}} </span>
+            <span [hidden]="!tokenForm.controls['name'].errors.maxlength">
+              {{"Maximum allowed characters are 30"|translate}} </span>
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"Mobile No"|translate}}</mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile No'|translate"
+            formControlName="mobileNo">
+          <mat-error *ngIf="tokenForm.controls.mobileNo.invalid" class="error-txt-1">
+            <span [hidden]="!tokenForm.controls['mobileNo'].errors.pattern">
+              {{"Mobile number must be number exactly with 10 digits"|translate}}</span>
+          </mat-error>
+        </mat-form-field>
+      </div>
+      <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"Billing Counter"|translate}}</mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Counter'|translate"
+            formControlName="locationId" [disableOptionCentering]="true">
+            <mat-option *ngFor="let loc of locationList" [value]="loc.id">
+              {{loc.name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"Token Type"|translate}} <span
+            class="mandatory-field">*</span></mat-label>
+        <mat-radio-group class="custom-radio-group" style="display: flex; align-items: center;"
+          formControlName="tokenTypeId" [disabled]="this.data">
+          <mat-radio-button style="padding:5px;" *ngFor="let type of tokenTypeList;" [value]="type.code">
+            {{ type.value }}
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <div *ngIf="!data" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"No Of Tokens"|translate}}</mat-label>
+        <mat-radio-group formControlName="tokenCount" class="custom-radio-group"
+          style="display: flex; align-items: center;" (change)="onRadioChange($event)">
+          <mat-radio-button style="padding:5px;" *ngFor="let option of tokenOptions.slice(0, 3)"
+            [value]="option.value">{{ option.label }}</mat-radio-button>
+          <mat-radio-button style="padding:5px;" [value]="'more'" id="moreRadioButton">{{ 'More' }}</mat-radio-button>
+          <mat-form-field style="width: 40px; margin-top: 10px;padding-left:10px;" *ngIf="this.showDropdown"
+            appearance="outline">
+            <mat-select formControlName="tokenCount">
+              <mat-option *ngFor="let option of tokenOptions.slice(3)" [value]="option.value">{{ option.label
+                }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </mat-radio-group>
+      </div>
+
+      <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"Visit Type"|translate}} <span
+            class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Visit Type'|translate"
+            formControlName="visitTypeId" [disableOptionCentering]="true" [disabled]="this.data">
+            <mat-option *ngFor="let type of visitTypeList" [value]="type.code">
+              {{ type.value }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"Process Counter"|translate}} <span
+            class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Process Counter'|translate"
+            formControlName="floorId" [disableOptionCentering]="true" [disabled]="this.data">
+            <mat-option *ngFor="let type of floor" [value]="type.floorId">
+              {{ type.floorName }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="tokenForm.controls.floorId.invalid" class="error-txt-1">
+            <span [hidden]="!tokenForm.controls['floorId'].errors.required">
+              {{"Please select the Process Counter from the options"|translate}}</span>
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="this.tokenForm.controls.tokenTypeId.value === 'TK-RES'"
+        class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label  class="ovi-lbl-text-size">{{"Reschedule Date"|translate}}
+          <span class="mandatory-field">*</span>
+        </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+          <input matInput [matDatepicker]="datepicker" appPlaceholder [showPlaceholder]="false"
+            [placeholderText]="'Reschedule Date'|translate" formControlName="tokenDate" [min]="today"
+            (dateChange)="rescheduleDate($event.target.value)" required>
+          <mat-datepicker-toggle matSuffix [for]="datepicker"></mat-datepicker-toggle>
+          <mat-datepicker #datepicker></mat-datepicker>
+          <mat-error *ngIf="tokenForm.controls.tokenDate.invalid" class="error-txt-1">
+            <span  [hidden]="!tokenForm.controls['tokenDate'].errors.required">
+              {{"Reschedule Date is required"|translate}}</span>
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-lbl-text-size ovi-fnt-sze13" 
+        style="font-weight: bolder; display: flex; justify-content: center; align-items: center;">
+        <p style="border:2px solid rgba(0,0,0,0.12); padding:12px 14px">
+          <img src="/assets/Menus/ticket.svg" alt="ticket" appTooltip [tooltipText]="'Total Count'" placement="bottom"
+            style="cursor: pointer;width:25px;margin-right:2px;margin-bottom:-7px">
+          <span class="ovi-prmry-clr">{{"Total:"|translate}} </span>{{ floorDetails.totalFloorCount }}
+          <span *ngFor="let floor of floorDetails.floors; let i = index" style="padding-left: 5px;">
+            <img src="/assets/icons/floor_icon.png" alt="floor_icon" appTooltip [tooltipText]="'Total Count'"
+              placement="bottom" style="cursor: pointer;width:25px;margin-right:2px;margin-bottom:-7px">
+            <span class="ovi-prmry-clr">{{ floor.floorName }}</span>: {{ floor.count }}
+            <span *ngIf="i < floorDetails.floors.length - 1"></span>
+          </span>
+        </p>
+      </div>
+
+    </div>
+
+    <div class="ovi-lbl-text-size ovi-fnt-sze14" style="font-weight: 600;padding: 2px">{{"Preview
+      Token"|translate}}</div>
+    <div *ngIf="false" id="tokenData" style="display: flex; flex-wrap: wrap; margin-top:5px;gap: 40px;">
+      <div *ngFor="let data of barcodearray; let i = index" class="ovi-fnt-sze18" 
+        style="border: 2px solid #000; width: 325px; padding: 10px; text-align: center; font-weight: 600; background-color: #f9f9f9; display: flex; align-items: center;">
+        <div class="logo" style="text-align: left;">
+          <img src="{{ customerLogo }}" alt="Logo" style="height: 80px;" />
+        </div>
+        <div style="flex: 2;">
+          <div class="ovi-fnt-sze14" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <div>{{ today | date: 'dd-MMM-yyyy'}}</div>
+            <div>{{ today | date: 'hh:mm' }}</div>
+          </div>
+          <div class="ovi-fnt-sze20"  style="margin-bottom: 10px;">
+            {{"TOKEN NO:"|translate}} <span style="font-weight: bold;">{{ barcodearray[i] }}</span>
+          </div>
+          <div class="ovi-fnt-sze14" style="display:flex;justify-content: center; font-weight: bold;">
+            {{ this.floorName }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="tokenData" style="display: flex; flex-wrap: wrap; margin-top: 5px; gap: 40px;">
+      <div *ngFor="let barcode of barcodearray; let i = index"  class="ovi-fnt-sze18"
+        style="border: 2px solid #000; width: 325px;font-weight: 600; background-color: #f9f9f9; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; width: 100%;">
+          <img [src]="customerLogo" alt="Logo" style="height: 40px; width: 40px;object-fit: contain;padding-left:5px" />
+          <div  class="ovi-fnt-sze14" style="display: flex; gap: 100px;padding:0 5px;white-space: nowrap;">
+            <span *ngIf="!data?.createdTime">{{ today | date: 'dd-MMM-yyyy' }}</span>
+            <span *ngIf="!data?.createdTime">{{ today | date: 'hh:mm a' }}</span>
+            <span *ngIf="data?.createdTime">{{ data?.createdTime | date: 'dd-MMM-yyyy' }}</span>
+            <span *ngIf="data?.createdTime">{{ data.createdTime | date: 'hh:mm a' }}</span>
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <div class="ovi-fnt-sze26" style="display: flex; flex-direction: column; align-items: center;">
+            {{ "Billing Token No:" | translate }}
+            <br>
+            <span class="ovi-fnt-sze-xxlrg" style="font-weight: bolder;">{{ barcode }}</span>
+          </div>
+          <div  class="ovi-fnt-sze14" style="font-weight: bolder;">[1st Floor]</div>
+          <div *ngIf="tokenForm.controls.floorId.value != null"  class="ovi-fnt-sze14"
+            style="font-weight: bolder; border-top:2px solid #000">
+            {{ "To" | translate }} {{ floorName }} {{ "- After Billing" | translate }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ovi-pop-ftr">
+    <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+    <button mat-button class="active-btn"
+      [disabled]="tokenForm.invalid  || tokenForm.controls['tokenCount'].value === 'more' || disabled"
+      appDebounceClick (debounceClick)="generateToken()" [debounceTime]="300" >{{"Print"|translate}}</button>
+  </div>

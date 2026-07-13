@@ -1,0 +1,117 @@
+    <div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+        <div class="ovi-pop-hdr">
+            <div *ngIf="!selectedDate">{{"Manage Holiday"|translate}}</div>
+            <div *ngIf="selectedDate">{{"Manage Holiday"|translate}} - {{selectedDate}}</div>
+            <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+        </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);" [formGroup]="holidayForm">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Holiday Type"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type'|translate" [disableOptionCentering]="true" formControlName="holidayType">
+                        <mat-option *ngFor="let holiday of holidayType" [value]="holiday.code">
+                            {{holiday.value}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" autocomplete="off"  formControlName="name">
+                    </mat-form-field>
+            </div>
+            <div *ngIf="holidayForm.controls.holidayType.value != 'HT-WKL'" class="ovi-row-three-clmn" style="display: flex ; position: relative;top: 3px;">
+            <div style="display:flex; align-items: center;">
+                <div class="hldy-custom-checkbox" style="padding-left: 20px;">
+                    <input id="hldy-status" type="checkbox"   [checked]="checkedValue === 'Range'"  [disabled]="toggleDisable" (change)="onToggleChange($event)">
+                    <span for="hldy-status">
+                        <div class="hldy-status-switch" [ngStyle]="{'background-color': this.toggleDisable == true  ? '#c1c1c1' : ''}" [attr.data-checked]="'Range'|translate" [attr.data-unchecked]="'Day'|translate"></div>
+                    </span>
+                </div>
+            </div>
+            </div>
+
+
+
+        </div>
+        <!-- weekoff code will command here start -->
+        <div *ngIf="holidayForm.controls.holidayType.value == 'HT-WKL' && 'false'" formArrayName="weeklyOff">
+            <div style="margin-right: 25px;width: 10%;" class="ovi-popup-title-text-size ovi-fnt-sze18">Weekly Off:</div>
+            <div style="width: 35%;display: contents;" *ngFor="let obj of holidayForm.controls.weeklyOff.controls; let j=index" class="ovi-lbl-text-size ovi-fnt-sze14">
+                <span [formGroupName]="j">
+                    <span *ngFor="let day of daysOfWeek; let i = index" style="display: inline-block;margin-right: 15px;">
+                        <label>
+                        <input type="checkbox" [formControlName]="day['code']" (change)="onCheckboxChange($event,i)">
+                        {{ day.value }}
+                        </label>
+                    </span>
+                </span>
+            </div>
+            <div style="width: 13%">
+                <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="bindData()">{{"UPDATE"|translate}}</button>
+            </div>
+        </div>
+        <!-- weekoff code will command here end -->
+        <div *ngIf="holidayForm.controls.holidayType.value != 'HT-WKL'">
+            <div class="ovi-row-gap" >
+                <div *ngIf="false" style="display:flex; align-items: center;">
+                    <div class="hldy-custom-checkbox" style="padding-left: 20px;">
+                        <input id="hldy-status" type="checkbox"   (change)="onToggleChange($event)">
+                        <label for="hldy-status">
+                            <div class="hldy-status-switch" [attr.data-checked]="'Range'|translate" [attr.data-unchecked]="'Day'|translate"></div>
+                        </label>
+                    </div>
+                </div> 
+                <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn" >
+                        <mat-label class="ovi-lbl-text-size" *ngIf="checkedValue !== 'Range'">{{"Date"|translate}}</mat-label>
+                        <mat-label class="ovi-lbl-text-size" *ngIf="checkedValue === 'Range'">{{"StartDate"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Date'|translate" autocomplete="off"  formControlName="startDate" [matDatepicker]="picker"  [matDatepickerFilter]="customDatePickerDisable">
+                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                            <mat-datepicker #picker></mat-datepicker>
+                        </mat-form-field>
+                </div>
+                <div *ngIf="checkedValue === 'Range'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" >
+                        <mat-label class="ovi-lbl-text-size">{{"EndDate"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Date'|translate" autocomplete="off"  formControlName="endDate" [matDatepicker]="picker1"  [matDatepickerFilter]="customDatePickerDisable">
+                            <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                            <mat-datepicker #picker1></mat-datepicker>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn" style="display: flex ;align-items: center;position: relative;top: 5px; " [ngStyle]="{'left' : checkedValue !== 'Range' ? '' : '40px;' }"  *ngIf="!updateEnable">
+                    <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="bindData()" [disabled]="this.holidayForm.invalid">{{"ADD"|translate}}</button>
+                </div>
+                <div class="ovi-row-three-clmn"style="display: flex ;align-items: center;position: relative;top:5px" [ngStyle]="{'left' : checkedValue !== 'Range' ? '' : '40px' }"  *ngIf="updateEnable">
+                    <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="updateData()" [disabled]="this.holidayForm.invalid">{{"UPDATE"|translate}}</button>
+            </div>
+            </div>
+        </div>
+        <div>
+            <div class="ovi-lbl-text-size">{{"Week Off:"|translate}}</div>
+            <div style="width: 35%;display: contents;" class="ovi-lbl-text-size ovi-fnt-sze14">
+                <span *ngFor="let day of daysOfWeek; let i = index" style="display: inline-block;margin-right: 15px;">
+                    <span>
+                        <button mat-button class="date-btn" class="margin-r-1" 
+                        [ngClass]="weekOff.indexOf(day.code) > -1 ? 'active-day' : 'week-day'"
+                        (click)="getWeekOff(day.code)">{{day.value | slice:0:3}}</button>
+                    </span>
+                </span>
+            </div>
+        </div> 
+        <div style="padding-top: 10px;height: 270px;width: calc(100% - 20px);overflow: auto;" >
+            <angular-table-component [id]="'formBuilder'" [type]="'ng-table'" [tableData]="tableDataActive"
+            [columns]="['Type', 'Name','Event Name','EventDate','Manage']" [component]="'manageHoliday'"
+            [columnData]="['typeName', 'name','holidayPatternName','date','manage']"
+            [pageSizeOptions]="[5, 10, 15, 20, 30]"
+            (triggerAction)="triggerAction($event)">
+            </angular-table-component>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close close-button>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" appDebounceClick (debounceClick)="saveHoliday()" [debounceTime]="300">{{"Save"|translate}}</button>
+    </div>
+</div>

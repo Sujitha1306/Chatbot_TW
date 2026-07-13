@@ -1,0 +1,95 @@
+<div  class="input-component container-fluid">
+    <mat-toolbar class="input-header">
+        <div class="header-name" *ngIf="data.healthTestId">{{"Edit Health Test"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <form class="input-container mat-custom-form-field-box block-3 popup-margin" [formGroup]="packageForm">
+        <div class="form-body-default">
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size ovi-font-family top-styl">{{"TEST DETAILS"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div  class="form-row">
+                <div class="row-field-1 box-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Test Name"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Test Name'|translate" formControlName="healthTestName"
+                                autocomplete="off" readonly style="border: 1px">
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1 box-2">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size"> {{"Test Sequence"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate" formControlName="sequence"
+                                autocomplete="off">
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size ovi-font-family">{{"DURATION"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div  class="form-row">
+                <div  class="row-field-1 box-3">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Min Duration"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput type="number" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Min Duration'|translate" minlength=1
+                                maxlength=3 formControlName="minDuration" autocomplete="off">
+                            <mat-error *ngIf="packageForm.controls.minDuration.invalid">
+                                <span [hidden]="!packageForm.controls['minDuration'].errors.required">{{"Min. duration
+                                    is required"|translate}} </span>
+                                <span [hidden]="!packageForm.controls['minDuration'].errors.minDuration">
+                                    {{"Please do enter a number!"|translate}}
+                                </span>
+                            </mat-error>
+                            <mat-error *ngIf="packageForm.controls.minDuration.invalid">
+                                <span [hidden]="!packageForm.controls['minDuration'].errors.pattern">{{"Enter a valid
+                                    number / should be lesser than Max. value!"|translate}}</span>
+                        </mat-error>
+                        </mat-form-field>
+                       <div class="ovi-fnt-sze11" style="color:#B0B0B0;" *ngIf="!packageForm.valid">
+                            {{ packageForm.valid ? ('Max. value is greater than Min. value'|translate) : ('Min. value should be lesser than Max. value'|translate) }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row-field-1 box-4">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size"> {{"Max Duration"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput type="number" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Max Duration'|translate" minlength=1
+                                maxlength=3 formControlName="maxDuration" autocomplete="off">
+                            <mat-error *ngIf="packageForm.controls.maxDuration.invalid">
+                                <span [hidden]="!packageForm.controls['maxDuration'].errors.required">{{"Max. value
+                                    should always be greater than Min. value!"|translate}} </span>
+                                <span [hidden]="!packageForm.controls['maxDuration'].errors.maxDuration">
+                                    {{"Please do enter a number!"|translate}}
+                                </span>
+                            </mat-error>
+                            <mat-error *ngIf="packageForm.controls.maxDuration.invalid">
+                                <span [hidden]="!packageForm.controls['maxDuration'].errors.pattern">{{"Enter a valid
+                                    number (3 digits) Or Greater than Min. value!"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="input-footer">
+            <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+            <button mat-button *ngIf="data.healthTestId" class="active-btn margin-r-1" appDebounceClick [disabled]="packageForm.invalid || isDisabled"
+             (debounceClick)="updatePackage(data)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+        </div>
+    </form>
+</div>

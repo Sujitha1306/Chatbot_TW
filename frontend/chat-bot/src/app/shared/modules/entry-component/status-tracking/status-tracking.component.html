@@ -1,0 +1,34 @@
+<div class="comments-container">
+    <div *ngFor="let k of tktHistoryData['key']">
+        <span style="float: left;margin-left: 4px;">
+            <span class="circles"
+                [ngClass]="k === 'RQ-OP' ? 'redlight': (k === 'RQ-IP' ? 'orangelight': 'greenlight')">
+                <span class="circle-desc">{{tktHistoryData['data'][k][0].statusName}}</span>
+            </span>
+            <!-- <span class="bar" *ngIf="k != barLineData"></span> -->
+        </span>
+        <div class="container" *ngFor="let object of tktHistoryData['data'][k]; let j= index; let last = last">
+            <div class="assessment-card gap"
+                [ngStyle]="{'border-left': k != trackLineData ? 'solid 2px #9b9b9b' : '','background-color': j % 2 !== 0 ? '#fbfcff' : '#eaf2ff'}">
+                <div class="header">
+                    <span class="assignee">
+                        {{last && object.statusName ==='Assigned' ? openLabeltext : updateLabeltext}} :{{object.createdUser}} &nbsp;
+                        Assigned to : {{object.name}} at {{object.eventTime | date : 'hh:mm a, d MMM'}}</span>
+                </div>
+                <span class="content">
+                    {{object.comments}}
+                    <span class="attach" *ngFor="let attach of attachment; let i= index">
+                        <div *ngIf="attach.entityId === object.id">
+                           <img *ngIf="attach.fileType === 'image/png' || attach.fileType === 'image/jpeg'" [src]="attach.fileUrl"  alt="fileUrl" (click)="lightboxView(attach.fileUrl, attach.fileType)" appTooltip tooltipText="Click To View" class="img-siz" (keydown.enter)="fixClick()"/>
+                           <img *ngIf="attach.fileType === 'application/pdf'" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="lightboxView(attach.fileUrl, attach.fileType)" appTooltip tooltipText="Click To View" class="img-siz" (keydown.enter)="fixClick()"/>
+                        </div>
+                    </span>
+                </span>
+                <span  class="content">
+                <mat-divider *ngIf="!last "></mat-divider>
+                </span>
+            </div>
+        </div>
+        <mat-divider class="divider" style="width: 85%;margin-left: 11%;margin-bottom: 6px;"></mat-divider>
+    </div>
+</div>

@@ -1,0 +1,83 @@
+<div class="pwa-full-container ovi-font-family">
+    <div class="pwa-task-container">
+        <div class="pwa-tab-container">
+            <div *ngFor="let tab of tabs" class="pwa-tabs" [ngStyle]="{'background': tab.code === selectedTab ? 'white' : '',
+                'color': tab.code === selectedTab ? 'black' : ''}" (click)="onTabSwitch(tab.code)" (keydown.enter)="fixClick()">{{tab.name}}
+            </div>
+            <div>
+                <span style="display: flex; align-items: center; justify-content: center;">
+                    <mat-icon class="pwa-custome-icon-style ovi-fnt-sze22" (click)="openTaskBottomSheet('')" (keydown.enter)="fixClick()">add</mat-icon>
+                </span>
+            </div>
+        </div>
+        <div style="padding: 0 12px; margin: 5px 0px 0px 0px;"
+            class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin ovi-matfrmfld-input-box-pdg search-field">
+            <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh">
+                <mat-icon matPrefix class="pwa-search">search</mat-icon>
+                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" #searchInput>
+            </mat-form-field>
+        </div>
+        <div class="ovi-fnt-sze12" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 20px;">
+            <span style="color: #889093;">{{totalTask}}&nbsp;Task</span>
+            <span style="display: flex; gap: 12px; align-items: center;">
+                <span style="display: flex; gap: 3px; color: #889093;">
+                <img height="14px" width="14px" alt="calendar" style="filter: invert(40%) sepia(95%) saturate(700%) hue-rotate(170deg) brightness(95%) contrast(92%);"
+                 src="../../../../../assets/icons/calendar-to.svg"/>{{selectedDate | date: 'dd-MM-yyyy'}}</span>
+                <mat-icon style="color: #889093;" class="pwa-custome-icon-style"  (click)="toggleFilter()" (keydown.enter)="fixClick()">sort</mat-icon>
+            </span>
+        </div>
+        <div class="content-container">
+            <mat-card class="card-list" *ngFor="let task of pwaTaskData" (click)="taskInfoBottomSheet(task)" (keydown.enter)="fixClick()">
+                <div style="display: flex; justify-content: space-between; font-weight: 600; padding-bottom: 5px;">
+                    <span>{{task.activityName}}</span>
+                    <span class="icon-text">
+                        <mat-icon class="pwa-custome-icon-style" style="color: #0f89ad;">access_time</mat-icon>
+                        {{task.scheduleDate | date: 'hh:mm a'}}
+                    </span>
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="content-texts">
+                        <span class="card-label">{{"Context"|translate}}</span>
+                        <span *ngIf="task.requestCategoryId" class="icon-text" style="gap: 5px"><img height="16px"
+                                width="16px" alt="task" [src]="task['requestCategoryId'] === 'PR-AT' ? '../../../../../assets/Menus/task-asset.svg' :
+                            task['requestCategoryId'] === 'PR-LC' ? '../../../../../assets/Menus/task-location.svg' :
+                            task['requestCategoryId'] === 'PR-PA' ? '../../../../../assets/Menus/task-patient.svg' :
+                            '../../../../../assets/Menus/task-general.svg'" />{{task.requestCategoryId === 'PR-AT' ?
+                            'Asset' : task.requestCategoryId === 'PR-LC' ? 'Location' :
+                            task.requestCategoryId === 'PR-PA' ? 'Patient' : 'General'}}
+                        </span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{"Category"|translate}}</span>
+                        <span class="task-data-text">{{task.activityCategoryName}}</span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{task.requestCategoryId === 'PR-AT' ?
+                            'Asset' : task.requestCategoryId === 'PR-LC' ? 'Location' :
+                            task.requestCategoryId === 'PR-PA' ? 'Patient' : 'General'}}</span>
+                        <span class="task-data-text">{{task.nonPerformerName}}</span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{"Status"|translate}}</span>
+                        <span class="task-data-text" style="color:#0f89ad">{{task.statusName}}</span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{"Identifier"|translate}}</span>
+                        <span class="task-data-text">{{task.requestIdentifier}}</span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{"Assigned to"|translate}}</span>
+                        <span class="task-data-text">{{task.performerName}}</span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{"Description"|translate}}</span>
+                        <span class="task-data-text">{{task.comments}}</span>
+                    </div>
+                </div>
+            </mat-card>
+
+            <span *ngIf="totalTask > pageSize" class="ovi-fnt-sze10" style="text-align: center; color: #717171; cursor: pointer;"
+                 (click)="moreData()" (keydown.enter)="fixClick()">{{"more"|translate}}</span>
+        </div>
+    </div>
+</div>

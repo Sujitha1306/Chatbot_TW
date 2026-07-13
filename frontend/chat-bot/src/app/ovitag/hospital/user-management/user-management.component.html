@@ -1,0 +1,40 @@
+<div id="user" class="loading-spinner" *ngIf="loading">
+  <div class="spinnerload">
+    <div class="spin1"></div>
+    <div class="spin2"></div>
+    <div class="spin3"></div>
+  </div>
+</div>
+<div class="manage-body">
+  <div>
+    <tw-header-new-component [component]="'manage-user'" [permission]="null" [dateFilter]="null" [rowFilter]="null"
+      [manageAction]="showActions" [selectDropdown]="selectDropdown"
+      [selectedName]="selectedName !== null ? selectedName : true" [locationId]="null" [selectedView]="selectedView"
+      [multiView]="false" (headerEventAction)="headerEventAction($event)">
+    </tw-header-new-component>
+  </div>
+  <div class="tw-content1 table-align">
+    <div *ngIf="tableVersion === 1">
+      <tw-table-component [component]="'manage-user'" [columns]="displayedColumns" [tableData]="tableData"
+        [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+        [rowClick]="true" [rowId]="'id'" (eventAction)="eventAction($event)" (rowClickAction)="rowClick($event)"
+        [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowDbClick]="false"
+        [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'table-with-header'">
+      </tw-table-component>
+    </div>
+    <div *ngIf="tableVersion === 2"> 
+      <tw-data-table [columns]="userTwColumns" [data]="tableData" [loading]="loading"
+        [pagination]="userPaginationConfig" [rowClickable]="false" [rowId]="'id'" [applyFilter]="applyFilterValue"
+        [permissionControl]="permissionControl" [rowColor]="null" tableClass="tdt-borderless" tableSize="108px"
+        (cellAction)="onCellAction($event)" (rowClick)="null" (pageChange)="onPageChange($event)">
+        <ng-template twCellDef="Unlock" let-row>
+          <span *ngIf="row?.isLocked && activate_btn.includes('BT_ULUSRLGN')" class="user-unlock-cell" 
+          (click)="eventAction({key:'Unlock', data:row}); $event.stopPropagation()">
+            <mat-icon class="porter-alert-icon" style="font-size: 19px;">lock_open</mat-icon>
+            <span>{{"Unlock"|translate}}</span>
+          </span>
+        </ng-template>
+      </tw-data-table>
+    </div>
+  </div>
+</div>

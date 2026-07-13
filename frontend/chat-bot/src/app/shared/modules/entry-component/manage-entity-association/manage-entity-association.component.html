@@ -1,0 +1,145 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div *ngIf="entityAssociationData?.type !== 'TW-FTP'" class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Entity Association"|translate}}</div>
+        <div *ngIf="data">{{"Modify Entity Association"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [ngStyle]="{'height' : entityAssociationData?.type !== 'TW-FTP' ? 'calc(100% - 140px)' : 'calc(100% - 43px)' }" style="overflow: auto;" [formGroup]="associationForm">
+        <div class="ovi-row-gap" style="gap: 10px 10px;">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Qualifier"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Qualifier'|translate" matSelectSearch
+                        formControlName="qualifier" [disableOptionCentering]="true" [disabled]="data?.qualifier && entityAssociationData?.type != 'TW-FTP'">
+                        <mat-option *ngFor="let data of qualifier" [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="associationForm.controls.qualifier.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['qualifier'].errors.required">
+                            {{"Qualifier is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Entity Type"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Entity Type'|translate"
+                        formControlName="entityType" [disableOptionCentering]="true" [disabled]="entityAssociationData?.type == 'TW-FTP' || data?.entityType">
+                        <mat-option *ngFor="let data of entityTypeList" (click)="getEntityType(data)"
+                            [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="associationForm.controls.entityType.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['entityType'].errors.required">
+                            {{"EntityType is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Entity Id"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                    <mat-select [panelClass]="'tw-ngx-search-icon'" appPlaceholder [showPlaceholder]="false" [disabled]="entityAssociationData?.type == 'TW-FTP' || data?.entityId"
+                        [placeholderText]="'Entity Id'|translate" formControlName="entityId" [disableOptionCentering]="true" >
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="entityIdsInfo" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                        </mat-option>
+                        <mat-option *ngFor="let data of entityIdList" [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="associationForm.controls.entityId.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['entityId'].errors.required">
+                            {{"EntityId is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Identifying Type"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                    <mat-select appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Identifying Type'|translate" formControlName="identifyingType"
+                        [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of identifyingList" (click)="getApptermsFilter(data)"
+                            [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="associationForm.controls.identifyingType.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['identifyingType'].errors.required">
+                            {{"IdentifyingType is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="associationForm.controls.identifyingType.value !== 'manufacturer_model_assetType'" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Identifying Name"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                    <mat-select [panelClass]="'tw-ngx-search-icon'" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Identifying Name'|translate" formControlName="identifyingName"
+                        [disableOptionCentering]="true" multiple>
+                        <mat-option>
+                            <ngx-mat-select-search [formControl]="identifyingInfo"
+                                [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                        </mat-option>
+                        <mat-option *ngFor="let data of identifyingNameList" [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="associationForm.controls.identifyingName.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['identifyingName'].errors.required">
+                            {{"IdentifyingName is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="associationForm.controls.identifyingType.value === 'manufacturer_model_assetType'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Identifying Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Identifying Name'|translate" appTypeHit formControlName="identifyingName">
+                    <mat-error *ngIf="associationForm.controls.identifyingName.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['identifyingName'].errors.required">
+                            {{"IdentifyingName is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate"
+                        formControlName="status" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of statusList" [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="associationForm.controls.status.invalid" class="error-txt">
+                        <span [hidden]="!associationForm.controls['status'].errors.required">
+                            {{"status is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div style="margin-top: 19px;margin-left: 10px;">
+                <button [disabled]="associationForm.invalid" mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                    (debounceClick)="addEntityAssocaition()">{{'ADD' | translate}}
+                </button>
+            </div>
+            </div>
+        <div *ngIf="dataSource?.length" style="padding: 10px 5px 0px 0px; position: relative; top: 40px;">
+            <angular-table-component [id]="'entity-Assocaitions'" [type]="'ng-table'" [tableData]="dataSource"
+                [columns]="DisplayColumn" [columnData]="DataColumns" (triggerAction)="eventAction($event)">
+            </angular-table-component>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data?.id" mat-button class="active-btn" appDebounceClick (debounceClick)="saveAssociation()" cdkFocusInitial
+        [disabled]="!dataSource?.length"  [debounceTime]="1000">{{"Save"|translate}}</button>
+        <button *ngIf="data?.id" mat-button class="active-btn " appDebounceClick (debounceClick)="updateAssociation()"
+        [disabled]="!dataSource?.length" cdkFocusInitial [debounceTime]="1000">{{'Update' | translate}}</button>
+    </div>
+</div>

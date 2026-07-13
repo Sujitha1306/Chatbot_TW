@@ -1,0 +1,594 @@
+<div class="tw-header block-1 filter-container tw-header-mat-custom-form-field-box font-class" style="display: inline-block;padding-bottom: 5px;width: 100%;background-color: white;">
+  <span style="display: flex;" [ngStyle]="{'flex-direction': filterInputs.length>5 ? 'column' : ''}">
+      <mat-label *ngIf="filterInputs.length<=5" class="report-label01" style="display: flex;align-items: center;justify-content: center;">
+          <!-- <div class="report-header1">
+              <div class="report-header">
+                  <span>
+                      <img src="/assets/Menus/{{selectedMenu.iconName}}.svg" alt="report" width = 20px style="margin-right: 10px;filter: invert(1);">
+                      {{selectedMenu.name}}
+                  </span>
+              </div>
+          </div> -->
+          <div style="display: flex;margin-left: 5px;align-items: center;justify-content: center;">
+            <span *ngIf="selectedMenu.iconName">
+              <img src="/assets/Menus/{{selectedMenu.iconName}}.svg" alt="Menus" width = 20px style="margin-right: 10px;filter: invert(1);">
+            </span>
+            <span class="ovi-fnt-sze13">{{selectedMenu.name}}</span>
+          </div>
+      </mat-label>
+      <div class="report-select01 form-row block-3" [formGroup]="reportForm" style="overflow: hidden;">
+          <div class="report-box" style="display: flex;width: 100%;">
+              <div class="report-inputs">
+                <div *ngFor="let filter of filterInputs">
+                  <div *ngIf="filter.name === 'report'" style="width: 250px;margin-right: 25px;" [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}</mat-label>
+                    <mat-select class="report-select02" style="width: 250px;padding-left: 10px !important;" [disableOptionCentering]="true" formControlName="reportId">
+                      <mat-option  *ngFor="let report of reportList;" [value]="filter?.routine ? report.code : report.link" (click)="reportHeaderActionEvent('report', report)" (keydown.enter)="fixClick()">{{report.name}}</mat-option>
+                    </mat-select>
+                  </div>
+                  
+                  <div class="report-date" style="margin-left: 5px;margin-right: -15px;" *ngIf="filter.name === 'multipleDate' || filter.name === 'fromDate'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}</mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px;margin-top: 4px; width: 115px !important;">
+                      <input matInput  [matDatepicker]="reportFromDate" class="tw-input-date" style="padding: 0px;"
+                        appPlaceholder [showPlaceholder]="true" [placeholderText]="'From Date'|translate" formControlName="fromDate" [max]="layout == 'static'?yesterday: today" required
+                        (dateChange)="reportHeaderActionEvent('fromDate', $event.target.value)" (click)="reportFromDate.open()">
+                      <mat-datepicker-toggle matSuffix [for]="reportFromDate" style="padding-right:2px;"></mat-datepicker-toggle>
+                      <mat-datepicker #reportFromDate></mat-datepicker>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="report-date" style="margin-left: 5px;margin-right: -15px;" *ngIf="filter.name === 'multipleDate' || filter.name === 'toDate'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}</mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px;margin-top: 4px; width: 115px !important;">
+                      <input matInput  [matDatepicker]="reportToDate" class="tw-input-date" style="padding: 0px;"
+                        appPlaceholder [showPlaceholder]="true" [placeholderText]="'To Date'|translate" formControlName="toDate" [max]="layout == 'static'?yesterday: today" required
+                        (dateChange)="reportHeaderActionEvent('toDate', $event.target.value)" (click)="reportToDate.open()">
+                      <mat-datepicker-toggle matSuffix [for]="reportToDate" style="padding-right:2px;"></mat-datepicker-toggle>
+                      <mat-datepicker #reportToDate></mat-datepicker>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="report-date" style="margin-left: 5px;margin-right: -15px;" *ngIf="filter.name === 'reportDate'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}</mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px;margin-top: 4px; width: 115px !important;">
+                      <input matInput  [matDatepicker]="reportDate" class="tw-input-date" style="padding: 0px;"
+                        appPlaceholder [showPlaceholder]="true" [placeholderText]="'Report Date'|translate" formControlName="reportDate" [max]="layout == 'static'?yesterday: today" required
+                        (dateChange)="reportHeaderActionEvent('reportDate', $event.target.value)" (click)="reportDate.open()">
+                      <mat-datepicker-toggle matSuffix [for]="reportDate" style="padding-right:2px;"></mat-datepicker-toggle>
+                      <mat-datepicker #reportDate></mat-datepicker>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="report-date" style="margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'multipleDateTime' || filter.name === 'fromDateTime'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}</mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input matInput type="datetime-local" id="datepicker"  class="tw-input-date" style="padding: 0px;"
+                      appPlaceholder [showPlaceholder]="true" [placeholderText]="'From Date'|translate" formControlName="fromDateTime" [max]="layout == 'static'?yesterdayDateTime: todayDateTime" required
+                      (change)="reportHeaderActionEvent('fromDateTime', $event.target.value)">
+                    </mat-form-field>
+                  </div>
+
+                  <div class="report-date" style="margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'multipleDateTime' || filter.name === 'toDateTime'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}</mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input matInput type="datetime-local" id="datepicker"  class="tw-input-date" style="padding: 0px;"
+                      appPlaceholder [showPlaceholder]="true" [placeholderText]="'To Date'|translate" formControlName="toDateTime" [max]="layout == 'static'?yesterdayDateTime: todayDateTime" required
+                      (change)="reportHeaderActionEvent('toDateTime', $event.target.value)">
+                    </mat-form-field>
+                  </div>
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'poolLocation'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}} <span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="poolLocation" [required]="filter.required">
+                        <mat-option value="All" (click)="reportHeaderActionEvent('poolLocation', 'All')" selected (keydown.enter)="fixClick()">All</mat-option>
+                        <mat-option  *ngFor="let data of PoolLocationList;" [value]="data.code" 
+                        (click)="reportHeaderActionEvent('poolLocation', data.code)" (keydown.enter)="fixClick()">{{data.value | translate}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.poolLocation.invalid">
+                          {{"PoolLocation is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'Schedule'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}} <span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="Schedule" [required]="filter.required">
+                        <mat-option  *ngFor="let data of scheduleList;" [value]="data.id" 
+                        (click)="reportHeaderActionEvent('Schedule', data.id)" (keydown.enter)="fixClick()">{{data.name}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.Schedule.invalid">
+                          {{"Schedule is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'poolName'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="poolName" [required]="filter.required">
+                        <mat-option value="All" (click)="reportHeaderActionEvent('poolName', 'All')" selected (keydown.enter)="fixClick()">All</mat-option>
+                        <mat-option  *ngFor="let data of poolNameList;" [value]="data.code" 
+                        (click)="reportHeaderActionEvent('poolName', data.code)" (keydown.enter)="fixClick()">{{data.value}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.poolName.invalid">
+                          {{"PoolName is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'Shift'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="Shift" [required]="filter.required">
+                        <mat-option [value]="'All'" (click)="reportHeaderActionEvent('Shift', 'All')" (keydown.enter)="fixClick()">All </mat-option>
+                        <mat-option  *ngFor="let data of shiftList;" [value]="data.id" 
+                        (click)="reportHeaderActionEvent('Shift', data.id)" (keydown.enter)="fixClick()">{{data.shiftName}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.Shift.invalid">
+                          {{"Shift is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'Department'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="Department" [required]="filter.required">
+                        <mat-option [value]="'All'" (click)="reportHeaderActionEvent('Department', 'All')" (keydown.enter)="fixClick()">All </mat-option>
+                        <mat-option  *ngFor="let data of deptList;" [value]="data.id" 
+                        (click)="reportHeaderActionEvent('Department', data.id);bindChildInputInfo(filter,'Department', data.id);" (keydown.enter)="fixClick()">{{data.name}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.Department.invalid">
+                          {{"Department is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'userDepartmentLink'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="userDepartmentLink" [required]="filter.required">
+                        <mat-option *ngIf="userDeptList.length > 1"  [value]="'All'" (click)="reportHeaderActionEvent('userDepartmentLink', 'All')" (keydown.enter)="fixClick()">All </mat-option>
+                        <mat-option  *ngFor="let data of userDeptList;" [value]="data.departmentId" 
+                        (click)="reportHeaderActionEvent('userDepartmentLink', data.departmentId);bindChildInputInfo(filter,'userDepartmentLink', data.departmentId);" (keydown.enter)="fixClick()">{{data.departmentName}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.userDepartmentLink.invalid">
+                          {{"Department is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'Grade'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="Grade" [required]="filter.required">
+                        <mat-option [value]="'All'" (click)="reportHeaderActionEvent('Grade', 'All')" (keydown.enter)="fixClick()">All </mat-option>
+                        <mat-option  *ngFor="let data of studGradeList;" [value]="data.code" 
+                        (click)="reportHeaderActionEvent('Grade', data.code)" (keydown.enter)="fixClick()">{{data.value}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.Grade.invalid">
+                          {{"Student Grade is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'StdGroup'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="StdGroup" [required]="filter.required">
+                        <mat-option [value]="'All'" (click)="reportHeaderActionEvent('StdGroup', 'All')" (keydown.enter)="fixClick()">All </mat-option>
+                        <mat-option  *ngFor="let data of studGroupList;" [value]="data.code"  (keydown.enter)="fixClick()"
+                        (click)="reportHeaderActionEvent('StdGroup', data.code)">{{data.value}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.StdGroup.invalid">
+                          {{"Student Group is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'Appterms'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" [formControlName]="filter.groupName" [required]="filter.required">
+                        <mat-option [value]="'All'" (click)="reportHeaderActionEvent(filter.name, 'All',filter.groupName)" (keydown.enter)="fixClick()">All </mat-option>
+                        <ng-container *ngFor="let data of apptermsList">
+                          <mat-option  *ngIf="data.groupName === filter.groupName" [value]="data.code" 
+                          (click)="reportHeaderActionEvent(filter.name, data.code,filter.groupName)" (keydown.enter)="fixClick()">{{data.value}}</mat-option>
+                        </ng-container>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="filter?.groupName && reportForm.controls[filter.groupName]?.invalid">
+                          {{filter.groupName}} is required.</span>
+                      </mat-error>
+                    </mat-form-field>
+                    </div>                
+                    <div style="width: 150px; margin-left: 5px; margin-right: 20px;" *ngIf="filter.name === 'customFilter'"
+                      [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    
+                      <mat-label>
+                        {{ filter.label }}
+                        <span *ngIf="filter.required === true">*</span>
+                      </mat-label>
+                    
+                      <mat-form-field class="tw-date-picker" appearance="outline"
+                        style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                    
+                        <mat-select [disableOptionCentering]="true" [formControlName]="filter.id" [required]="filter.required"
+                          (openedChange)="openedChange($event, 'customFilter', filter.id)">
+                    
+                          <mat-option *ngFor="let item of customFilterList[filter.id]"
+                            [value]="item[customFilterOutputMap[filter.id]?.idKey]">
+                            {{ item[customFilterOutputMap[filter.id]?.dataKey] }}
+                          </mat-option>
+                    
+                        </mat-select>
+                    
+                        <mat-error class="error-txt-1">
+                          <span *ngIf="reportForm.get(filter.id || 'customFilter')?.invalid">
+                            {{ filter.label + ' is required' | translate }}
+                          </span>
+                        </mat-error>
+                    
+                      </mat-form-field>
+                    </div>
+                    <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'poolNames'"
+                    [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                      <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" multiple formControlName="poolNames"
+                      (openedChange)="openedChange($event, 'poolNames');" [required]="filter.required">
+                        <mat-option  *ngFor="let data of poolNameList;" [value]="data.code">{{data.value}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.poolNames.invalid">
+                          {{"PoolName is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+                  
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'location'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search for a location'|translate" #selectLoc 
+                      (keyup)="getLocationlist($event)" [matAutocomplete]="auto" formControlName="location" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectLoc.value != ''" (click)="selectLoc.value = '';reportHeaderActionEvent('location', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #auto="matAutocomplete">
+                      <mat-option *ngFor="let location of locationlist" (click)="reportHeaderActionEvent('location', location)" value="{{location.name}},{{location.fullName}}" (keydown.enter)="fixClick()">
+                      {{location.name}},{{location.fullName}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.location.invalid">
+                          {{"Location is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'role'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="role" [required]="filter.required">
+                        <mat-option  *ngFor="let data of RoleList;" [value]="data.id"
+                        (click)="reportHeaderActionEvent('role', data.id)" (keydown.enter)="fixClick()">{{data.name}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.role.invalid">
+                          {{"Role is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'user'" 
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search User'|translate" #selectUser
+                      (keyup)="getUserByTypeCheck($event)" formControlName="user" [matAutocomplete]="autoUser" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectUser.value != ''" (click)="selectUser.value = '';reportHeaderActionEvent('user', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoUser="matAutocomplete">
+                      <mat-option *ngFor="let user of userList" (click)="reportHeaderActionEvent('user', user)" value="{{user.name}}" (keydown.enter)="fixClick()">
+                      {{user.name}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.user.invalid">
+                          {{"User is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'studentSearch'" 
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search Student'|translate" #selectUser
+                      (keyup)="getUserInfoByTypeCheck($event,'UT_STUDENT')" formControlName="studentSearch" [matAutocomplete]="autoUser" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectUser.value != ''" (click)="selectUser.value = '';reportHeaderActionEvent('studentSearch', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoUser="matAutocomplete">
+                      <mat-option *ngFor="let user of userInfoList" (click)="reportHeaderActionEvent('studentSearch', user)" value="{{user.firstName}}" (keydown.enter)="fixClick()">
+                      {{user.firstName}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.studentSearch.invalid">
+                          {{"Student is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'staffSearch'" 
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search Staff'|translate" #selectStaff
+                      (keyup)="getUserInfoByTypeCheck($event,'UT_STAFF')" formControlName="staffSearch" [matAutocomplete]="autoUser" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectStaff.value != ''" (click)="selectStaff.value = '';reportHeaderActionEvent('staffSearch', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoUser="matAutocomplete">
+                      <mat-option *ngFor="let user of userInfoList" (click)="reportHeaderActionEvent('staffSearch', user)" value="{{user.firstName}}" (keydown.enter)="fixClick()">
+                      {{user.firstName}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.staffSearch.invalid">
+                          {{"Staff is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'doctorSearch'" 
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search Doctor'|translate" #selectStaff
+                      (keyup)="getUserInfoByTypeCheck($event,'UT_DOCTOR')" formControlName="doctorSearch" [matAutocomplete]="autoUser" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectStaff.value != ''" (click)="selectStaff.value = '';reportHeaderActionEvent('doctorSearch', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoUser="matAutocomplete">
+                      <mat-option *ngFor="let user of userInfoList" (click)="reportHeaderActionEvent('doctorSearch', user)" value="{{user.firstName}}" (keydown.enter)="fixClick()">
+                      {{user.firstName}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.doctorSearch.invalid">
+                          {{"Staff is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'tagSerialNumber'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search Tag'|translate" #selectTag
+                      (keyup)="searchToCoster($event)" formControlName="tagSerialNumber" [matAutocomplete]="autoTag" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectTag.value != ''" (click)="selectTag.value = '';reportHeaderActionEvent('tagSerialNumber', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoTag="matAutocomplete">
+                      <mat-option *ngFor="let tag of searchCosterlist" (click)="reportHeaderActionEvent('tagSerialNumber', tag)" value="{{tag.tagId}}" (keydown.enter)="fixClick()">
+                      {{tag.tagId}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.tagSerialNumber.invalid">
+                            {{"Tag is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'asset'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Asset Name'|translate" #selectAsset
+                      (keyup)="searchAsset($event)" formControlName="asset" [matAutocomplete]="autoAsset" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectAsset.value != ''" (click)="selectAsset.value = '';reportHeaderActionEvent('asset', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoAsset="matAutocomplete">
+                      <mat-option *ngFor="let asset of searchAssetList" (click)="reportHeaderActionEvent('asset', asset)" value="{{asset.name}}" (keydown.enter)="fixClick()">
+                      {{asset.name}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.asset.invalid">
+                            {{"Asset is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'patient'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Patient Name'|translate" #selectPatient
+                      (keyup)="searchPatient($event)" formControlName="patient" [matAutocomplete]="autoPatient" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectPatient.value != ''" (click)="selectPatient.value = '';reportHeaderActionEvent('patient', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoPatient="matAutocomplete">
+                      <mat-option *ngFor="let patient of searchPatientlist" (click)="reportHeaderActionEvent('patient', patient)" value="{{patient.firstName}}" (keydown.enter)="fixClick()">
+                      {{patient.firstName}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.patient.invalid">
+                            {{"Patient is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'infant'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search Infant'|translate" #selectInfant
+                      (keyup)="searchInfant($event)" formControlName="infant" [matAutocomplete]="autoPatient" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="selectInfant.value != ''" (click)="selectInfant.value = '';reportHeaderActionEvent('infant', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoPatient="matAutocomplete">
+                      <mat-option *ngFor="let infant of searchInfantlist" (click)="reportHeaderActionEvent('infant', infant)" value="{{infant.patientName}}" (keydown.enter)="fixClick()">
+                      {{infant.patientName}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.infant.invalid">
+                            {{"Infant is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'uhid'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <input #uhid  matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="true" [placeholderText]="'UHID'|translate"
+                      (keyup)="getUHID($event.target.value)" formControlName="uhid" [matAutocomplete]="autoUhid" [required]="filter.required">
+                      <button type="button" mat-button matSuffix mat-icon-button aria-label="Clear"
+                      *ngIf="uhid.value != ''" (click)="uhid.value = '';clearUHID($event);reportHeaderActionEvent('uhid', null)">
+                          <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoUhid="matAutocomplete">
+                      <mat-option *ngFor="let uhid of uhidList" (click)="reportHeaderActionEvent('uhid', uhid)" value="{{uhid}}" (keydown.enter)="fixClick()">
+                      {{uhid}}
+                      </mat-option>
+                      </mat-autocomplete>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.uhid.invalid">
+                            {{"UHID is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'activity'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="activity" (openedChange)="openedChange($event, 'activity');" multiple>
+                        <mat-option #allCatSelected value="All" (click)="reportActionEvent('activity', true)" (keydown.enter)="fixClick()">All</mat-option>
+                        <mat-option *ngFor="let category of activityCategoryList" [value]="category.code" 
+                        (click)="reportActionEvent('activity', false)" (keydown.enter)="fixClick()">
+                        {{category.value}}
+                        </mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.activity.invalid">
+                          {{"Role is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'task'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{"Task"|translate}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="task" (openedChange)="openedChange($event, 'task');" multiple>
+                        <mat-option #allTaskSelected value="All" (click)="reportActionEvent('task', true)" (keydown.enter)="fixClick()">All</mat-option>
+                        <mat-option *ngFor="let task of taskActivitiesList" [value]="task.id" 
+                        (click)="reportActionEvent('task', false)" (keydown.enter)="fixClick()">
+                        {{task.name}}
+                        </mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.task.invalid">
+                          {{"Task is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+
+                  <div style="width: 150px; margin-left: 5px;margin-right: 20px;" *ngIf="filter.name === 'dateRangeType'"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-label>{{filter.label}}<span *ngIf="filter.required === true">*</span></mat-label>
+                    <mat-form-field class="tw-date-picker" appearance="outline" style="margin-left: 0px; margin-top: 4px; width: 150px !important;">
+                      <mat-select [disableOptionCentering]="true" formControlName="dateRangeType" [required]="filter.required">
+                        <mat-option  *ngFor="let data of dateRangeList;" [value]="data"
+                        (click)="reportHeaderActionEvent('dateRangeType', data)" (keydown.enter)="fixClick()">{{data}}</mat-option>
+                      </mat-select>
+                      <mat-error class="error-txt-1">
+                        <span  *ngIf="reportForm.controls.dateRangeType.invalid">
+                          {{"Date Range Type is required"|translate}}.</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+                  
+                  <div *ngIf="filter.name === 'groupBy'" style="padding-top: 15px;" [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}">
+                    <mat-button-toggle-group appearance="legacy" name="fontStyle" aria-label="Font Style" style="height: 33px">
+                      <mat-button-toggle value="D" (change)="reportHeaderActionEvent('groupBy', $event.value);" [checked]="this.type === 'D' ? true : false">Day</mat-button-toggle>
+                      <mat-button-toggle value="M" (change)="reportHeaderActionEvent('groupBy', $event.value);" [checked]="this.type === 'M' ? true : false">Month</mat-button-toggle>
+                    </mat-button-toggle-group>
+                  </div>
+
+
+                  <button *ngIf="filter.name === 'getInsights'"  mat-button class="active-btn margin-r-1" style="padding-top: 0px;margin-left: 5px;margin-top: 15px !important;height: 33px;"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}"
+                  cdkFocusInitial (click)="reportHeaderActionEvent('getInsights', null)" [disabled]="this.reportForm.invalid || !validDate">{{filter.label}}</button>
+
+                  <button *ngIf="filter.name === 'downloadExcel'"  mat-button class="active-btn margin-r-1" style="padding-top: 0px;margin-left: 5px;margin-top: 15px !important;height: 33px;"
+                  [ngStyle]="{'display': filter.visibled === false ? 'none' : ''}"
+                  cdkFocusInitial (click)="downloadServerExcel(filter.default)" [disabled]="this.reportForm.invalid || !validDate">{{filter.label}}</button>
+                </div>
+                <span *ngIf="enableRefresh" class="dq-main-wrapper" style="margin-top: 10px;">
+                  <i class="material-icons cur-ptr"  matTooltip="{{'Refresh'|translate}}" (click)="reportHeaderActionEvent('refresh', null)" (keydown.enter)="fixClick()">autorenew</i>
+                </span>
+
+              </div>
+              <div class="report-doc">
+                <img *ngIf="this.pdfConfigSelected !== 'default' && enablePdf && !isDownloading" height="20" width="20" src="/assets/Alert/common_icons/pdf-file.png" alt="pdf" (click)="serverPdf();" style="cursor: pointer;height: 28px;width: 28px;" (keydown.enter)="fixClick()">
+                <img *ngIf="enablePdf && isDownloading" src="/assets/Alert/common_icons/pdf_grey.svg" alt="PDF Downloading" height="25" width="25" style="height: 28px;width: 28px;">
+                <img *ngIf="enableExcel && (this.params !== null && !disabled)" src="/assets/Alert/common_icons/excel_grey.svg" alt="Excel Downloading" width=30px  style="cursor: pointer;">
+                <img *ngIf="enableExcel && (this.params === null && disabled || this.params !== null && disabled)" src="/assets/Alert/common_icons/excel_icon.png" alt="" matTooltip="{{'Download as excel sheet'|translate}}" 
+                width=30px  style="cursor: pointer;" (click)="reportHeaderActionEvent('excel', null)" (keydown.enter)="fixClick()">
+                <img *ngIf="enablePdf && (this.params === null && disabled || this.params !== null && disabled) && this.pdfConfigSelected === 'default'" 
+                src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon"  matTooltip="{{'Download as PDF'|translate}}" 
+                width = 30px style="padding:0px 5px;cursor: pointer;" (click)="reportHeaderActionEvent('pdf', null)" (keydown.enter)="fixClick()">
+                <img *ngIf="enablePdf && (this.params !== null && !disabled)" src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 25px style="padding:4px 5px;cursor: pointer;">
+              </div>
+          </div>
+      </div>
+  </span>
+</div>

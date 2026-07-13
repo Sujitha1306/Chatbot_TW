@@ -1,0 +1,1130 @@
+﻿<div class="ai-porter-wrapper ovi-font-family">
+
+  <!-- Top bar: Date selector + Layout selector + Export buttons -->
+  <div class="ai-top-bar">
+
+    <!-- Date period selector -->
+    <porter-date-selector
+      [periodType]="aiPeriodType"
+      [initialFrom]="aiDateFrom"
+      [initialTo]="aiDateTo"
+      [mode]="selectedLayout === 'v5' ? 'year' : 'default'"
+      (dateChange)="onAiDateChange($event)">
+    </porter-date-selector>
+
+    <!-- Get Insights button -->
+    <button class="ai-get-btn" (click)="refreshActiveLayout()">
+      <i class="material-icons">insights</i> Get Insights
+    </button>
+
+    <!-- Spacer -->
+    <div style="flex:1;"></div>
+
+    <!-- Layout selector -->
+    <span class="layout-label">Layout</span>
+    <select class="layout-select" [(ngModel)]="selectedLayout" (ngModelChange)="onLayoutChange($event)">
+      <option *ngFor="let l of layouts" [value]="l.key">{{l.label}}</option>
+    </select>
+
+    <!-- Export buttons (V4 only) -->
+    <ng-container *ngIf="selectedLayout === 'v4' && v4DataReady">
+      <button class="ai-export-btn ai-export-excel" (click)="downloadV4Excel()" title="Download Excel">
+        <i class="material-icons">table_chart</i>
+        <span>Excel</span>
+      </button>
+      <button class="ai-export-btn ai-export-pdf" (click)="downloadV4Pdf()" title="Download PDF">
+        <i class="material-icons">picture_as_pdf</i>
+        <span>PDF</span>
+      </button>
+    </ng-container>
+
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-spinner" *ngIf="reportData.loading">
+    <div class="spinnerload"><div class="spin1"></div><div class="spin2"></div><div class="spin3"></div></div>
+  </div>
+
+  <!-- No records -->
+  <div *ngIf="reportData.noRecords && !reportData.loading"
+       style="text-align:center;margin:4% 0;color:#019F96;font-size:16px;">No Records Found</div>
+
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!--  V1 Dashboard                                                       -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <div *ngIf="selectedLayout === 'v1' && !reportData.noRecords && !reportData.loading && summaryCards.length"
+       class="ai-porter-grid grid-stack">
+
+    <div class="grid-stack-item" gs-w="12" gs-h="2" gs-x="0" gs-y="0" gs-no-resize="true">
+      <div class="grid-stack-item-content cards-row">
+        <div class="summary-card" *ngFor="let card of summaryCards">
+          <span class="card-value">{{card.value}}</span>
+          <span class="card-label">{{card.label}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="2">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Turnaround Time Breakdown</div>
+        <div class="echart-wrap">
+          <div echarts [options]="tatBarOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('tatBar',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="0" gs-y="7">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Create → Assign Trend</div>
+        <div class="echart-wrap">
+          <div echarts [options]="createAssignOpt" [initOpts]="io4" [autoResize]="true"
+               (chartInit)="onChartInit('casgn',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="3" gs-y="7">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Create → Accept Trend</div>
+        <div class="echart-wrap">
+          <div echarts [options]="createAcceptOpt" [initOpts]="io4" [autoResize]="true"
+               (chartInit)="onChartInit('cacc',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="6" gs-y="7">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Accept → Arrive Trend</div>
+        <div class="echart-wrap">
+          <div echarts [options]="acceptArriveOpt" [initOpts]="io4" [autoResize]="true"
+               (chartInit)="onChartInit('aarr',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="4" gs-x="9" gs-y="7">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Arrive → Complete Trend</div>
+        <div class="echart-wrap">
+          <div echarts [options]="arriveCompleteOpt" [initOpts]="io4" [autoResize]="true"
+               (chartInit)="onChartInit('arco',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="0" gs-y="11">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Completion Time Distribution</div>
+        <div class="echart-wrap">
+          <div echarts [options]="histOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('hist',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="7" gs-h="5" gs-x="5" gs-y="11">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Request Volume vs TAT Correlation <span class="drill-hint">click → drilldown</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="scatterOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('scatter',$event)"
+               (chartClick)="onChartClick('hour',$event)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="0" gs-y="16">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Peak Hour Analysis <span class="drill-hint">click → drilldown</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="peakHourOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('peak',$event)"
+               (chartClick)="onChartClick('hour',$event)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="6" gs-y="16">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Weekday / Weekend 3D <span class="drill-hint">click → drilldown</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="weekdayOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('weekday',$event)"
+               (chartClick)="onChartClick('weekday',$event)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="0" gs-y="21">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Pool Performance 3D <span class="drill-hint">click → drilldown</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="poolBarOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('pool',$event)"
+               (chartClick)="onChartClick('pool',$event)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="6" gs-y="21">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Category Performance 3D <span class="drill-hint">click → drilldown</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="categoryBarOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('cat',$event)"
+               (chartClick)="onChartClick('category',$event)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="12" gs-h="6" gs-x="0" gs-y="26">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Location Bottleneck Analysis <span class="drill-hint">click cell → drilldown</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="heatmapOpt" [initOpts]="io6" [autoResize]="true"
+               (chartInit)="onChartInit('heatmap',$event)"
+               (chartClick)="onChartClick('location',$event)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="32">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Porter Performance Scorecard <span class="drill-hint">click row → drilldown</span></div>
+        <div class="table-wrap" *ngIf="porterScorecard.length">
+          <table class="ai-table">
+            <thead><tr><th *ngFor="let col of porterScorecardCols">{{col}}</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let row of porterScorecard" class="clickable-row" (click)="onPorterRowClick(row)">
+                <td *ngFor="let col of porterScorecardCols">{{row[col]}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="0" gs-y="37">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Repeat Delay Locations <span class="drill-hint">click row → drilldown</span></div>
+        <div class="table-wrap" *ngIf="delayLocations.length">
+          <table class="ai-table">
+            <thead><tr><th *ngFor="let col of delayLocationsCols">{{col}}</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let row of delayLocations" class="clickable-row" (click)="onLocationRowClick(row)">
+                <td *ngFor="let col of delayLocationsCols">{{row[col]}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="!delayLocations.length" class="no-data">No locations exceed 15 min threshold</div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="7" gs-h="5" gs-x="5" gs-y="37">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Manual Completion Root Cause Trend</div>
+        <div class="echart-wrap">
+          <div echarts [options]="manualTrendOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('manual',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end v1 grid -->
+
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!--  V2 Dashboard — Porter Operations                                  -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <div *ngIf="selectedLayout === 'v2' && !reportData.noRecords && !reportData.loading && v2DataReady"
+       class="ai-porter-grid grid-stack">
+
+    <!-- Row 0: KPI cards -->
+    <div class="grid-stack-item" gs-w="12" gs-h="3" gs-x="0" gs-y="0" gs-no-resize="true">
+      <div class="grid-stack-item-content v2-kpi-row">
+        <div class="v2-kpi-card" *ngFor="let card of v2KpiCards"
+             [class.v2-kpi-card--gauge]="card.icon === 'gauge'">
+          <ng-container *ngIf="card.icon !== 'gauge'">
+            <span class="v2-kpi-label">{{card.label}}</span>
+            <span class="v2-kpi-value">{{card.value}}</span>
+            <span class="v2-kpi-trend"
+                  [class.v2-trend-up]="card.lower_is_better ? card.trend < 0 : card.trend > 0"
+                  [class.v2-trend-dn]="card.lower_is_better ? card.trend > 0 : card.trend < 0">
+              {{card.trend > 0 ? '↑' : '↓'}} {{card.trend | number:'1.1-1'}}% vs yesterday
+            </span>
+          </ng-container>
+          <ng-container *ngIf="card.icon === 'gauge'">
+            <span class="v2-kpi-label">{{card.label}}</span>
+            <div class="v2-gauge-wrap">
+              <div echarts [options]="{
+                series:[{type:'gauge',radius:'90%',startAngle:200,endAngle:-20,
+                  min:0,max:100,splitNumber:5,
+                  axisLine:{lineStyle:{width:12,color:[[0.4,'#ee6666'],[0.7,'#fac858'],[1,'#91cc75']]}},
+                  pointer:{length:'70%'},
+                  detail:{formatter:'{value}%',fontSize:16,fontWeight:'bold',color:'#333'},
+                  data:[{value:card.value}]}]}"
+                style="width:110px;height:110px;">
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Funnel | Waitlist Heatmap | Hourly Area -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="3">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">1. Request Lifecycle Funnel</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2FunnelOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2funnel',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="4" gs-y="3">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">2. Hourly Waitlist Summary (Heatmap)</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2WaitlistHeatOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2heat',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="3">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">3. Hourly Porter Requests</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2HourlyAreaOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2hourly',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 8: Treemap | Drilldown Bar | Radar -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="8">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">4. Locationwise Movement (Treemap)</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2TreemapOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2tree',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="4" gs-y="8">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">
+          5. Porter Request Count
+          <span class="drill-breadcrumb" *ngIf="v2DrillLevel==='location'">
+            Pool › {{v2DrillPool}}
+            <button class="drill-back-btn" (click)="v2DrillUp()">↩ Back</button>
+          </span>
+          <span class="drill-hint" *ngIf="v2DrillLevel==='pool'">click bar → drilldown</span>
+        </div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2DrillBarOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2drill',$event)"
+               (chartClick)="v2DrillLevel==='pool' && v2DrillDown($event.name)"
+               style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="8">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">6. Porter Individual Efficiency (Radar)</div>
+        <div class="echart-wrap v2-radar-wrap">
+          <div echarts [options]="v2RadarOpt" [initOpts]="{renderer:'canvas',height:220}" [autoResize]="true"
+               (chartInit)="onChartInit('v2radar',$event)" style="width:100%;height:220px;"></div>
+          <div class="v2-radar-table" *ngIf="v2RadarTable.length">
+            <table class="ai-table">
+              <thead><tr><th *ngFor="let c of v2RadarCols">{{c}}</th></tr></thead>
+              <tbody>
+                <tr *ngFor="let row of v2RadarTable">
+                  <td *ngFor="let c of v2RadarCols">{{row[c]}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 13: Perf Bar | Idle Heatmap | Timeline (spans 2 cols) -->
+    <div class="grid-stack-item" gs-w="3" gs-h="5" gs-x="0" gs-y="13">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">7. Porter Performance Summary</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2PerfBarOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2perf',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="5" gs-x="3" gs-y="13">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">8. Porter Idle Summary (Heatmap)</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2IdleHeatOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2idle',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="6" gs-y="13">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">9. Porter Associations — Timeline</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v2TimelineOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v2timeline',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 18: Bottom KPI strip -->
+    <div class="grid-stack-item" gs-w="12" gs-h="2" gs-x="0" gs-y="18" gs-no-resize="true">
+      <div class="grid-stack-item-content v2-bottom-strip">
+        <div class="v2-bottom-kpi" *ngFor="let k of v2BottomKpi">
+          <span class="v2-bottom-label">{{k.label}}</span>
+          <span class="v2-bottom-value">{{k.value}}</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end v2 grid -->
+
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!--  V3 Dashboard — 3D Bar: Request Volume by Hour Ã— Location Ã— Count  -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <div *ngIf="selectedLayout === 'v3' && !reportData.noRecords && !reportData.loading && v3DataReady"
+       class="ai-porter-grid grid-stack v3-dark-grid">
+
+    <!-- Row 0: Title bar -->
+    <div class="grid-stack-item" gs-w="12" gs-h="1" gs-x="0" gs-y="0" gs-no-resize="true" gs-no-move="true">
+      <div class="grid-stack-item-content v3-title-bar">
+        <span class="v3-title-text">Request Volume by Hour Ã— Location Ã— Count</span>
+        <span class="v3-title-sub">3D View: Hourly request volume across locations</span>
+      </div>
+    </div>
+
+    <!-- Row 1: 3D Chart (w=9) + Right Panel (w=3) -->
+    <div class="grid-stack-item" gs-w="9" gs-h="10" gs-x="0" gs-y="1">
+      <div class="grid-stack-item-content v3-chart-tile">
+        <div echarts [options]="v3Bar3dOpt"
+             [initOpts]="{renderer:'canvas', height: 756}"
+             [autoResize]="true"
+             (chartInit)="onChartInit('v3bar3d',$event)"
+             style="width:100%;height:100%;background:#0d1117;">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="10" gs-x="9" gs-y="1">
+      <div class="grid-stack-item-content v3-right-panel">
+
+        <!-- Color Legend -->
+        <div class="v3-panel-section">
+          <div class="v3-panel-title">Request Count (Volume)</div>
+          <div class="v3-legend-row" *ngFor="let band of v3LegendBands">
+            <span class="v3-swatch" [style.background]="band.color"></span>
+            <span class="v3-legend-label">{{band.label}}</span>
+          </div>
+        </div>
+
+        <!-- Top Insights -->
+        <div class="v3-panel-section" *ngIf="v3Insights">
+          <div class="v3-panel-title">ðŸ” Top Insights</div>
+          <div class="v3-insight-item">
+            <span class="v3-insight-icon">ðŸ“ˆ</span>
+            <div>
+              <div class="v3-insight-label">Peak volume between</div>
+              <div class="v3-insight-value">{{v3Insights.peak_window}}</div>
+            </div>
+          </div>
+          <div class="v3-insight-item">
+            <span class="v3-insight-icon">ðŸ•</span>
+            <div>
+              <div class="v3-insight-label">Highest single hour</div>
+              <div class="v3-insight-value">{{v3Insights.highest_hour?.label}} ({{v3Insights.highest_hour?.count}} requests)</div>
+            </div>
+          </div>
+          <div class="v3-insight-item">
+            <span class="v3-insight-icon">ðŸ“</span>
+            <div>
+              <div class="v3-insight-label">Busiest location</div>
+              <div class="v3-insight-value">{{v3Insights.busiest_location?.name}} ({{v3Insights.busiest_location?.total | number}} requests)</div>
+            </div>
+          </div>
+          <div class="v3-insight-item">
+            <span class="v3-insight-icon">ðŸ“Š</span>
+            <div>
+              <div class="v3-insight-label">Lowest volume</div>
+              <div class="v3-insight-value">{{v3Insights.lowest_period}}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Row 11: KPI footer -->
+    <div class="grid-stack-item" gs-w="12" gs-h="2" gs-x="0" gs-y="11" gs-no-resize="true" gs-no-move="true">
+      <div class="grid-stack-item-content v3-kpi-strip" *ngIf="v3KpiSummary">
+        <div class="v3-kpi-item">
+          <span class="v3-kpi-icon">ðŸ“Š</span>
+          <div>
+            <div class="v3-kpi-val">{{v3KpiSummary.total | number}}</div>
+            <div class="v3-kpi-lbl">Total Requests</div>
+          </div>
+        </div>
+        <div class="v3-kpi-sep"></div>
+        <div class="v3-kpi-item">
+          <span class="v3-kpi-icon">ðŸ•</span>
+          <div>
+            <div class="v3-kpi-val">{{v3KpiSummary.avg_per_hour | number}}</div>
+            <div class="v3-kpi-lbl">Average per Hour</div>
+          </div>
+        </div>
+        <div class="v3-kpi-sep"></div>
+        <div class="v3-kpi-item">
+          <span class="v3-kpi-icon">ðŸ“</span>
+          <div>
+            <div class="v3-kpi-val">{{v3KpiSummary.avg_per_location | number}}</div>
+            <div class="v3-kpi-lbl">Average per Location</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end v3 grid -->
+
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <!--  V4 Dashboard — Porter Operations Overview                         -->
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <div *ngIf="selectedLayout === 'v4' && !reportData.noRecords && !reportData.loading && v4DataReady"
+       class="ai-porter-grid grid-stack v4-grid">
+
+    <!-- Row 0 h=3: KPI cards (10 cards, 2 rows of 5) -->
+    <div class="grid-stack-item" gs-w="6" gs-h="3" gs-x="0" gs-y="0" gs-no-resize="true" gs-no-move="true">
+      <div class="grid-stack-item-content v4-kpi-row">
+        <div class="v4-kpi-card" *ngFor="let card of v4KpiCards">
+          <div class="v4-kpi-icon-wrap" [style.background]="card.color + '18'">
+            <i class="material-icons v4-kpi-icon" [style.color]="card.color">{{
+              card.icon === 'check' ? 'check_circle' :
+              card.icon === 'clock' ? 'schedule' :
+              card.icon === 'hourglass' ? 'hourglass_empty' :
+              card.icon === 'x' ? 'cancel' :
+              card.icon === 'person' ? 'people' : 'assignment'
+            }}</i>
+          </div>
+          <div class="v4-kpi-text">
+            <div class="v4-kpi-label">{{card.label}}</div>
+            <div class="v4-kpi-value">
+              {{card.value | number}}
+              <span class="v4-kpi-unit" *ngIf="card.unit">{{card.unit}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2 h=6: Donut | Gauge | Performance Metrics -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="3">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Request Status Breakdown</div>
+        <div class="v4-status-body">
+          <!-- Left: donut -->
+          <div class="v4-status-donut">
+            <div echarts [options]="v4StatusDonutOpt" [initOpts]="io5"
+                 [autoResize]="true" style="width:100%;height:100%;"></div>
+            <div class="v4-donut-center-label">
+              <span class="v4-dc-total">{{v4StatusTotal | number}}</span>
+              <span class="v4-dc-sub">Total Requests</span>
+            </div>
+          </div>
+          <!-- Right: completion rate + legend -->
+          <div class="v4-status-right">
+            <div class="v4-cr-label">Completion Rate</div>
+            <div class="v4-cr-value" [style.color]="v4CrColor">{{v4CompletionRate}}%</div>
+            <div class="v4-cr-divider"></div>
+            <div class="v4-sl-list">
+              <div class="v4-sl-row" *ngFor="let c of v4StatusCards">
+                <span class="v4-dot" [style.background]="c.color"></span>
+                <span class="v4-sl-name">{{c.name}}</span>
+                <span class="v4-sl-count">{{c.value | number}}</span>
+                <span class="v4-sl-pct">({{c.pct}}%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="3" gs-x="6" gs-y="0">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Completion Rate</div>
+        <div class="v4-gauge-body">
+          <!-- Progress-ring gauge -->
+          <div class="v4-gauge-chart">
+            <div echarts [options]="v4GaugeOpt" [initOpts]="io3"
+                 [autoResize]="true" (chartInit)="onChartInit('v4gauge',$event)"
+                 style="width:100%;height:100%;"></div>
+          </div>
+          <!-- Compact threshold legend -->
+          <div class="v4-gauge-legend">
+            <span class="v4-tl v4-tl--poor"><i></i>0–30 Poor</span>
+            <span class="v4-tl v4-tl--avg"><i></i>30–70 Avg</span>
+            <span class="v4-tl v4-tl--exc"><i></i>70–100 Excellent</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="3" gs-h="3" gs-x="9" gs-y="0">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Performance Metrics</div>
+        <div class="v4-metrics-list" *ngIf="v4PerfMetrics">
+          <div class="v4-metric-item">
+            <div class="v4-metric-icon v4-metric-icon--green"><i class="material-icons" style="font-size:18px">schedule</i></div>
+            <div>
+              <div class="v4-metric-label">Avg. Completion Time</div>
+              <div class="v4-metric-val">{{v4PerfMetrics.avg_completion_time}} <span class="v4-metric-unit">mins</span></div>
+            </div>
+          </div>
+          <div class="v4-metric-item">
+            <div class="v4-metric-icon v4-metric-icon--blue"><i class="material-icons" style="font-size:18px">timer</i></div>
+            <div>
+              <div class="v4-metric-label">Avg. Response Time</div>
+              <div class="v4-metric-val">{{v4PerfMetrics.avg_response_time}} <span class="v4-metric-unit">mins</span></div>
+            </div>
+          </div>
+          <div class="v4-metric-item">
+            <div class="v4-metric-icon v4-metric-icon--purple"><i class="material-icons" style="font-size:18px">emoji_events</i></div>
+            <div>
+              <div class="v4-metric-label">Acceptance Rate</div>
+              <div class="v4-metric-val">{{v4PerfMetrics.acceptance_rate}}<span class="v4-metric-unit">%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 8 h=5: Hourly Trend | Heatmap -->
+    <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="0" gs-y="13">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">
+          Request Volume Trend (Hourly)
+          <span class="v4-badge">By Hour</span>
+        </div>
+        <div class="echart-wrap">
+          <div echarts [options]="v4TrendOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v4trend',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="5" gs-y="13">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">
+          Request Volume Heatmap (Hourly Ã— Day)
+          <span class="v4-badge">By Hour</span>
+        </div>
+        <div class="echart-wrap">
+          <div echarts [options]="v4HeatmapOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v4heat',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap Insight Panel -->
+    <div class="grid-stack-item" gs-w="2" gs-h="5" gs-x="10" gs-y="13">
+      <div class="grid-stack-item-content v4-card v4-insight-panel">
+        <div class="v4-card-header" style="font-size:12px;">Heatmap Insights</div>
+        <div class="v4-insight-list">
+          <div class="v4-insight-row" *ngFor="let item of v4HeatmapInsights">
+            <i class="material-icons v4-insight-icon">{{item.icon}}</i>
+            <div>
+              <div class="v4-insight-label">{{item.label}}</div>
+              <div class="v4-insight-val">{{item.value}}</div>
+              <div class="v4-insight-sub">{{item.sub}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pool × Status 3D Bar -->
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="0" gs-y="8">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">
+          Pool Performance by Status
+          <span class="v4-badge">3D Bar</span>
+        </div>
+        <div class="echart-wrap">
+          <div echarts [options]="v4PoolStatus3dOpt"
+               [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v4ps3d',$event)"
+               style="width:100%;height:100%;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pool Status Insights Panel -->
+    <div class="grid-stack-item" gs-w="2" gs-h="5" gs-x="6" gs-y="8">
+      <div class="grid-stack-item-content v4-card v4-insight-panel">
+        <div class="v4-card-header" style="font-size:12px;">Summary</div>
+        <div class="v4-pool-summary-list">
+          <div class="v4-ps-block" *ngFor="let p of v4PoolStatusInsights">
+            <div class="v4-ps-pool">{{p.pool}}</div>
+            <div class="v4-ps-stats">
+              <span class="v4-ps-stat" *ngFor="let s of p.stats">
+                {{s.name}} <strong>{{s.count}}</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Porter Performance -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="8">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Porter Performance <span class="v4-badge">Requests + Avg TAT</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="v4PorterPerfOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v4portperf',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 22: Hourly Movement | Request by Service -->
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="0" gs-y="18">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Avg Hourly Movement &amp; Cancellation</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v4HourlyMovOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v4hourmov',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="6" gs-y="18">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Request by Service (Pool)</div>
+        <div class="echart-wrap">
+          <div echarts [options]="v4ServiceOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v4svc',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 25: Floorwise Movement — Source table -->
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="0" gs-y="23">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">
+          Movement Summary — Source Locations
+          <span class="v4-badge">From Floor</span>
+        </div>
+        <div class="table-wrap">
+          <table class="v4-floor-table">
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Total</th>
+                <th>Completed</th>
+                <th>In Progress</th>
+                <th>Cancelled</th>
+                <th>Avg TAT</th>
+                <th>Completion Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of v4FloorMovement.source">
+                <td class="v4-loc-name">{{row.location}}</td>
+                <td>{{row.total}}</td>
+                <td class="v4-td-green">{{row.completed}}</td>
+                <td class="v4-td-orange">{{row.inprogress}}</td>
+                <td class="v4-td-red">{{row.cancelled}}</td>
+                <td>{{row.avg_tat}} min</td>
+                <td>
+                  <div class="v4-rate-cell">
+                    <span [class]="row.comp_rate >= 80 ? 'v4-rate-green' : row.comp_rate >= 50 ? 'v4-rate-amber' : 'v4-rate-red'">
+                      {{row.comp_rate}}%
+                    </span>
+                    <div class="v4-rate-bar">
+                      <div class="v4-rate-fill"
+                           [style.width]="row.comp_rate + '%'"
+                           [style.background]="row.comp_rate >= 80 ? '#22c55e' : row.comp_rate >= 50 ? '#f59e0b' : '#ef4444'">
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 25: Floorwise Movement — Destination table -->
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="6" gs-y="23">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">
+          Movement Summary — Destination Locations
+          <span class="v4-badge">To Floor</span>
+        </div>
+        <div class="table-wrap">
+          <table class="v4-floor-table">
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Total</th>
+                <th>Completed</th>
+                <th>In Progress</th>
+                <th>Cancelled</th>
+                <th>Avg TAT</th>
+                <th>Completion Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of v4FloorMovement.destination">
+                <td class="v4-loc-name">{{row.location}}</td>
+                <td>{{row.total}}</td>
+                <td class="v4-td-green">{{row.completed}}</td>
+                <td class="v4-td-orange">{{row.inprogress}}</td>
+                <td class="v4-td-red">{{row.cancelled}}</td>
+                <td>{{row.avg_tat}} min</td>
+                <td>
+                  <div class="v4-rate-cell">
+                    <span [class]="row.comp_rate >= 80 ? 'v4-rate-green' : row.comp_rate >= 50 ? 'v4-rate-amber' : 'v4-rate-red'">
+                      {{row.comp_rate}}%
+                    </span>
+                    <div class="v4-rate-bar">
+                      <div class="v4-rate-fill"
+                           [style.width]="row.comp_rate + '%'"
+                           [style.background]="row.comp_rate >= 80 ? '#22c55e' : row.comp_rate >= 50 ? '#f59e0b' : '#ef4444'">
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- End row: Poolwise Distribution table | Category Performance table -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="4" gs-y="3">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Poolwise Request Distribution</div>
+        <div class="table-wrap">
+          <table class="v4-pool-table">
+            <thead>
+              <tr>
+                <th class="v4-pt-left">Pool</th>
+                <th>Requests</th>
+                <th>Share</th>
+                <th>Avg TAT (min)</th>
+                <th>Completion Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of v4PoolDist">
+                <td class="v4-pt-left">
+                  <div class="v4-pool-name">{{r.pool}}</div>
+                  <div class="v4-share-bar"><div class="v4-share-fill" [style.width.%]="r.share"></div></div>
+                </td>
+                <td>{{r.total | number}}</td>
+                <td>{{r.share}}%</td>
+                <td>{{r.avg_tat}}</td>
+                <td>
+                  <span class="v4-rate-pill"
+                        [class.v4-rate-green]="r.comp_rate >= 80"
+                        [class.v4-rate-amber]="r.comp_rate >= 50 && r.comp_rate < 80"
+                        [class.v4-rate-red]="r.comp_rate < 50">{{r.comp_rate}}%</span>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="v4-pt-total">
+                <td class="v4-pt-left">Total</td>
+                <td>{{v4PoolTotals.total | number}}</td>
+                <td>{{v4PoolTotals.share}}%</td>
+                <td>{{v4PoolTotals.avg_tat}}</td>
+                <td>
+                  <span class="v4-rate-pill"
+                        [class.v4-rate-green]="v4PoolTotals.comp_rate >= 80"
+                        [class.v4-rate-amber]="v4PoolTotals.comp_rate >= 50 && v4PoolTotals.comp_rate < 80"
+                        [class.v4-rate-red]="v4PoolTotals.comp_rate < 50">{{v4PoolTotals.comp_rate}}%</span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="3">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Category Performance</div>
+        <div class="table-wrap">
+          <table class="v4-cat-table">
+            <thead>
+              <tr>
+                <th class="v4-ct-left">Category</th>
+                <th>Requests</th>
+                <th>Avg TAT (min)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of v4CatPerf">
+                <td class="v4-ct-left">
+                  <span class="v4-cat-icon"><i class="material-icons">{{r.icon}}</i></span>
+                  <span class="v4-cat-name">{{r.category}}</span>
+                </td>
+                <td>
+                  <div class="v4-ct-req">{{r.total | number}}</div>
+                  <div class="v4-cat-sub">{{r.share}}%</div>
+                </td>
+                <td>{{r.avg_tat}} min</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end v4 grid -->
+
+  <!-- V5: Year Over Year Comparison -->
+  <div *ngIf="selectedLayout === 'v5' && !reportData.noRecords && !reportData.loading && v5DataReady"
+       class="ai-porter-grid grid-stack v5-grid">
+
+    <!-- Row 0 h=3: KPI cards with YoY change badges -->
+    <div class="grid-stack-item" gs-w="12" gs-h="3" gs-x="0" gs-y="0" gs-no-resize="true" gs-no-move="true">
+      <div class="grid-stack-item-content v4-kpi-row">
+        <div class="v4-kpi-card" *ngFor="let card of v5KpiCards">
+          <div class="v4-kpi-icon-wrap" [style.background]="card.color + '18'">
+            <i class="material-icons v4-kpi-icon" [style.color]="card.color">{{card.icon}}</i>
+          </div>
+          <div class="v4-kpi-text">
+            <div class="v4-kpi-label">{{card.label}}</div>
+            <div class="v4-kpi-value">
+              {{card.value | number}}<span class="v4-kpi-unit" *ngIf="card.unit"> {{card.unit}}</span>
+            </div>
+            <div class="v5-yoy-row">
+              <span class="v5-prev-val">vs {{card.prev_value | number}}</span>
+              <span [class]="card.change_good ? 'v5-badge-up' : 'v5-badge-dn'">
+                <i class="material-icons" style="font-size:9px;vertical-align:middle;">{{card.change_good ? 'arrow_upward' : 'arrow_downward'}}</i>
+                {{card.change_pct > 0 ? '+' : ''}}{{card.change_pct}}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 1: Monthly Trend (w=7) + Status Breakdown (w=5) -->
+    <div class="grid-stack-item" gs-w="7" gs-h="5" gs-x="0" gs-y="3">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Monthly Requests Trend
+          <span class="v4-badge">{{v5PeriodLabels.current}} vs {{v5PeriodLabels.previous}}</span>
+        </div>
+        <div class="echart-wrap">
+          <div echarts [options]="v5MonthlyTrendOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v5trend',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Donut (w=3) + YoY Insight panel (w=2) -->
+    <div class="grid-stack-item" gs-w="3" gs-h="5" gs-x="7" gs-y="3">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Status Breakdown <span class="v4-badge">Current Period</span></div>
+        <div class="v4-status-body">
+          <div class="v4-status-donut">
+            <div echarts [options]="v5StatusDonutOpt" [initOpts]="io5" [autoResize]="true"
+                 (chartInit)="onChartInit('v5donut',$event)" style="width:100%;height:100%;"></div>
+            <div class="v4-donut-center-label">
+              <span class="v4-dc-total">{{v5KpiCards[0]?.value | number}}</span>
+              <span class="v4-dc-sub">Requests</span>
+            </div>
+          </div>
+          <div class="v4-status-right">
+            <div class="v4-cr-label">Completion Rate</div>
+            <div class="v4-cr-value" [style.color]="v5CompletionColor">{{v5CompletionPct}}%</div>
+            <div class="v4-cr-divider"></div>
+            <div class="v5-cr-yoy">
+              <span class="v5-prev-val">vs {{v5KpiCards[1]?.prev_value | number}} last yr</span>
+              <span [class]="v5KpiCards[1]?.change_good ? 'v5-badge-up' : 'v5-badge-dn'" *ngIf="v5KpiCards[1]">
+                <i class="material-icons" style="font-size:9px;vertical-align:middle;">{{v5KpiCards[1]?.change_good ? 'arrow_upward' : 'arrow_downward'}}</i>
+                {{v5KpiCards[1]?.change_pct > 0 ? '+' : ''}}{{v5KpiCards[1]?.change_pct}}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YoY Insight panel (w=2) -->
+    <div class="grid-stack-item" gs-w="2" gs-h="5" gs-x="10" gs-y="3">
+      <div class="grid-stack-item-content v4-card v4-insight-panel">
+        <div class="v4-card-header" style="font-size:12px;">YoY Insights</div>
+        <div class="v4-insight-list">
+          <div class="v4-insight-row" *ngFor="let item of v5YoyInsights">
+            <i class="material-icons v4-insight-icon">{{item.icon}}</i>
+            <div>
+              <div class="v4-insight-label">{{item.label}}</div>
+              <div class="v4-insight-val">{{item.value}}</div>
+              <div class="v4-insight-sub">{{item.sub}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Dept Top 10 (w=5) + Time Slot (w=5) + Monthly Table (w=12 full row below) -->
+    <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="0" gs-y="8">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Requests by Department (Top 10) <span class="v4-badge">YoY</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="v5DeptBarOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v5dept',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="5" gs-y="8">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Requests by Time Slot
+          <span class="v4-badge">{{v5PeriodLabels.current}} vs {{v5PeriodLabels.previous}}</span>
+        </div>
+        <div class="echart-wrap">
+          <div echarts [options]="v5TimeSlotOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('v5timeslot',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YoY Summary panel (w=2) -->
+    <div class="grid-stack-item" gs-w="2" gs-h="5" gs-x="10" gs-y="8">
+      <div class="grid-stack-item-content v4-card v4-insight-panel">
+        <div class="v4-card-header" style="font-size:12px;">Summary</div>
+        <div class="v4-insight-list">
+          <div class="v4-insight-row" *ngFor="let row of v5YoySummary">
+            <i class="material-icons v4-insight-icon"
+               [style.color]="row.change_pct >= 0 ? '#22c55e' : '#ef4444'">
+              {{row.change_pct >= 0 ? 'arrow_upward' : 'arrow_downward'}}
+            </i>
+            <div>
+              <div class="v4-insight-label">{{row.metric}}</div>
+              <div class="v4-insight-val">{{row.current | number:'1.0-1'}}</div>
+              <div class="v4-insight-sub">vs {{row.previous | number:'1.0-1'}}
+                &nbsp;<span [class]="row.change_pct >= 0 ? 'v5-badge-up' : 'v5-badge-dn'">
+                  {{row.change_pct > 0 ? '+' : ''}}{{row.change_pct}}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Comparison Table — full row -->
+    <div class="grid-stack-item" gs-w="12" gs-h="5" gs-x="0" gs-y="13">
+      <div class="grid-stack-item-content v4-card">
+        <div class="v4-card-header">Monthly Comparison
+          <span class="v4-badge">{{v5PeriodLabels.current}} vs {{v5PeriodLabels.previous}}</span>
+        </div>
+        <div class="table-wrap">
+          <table class="ai-table v5-table">
+            <thead>
+              <tr>
+                <th rowspan="2">Month</th>
+                <th colspan="3">{{v5PeriodLabels.current}}</th>
+                <th colspan="3">{{v5PeriodLabels.previous}}</th>
+                <th rowspan="2">% Change</th>
+              </tr>
+              <tr><th>Requests</th><th>Completed</th><th>Cancelled</th>
+                  <th>Requests</th><th>Completed</th><th>Cancelled</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of v5MonthlyTable">
+                <td class="v5-month-cell">{{row.month}}</td>
+                <td>{{row.cur_req | number}}</td>
+                <td class="v4-td-green">{{row.cur_comp | number}}</td>
+                <td class="v4-td-red">{{row.cur_can | number}}</td>
+                <td>{{row.prev_req | number}}</td>
+                <td class="v4-td-green">{{row.prev_comp | number}}</td>
+                <td class="v4-td-red">{{row.prev_can | number}}</td>
+                <td [class]="row.pct_change >= 0 ? 'v5-badge-up' : 'v5-badge-dn'" style="white-space:nowrap;">
+                  {{row.pct_change > 0 ? '+' : ''}}{{row.pct_change}}%
+                </td>
+              </tr>
+            </tbody>
+            <tfoot *ngIf="v5KpiCards.length">
+              <tr class="v5-total-row">
+                <td><strong>Total</strong></td>
+                <td>{{v5KpiCards[0]?.value | number}}</td>
+                <td class="v4-td-green">{{v5KpiCards[1]?.value | number}}</td>
+                <td class="v4-td-red">{{v5KpiCards[2]?.value | number}}</td>
+                <td>{{v5KpiCards[0]?.prev_value | number}}</td>
+                <td class="v4-td-green">{{v5KpiCards[1]?.prev_value | number}}</td>
+                <td class="v4-td-red">{{v5KpiCards[2]?.prev_value | number}}</td>
+                <td [class]="v5KpiCards[0]?.change_good ? 'v5-badge-up' : 'v5-badge-dn'">
+                  {{v5KpiCards[0]?.change_pct > 0 ? '+' : ''}}{{v5KpiCards[0]?.change_pct}}%
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end v5 grid -->
+
+  <!-- â”€â”€ Drilldown side panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <div class="drill-overlay" *ngIf="drillPanel" (click)="closeDrill()"></div>
+  <div class="drill-panel" [class.drill-panel--open]="drillPanel">
+    <div class="drill-panel-header">
+      <span class="drill-panel-title">{{drillTitle}}</span>
+      <button class="drill-close" (click)="closeDrill()">✕</button>
+    </div>
+    <div class="drill-panel-body">
+      <div *ngIf="drillLoading" style="text-align:center;padding:30px;">
+        <div class="spinnerload"><div class="spin1"></div><div class="spin2"></div><div class="spin3"></div></div>
+      </div>
+      <ng-container *ngIf="!drillLoading">
+        <div *ngIf="drillShowTrend" class="drill-chart-wrap">
+          <div echarts [options]="drillTrendOpt" [initOpts]="{height:180,renderer:'canvas'}"
+               [autoResize]="true" (chartInit)="onChartInit('drillTrend',$event)"
+               style="width:100%;height:180px;"></div>
+        </div>
+        <div class="drill-table-wrap" *ngIf="drillRows.length">
+          <table class="ai-table">
+            <thead><tr><th *ngFor="let col of drillCols">{{col}}</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let row of drillRows">
+                <td *ngFor="let col of drillCols">{{row[col]}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div *ngIf="!drillRows.length" class="no-data">No detail data available</div>
+      </ng-container>
+    </div>
+  </div>
+
+</div>

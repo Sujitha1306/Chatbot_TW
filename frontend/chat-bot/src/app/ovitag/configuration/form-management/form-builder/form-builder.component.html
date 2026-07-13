@@ -1,0 +1,398 @@
+<div style="height: calc(100% - 60px);">
+  <mat-toolbar class="input-header">
+      <div class ="header-name" >{{"Form Builder"|translate}}</div>
+      <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+        <mat-icon class="icon-style">highlight_off</mat-icon>
+    </button></div>
+  </mat-toolbar>
+  <div class="popup-margin" [ngClass]="selectedTab != 'Entity Association' ? 'custom-name tw-form-grp-hight-wid' : 'tw-entity-assocai-tab' ">
+    <mat-tab-group style="height: 100%;overflow: hidden;" class="form-tab" (selectedTabChange)="tabChanged($event)">
+      <mat-tab label="{{'Form'|translate}}" >
+        <ng-template mat-tab-label >{{"Form"|translate}}</ng-template>
+        <div #container style="height: calc(100% - 5px);overflow: auto;padding-top: 5px;" [formGroup]="templateForm">
+          <div>
+              <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;">
+                  <div fxFlex.xs="50"   fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                    <mat-label class="ovi-lbl-text-size">{{"Template Name"|translate}}</mat-label>
+                  <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template Name'|translate"
+                      formControlName="name" [errorStateMatcher]="matcher"
+                      autofocus autocomplete="off" required>
+                    <mat-error *ngIf="templateForm.controls['name'].invalid" class="error-txt">
+                        <span [hidden]="!templateForm.controls['name'].errors.required">
+                            {{"Name is required."|translate}}</span>
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                  <div fxFlex.xs="50"   fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                    <mat-label class="ovi-lbl-text-size" >{{"Type"|translate}}</mat-label>
+                  <mat-form-field  style="width: calc(100% - 10px);" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type Name'|translate" formControlName="type" [disableOptionCentering]="true">
+                      <mat-option *ngFor="let data of formTemplateTypeList" [value]="data.code">
+                          {{data.value}}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                  <div fxFlex.xs="50"   fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field style="width: calc(100% - 10px);"appearance="outline">
+                      <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" formControlName="description">
+                    </mat-form-field>
+                </div>
+              </div>
+              <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;">
+                  <div fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                    <mat-label class="ovi-lbl-text-size">{{"Applicable to Current Facility"|translate}}</mat-label>
+                    <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                      <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Applicable to Current Facility'|translate"
+                        formControlName="isFacility" [disableOptionCentering]="true">
+                        <mat-option value="true">{{"Yes"|translate}}</mat-option>
+                        <mat-option value="false">{{"No"|translate}}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div fxFlex.xs="50"   fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                    <mat-label class="ovi-lbl-text-size">{{"Form Status"|translate}}</mat-label>
+                  <mat-form-field style="width: calc(100% - 10px);"appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Form Status'|translate" formControlName="formStatusId" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of formStatusList" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                  <div fxFlex.xs="50"   fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                    <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                  <mat-form-field style="width: calc(100% - 10px);"appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of statusList" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+              <div fxLayout="column" fxLayout.lt-sm="column" fxLayoutGap="10px" style="margin: 0px 10px;" class="formtext-field">
+                <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="100">
+                  <mat-label class="ovi-lbl-text-size">{{ "Custom Css" | translate }}</mat-label>
+                  <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <textarea matInput formControlName="css" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Custom Css'|translate" [errorStateMatcher]="matcher"
+                      ></textarea>
+                    <mat-error *ngIf="templateForm.get('css')?.invalid">
+                      <span class="ovi-fnt-sze13">{{ "customCss JSON data is invalid" | translate }}</span>
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+              <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="10px" style="margin: 0px 10px; height: 40px; align-items: center;" class="ovi-fnt-sze12">
+                <div *ngFor="let item of jsonKeyList">
+                  <mat-checkbox [checked]="item.value" (change)="onCheckboxChange(item, $event)">{{(item.key === 'roundTrip' ? (item.key | titlecase ) : (item.key | splitCapital | titlecase)) | translate}}</mat-checkbox>
+                </div>
+              </div>
+              <div *ngIf="workFlowStatus">
+                <div class="ovi-fnt-sze14" style="margin: 0px 10px; font-weight: 600; margin-top: 5px;">Workflow Status</div>
+                <mat-divider class="divider" style="padding: 5px;"></mat-divider>
+                <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;" style="align-items: center;margin: 0px 10px;">
+                  <div fxFlex.xs="25" fxFlex.gt-xs="25" fxFlex.lg="25" fxFlex.md="25" fxFlex.sm="25">
+                    <mat-label class="ovi-lbl-text-size">{{"Form Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                      <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Form Status'|translate"
+                        formControlName="formGroupname">
+                        <mat-option *ngFor="let data of entityFormStatusList" [value]="data.code" (click)="getGroupName(data)" (keydown.enter)="fixClick()">
+                          {{data.value}}</mat-option>
+                      </mat-select>
+                      <mat-error *ngIf="templateForm.controls['formGroupname'].invalid" class="error-txt">
+                        <span [hidden]="!templateForm.controls['formGroupname'].errors.required">
+                            {{"Form Status is required."|translate}}</span>
+                    </mat-error>
+                    </mat-form-field>
+                  </div>
+                  <div fxFlex.xs="25" fxFlex.gt-xs="25" fxFlex.lg="25" fxFlex.md="25" fxFlex.sm="25">
+                    <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                    <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                      <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate"
+                        formControlName="formName">
+                    </mat-form-field>
+                  </div>
+                  <div fxFlex.xs="12" fxFlex.gt-xs="12" fxFlex.lg="12" fxFlex.md="12" fxFlex.sm="12">
+                    <mat-label class="ovi-lbl-text-size" style="position: relative;bottom: 9px;">{{"Level"|translate}}</mat-label>
+                    <div style="width: 90px;top: 10px;">
+                      <div style="display: flex;">
+                        <button class="ovi-prmry-wht-clr ovi-fnt-sze16"
+                          style=" cursor: pointer; border: 3px solid #fcfff9; border-radius: 50%; font-weight: 600; height: 27px; width: 128px;"
+                          [ngClass]="{'formStatus-clr': templateForm.controls['formLevel'].value == 0,
+                                                                  'ovi-prmry-bg-clr': templateForm.controls['formLevel'].value != 0  }"
+                          (click)="updateVisitorCount('decrement');">-</button>
+                        <button class="ovi-prmry-clr ovi-fnt-sze18"
+                          style=" background: transparent; border: 0px; height: 30px; font-weight: 800;">
+                          <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" #availableVisitors="matInput" formControlName="formLevel"
+                            autocomplete="off" [readonly]="true" style="margin-top: -5px;" class="ovi-fnt-sze20">
+                        </button>
+                        <button class="ovi-prmry-wht-clr ovi-fnt-sze16"
+                          style=" cursor: pointer; border: 3px solid #fcfff9; border-radius: 50%; font-weight: 600; height: 27px; width: 128px;"
+                         [ngClass]="{'formStatus-clr': templateForm.controls['formLevel'].value >= maxVisitorLimit,'ovi-prmry-bg-clr': templateForm.controls['formLevel'].value < maxVisitorLimit}"
+                          (click)="updateVisitorCount('increment'); ">+</button>
+                      </div>
+                    </div>
+                  </div>
+                   <div fxFlex.xs="6" fxFlex.gt-xs="6" fxFlex.lg="6" fxFlex.md="6" fxFlex.sm="6" style="position: relative; top: 5px;">
+                    <span class="act-space-around">
+                      <mat-checkbox formControlName="formEdit" (change)="onchangeEdit($event)" class="ovi-fnt-sze12">{{"Edit"|translate}}</mat-checkbox>
+                    </span>
+                  </div>
+                  <div *ngIf="templateForm.controls['formLevel'].value > 1" fxFlex.xs="8" fxFlex.gt-xs="8" fxFlex.lg="8" fxFlex.md="8" fxFlex.sm="8" style="position: relative; top: 5px;">
+                    <span class="act-space-around">
+                      <mat-checkbox formControlName="formReturn" (change)="onchangeReturn($event)" class="ovi-fnt-sze12" >{{"Return"|translate}}</mat-checkbox>
+                    </span>
+                  </div>
+                  <div style="position: relative; top: 4px;">
+                    <button mat-button class="active-btn " appDebounceClick (debounceClick)="addFormStatus()" cdkFocusInitial
+                      [debounceTime]="1000"
+                      [disabled]="!templateForm.controls['formGroupname'].value || !templateForm.controls['formName'].value 
+                                  || !templateForm.controls['formLevel'].value">{{editData != null &&  editData != undefined ? 'Update' : 'Add' | translate}}</button>
+                  </div>
+                </div>
+                <div *ngIf="formStatusData.length" style="position: relative; top: 15px;width: 99%;">
+                  <angular-table-component [id]="'FormStatus'" [type]="'ng-table'" [tableData]="formStatusData"
+                    [columns]="formStatusDisplayColumn" [columnData]="formStatusconDataColumns" (triggerAction)="eventAction($event)">
+                  </angular-table-component>
+                </div>
+              </div>
+            </div>
+          </div>
+      </mat-tab>
+      <mat-tab label="Design">
+        <ng-template mat-tab-label >{{"Design"|translate}}</ng-template>
+         <div style="height: calc(100% - 5px); width: calc(100% - 10px);padding: 5px 0px 0px 5px;" [formGroup]="templateForm">
+            <mat-drawer-container class="drawer-container" style="height: 100%;" autosize>
+              <mat-drawer #menu mode="side" opened="true" style = "width : 300px; max-width: 350px; height: 100%; background-color: white;">
+                <div style=" height: 100%;overflow: auto;">
+                  <div style="padding-left:5px;background: #EEEFF1;height: 40px;display: flex;align-items: center; justify-content: space-between;" class="ovi-fnt-sze12"> 
+                    <span>{{"Select DataItem"|translate}}</span>
+                     <div style="display: flex; align-items: center; gap: 3px;padding-right: 5px">
+                          <div class="tw-refresh-icon">
+                            <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
+                                (click)="reloadConfig()" (keydown.enter)="fixClick()" style="cursor: pointer; float: right;">autorenew</i>
+                            </span>
+                          </div>
+                          <div class="frm-filter-action" appTooltip tooltipText="{{ 'Filter' | translate }}" [matMenuTriggerFor]="menuAction" (click)="$event.stopPropagation()">
+                            <span class="material-icons ovi-fnt-sze17" style="color:#fff; padding-top: 2px;">filter_alt </span>
+                            <span *ngIf="selectedValue" class="frm-filter-indicator">
+                              <span class="frm-sub-indicator"></span>
+                            </span>
+                          </div>
+                          
+                          <mat-menu #menuAction="matMenu" class="frm-filter-menu ovi-font-family">
+                            <div *ngIf="dataItemTypes" class="frm-filter-container">
+                              <span class="ovi-fnt-sze14 frm-filter-header">{{"Filter"|translate}}</span>
+                              <div class="frm-filter-list" (click)="$event.stopPropagation()" (keydown.enter)="fixClick()">
+                                <div class="frm-header-container">
+                                  <div class="frm-sub-filter-header">{{ 'Data Items' | translate }}</div>
+                                </div>
+                                <div class="frm-filter-group">
+                                  <span *ngFor="let sub of dataItemTypes" (click)="selectedFilter(sub)" class="frm-subfilter ovi-fnt-sze12"
+                                    (keydown.enter)="fixClick()">
+                                    <span class="frm-filter-check" [ngClass]="{'frm-selected-filter-check': isSelected(sub)}">{{isSelected(sub) ? '✔' : ''}}</span> {{ sub | translate }}
+                                  </span>
+                                </div>
+                              </div>
+                              <div class="frm-filter-footer">
+                                <button mat-button class="active-btn" (click)="selectedFilter(selectedValue)">{{"Apply"|translate}}</button>
+                              </div>
+                            </div>
+                          </mat-menu>
+                        </div>
+                  </div>
+                    <div style="height:calc(100% - 47px);overflow-x: hidden;">
+                      <mat-nav-list style="width: calc(100% - 3px);">
+                        <mat-form-field appearance="outline" class="full-width" style="width: 290px">
+                          <mat-select matSelectSearch placeholder="Select Data Item">
+                            <mat-option *ngFor="let item of dataItems">
+                              <div class="item-row" (click)="$event.stopPropagation()">
+                                <span class="item-text">
+                                  {{item.labelName}} - {{item.name}} ({{item.typeName}})
+                                </span>
+                                <button mat-icon-button *ngIf="!item.isAdded"
+                                  (click)="addDataItem(item);item.isAdded = false; $event.stopPropagation();" [disableRipple]="true">
+                                  <mat-icon>add_circle_outline</mat-icon>
+                                </button>
+                              </div>
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                    </mat-nav-list>
+                  </div>
+                </div>
+              </mat-drawer>
+              <mat-drawer-content style="height:calc(100% - 2px);">
+                <div class="ovi-font-family" style="height: 100%;">
+                  <div *ngIf="isTrigger" style="height: 40px;background: #EEEFF1;display: flex;align-items: center;padding-left:5px;position: relative;">
+                    <span class="ovi-fnt-sze12" style="width: calc( 100% - 120px);">{{"Form Design"|translate}}</span>
+                    <span style="float: right;">
+                      <button type="button" class="icon-only-btn"  matTooltip="{{ enableDrag ? 'Disable Drag & Drop' : 'Enable Drag & Drop' }}" (click)="enableDrop(!enableDrag)">
+                        <mat-icon class="drag-icon" style="padding-top: 0%;margin-right : 10px; color: var(--primary-bg-color) !important;" [class.disabled]="!enableDrag">
+                          open_with
+                        </mat-icon>
+                      </button>
+                    </span>
+                    <span style="float: right;">
+                      <button class="ovi-prmry-bg-clr" style=" margin-right: 10px;margin-top:-5px; height: 28px; width: 90px; color: white;
+                          border: transparent; border-radius: 5px;" [ngStyle]="{color : pfFormTemplateId == null ? 'grey' : 'white'}" (click) = "previewDialog()" [disabled]="pfFormTemplateId == null">
+                          {{"Preview"|translate}}
+                      </button>
+                    </span>
+                  </div>
+                  <div *ngIf="isReload" style="height: calc(100%);overflow: auto;">
+                    <app-form-component [formTemplateData] = "formTemplateData" [formConfig] = "formConfig" type = 'create' (formTemplateUpdatedData) = formTemplateUpdatedData($event) [enableDrag]="enableDrag" (isSaveEnabled) = isSaveEnable($event)     [activeAccordionKey]="activeAccordionKey" (accordionTargetChanged)="onAccordionTargetChanged($event)"></app-form-component>
+                  </div>
+                </div>
+              </mat-drawer-content>
+            </mat-drawer-container>
+            </div>
+      </mat-tab>
+      <mat-tab label="{{'Approval Matrix'|translate}}" >
+        <ng-template mat-tab-label >{{"Approval Matrix"|translate}}</ng-template>
+        <div style="height: calc(100% - 5px);padding-top: 5px;width: 100%;overflow-y:auto; overflow-x: hidden;
+                        position: relative;" [formGroup]="matrixForm">
+          <div fxLayout="row" fxLayout.lt-sm="column" fxLayout="row wrap"
+            style="margin: 0px 10px;width: 100%;justify-content: flex-start;flex-wrap: wrap;">
+            <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+              <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}</mat-label>
+              <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                <mat-select formControlName="recipientType" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                  required (selectionChange)="getRecipientName($event.value)">
+                  <mat-option *ngFor="let data of recipientTypeList" [value]="data.code">{{data.value}} </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+              <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+              <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                  formControlName="recipientName" appTypeHit (typeHit)="searchUserNamelist($event)" [matAutocomplete]="auto"
+                  autocomplete="off">
+                <mat-autocomplete autoActiveFirstOption [displayWith]="this.recipientEnabled? getUsername.bind(this) : ''"
+                  #auto="matAutocomplete">
+                  <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                    <div class="alrt-wid-styl">{{option.name}}</div>
+                  </mat-option>
+                </mat-autocomplete>
+              </mat-form-field>
+            </div>
+            <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+              <mat-label class="ovi-lbl-text-size">{{"Level"|translate}}</mat-label>
+              <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                <mat-select formControlName="level" required appPlaceholder [showPlaceholder]="false" [placeholderText]="'Level'|translate" 
+                   (selectionChange)="getLavelValueName($event.value)">
+                  <mat-option *ngFor="let data of levelListInfo" [value]="data.code">{{data.value}} </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+              <mat-label class="ovi-lbl-text-size">{{"Approval Capacity"|translate}}</mat-label>
+              <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Approval Capacity'|translate"
+                  formControlName="description">
+              </mat-form-field>
+            </div>
+            <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+              <mat-label class="ovi-lbl-text-size">{{"Channel Type"|translate}}</mat-label>
+              <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                <mat-select formControlName="channelId" required appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate">
+                  <mat-option *ngFor="let data of channelList" [value]="data.code">{{data.value}} </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+              <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+              <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                <mat-select formControlName="entityStatusId" required appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" [disabled]="true">
+                  <mat-option *ngFor="let data of this['entityFormStatusInfo']" [value]="data.code">{{data.value}} </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div style="position: relative; top: 20px;">
+              <button mat-button class="active-btn " appDebounceClick (debounceClick)="addApprovelData()" cdkFocusInitial  [disabled]="!matrixForm.controls['recipientType'].value || !matrixForm.controls['recipientName'].value 
+                || !matrixForm.controls['channelId'].value" [debounceTime]="1000">{{ appEditData != null &&  appEditData != undefined ? 'Update' : 'Add' | translate}}</button>
+            </div>
+          </div>
+          <div *ngIf="pfworkflowData.length"  style="position: relative; top: 15px;width: 99%;">
+            <angular-table-component [id]="'approvelMatrix'" [type]="'ng-table'" [tableData]="pfworkflowData"
+              [columns]="approvelDisplayColumn" [columnData]="approvelDataColumns" (triggerAction)="eventAction($event)">
+            </angular-table-component>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="{{'Department'|translate}}"  *ngIf="data">
+        <ng-template mat-tab-label >{{"Department"|translate}}</ng-template>
+        <div style="height: calc(100% - 5px);padding-top: 5px;width: 100%;overflow-y:auto; overflow-x: hidden;
+        position: relative;" [formGroup]="departmentForm">
+          <div style="width: calc(100% - 70px);">
+                  <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;width: 100%">
+                    <div fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                      <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}</mat-label>
+                      <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to department'|translate"
+                           appTypeHit (typeHit)="searchDepartmentDetails($event)" [matAutocomplete]="autoFrom" formControlName="departmentId">
+                        <mat-autocomplete autoActiveFirstOption [displayWith]="this.departmentEnabled === true ? getDepartmentList.bind(departmentList) : ''"
+                        #auto="matAutocomplete" #autoFrom="matAutocomplete">
+                          <mat-option *ngFor="let list of departmentList"
+                                      [value]="list.id">
+                            <div class="tot-wid-styl">{{list.name}}</div>
+                          </mat-option>
+                        </mat-autocomplete>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="false" fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                      <mat-label class="ovi-lbl-text-size">{{"QualifierTypeId"|translate}}</mat-label>
+                      <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type Name'|translate"
+                          formControlName="qualifierTypeId" [disableOptionCentering]="true">
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                      <mat-label class="ovi-lbl-text-size">{{"Start Date"|translate}}</mat-label>
+                      <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                        <input  matInput [matDatepicker]="picker1" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate"
+                          formControlName="startDate" [min]="selectedDate">
+                        <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                        <mat-datepicker #picker1></mat-datepicker>
+                      </mat-form-field>
+                    </div>
+                    <div fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30" fxFlex.sm="30">
+                      <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}}</mat-label>
+                      <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                        <input  matInput [matDatepicker]="picker2" appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate"
+                          formControlName="endDate">
+                        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                        <mat-datepicker #picker2></mat-datepicker>
+                      </mat-form-field>
+                    </div>
+                      <div style="position: relative; top: 5px; left: 20px; display: flex ; align-items: center;">
+                      <button mat-button class="active-btn " (click)="addDepartment()" [disabled]="departmentForm.invalid" cdkFocusInitial  [disabled]=""
+                      >{{editdepKey ? 'Update' : 'Add'}}</button>
+                     </div>
+                  </div>
+             <mat-divider></mat-divider>
+            <div *ngIf="this.deptable">
+              <angular-table-component [id]="'department'" [type]="'ng-table'" [tableData]="deptableData"
+                [columns]="depdisplayedColumns" [columnData]="depDataColumns" (triggerAction)="eventAction($event)">
+              </angular-table-component>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab label="{{'Entity Association'|translate}}" *ngIf="entityData">
+        <app-manage-entity-association [entityAssociationData]="entityData"></app-manage-entity-association>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+  <div #footer *ngIf="isSaveEnabled && selectedTab != 'Entity Association'" class="ovi-pop-ftr">
+    <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+    <button mat-button class="active-btn"  *ngIf="selectedTab == 1" [ngStyle]="{color : pfFormTemplateId == null ? 'grey' : 'white'}" appDebounceClick
+    (debounceClick)="previewDialog()" [disabled]="pfFormTemplateId == null">{{"Preview"|translate}}</button>
+    <button mat-button class="active-btn"  cdkFocusInitial appDebounceClick
+    (debounceClick)="saveFormTemplate()" [disabled]="templateForm.controls['name'].invalid">{{"Save"|translate}}</button>
+    <button mat-button class="active-btn" *ngIf="templateForm.controls['id'].value != null"  cdkFocusInitial appDebounceClick
+    (debounceClick)="saveAsFormTemplate()">{{"Save As"|translate}}</button>
+  </div>
+</div>

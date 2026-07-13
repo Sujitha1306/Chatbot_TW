@@ -1,0 +1,1011 @@
+<div class="loading-spinner" *ngIf="isLoading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<mat-toolbar class="mat-elevation-z4" style="background-color:  #EDF4F7 !important; height: 35px; padding-left: 0px;"
+    *ngIf="(options.show.navbar)">
+    <div style="width: 100%; height: 100%; display: flex; justify-content: space-between;">
+        <div>
+            <div class="leaf-toolbar2-menu" *ngIf="options.show.navMenu">
+                <button mat-icon-button style="object-fit: contain; color: white;" (click)="menu.toggle()"
+                     matTooltip="{{'Block view'|translate}}" matTooltipClass="custom-tooltip">
+                    <em class="material-icons ovi-fnt-sze19"
+                        style="padding-top : 0px;padding-bottom: 5px;font-weight: 600;">menu </em>
+                </button>
+            </div>
+            <div class="leaf-toolbar2-blk" [ngStyle]="{'width' : type == 'popup' ? '180px' : '120px'}"
+                *ngIf="options.show.blockSelect">
+                <mat-select id="blockSelect" [formControl]="blockId" (selectionChange)="onBlockChange($event.value)"
+                    panelClass="leaf-blk-select-box" disableOptionCentering>
+                    <mat-option class="ovi-fnt-sze14" *ngFor="let blk of blockList" [value]="blk.id">
+                        {{blk.name}}
+                    </mat-option>
+                </mat-select>
+            </div>
+            <div class="leaf-toolbar2-flr" [ngStyle]="{'width' : type == 'popup' ? '200px' : '130px'}"
+                *ngIf="options.show.floorSelect">
+                <mat-select id="floorSelect" [formControl]="floorId" (selectionChange)="onFloorChange($event.value)"
+                    panelClass="leaf-flr-select-box" disableOptionCentering>
+                    <mat-option class="ovi-fnt-sze14" *ngFor="let floor of floorList" [value]="floor.id">
+                        {{floor.name}}
+                    </mat-option>
+                </mat-select>
+                <!-- <button (click) = "changeView()">{{blockView['active'] ? 'Floor view' : 'Block view'}}</button> -->
+            </div>
+            <div fxHide
+                style="width: 20%; height: 85%; margin-top: 2px; float: right; background-color: white; border: 0.5px solid black ; border-radius: 0px 50px 50px 0px;"
+                *ngIf="options.show.searchBox">
+                <span>
+                    <input type="text"
+                        style="border-color: white; height: 70%; width: 78%; border-radius: 50px; border-width: 0px; padding-left: 10px; outline: none;">
+                </span>
+                <span>
+                    <button mat-icon-button id="search-icon" disabled style="width: 10%;">
+                        <mat-icon class="ovi-fnt-sze27"  style="line-height: 18px !important;">search</mat-icon>
+                    </button>
+                </span>
+            </div>
+
+        </div>
+        <div style="padding-right: 10px; display: flex; align-items: center; gap: 5px;" *ngIf="!pathData && options.show.editable">
+            <!-- <button  *ngIf="activate_btn && activate_btn.includes('BT_FPAT')" mat-icon-button class="filter-btns" [class.active]="isExpanded" (click)="toggleExpand()" appTooltip
+            tooltipText="Create Location">
+            <span class="material-icons"
+                style="padding: 0; font-size: 16px; color: #fff; padding-bottom: 3px;">add_location_alt</span>
+            </button> -->
+            <div  *ngIf="navConfig.manualPublish" style="display: flex;">
+                <div style="height: 30px; width: 250px; background-color: white;color: #4f4f4f;">
+                    <mat-form-field class="filter-select select-drpdwn-arw" appearance="none">
+                        <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Tag'|translate" [formControl]="selectedTag"
+                            (openedChange)="tagChanged($event)">
+                            <mat-option>
+                                <ngx-mat-select-search [formControl]="tagSearchControl" (ngModelChange)="applyTagFilter($event)" [placeholderLabel]="'Search....'|translate" [noEntriesFoundLabel]="'No matching options'">
+                                </ngx-mat-select-search>
+                            </mat-option>
+
+                            <mat-option *ngFor="let tag of associatedTagsFilters" [value]="tag.tagId">
+                                <span style="float: left;margin: 2px; width: 25px; height: 30px;">
+                                    <img matListAvatar src="/assets/Floorplan/{{tag.tagAssociationType}}.svg" alt="device">
+                                </span>
+                                <span style="padding-left: 10px;">
+                                    {{tag.tagId}}, {{tag.tagAssociationName}}
+                                </span>
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>                                    
+                </div>
+                <div>
+                    <button mat-icon-button appTooltip tooltipText="{{'Manual navigation'|translate}}" style="height: 30px; border-radius: 0px 5px 5px 0px;"
+                        class="filter-btns" (click)="enableTagPublish()"
+                        [ngClass]="{'ovi-prmry-bg-clr': selectedTag.value != null && enableManualNav == false,
+                                    'tag-disabled': selectedTag.value == null || enableManualNav == true}" >
+                            <!-- [ngStyle]="{ background : selectedTag.value !=null && enableManualNav == false ? '#1e8fc8' : '#cacbcb'}" -->
+                        <span class="material-icons ovi-fnt-sze15"
+                            style="border-color: white; padding: 0; color: #fff; padding-bottom: 2px;">send</span>
+                    </button>
+                </div>
+            </div>
+            <button  *ngIf="!blockView.active && activate_btn && activate_btn.includes('BT_FPET')" mat-icon-button appTooltip tooltipText="{{'Edit Mode'|translate}}" [class.active]="isEditPolygon"
+                class="filter-btns" (click)="actionEvent('editPolygon',!isEditPolygon)">
+                <span class="material-icons  ovi-fnt-sze15"
+                    style="padding: 0; color: #fff; padding-bottom: 2px;">mode_edit</span>
+            </button>
+            <button *ngIf="!blockView.active && activate_btn && activate_btn.includes('BT_FPMF')" mat-icon-button class="filter-btns" [class.active]="isNewMapFilter" appTooltip
+                tooltipText="{{'Map Filter'|translate}}" (click)="actionEvent('mapFilter', !isNewMapFilter)">
+                <span class="material-icons ovi-fnt-sze16"
+                    style="padding: 0;color: #fff; padding-bottom: 1px;">pin_drop</span>
+            </button>
+            <button *ngIf="activate_btn && activate_btn.includes('BT_FPTF')" mat-icon-button [matMenuTriggerFor]="allFilter" appTooltip tooltipText="{{'Tag Filters'|translate}}"
+                class="filter-btns" [class.active]="allFilterTrigger?.menuOpen">
+                <span class="material-icons ovi-fnt-sze16" style="padding: 0;color: #fff;">filter_alt</span>
+            </button>
+            <div class="floormap-toggle-content1"
+                *ngIf="false && (options.show.filterOption || (reqType && ['porter', 'track'].includes(reqType)))">
+                <div style="position: absolute;" *ngIf="!blockView.active && options.show.filterOption">
+                    <div class="social-icons">
+                        <!-- Toggle Button -->
+                        <!-- <input type="checkbox" *ngIf="leafRef != undefined" id="checkDia">
+                    <label *ngIf="leafRef != undefined" for="checkDia" style="position: absolute;">
+                        <div id="button"><span class="material-icons" style="color: white;font-size: 35px;position: absolute;padding-top: 0px;"  matTooltip="Floating Menu" (click)="filterOptions.isOpen == true ? filterOptions.isOpen = false : ''">highlight_off</span></div>
+                    </label> -->
+                        <input type="checkbox" *ngIf="leafRef == undefined" id="checkCon">
+                        <label *ngIf="leafRef == undefined" for="checkCon" style="position: absolute; top: 7px;">
+                            <div id="button">
+                                <span class="material-icons  ovi-fnt-sze30"
+                                    style="color: lightgrey; position: absolute;padding-top: 0px;"
+                                     matTooltip="{{'Floating Menu'|translate}}" matTooltipClass="custom-tooltip"
+                                    (click)="filterOptions.isOpen == true ? filterOptions.isOpen = false : ''" (keydown.enter)="fixClick()">trip_origin</span>
+                            </div>
+                        </label>
+                        <!-- Social icons list -->
+                        <div class="icon-list">
+                            <ul>
+                                <li *ngFor="let option of filterContext.searchOptions">
+                                    <div class="leaf-filter-button" *ngIf="option.show"
+                                        [ngStyle]="{ background : (mapFilter.selectedFilter == option.name || filterOptions.isOpen === false) ? 'white' : '#99ccff', color : (tagOptions.selectedTag == null && option.name == 'navigate') ? '#adadad' : 'black'}"
+                                        (click)="filterOptions.isOpen = !filterOptions.isOpen; getFilter(option.name ,filterOptions.isOpen)" (keydown.enter)="fixClick()"
+                                        mat-icon-button style="width: 40px;">
+                                        <mat-icon class="icon ovi-fnt-sze19" style="padding-left: 3px;"
+                                             matTooltip="option.toolTip"
+                                            matTooltipClass="custom-tooltip">{{option.iconUrl}}</mat-icon>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div *ngIf="mapFilter.selectedFilter == 'location'" class="leaf-location-select mat-elevation-z1"
+                        [class.open]="filterOptions.isOpen">
+                        <div class="leaf-filter-content">
+                            <div class="ovi-prmry-bg-clr" style="height: 100%;box-shadow: 1px 1px 10px 3px grey;">
+                                <div style="height: 40px; padding-left: 90%;">
+                                    <button mat-icon-button class="ovi-prmry-wht-clr" style="line-height:20px; width: 0px; height: 0px;"
+                                        (click)="filterOptions.isOpen = !filterOptions.isOpen">
+                                        <mat-icon class="ovi-fnt-sze12">close</mat-icon>
+                                    </button>
+                                </div>
+                                <div style="height: 45px;width: 100%">
+                                    <mat-icon class="leaf-f-loc-icon">fiber_manual_record</mat-icon>
+                                    <input  type="text" id="leaf-placeholder-1" class="leaf-f-loc-input" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Location'|translate"
+                                         #fromLoc (keyup)="inputText($event)"
+                                        [matAutocomplete]="sourceId" [formControl]="fromLocation">
+                                    <span class="fas fa-times form-control-feedback" style="padding-top: 5px;"
+                                        *ngIf="fromLoc.value != ''" (click)="fromLoc.value = ''" (keydown.enter)="fixClick()"></span>
+                                    <mat-autocomplete autoActiveFirstOption #sourceId="matAutocomplete">
+                                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                                            (onSelectionChange)="getLocationId(option, 'fromLoc', $event)"
+                                            value="{{option.fullName}}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </div>
+                                <div class="form-group" style="height: 45px;width: 100%">
+                                    <mat-icon class="leaf-t-loc-icon">location_on</mat-icon>
+                                    <input type="text" id="leaf-placeholder-2" class="leaf-t-loc-input" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Choose destination or near by location'|translate"
+                                        #toLoc (keyup)="inputText($event)" [matAutocomplete]="destinationId"
+                                        [formControl]="toLocation">
+                                    <span class="fas fa-times form-control-feedback" style="padding-top:5px;"
+                                        *ngIf="toLoc.value != ''" (click)="toLoc.value = ''" (keydown.enter)="fixClick()"></span><span
+                                        class="material-icons" style="padding-left : 10px;color: white;" (keydown.enter)="fixClick()"
+                                        (click)="(searchFilter.hasOwnProperty('src') && searchFilter.hasOwnProperty('dest')) ? getShortestPath(searchFilter['src'], searchFilter['dest']) : ''; filterOptions.isOpen = !filterOptions.isOpen">search</span>
+                                    <mat-autocomplete autoActiveFirstOption #destinationId="matAutocomplete">
+                                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                                            (onSelectionChange)="getLocationId(option, 'toLoc', $event)"
+                                            value="{{option.fullName}}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </div>
+                                <!-- showYourLoc -->
+                                <div class="form-group" *ngIf="false"
+                                    style="height: 35px;width: 100%;background: white;border-top-left-radius: 8px;border-top-right-radius: 8px;cursor: pointer;"
+                                    (click)="getLocationId(tagOptions.selectedTag, 'yourLoc', null)" (keydown.enter)="fixClick()">
+                                    <mat-icon class="ovi-fnt-sze21"
+                                        style="width: 10%;float:left;margin-top: 3px;margin-left:30px;color: rgba(34, 32, 32, 0.76);">my_location</mat-icon>
+                                    <span class="ovi-fnt-sze14" style="width: 80%;float: right; margin-top: 9px;">Your
+                                        Location</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="mapFilter.selectedFilter == 'filter'" class="leaf-filter-select mat-elevation-z1"
+                        [class.open]="filterOptions.isOpen" style="z-index: 999;">
+                        <div class="leaf-filter-content">
+                            <!-- <div class="leaf-filter-select-options" mat-icon-button style="width: 40px;background: white;" ><i class="fas fa-hand-holding-heart" style="padding-left: 7px; padding-top: 7px; font-size: 16px; display: block;"></i></div>
+                        <div class="leaf-filter-select-options" mat-icon-button style="width: 40px;background: white;"><i class="fas fa-notes-medical" style="padding-left: 8px; padding-top: 7px; font-size: 16px; display: block;"></i></div> -->
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.readerFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Readers'|translate}}"
+                                matTooltipClass="custom-tooltip"><img alt="reader" class="ovi-fnt-sze16"
+                                    [src]="mapFilter.floorReaders.length == 0 ? '/assets/Menus/FP_reader_inactive.svg' : './../../../../../../assets/Menus/SMC_reader.svg'"
+                                    style="padding-left: 5px; padding-top: 5px;padding-bottom: 6px; display: block;"
+                                    (click)="(mapFilter.floorReaders.length > 0) ? getReadercoord('show') : ''; filterOptions.isOpen = !filterOptions.isOpen" (keydown.enter)="fixClick()">
+                            </div>
+                            <!-- <div class="leaf-filter-select-options" [ngStyle]="{ background : filterOptions.bedFilter ? 'lightsteelblue' : 'white'}" mat-icon-button style="width: 40px;background: white;"  matTooltip="Bed Occupancy" matTooltipClass="custom-tooltip"><span class="material-icons" [ngStyle]="{ color : mapFilter.bedSpacingDetails.length == 0 ? '#a5a5a5e8' : 'black'}" style="padding-left: 5px; padding-top: 7px; font-size: 16px; display: block;" (click)="(mapFilter.bedSpacingDetails.length > 0) ? getBedspacing('show') : ''; filterOptions.isOpen = !filterOptions.isOpen">night_shelter</span></div> -->
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.heatFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Heat Map'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : navigationHeatData[floorId.value] ? navigationHeatData[floorId.value].length == 0 ? '#a5a5a5e8' : 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 8px; padding-top: 7px; display: block;"
+                                    (click)="(navigationHeatData[floorId.value].length > 0) ? getHeatmap('open', null) : ''; filterOptions.isOpen = !filterOptions.isOpen" (keydown.enter)="fixClick()">local_fire_department</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.pathFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Map Path'|translate}}" matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : mapFilter.pathData.length == 0 ? '#a5a5a5e8' : 'black'}"
+                                    style="padding-left: 6px; padding-top: 7px; display: block;"
+                                    (click)="(mapFilter.pathData.length > 0) ? getPath('show') : ''; filterOptions.isOpen = !filterOptions.isOpen" (keydown.enter)="fixClick()">route</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.distFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Distance'|translate}}" matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    style="padding-left: 6px; padding-top: 7px; display: block;transform: rotate(45deg);"
+                                    (click)="getDistance();filterOptions.isOpen = !filterOptions.isOpen" (keydown.enter)="fixClick()">open_in_full</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.labelFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                [matTooltip]="filterOptions.labelFilter ? ('Show Label'|translate) : ('Hide Label'|translate)"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    style="padding-left: 6px; padding-top: 7px;display: block;"
+                                    (click)="showLabel();filterOptions.isOpen = !filterOptions.isOpen" (keydown.enter)="fixClick()">spellcheck</span>
+                            </div>
+                            <!-- <div class="leaf-filter-select-options" [ngStyle]="{ background : filterOptions.navigateFilter ? 'lightsteelblue' : 'white'}" mat-icon-button style="width: 40px;background: white;"   matTooltip="Navigate"><i class="fas fa-location-arrow" [ngStyle]="{ color : tagOptions.selectedTag == null ? '#a5a5a5e8' : 'black'}" style="padding-left: 6px; padding-top: 7px; font-size: 16px; display: block;" (click)="(tagOptions.selectedTag != null) ? navigateHighlightedTag(tagOptions.selectedTag) : ''; filterOptions.isOpen = !filterOptions.isOpen"></i></div> -->
+                        </div>
+                    </div>
+                    <div *ngIf="mapFilter.selectedFilter == 'tag-filter'" class="leaf-tag-select mat-elevation-z1"
+                        [class.open]="filterOptions.isOpen" style="z-index: 999;">
+                        <div class="leaf-tag-content">
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-DAT' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Disassociated Tag'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : isShowTag['TAT-DAT'] ? 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 7px; padding-top: 7px; display: block;"
+                                    (click)="showTagOverlay('TAT-DAT'); filterOptions.isOpen = !filterOptions.isOpen;" (keydown.enter)="fixClick()">link_off</span>
+                            </div>
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-PA' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Patient Tag'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : isShowTag['TAT-PA'] ? 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 7px; padding-top: 7px; display: block;"
+                                    (click)="isShowTag['TAT-PA'] ? showTagOverlay('TAT-PA') : ''; filterOptions.isOpen = !filterOptions.isOpen;" (keydown.enter)="fixClick()">personal_injury</span>
+                            </div>
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-AS' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Asset Tag'|translate}}" matTooltipClass="custom-tooltip"><img alt="reader" class="ovi-fnt-sze16"
+                                    [src]="isShowTag['TAT-AS'] ? '/assets/Menus/SMC_asset.svg' : '/assets/Menus/FP_asset_inactive.svg'"
+                                    style="padding-left: 7px; padding-top: 6px; padding-bottom: 4px; display: block;"
+                                    (click)="isShowTag['TAT-AS'] ? showTagOverlay('TAT-AS') : ''; filterOptions.isOpen = !filterOptions.isOpen;" (keydown.enter)="fixClick()">
+                            </div>
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-IN' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Infant Tag'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : isShowTag['TAT-IN'] ? 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 7px; padding-top: 7px; display: block;"
+                                    (click)="isShowTag['TAT-IN'] ? showTagOverlay('TAT-IN') : ''; filterOptions.isOpen = !filterOptions.isOpen;" (keydown.enter)="fixClick()">baby_changing_station</span>
+                            </div>
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : filterOptions.sensorFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Sound Sensor'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons  ovi-fnt-sze16"
+                                    [ngStyle]="{ color : mapFilter.floorSensors.length ? 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 7px; padding-top: 7px; display: block;"
+                                    (click)="(mapFilter.floorSensors.length > 0) ? getSoundSensor('show') : ''; filterOptions.isOpen = !filterOptions.isOpen" (keydown.enter)="fixClick()">volume_up</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="float: right;width: 25px;" (click)="isOpen = !isOpen" class="tlbr-styl"
+                *ngIf="navConfig['legend']['show']" (keydown.enter)="fixClick()">
+                <img src="/assets/Alert/common_icons/map-legend.svg" alt="Map" style="padding-top: 10px; height: 30px;width: 34px;">
+            </div>
+            <mat-menu #allFilter="matMenu" class="filter-menu ovi-font-family">
+                <div>
+                    <div *ngFor="let filter of allMapFilter" class="all-filter-container" (click)="$event.stopPropagation()" (keydown.enter)="fixClick()">
+                        <div class="header-container">
+                            <div class="filter-header no-select">
+                                {{ (filter.titleName|translate) || 'Filter' }}
+                            </div>
+                        </div>
+                        <div class="filter-box-container">
+                            <span *ngIf="filter.isOptionAll" class="filter-box-2"
+                                [class.active]="selectedTagFilters.length === filter.filterData.length"
+                                (click)="onFilterClick('All', !filter.isMulti ? 'single' : null)" (keydown.enter)="fixClick()">
+                                <span class="filter-icon-block">
+                                    <span class="material-icons ovi-fnt-sze16">done_all</span>
+                                </span> {{"All"|translate}}
+                            </span>
+                            <span *ngFor="let tag of filter.filterData" class="filter-box-2"
+                                [class.active]="!filter.isMulti ? selectedDisassociateFilters.includes(tag.code) : selectedTagFilters.includes(tag.code)"
+                                (click)="onFilterClick(tag, !filter.isMulti ? 'single' : null)" (keydown.enter)="fixClick()">
+                                <span class="filter-icon-block">
+                                    <mat-icon *ngIf="tag.iconType === 'icon'" class="ovi-fnt-sze15">{{ tag.iconName }}</mat-icon>
+                                    <img *ngIf="tag.iconType === 'img'" height="16px" width="16px" [src]="tag.iconName" alt="tag" />
+                                    <span *ngIf="tag.iconType === 'mIcon'" class="material-icons  ovi-fnt-sze16" style="padding: 0;">{{ tag.iconName }}</span>
+                                </span>
+                                {{ tag.value | translate }}
+                            </span>
+                        </div>
+                        <div class="filter-footer">
+                        </div>
+                    </div>
+                    <div class="filter-footer">
+
+                    </div>
+                </div>
+            </mat-menu>
+        </div>
+    </div>
+</mat-toolbar>
+<div *ngIf="pathData && enableSearch" class="ovi-font-family" style="margin-top: 10px; padding: 10px 5px 5px 5px;">
+    <span class="search-container">
+        <div>
+            <div *ngIf="!isNavigate" class = "tw-path-direction"
+            (click)="navigate()" (keydown.enter)="fixClick()">Get Direction</div>            
+        </div>
+        <div *ngIf="isNavigate" class="direction-container">
+            <div style="height: 15px; display: flex; justify-content: flex-end;">
+                <button *ngIf="false" mat-icon-button style="line-height:30px; width: 30px; height: 0px;"
+                    (click)="isNavigate = false">
+                    <mat-icon class="ovi-fnt-sze16" style="padding: 0;">close</mat-icon>
+                </button>
+            </div>
+            <div class="loc-to-loc">
+                <mat-icon class="ovi-fnt-sze20" style="color: #0099d7; padding: 0px 0px 24px 0px;"> my_location</mat-icon>
+                <mat-icon class="ovi-fnt-sze20" style="color: #c2bfbe; padding: 0px 0px 24px 0px;" [ngStyle]="{'color': toLocation.disabled ? '#0071af' : '#c2bfbe'}" appDebounceClick (debounceClick)="swapDirection()" [debounceTime]="500" (keydown.enter)="fixClick()"> swap_vertical_circle</mat-icon>
+                <mat-icon class="ovi-fnt-sze20" style="color: #db3d33; padding:0px 0px 24px 0px;"> location_on</mat-icon>
+            </div>
+            <div class="direction-field-container">
+                <div style="display: flex; justify-content: center;">
+                    <input type="text" id="leaf-placeholder-new" class="new-leaf-f-loc-input" appPlaceholder [showPlaceholder]="true" [placeholderText]="'choose starting point'|translate"
+                        #fromLoc (keyup)="inputText($event)"
+                        [matAutocomplete]="sourceId" [formControl]="fromLocation">
+                    <button style="width: 0px; height: 0px;" type="button" mat-button matSuffix mat-icon-button aria-label="Clear" *ngIf="fromLoc.value != ''"
+                    (click)="clearSearchInput('src')" (keydown.enter)="fixClick()">
+                        <mat-icon class="ovi-fnt-sze25" style=" margin-top: -15px;color: #8f8989; ">highlight_off</mat-icon>
+                    </button>
+                    <mat-autocomplete autoActiveFirstOption #sourceId="matAutocomplete">
+                        <mat-option *ngFor="let option of searchFilter.searchLoclist" 
+                            (onSelectionChange)="getLocation(option, 'fromLoc', $event)"
+                            value="{{option.fullName}}" [ngStyle]="{display: option.id == searchFilter.locToId ? 'none' : ''}">
+                            <div class="tot-wid-styl">{{option.fullName ? option.fullName : ''}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <input type="text" id="leaf-placeholder-new" class="new-leaf-f-loc-input"  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Choose destination or near by location'|translate"
+                        #toLoc (keyup)="inputText($event)"
+                        [matAutocomplete]="destinationId" [formControl]="toLocation">
+                    <button style="width: 0px; height: 0px;" type="button" mat-button matSuffix mat-icon-button aria-label="Clear" *ngIf="toLoc.value != ''" 
+                       (click)="clearSearchInput('dest')" (keydown.enter)="fixClick()">
+                        <mat-icon class="ovi-fnt-sze25" style="margin-top: -15px;color: #8f8989; ">highlight_off</mat-icon>
+                    </button>
+                    <span class="fas fa-times form-control-feedback" *ngIf="toLoc.value != ''"
+                        (click)="toLoc.value = ''" (keydown.enter)="fixClick()"></span>
+                    <mat-autocomplete autoActiveFirstOption #destinationId="matAutocomplete">
+                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                            (onSelectionChange)="getLocation(option, 'toLoc', $event)"
+                            [ngStyle]="{display: option.id == searchFilter.locFromId ? 'none' : ''}"
+                            value="{{option.fullName}}">
+                            <div class="tot-wid-styl">{{option.fullName ? option.fullName : ''}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                </div>
+                <div *ngIf="navConfig.showAlternatePath && pathCategoryId" style="display: inline-flex ; justify-content: flex-end; margin-right: 25px;margin-top: -5px;">
+                    <span (click) = "changePathCategory('LC_Stair Case')"><mat-icon [ngStyle]="{'color': pathCategoryId == 'LC_Stair Case' ? '' : '#a4a4a4'}" class="ovi-fnt-sze27" style="margin-top : -15px; padding: 0;">stairs</mat-icon></span>
+                    <span (click) = "changePathCategory('LC_Lift')"><mat-icon [ngStyle]="{'color': pathCategoryId == 'LC_Lift' ? '' : '#a4a4a4'}" class="ovi-fnt-sze27" style="margin-top : -15px; padding: 0;">elevator</mat-icon></span>
+                </div>
+            </div>
+        </div>
+    </span>
+        <div class="ovi-font-family tw-viewSteps" [matMenuTriggerFor]="stepMenu"  #menuTrigger="matMenuTrigger"
+            *ngIf="isNavigate && stepDetails.length">
+            <div> View Steps </div>
+            <mat-menu #stepMenu="matMenu" class="tw-stepmenu-template ovi-font-family">
+                <div class="tw-stepmenu-header">
+                    <span>Steps</span>
+                    <span style="margin-top: -8px;">
+                        <button mat-icon-button (click)="onCloseMenu(menuTrigger, $event)">
+                            <mat-icon>highlight_off</mat-icon>
+                        </button>
+                    </span>
+                </div>
+                <div style="height: 252px; overflow-y: auto;">
+                    <div *ngFor="let event of stepDetails; let i = index">
+                        <button mat-menu-item style="height: 52px;">
+                            <div class="tw-stepmenu-event">
+                                <span>
+                                        <mat-icon *ngIf="i === 0" class="menu-icon tw-direction-icon-menu">my_location</mat-icon>
+            
+                                        <mat-icon *ngIf="i === stepDetails.length - 1"
+                                            class="menu-icon tw-direction-icon-menu">location_on</mat-icon>
+            
+                                        <mat-icon *ngIf="event.direction === 'Turn left' && i !== 0 && i !== stepDetails.length - 1"
+                                            class="menu-icon tw-direction-icon-menu">turn_left</mat-icon>
+            
+                                        <mat-icon
+                                            *ngIf="event.direction === 'Turn right' && i !== 0 && i !== stepDetails.length - 1"
+                                            class="menu-icon tw-direction-icon-menu">turn_right</mat-icon>
+            
+                                        <mat-icon
+                                            *ngIf="event.direction === 'Go straight' && i !== 0 && i !== stepDetails.length - 1"
+                                            class="menu-icon tw-direction-icon-menu">north</mat-icon>
+            
+                                        <mat-icon *ngIf="!event.direction && i !== 0 && i !== stepDetails.length - 1"
+                                            class="menu-icon tw-direction-icon-menu">location_off</mat-icon>
+                                    </span>
+                                <div class="tw-stepmenu-title">
+                                    {{ event?.message }}
+                                </div>
+                            </div>
+                        </button>
+                        <mat-divider class="tw-step-mat-divider" *ngIf="i < stepDetails.length - 1"></mat-divider>
+                    </div>
+                </div>
+            </mat-menu>
+        </div>
+</div>
+<div *ngIf="!enableSearch" class="ovi-font-family">
+    <div style="width: 100%;">
+        <div class="ovi-fnt-sze22" style="display: flex; padding: 8px; font-weight: 400;gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;width: calc(100vw - 15px);">
+                <div class="map-cust-logo" style="display:flex; align-items:center; gap:8px;">
+                    <img *ngIf="customerLogo !== null" [src]="customerLogo" style="object-fit: contain; width:45px;" />
+
+                    <div *ngIf="customerLogo === null" style="width:50px;"></div>
+
+                    <div mat-line class="map-cust-name">
+                        {{ customerDetail?.name }}
+                    </div>
+                </div>
+
+                <div style="width: 40%;display: flex;justify-content: flex-end;margin-right: 10px;">
+                    <div style="overflow: hidden;">
+                        <div class="ovi-fnt-sze8" style="color: gray;font-weight: 600;">
+                            Current Floor
+                        </div>
+                        <div class="map-cur-floor hover-text" (click)="changeFloorByBlock()">
+                            {{ currentFloor }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="map-mat-field">
+        <div class="map-route-to">
+            <mat-icon class="loc-icon">room</mat-icon>
+            <span style="margin-left: 5px;">
+                <div class="ovi-fnt-sze10" style="color: grey;">Route To</div>
+                <div class="ovi-fnt-sze12 map-flr-name">{{toLocation?.value}}
+                </div>
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="Map-filter-container" [ngStyle]="{'display': !isNewMapFilter ? 'none' : ''}">
+    <span class="search-container">
+        <div class="input-with-icons">
+            <input readonly *ngIf="!isNavigate" #searchValue matInput  class="{{'location-search-input'|translate}}">
+            <div *ngIf="!isNavigate" class="icon-block">
+                <!-- <mat-icon class="f-icon">search</mat-icon> -->
+                <mat-icon class="f-circle-icon" (click)="navigate()" (keydown.enter)="fixClick()">directions_walk</mat-icon>
+            </div>
+        </div>
+        <div *ngIf="isNavigate" class="direction-container">
+            <div style="height: 20px; display: flex; justify-content: flex-end;">
+                <button mat-icon-button style="line-height:30px; width: 30px; height: 0px;"
+                    (click)="isNavigate = false">
+                    <mat-icon class="ovi-fnt-sze16" style="padding: 0;">close</mat-icon>
+                </button>
+            </div>
+            <div class="loc-to-loc">
+                <mat-icon style="color: #0099d7; padding: 0;"> my_location</mat-icon>
+                <mat-icon style="color: #db3d33; padding: 0;"> swap_vertical_circle</mat-icon>
+                <mat-icon style="color: #db3d33; padding: 0;"> location_on</mat-icon>
+            </div>
+            <div class="direction-field-container">
+                <div style="display: flex; justify-content: center;">
+                    <input type="text" id="leaf-placeholder-new" class="new-leaf-f-loc-input" appPlaceholder [showPlaceholder]="true" [placeholderText]="'choose starting point'|translate"
+                        #fromLoc (keyup)="inputText($event)"
+                        [matAutocomplete]="sourceId" [formControl]="fromLocation">
+                    <span class="fas fa-times form-control-feedback" *ngIf="fromLoc.value != ''"
+                        (click)="fromLoc.value = ''" (keydown.enter)="fixClick()"></span>
+                    <button style="width: 0px; height: 0px;" type="button" mat-button matSuffix mat-icon-button aria-label="Clear" *ngIf="false && fromLoc.value != ''"
+                    (click)="clearSearchInput('src')" (keydown.enter)="fixClick()">
+                        <mat-icon class="ovi-fnt-sze25" style="margin-top: -15px;color: #8f8989; ">highlight_off</mat-icon>
+                    </button>
+                    <mat-autocomplete autoActiveFirstOption #sourceId="matAutocomplete">
+                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                            (onSelectionChange)="getLocationId(option, 'fromLoc', $event)"
+                            value="{{option.fullName}}">
+                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <input type="text" id="leaf-placeholder-new" class="new-leaf-f-loc-input"  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Choose destination or near by location'|translate"
+                        #toLoc (keyup)="inputText($event)"
+                        [matAutocomplete]="destinationId" [formControl]="toLocation">
+                    <button style="width: 0px; height: 0px;" type="button" mat-button matSuffix mat-icon-button aria-label="Clear" *ngIf="toLoc.value != ''" 
+                       (click)="clearSearchInput('dest')" (keydown.enter)="fixClick()">
+                        <mat-icon class="ovi-fnt-sze25" style="margin-top: -15px;color: #8f8989; ">highlight_off</mat-icon>
+                    </button>
+                    <span class="fas fa-times form-control-feedback" *ngIf="toLoc.value != ''"
+                        (click)="toLoc.value = ''" (keydown.enter)="fixClick()"></span>
+                    <mat-autocomplete autoActiveFirstOption #destinationId="matAutocomplete">
+                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                            (onSelectionChange)="getLocationId(option, 'toLoc', $event)"
+                            value="{{option.fullName}}">
+                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                </div>
+            </div>
+        </div>
+    </span>
+    <span>
+        <div class="filter-container" #filterContainer>
+            <button *ngIf="showLeftButton" (click)="scrollLeft()" class="scroll-btn" style="top: 0; left: -15px;">
+                <mat-icon>keyboard_arrow_left</mat-icon>
+            </button>
+            <div #scrollContainer id="scrollContainer" class="scrollable-container" (scroll)="onScroll()">
+                <div class="filter-box" *ngFor="let filter of mapOptionFilter"
+                    (click)="onFilterClick(filter, 'mapFilter')" (keydown.enter)="fixClick()"
+                    [class.active]="selectedTagFilters.includes(filter.code)" [class.disabled]="filter.disabled">
+                    <span>
+                        <mat-icon *ngIf="filter.icon">{{filter.url}}</mat-icon>
+                        <img *ngIf="filter.img" height="16px" width="16px" [src]="filter.url" alt="filter"/>
+                        <span *ngIf="filter.mIcon" class="material-icons ovi-fnt-sze16"
+                            style="display: block; padding: 0;">{{filter.url}}</span>
+                    </span>
+                    <span class="ovi-font-family ovi-fnt-sze12" style="white-space: nowrap;">
+                        {{ filter.code === 'lable' ? (filterOptions.labelFilter ? ('Show Label'|translate) : ('Hide Label'|translate)) :
+                        (filter.name|translate) }}
+                    </span>
+                </div>
+            </div>
+
+            <button *ngIf="showRightButton" (click)="scrollRight()" class="scroll-btn" style="top: 0px; right: -15px;">
+                <mat-icon>keyboard_arrow_right</mat-icon>
+            </button>
+        </div>
+    </span>
+</div>
+<div class="dropdown mat-elevation-z1"
+    style="width: 350px;right: 10px;height: 160px;box-shadow: -5px -5px 6px #00000030;background-color: #f5f5f5;"
+    [class.open]="isOpen">
+    <div style="margin:5px;">
+        <div style="display: flex; flex-direction: row;justify-content: space-around;flex-wrap: wrap;">
+            <div style="display: flex;gap: 5px;flex-direction: column;">
+                <span><img src="/assets/Floorplan/TAT-PO-IA.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Porter (Available)</span></span>
+                <span><img src="/assets/Floorplan/TAT-PO.svg" style="height: 25px;width: 25px;"  alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Porter (Busy)</span></span>
+                <span><img src="/assets/Floorplan/TAT-PO-IDL.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Idle</span></span>
+                <span><img src="/assets/Floorplan/TAT-PO-OLD.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Inactive</span></span>
+            </div>
+            <div style="display: flex;gap: 5px;flex-direction: column;">
+                <span><img src="/assets/Floorplan/TAT-PA.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Patient</span></span>
+                <span><img src="/assets/Floorplan/TAT-AS.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Asset</span></span>
+                <span><img src="/assets/Floorplan/TAT-MR.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">Medical Record</span></span>
+                <span><img src="/assets/Floorplan/TAT-US.svg" style="height: 25px;width: 25px;" alt="TAT" ><span
+                        style="vertical-align: top;" class="ovi-font-family">User</span></span>
+            </div>
+            <div style="position: absolute; top: 5px; right: 0px;">
+                <mat-icon style="padding-top: 0px;cursor: pointer;" (click)="isOpen = !isOpen" (keydown.enter)="fixClick()">close</mat-icon>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ovi-font-family"
+    [ngStyle]="{display: blockExist ? 'block' : 'none',height : leafRef != undefined ? 'calc(100% - 50px)'
+    : pathData && isNavigate && enableSearch ? 'calc(100% - 205px)' : pathData && !isNavigate ? 'calc(100% - 75px)' 
+    : 'calc(100% - 90px)'}">
+    <mat-drawer-container class="floormap-toggle-container" autosize>
+        <mat-drawer #menu mode="side" style="overflow: hidden;"
+            [ngClass]="menu._opened ? 'floormap-toggle-open' : 'floormap-toggle-close'" [resizableMinWidth]="350"
+            appResizable>
+            <div style="width: 100%; height: 100%; overflow: hidden;">
+                <!-- <mat-toolbar style="padding: 0px; width: calc(100% - 5px); height: 35px;float: right;">
+                    <div style="padding-left: 7px;font-size: 15px; font-weight: 600;"
+                        [ngStyle]="{'width': type == 'popup' ? '82%' : 'calc(100% - 35px)'}">Tracker View Block</div>
+                    <div style="height: 100%;display: flex;justify-content: center;align-items: center;"
+                        [ngStyle]="{'width': type == 'popup' ? '18%' : '30px'}">
+                        <button mat-icon-button (click)="menu.toggle()">
+                            <span class="material-icons">keyboard_double_arrow_left</span>
+                        </button>
+                    </div>
+                </mat-toolbar> -->
+                <!-- <div *ngIf="options.show.navBlkImg" id="{{blockRef}}" class="block-img"></div> -->
+                <!-- <p style="text-align: center;font-size: 15px; margin: 8px 8px 8px 8px;"
+                    *ngIf="options.show.navBlkContent">
+                </p> -->
+                <span  *ngIf="tabData.length != 0" class="tw-filter-new" style="padding:5px;width: calc(100% - 10px)">
+                    <input matInput [(ngModel)]="this.filterValue"  [ngModelOptions]="{ standalone: true }"  style="padding: 5px !important; height: 20px;border: 1px solid black"  appearence="outline"
+                        (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" >
+                </span>
+                <mat-tab-group id="leaf" class="device-tab" style="height:100%;width : calc(100% - 0px);"
+                    *ngIf="tabData.length > 0" (selectedTabChange)="onTabChanged($event, 'tabChange')"
+                    [selectedIndex]="selectedIndex">
+                    <mat-tab label="{{tab.name}} {{i == selectedIndex ? '('+ tabData.length+ ')': ''}}"
+                        *ngFor="let tab of tabValue;let i= index">
+                        <div *ngIf="options.show.navBlkList">
+                            <div *ngFor="let patient of tabData"
+                                [ngStyle]="{background : (tagOptions.selectedTag && (tagOptions.selectedTag.tid == patient.tid)) ? '#cecece' : 'white'}"
+                                style="padding: 0px 5px;width: calc(100% - 10px);height: 35px; border-bottom: 1px solid #ededed;"
+                                (click)="highlightTag(patient)" (keydown.enter)="fixClick()">
+                                <div style="float: left;margin: 2px; width: 25px; height: 30px;">
+                                    <img style="width: 25px; height: 30px;" matListAvatar src="/assets/Floorplan/{{patient.icon}}.svg" alt="device">
+                                </div>
+                                <div matLine class="ovi-fnt-sze14"
+                                    style="float: left; width: calc(100% - 40px); margin: 7px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; box-sizing: border-box;"
+                                    matTooltipClass="custom-tooltip" 
+                                    matTooltip="{{patient.tan}}{{patient.hasOwnProperty('asi') && patient.asi ? ' - ' + patient.asi : ''}} ({{patient.tid}}) {{patient.ttp == 'TAT-PO' && porters.hasOwnProperty(patient.tvl) ? porters[patient.tvl]['poolNameLocation']: ''}}">
+                                    {{patient.tan}} {{patient.hasOwnProperty('asi') && patient.asi ? ' - ' + patient.asi
+                                    : ''}}<span class="ovi-fnt-sze12"> ({{patient.tid}}) <span
+                                            style="color: #ff8e15;">{{patient.ttp == 'TAT-PO' &&
+                                            porters.hasOwnProperty(patient.tvl) ? ', ' +
+                                            porters[patient.tvl]['poolNameLocation']: ''}}</span></span></div>
+                            </div>
+                        </div>
+                    </mat-tab>
+                </mat-tab-group>
+            </div>
+        </mat-drawer>
+        <div class="floormap-toggle-content" *ngIf="reqType && ['porter', 'track'].includes(reqType)">
+            <div *ngIf="false"> <!-- CONTENT FLOATING MENU -->
+                <div style="width: 18%;float: left;" *ngIf="!blockView.active && options.show.filterOption">
+                    <div class="social-icons">
+                        <!-- Toggle Button -->
+                        <!-- <input type="checkbox" *ngIf="leafRef != undefined" id="checkDia">
+                    <label *ngIf="leafRef != undefined" for="checkDia" style="position: absolute;">
+                        <div id="button"><span class="material-icons" style="color: white;font-size: 35px;position: absolute;padding-top: 0px;"  matTooltip="Floating Menu" (click)="filterOptions.isOpen == true ? filterOptions.isOpen = false : ''">highlight_off</span></div>
+                    </label> -->
+                        <input type="checkbox" *ngIf="leafRef == undefined" id="checkCon">
+                        <label *ngIf="leafRef == undefined" for="checkCon" style="position: absolute; top: 9px;">
+                            <div id="button">
+                                <span class="material-icons  ovi-fnt-sze30"
+                                    style="color: white; position: absolute;padding-top: 0px;"
+                                     matTooltip="{{'Floating Menu'|translate}}" matTooltipClass="custom-tooltip"
+                                    (click)="filterOptions.isOpen == true ? filterOptions.isOpen = false : ''" (keydown.enter)="fixClick()">trip_origin</span>
+                            </div>
+                        </label>
+                        <!-- Social icons list -->
+                        <div class="icon-list">
+                            <ul>
+                                <li *ngFor="let option of filterContext.searchOptions">
+                                    <div class="leaf-filter-button" *ngIf="option.show"
+                                        [ngStyle]="{ background : (mapFilter.selectedFilter == option.name || filterOptions.isOpen === false) ? 'white' : '#99ccff', color : (tagOptions.selectedTag == null && option.name == 'navigate') ? '#adadad' : 'black'}"
+                                        (click)="filterOptions.isOpen = !filterOptions.isOpen; getFilter(option.name ,filterOptions.isOpen)" (keydown.enter)="fixClick()"
+                                        mat-icon-button style="width: 40px;">
+                                        <mat-icon class="icon  ovi-fnt-sze19" style="padding-left: 4px;"
+                                             matTooltip="option.toolTip"
+                                            matTooltipClass="custom-tooltip">{{option.iconUrl}}</mat-icon>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div *ngIf="mapFilter.selectedFilter == 'location'" class="leaf-location-select mat-elevation-z1"
+                        [class.open]="filterOptions.isOpen">
+                        <div class="leaf-filter-content">
+                            <div class="ovi-prmry-bg-clr" style="height: 100%;box-shadow: 1px 1px 10px 3px grey;">
+                                <div style="height: 40px; padding-left: 90%;">
+                                    <button mat-icon-button class="ovi-prmry-wht-clr"
+                                        style="line-height:20px; width: 0px; height: 0px;"
+                                        (click)="filterOptions.isOpen = !filterOptions.isOpen">
+                                        <mat-icon class="ovi-fnt-sze12">close</mat-icon>
+                                    </button>
+                                </div>
+                                <div style="height: 45px;width: 100%">
+                                    <mat-icon class="leaf-f-loc-icon">fiber_manual_record</mat-icon>
+                                    <input  type="text" id="leaf-placeholder-1" class="leaf-f-loc-input" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Location'|translate"
+                                        #fromLoc (keyup)="inputText($event)"
+                                        [matAutocomplete]="sourceId" [formControl]="fromLocation">
+                                    <span class="fas fa-times form-control-feedback" style="padding-top: 5px;"
+                                        *ngIf="fromLoc.value != ''" (click)="fromLoc.value = ''" (keydown.enter)="fixClick()"></span>
+                                    <mat-autocomplete autoActiveFirstOption #sourceId="matAutocomplete">
+                                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                                            (onSelectionChange)="getLocationId(option, 'fromLoc', $event)"
+                                            value="{{option.fullName}}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </div>
+                                <div class="form-group" style="height: 45px;width: 100%">
+                                    <mat-icon class="leaf-t-loc-icon">location_on</mat-icon>
+                                    <input type="text" id="leaf-placeholder-2" class="leaf-t-loc-input"  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Choose destination or near by location'|translate"
+                                        #toLoc (keyup)="inputText($event)" [matAutocomplete]="destinationId"
+                                        [formControl]="toLocation">
+                                    <span class="fas fa-times form-control-feedback" style="padding-top:5px;"
+                                        *ngIf="toLoc.value != ''" (click)="toLoc.value = ''" (keydown.enter)="fixClick()"></span><span
+                                        class="material-icons" style="padding-left : 10px;color: white;" (keydown.enter)="fixClick()"
+                                        (click)="(searchFilter.hasOwnProperty('src') && searchFilter.hasOwnProperty('dest')) ? getShortestPath(searchFilter['src'], searchFilter['dest']) : ''; filterOptions.isOpen = !filterOptions.isOpen">search</span>
+                                    <mat-autocomplete autoActiveFirstOption #destinationId="matAutocomplete">
+                                        <mat-option *ngFor="let option of searchFilter.searchLoclist"
+                                            (onSelectionChange)="getLocationId(option, 'toLoc', $event)"
+                                            value="{{option.fullName}}">
+                                            <div class="tot-wid-styl">{{option.fullName}}</div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                </div>
+                                <!-- showYourLoc -->
+                                <div class="form-group" *ngIf="false"
+                                    style="height: 35px;width: 100%;background: white;border-top-left-radius: 8px;border-top-right-radius: 8px;cursor: pointer;"
+                                    (click)="getLocationId(tagOptions.selectedTag, 'yourLoc', null)" (keydown.enter)="fixClick()">
+                                    <mat-icon class="ovi-fnt-sze21"
+                                        style="width: 10%;float:left;margin-top: 3px;margin-left:30px;color: rgba(34, 32, 32, 0.76);">my_location</mat-icon>
+                                    <span class="ovi-fnt-sze14" style="width: 80%;float: right; margin-top: 9px;">Your
+                                        Location</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="mapFilter.selectedFilter == 'filter'" class="leaf-filter-select mat-elevation-z1"
+                        [class.open]="filterOptions.isOpen" style="z-index: 999;">
+                        <div class="leaf-filter-content">
+                            <!-- <div class="leaf-filter-select-options" mat-icon-button style="width: 40px;background: white;" ><i class="fas fa-hand-holding-heart" style="padding-left: 7px; padding-top: 7px; font-size: 16px; display: block;"></i></div>
+                        <div class="leaf-filter-select-options" mat-icon-button style="width: 40px;background: white;"><i class="fas fa-notes-medical" style="padding-left: 8px; padding-top: 7px; font-size: 16px; display: block;"></i></div> -->
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.readerFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Readers'|translate}}"
+                                matTooltipClass="custom-tooltip"><img  alt="reader"  class="ovi-fnt-sze16"
+                                    [src]="mapFilter.floorReaders.length == 0 ? '/assets/Menus/FP_reader_inactive.svg' : './../../../../../../assets/Menus/SMC_reader.svg'"
+                                    style="padding-left: 5px; padding-top: 5px;padding-bottom: 6px; display: block;"  (keydown.enter)="fixClick()"
+                                    (click)="(mapFilter.floorReaders.length > 0) ? getReadercoord('show') : ''; filterOptions.isOpen = !filterOptions.isOpen">
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.bedFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Bed Occupancy'|translate}}" matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : mapFilter.bedSpacingDetails.length == 0 ? '#a5a5a5e8' : 'black'}"
+                                    style="padding-left: 5px; padding-top: 7px; display: block;" (keydown.enter)="fixClick()"
+                                    (click)="(mapFilter.bedSpacingDetails.length > 0) ? getBedspacing('show') : ''; filterOptions.isOpen = !filterOptions.isOpen">night_shelter</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.heatFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Heat Map'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : navigationHeatData[floorId.value] ? navigationHeatData[floorId.value].length == 0 ? '#a5a5a5e8' : 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 8px; padding-top: 7px;  display: block;" (keydown.enter)="fixClick()"
+                                    (click)="(navigationHeatData[floorId.value].length > 0) ? getHeatmap('open', null) : ''; filterOptions.isOpen = !filterOptions.isOpen">local_fire_department</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.pathFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Map Path'|translate}}" matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    [ngStyle]="{ color : mapFilter.pathData.length == 0 ? '#a5a5a5e8' : 'black'}"
+                                    style="padding-left: 6px; padding-top: 7px;  display: block;" (keydown.enter)="fixClick()"
+                                    (click)="(mapFilter.pathData.length > 0) ? getPath('show') : ''; filterOptions.isOpen = !filterOptions.isOpen">route</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.distFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Distance'|translate}}" matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    style="padding-left: 6px; padding-top: 7px; display: block;transform: rotate(45deg);" (keydown.enter)="fixClick()"
+                                    (click)="getDistance();filterOptions.isOpen = !filterOptions.isOpen">open_in_full</span>
+                            </div>
+                            <div class="leaf-filter-select-options"
+                                [ngStyle]="{ background : filterOptions.labelFilter ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                [matTooltip]="filterOptions.labelFilter ? 'Show Label' : 'Hide Label'"
+                                matTooltipClass="custom-tooltip"><span class="material-icons ovi-fnt-sze16"
+                                    style="padding-left: 6px; padding-top: 7px; display: block;" (keydown.enter)="fixClick()"
+                                    (click)="showLabel();filterOptions.isOpen = !filterOptions.isOpen">spellcheck</span>
+                            </div>
+                            <!-- <div class="leaf-filter-select-options" [ngStyle]="{ background : filterOptions.navigateFilter ? 'lightsteelblue' : 'white'}" mat-icon-button style="width: 40px;background: white;"   matTooltip="Navigate"><i class="fas fa-location-arrow" [ngStyle]="{ color : tagOptions.selectedTag == null ? '#a5a5a5e8' : 'black'}" style="padding-left: 6px; padding-top: 7px; font-size: 16px; display: block;" (click)="(tagOptions.selectedTag != null) ? navigateHighlightedTag(tagOptions.selectedTag) : ''; filterOptions.isOpen = !filterOptions.isOpen"></i></div> -->
+                        </div>
+                    </div>
+                    <div *ngIf="mapFilter.selectedFilter == 'tag-filter'" class="leaf-tag-select mat-elevation-z1"
+                        [class.open]="filterOptions.isOpen" style="z-index: 999;">
+                        <div class="leaf-tag-content">
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-PA' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Patient Tag'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons  ovi-fnt-sze16"
+                                    [ngStyle]="{ color : isShowTag['TAT-PA'] ? 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 7px; padding-top: 7px; display: block;" (keydown.enter)="fixClick()"
+                                    (click)="isShowTag['TAT-PA'] ? showTagOverlay('TAT-PA') : ''; filterOptions.isOpen = !filterOptions.isOpen;">personal_injury</span>
+                            </div>
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-AS' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;background: white;" 
+                                matTooltip="{{'Asset Tag'|translate}}" matTooltipClass="custom-tooltip"><img  alt="reader"  class="ovi-fnt-sze16"
+                                    [src]="isShowTag['TAT-AS'] ? '/assets/Menus/SMC_asset.svg' : '/assets/Menus/FP_asset_inactive.svg'"
+                                    style="padding-left: 7px; padding-top: 6px; padding-bottom: 4px; display: block;" (keydown.enter)="fixClick()"
+                                    (click)="isShowTag['TAT-AS'] ? showTagOverlay('TAT-AS') : ''; filterOptions.isOpen = !filterOptions.isOpen;">
+                            </div>
+                            <div class="leaf-tag-select-options"
+                                [ngStyle]="{ background : lastFilter == 'TAT-IN' ? 'lightsteelblue' : 'white'}"
+                                mat-icon-button style="width: 40px;"  matTooltip="{{'Infant Tag'|translate}}"
+                                matTooltipClass="custom-tooltip"><span class="material-icons  ovi-fnt-sze16"
+                                    [ngStyle]="{ color : isShowTag['TAT-IN'] ? 'black' : '#a5a5a5e8'}"
+                                    style="padding-left: 7px; padding-top: 7px; display: block;" (keydown.enter)="fixClick()"
+                                    (click)="isShowTag['TAT-IN'] ? showTagOverlay('TAT-IN') : ''; filterOptions.isOpen = !filterOptions.isOpen;">baby_changing_station</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div fxHide fxShow.gt-sm *ngIf="reqType && reqType == 'porter'" class="ovi-fnt-sze14"
+                style="width: 100%;float: right;background: white ;height: 60px; margin: 7px; font-weight: 600;">
+                <mat-grid-list cols="5" rowHeight="28px" style="margin-left: 5px;">
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"Name"|translate}}</div>
+                        <div class="grd-text_tack">:
+                            <span  [matTooltip]="reqTagDetail.sourceLocationName"
+                                matTooltipClass="custom-tooltip"> {{ reqTagDetail['nonPerformer']?.length > 0 ?
+                                reqTagDetail['nonPerformer'][0].name :
+                                reqTagDetail['requestCategory'] == 'PR-OT' ? reqTagDetail['comments'] : ''}}</span>
+                        </div>
+                        <br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"From"|translate}}</div>
+                        <div class="grd-text_tack">:
+                            <span  [matTooltip]="reqTagDetail.sourceLocationName"
+                                matTooltipClass="custom-tooltip">{{reqTagDetail.sourceLocationName}}</span>
+                        </div><br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"Start"|translate}}</div>
+                        <div class="grd-text_tack">: {{reqTagDetail.startTime | date : 'hh:mm a'}}</div><br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"Porter"|translate}}</div>
+                        <div class="grd-text_tack">: <span  [matTooltip]="reqTagDetail.porterCount"
+                                matTooltipClass="custom-tooltip"> {{reqTagDetail.porterCount}}</span></div><br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="2">
+                        <mat-select class="widget-class custom-port-leaf-select"
+                            style="padding-left: 5px;padding-top: 8px;">
+                            <mat-option *ngFor="let tag of porterReqTagList" value="{{tag.id}}"
+                                (click)="onSelectMonitorTag(tag)" (keydown.enter)="fixClick()">
+                                <img style="width: 26px;height: 26px; float:left; padding-top: 5px; padding-right: 8px;"
+                                    src='/assets/Floorplan/{{tag.tagAssociationTypeId}}.svg'  alt="tag" >
+                                <span>{{tag.fullName}} ({{tag.tagId}})</span>
+                            </mat-option>
+                        </mat-select>
+                    </mat-grid-tile>
+
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"Status"|translate}}</div>
+                        <div class="grd-text_tack">:
+                            <span  [matTooltip]="reqTagDetail.statusName"
+                                matTooltipClass="custom-tooltip">{{reqTagDetail.statusName}}</span>
+                        </div><br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"To"|translate}}</div>
+                        <div class="grd-text_tack"  [matTooltip]="reqTagDetail.destinationLocationName"
+                            matTooltipClass="custom-tooltip">: {{reqTagDetail.destinationLocationName}}</div><br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"End"|translate}}</div>
+                        <div class="grd-text_tack">: {{reqTagDetail.endTime | date : 'hh:mm a'}}</div><br>
+                    </mat-grid-tile>
+                    <mat-grid-tile colspan="1" rowspan="1">
+                        <div class="grd-styl_track">{{"Asset"|translate}}</div>
+                        <div class="grd-text_tack">: <span  [matTooltip]="reqTagDetail.assetCount"
+                                matTooltipClass="custom-tooltip">{{reqTagDetail.assetCount}}</span>
+                        </div><br>
+                    </mat-grid-tile>
+                </mat-grid-list>
+            </div>
+            <div fxHide fxShow.gt-sm *ngIf="reqType && reqType == 'track'" class="ovi-fnt-sze14"
+                style="width: 100%;float: right;background: white ;height: 60px; margin: 7px; font-weight: 600;">
+                <div style="float: left;width: calc(100% - 50px);">
+                    <div style="float: left; margin-left : 10px; width: calc(50% - 80px); height: calc(100% - 5px);">
+                        <mat-grid-list cols="5" rowHeight="35px" style="margin : 10px">
+                            <mat-grid-tile colspan="2" rowspan="1">
+                                <div  [matTooltip]="reqTagDetail['Activity']"
+                                    matTooltipClass="custom-tooltip">Activity : <span class="ovi-prmry-clr">{{reqTagDetail['Activity']}}</span></div>
+                            </mat-grid-tile>
+                            <mat-grid-tile colspan="3" rowspan="1">
+                                <div  [matTooltip]="'Performer'|translate" matTooltipClass="custom-tooltip">
+                                    Performer : <span class="ovi-prmry-clr">{{reqTagDetail['Performer']}} (
+                                        {{reqTagDetail['Location']}}, {{reqTagDetail['Floor name']}} )</span></div>
+                            </mat-grid-tile>
+                        </mat-grid-list>
+                    </div>
+                    <div style="float: left; width: 165px; height: calc(100% - 5px); margin-top: 2px; margin-right: 2px; border: 1px solid grey; border-radius: 3px;"
+                        *ngIf="hazardDetails['label'].length">
+                        <div style="cursor: pointer; background: #e9e9e9; float: left; width: 45px; margin: 7px 5px; border-radius: 25% 25% 25% 25%;"
+                            (click)="playOption('fast-rwd')" (keydown.enter)="fixClick()">
+                            <mat-icon class="ovi-fnt-sze30" style="padding: 5px;" 
+                                matTooltip="{{'Slow (2X)'|translate}}">fast_rewind</mat-icon>
+                        </div>
+                        <div style="cursor: pointer; background: #e9e9e9; float: left; width: 45px; margin: 7px 5px; border-radius: 25% 25% 25% 25%;"
+                            (click)="playOption('play')" (keydown.enter)="fixClick()"
+                            *ngIf="hazardDetails['marker'] && !hazardDetails['marker'].isRunning()">
+                            <mat-icon class="ovi-fnt-sze30" style="padding: 5px;" 
+                                matTooltip="{{'Play'|translate}}">play_circle_fill</mat-icon>
+                        </div>
+                        <div style="cursor: pointer; background: #e9e9e9; float: left; width: 45px; margin: 7px 5px; border-radius: 25% 25% 25% 25%;"
+                            (click)="playOption('pause')" (keydown.enter)="fixClick()"
+                            *ngIf="hazardDetails['marker'] && hazardDetails['marker'].isRunning()">
+                            <mat-icon class="ovi-fnt-sze30" style="padding: 5px;" 
+                                matTooltip="{{'Pause'|translate}}">pause</mat-icon>
+                        </div>
+                        <div style="cursor: pointer; background: #e9e9e9; float: left; width: 45px; margin: 7px 5px; border-radius: 25% 25% 25% 25%;"
+                            (click)="playOption('fast-fwd')" (keydown.enter)="fixClick()">
+                            <mat-icon class="ovi-fnt-sze30" style="padding: 5px;" 
+                                matTooltip="{{'Fast (2X)'|translate}}">fast_forward</mat-icon>
+                        </div>
+                    </div>
+                    <div style="float: left; width: calc(50% - 115px); margin-left : 10px; height: calc(100% - 5px);">
+                        <mat-grid-list cols="2" rowHeight="35px" style="margin : 10px">
+                            <mat-grid-tile colspan="1" rowspan="1">
+                                <div  [matTooltip]="'Performer'|translate" matTooltipClass="custom-tooltip">{{"Start
+                                    time :"|translate}}
+                                    <span  class="ovi-prmry-clr">{{reqTagDetail['Start time'] | date : 'dd MMM, hh:mm
+                                        a'}}</span>
+                                </div>
+                            </mat-grid-tile>
+                            <mat-grid-tile colspan="1" rowspan="1">
+                                <div  [matTooltip]="'Performer'|translate" matTooltipClass="custom-tooltip">{{"End time
+                                    :"|translate}}
+                                    <span  class="ovi-prmry-clr">{{reqTagDetail['End time'] | date : 'dd MMM, hh:mm
+                                        a'}}</span>
+                                </div>
+                            </mat-grid-tile>
+                        </mat-grid-list>
+                    </div>
+                </div>
+                <div style="width: 50px;float: right;margin-top: 8px;">
+                    <img height="20" width="20" src="/assets/Alert/common_icons/pdf-file.png" alt="pdf-file"
+                        (click)="downloadPdf('floorMap-container-pdf')" (keydown.enter)="fixClick()"
+                        style="cursor: pointer;height: 28px;width: 28px;">
+                </div>
+            </div>
+        </div>
+        <div class="floorMap-container" id="floorMap-container-pdf"
+            [ngClass]="(reqType && ['porter', 'track'].includes(reqType)) ? 'floorMap-container' : 'floorMap-container1'"
+            *ngIf="!blockView['active']">
+            <div id="{{leafRef+'_'+floorId.value}}" class="floorMap-img"></div>
+        </div>
+        <div class="floorMap-container"
+            [ngClass]="(reqType && ['porter', 'track'].includes(reqType)) ? 'floorMap-container' : 'floorMap-container1'"
+            *ngIf="blockView['active']">
+            <mat-grid-list [cols]="blockView['col']" rowHeight="{{floorList.length == 1 ? '100%' : '50%'}}">
+                <mat-grid-tile *ngFor="let floor of floorList">
+                    <div
+                        style="margin:0px 5px; background:#ddd !important;width: calc(100% - 5px);height: calc(100% - 5px);border: 1px solid gray;">
+                        <div style="text-align: center; color: white; font-weight: 800;height: 25px;">{{floor['name']}}
+                        </div>
+                        <div id="{{leafRef+'_'+floor['id']}}" style="height: calc(100% - 30px);" class="floorMap-img">
+                        </div>
+                    </div>
+                </mat-grid-tile>
+            </mat-grid-list>
+        </div>
+        <div *ngIf="isEditPolygon" class="fab-container">
+            <div *ngFor="let item of EditPolygonOptions; let i = index" class="fab-option"
+            [ngStyle]="{'bottom': isSettingOpen ? (i + 1) * 50 + 'px' : '0.3rem'}" [class.disabled]="item.disabled"[class.active]="activeOptionCode === item.code"
+             appDebounceClick (debounceClick)="onOptionClick(item.code)" [debounceTime]="300" (keydown.enter)="fixClick()">
+
+                <span *ngIf="isSettingOpen" class="fab-label">{{ item.name | translate }}</span>
+                <button mat-mini-fab class="sub-setting-btn" [disabled]="getDisabledState(item.code)">
+                    <span *ngIf="item.icon" style="padding: 0;" class="material-icons">edit_location_alt</span>
+                    <mat-icon *ngIf="item.mIcon" class="ovi-fnt-sze16" 
+                        style="padding: 0; height: fit-content; width: fit-content; padding-bottom: 2px;">
+                        {{ item.iconUrl }}
+                    </mat-icon>
+                </button>
+            </div>
+            <div style="display: flex;flex-direction: column;">
+            <div style="display: flex;justify-content: end;position: relative;top: 14px;">
+            <button mat-fab class="setting-button" (click)="toggleEditMenu()">
+                <mat-icon style="padding-top: 0px;">{{ isSettingOpen ? 'close' : 'settings' }}</mat-icon>
+            </button>
+            </div>   
+            <div class="ovi-fnt-sze12" style="display: flex; top: 25px; position: relative;min-height: 18px; z-index: 1010" class="ovi-font-family"> <span *ngIf="this.selectedpolygon == null">* Please Select any Location </span> </div>
+            </div>    
+        </div>
+        <!-- <span class="footer">© {{currentYear}} Trackerwave</span> -->
+    </mat-drawer-container>
+</div>
+<div *ngIf="!blockExist" class="ovi-font-family"
+    style="width: 100%;height: 95%;background: #f7f7f7;display: flex;flex-direction: column;justify-content: center;align-items: center;">
+    <h4 style="color: #7ca4b7;">Block / Floor Unavailable.</h4>
+    <img style="width: 50%;height: 80%;opacity: 0.5;" src='/assets/Alert/common_icons/default-block.jpg' alt="block" >
+</div>

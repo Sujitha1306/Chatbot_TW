@@ -1,0 +1,161 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div *ngIf="data.launchType !== 'isTask'" class="input-component-holder container-fluid">
+    <mat-toolbar class="input-header" style="padding-left: 0px;">
+        <div class="header-name">{{"Assign Task"|translate}}</div>
+        <div class="header-close" ><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style" style="margin-left: 0px !important">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div class="tw-popup-content block-2" style="margin-top: 15px;">
+        <div class="mat-custom-form-field-box popup-margin" [formGroup]="assignTaskForm">
+            <div class="form-row block-3 ovi-font-family ovi-fnt-sze13" style="margin-left: 13px;margin-right: -60px;">
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Assign To"|translate}} : </mat-label>
+                        <div class="task-radio-button">
+                            <mat-radio-group appearance="outline" formControlName="assignTaskType">
+                                <mat-radio-button class="task-radio" *ngFor="let o of assignTask" (change)="getSelectedType(o.code)" [value]="o.code"
+                                [disabled]="data.selectedTabIndex === 1 && o.code === 'RT-RO'">
+                                    {{o.value | translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </div>
+                </div>
+                <div class="row-field-1" style="width:50%">
+                    <div class="example-form" *ngIf="this.assignTaskForm.controls.assignTaskType.value === 'RT-RO'">
+                        <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate" id="role" formControlName="AssignNameId"
+                                appTypeHit (typeHit)="getRecipientName($event)" [matAutocomplete]="auto" autocomplete="off"
+                                [readonly]= "this.data.assignedToRoleId || data.selectedTabIndex === 0 || data.selectedTabIndex === 2">
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.roleEnabled === true ? getRoleList.bind(roleNameList) : ''"
+                                #auto="matAutocomplete">
+                                <mat-option *ngFor="let option of roleNameList" [value]="option.id">
+                                    <div class="act-wid-styl">{{option.name}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
+                    </div>
+                    <div class="example-form" *ngIf="this.assignTaskForm.controls.assignTaskType.value === 'RT-US'">
+                        <mat-label class="ovi-lbl-text-size">{{"User"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'User'|translate" id="user" formControlName="AssignNameId"
+                                appTypeHit (typeHit)="getRecipientName($event)" [matAutocomplete]="auto"
+                                autocomplete="off">
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.userEnabled === true ? getUserList.bind(userNameList) : ''"
+                                #auto="matAutocomplete">
+                                <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                                    <div class="act-wid-styl">{{option.name}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-footer" style="margin-top: 2%; text-align: right;">
+        <button mat-button class="cancle-btn" mat-dialog-close style="margin-right: 5px;">{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn " appDebounceClick (debounceClick)="AssignTaskTo()"
+            [disabled]="this.assignTaskForm.invalid" [debounceTime]="300" cdkFocusInitial>{{"Assign"|translate}}</button>
+    </div>
+</div>
+
+<div *ngIf="data.launchType === 'isTask'" class="input-component-holder container-fluid">
+    <mat-toolbar class="input-header" style="padding-left: 0px;">
+        <div class="header-name">{{"Assign Task"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style" style="margin-left: 0px !important">highlight_off</mat-icon>
+            </button>
+        </div>
+    </mat-toolbar>
+    <div class="tw-popup-content ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin">
+        <div class="ovi-row-gap" style="gap: 0px 15px; height:160px" [formGroup]="assignTaskForm">
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box" style="min-width: 0px;">
+                <mat-label class="ovi-lbl-text-size">{{"Assign Type"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign Type'|translate" formControlName="assignTaskType"
+                     [disableOptionCentering]="true" (selectionChange)="getTaskIncharge($event.value);assignToVal=''">
+                        <mat-option *ngFor="let data of assignTypeList" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="min-width: 0px;">
+                <mat-label class="ovi-lbl-text-size">{{"Assign To"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign To'|translate" [readonly]="!ischeckConfig || assignNameId !== null"
+                        formControlName="AssignNameId" appTypeHit (typeHit)="searchTaskUserNamelist($event)"
+                        [matAutocomplete]="auto" autocomplete="off" [(ngModel)]="assignToVal" [ngModelOptions]="{ standalone: true }">
+                        <button style="height: 35px;" type="button" mat-button *ngIf="assignToVal" matSuffix mat-icon-button
+                            aria-label="Clear" (click)="assignToVal= '';clearChild('assignTo')">
+                            <mat-icon class="ovi-fnt-sze20">highlight_off</mat-icon>
+                        </button>
+                    <mat-autocomplete autoActiveFirstOption
+                        [displayWith]="this.taskInchargeEnabled === true ? getTaskAssignList.bind(taskInchargeList) : ''"
+                        #auto="matAutocomplete">
+                        <mat-option *ngFor="let option of taskInchargeList" [value]="option.id" appTooltip [tooltipText]="option.name" placement="bottom"
+                        (click)="getAssignNameId(option.id)">
+                            {{option.name}}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="assignTaskForm.controls.AssignNameId.invalid" class="error-txt">
+                        <span [hidden]="!assignTaskForm.controls['AssignNameId'].errors.required">
+                            {{"Assign to required"|translate}}</span>
+                        <span [hidden]="assignTaskForm.controls['AssignNameId'].errors.required">
+                            {{"Please select value from the option"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+              </div>    
+            <div style="display: flex;flex-direction:column;">     
+            <div  class="row-field-1" *ngIf="data.requestCategoryId === 'PR-AT' && isDisplayNotify == true">
+              <mat-checkbox formControlName="showServicePersonDetails" class="ovi-lbl-text-size">
+                {{ "Notify Service Person" | translate }}
+              </mat-checkbox>
+            </div>
+            <div *ngIf="isDisplayNotify == false" class="ovi-lbl-text-size">
+                Service Person has been alredy Notified at {{this.serviceMessage.dataTime}}.
+            </div>     
+            <div style="display: flex;align-items:column;gap :0 15px" *ngIf="assignTaskForm.controls['showServicePersonDetails'].value && data.requestCategoryId === 'PR-AT' && isDisplayNotify == true">
+            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg "style="min-width: 0px;">
+                <mat-label class="ovi-lbl-text-size">{{ "Service Person Name" | translate }}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                  <input matInput formControlName="serviceProviderName" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter name'|translate"/>
+                  <mat-error *ngIf="assignTaskForm.controls.serviceProviderName.invalid" class="error-txt">
+                    <span [hidden]="!assignTaskForm.controls['serviceProviderName'].errors.required">
+                        {{"Service Person Name is required."|translate}}</span>
+                </mat-error>
+                </mat-form-field>
+            </div>
+          
+            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="min-width: 0px;" *ngIf="assignTaskForm.controls['showServicePersonDetails'].value && data.requestCategoryId === 'PR-AT'">
+                <mat-label class="ovi-lbl-text-size">{{ "Service Person Email" | translate }}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                  <input matInput formControlName="servicePersonEmail" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter email'|translate" />
+                  <mat-error *ngIf="assignTaskForm.controls.servicePersonEmail.invalid" class="error-txt">
+                    <span [hidden]="!assignTaskForm.controls['servicePersonEmail'].errors.required">
+                        {{"Service Person Email is required."|translate}}</span>
+                    <span 
+                        [hidden]="!assignTaskForm.controls['servicePersonEmail'].errors.pattern">
+                        {{"Invalid E-mail"|translate}}
+                    </span>
+                </mat-error>
+                </mat-form-field>
+            </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-footer" style="margin-top: 2%; text-align: right;">
+        <button mat-button class="cancle-btn" mat-dialog-close style="margin-right: 5px;">{{"Cancel"|translate}}</button>
+        <button style="margin-right: 5px;" mat-button class="active-btn " appDebounceClick (debounceClick)="AssignTaskTo(false)"
+        [disabled]="!assignTaskForm.controls['AssignNameId'].valid" [debounceTime]="300" cdkFocusInitial>{{"Assign"|translate}}</button>
+        <button *ngIf="isAssignMe"  style="margin-right: 5px;" mat-button class="active-btn " appDebounceClick (debounceClick)="AssignTaskTo(true)"
+        [disabled]="!assignTaskForm.controls['AssignNameId'].value" [debounceTime]="300" cdkFocusInitial>{{"Assign To Me"|translate}}</button>
+        <button *ngIf="data.requestCategoryId === 'PR-AT'&& isDisplayNotify == true" mat-button class="active-btn" appDebounceClick (debounceClick)="saveServicePermission()"
+            [disabled]="assignTaskForm.controls['showServicePersonDetails'].value == false || !assignTaskForm.controls['serviceProviderName'].valid ||
+            !assignTaskForm.controls['servicePersonEmail'].valid" [debounceTime]="300" cdkFocusInitial>{{"Notify"|translate}}</button>
+    </div>
+</div>

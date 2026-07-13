@@ -1,0 +1,251 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.id"> {{"Create Sales Order"|translate}} </div>
+        <div *ngIf="data.id"> {{"Manage Sales Order"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div style="height: calc(100% - 135px); overflow: auto;">
+        <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="salesOrderForm">
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size"> {{"Order No"|translate}}<span
+                            class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" formControlName="identifier"
+                            [placeholderText]="'Order No'|translate" autocomplete="off">
+                        <mat-error *ngIf="salesOrderForm.controls.identifier.invalid">
+                            <span [hidden]="!salesOrderForm.controls['identifier'].errors.required">{{"Order No is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size"> {{"Purchaser"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" formControlName="purchaser"
+                            [placeholderText]="'Purchaser'|translate" autocomplete="off">
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size"> {{"Country"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-drpdwn-top-box" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Country Code'|translate" formControlName="countryCode">
+                            <mat-option>
+                                <ngx-mat-select-search [formControl]="searchControl"
+                                    (ngModelChange)="applySearch($event, 'country')"
+                                    [placeholderLabel]="'Search....'|translate"
+                                    [noEntriesFoundLabel]="'No matching options'">
+                                </ngx-mat-select-search>
+                            </mat-option>
+                            <mat-option *ngFor="let data of countrycodeList" [value]=data.value>
+                                {{data.value | translate}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Requested Department"|translate}}<span
+                            class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Requested Department'|translate"
+                            formControlName="requestUserDepartmentId" appTypeHit
+                            (typeHit)="getRequestIds($event, 'department')" [matAutocomplete]="auto" autocomplete="off">
+                        <mat-autocomplete autoActiveFirstOption
+                            [displayWith]="this.depEnable === true ? bindDepartmentList.bind(departmentList) : ''"
+                            #auto="matAutocomplete">
+                            <mat-option *ngFor="let option of departmentList" [value]="option.id">{{option.name}}
+                            </mat-option>
+                        </mat-autocomplete>
+                        <mat-error *ngIf="salesOrderForm.controls.requestUserDepartmentId.invalid">
+                            <span 
+                                [hidden]="!salesOrderForm.get('requestUserDepartmentId').hasError('invalidDepartment')">{{
+                                'Please
+                                select a value from the options' | translate }}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Requested User"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Requested User'|translate" formControlName="requestedByUserId"
+                            appTypeHit (typeHit)="getRequestIds($event, 'user')" [matAutocomplete]="auto1"
+                            autocomplete="off">
+                        <mat-autocomplete autoActiveFirstOption
+                            [displayWith]="this.userEnable === true ? bindDepartmentList.bind(userList) : ''"
+                            #auto1="matAutocomplete">
+                            <mat-option *ngFor="let option of userList" [value]="option.id">{{option.name}}
+                            </mat-option>
+                        </mat-autocomplete>
+                        <mat-error *ngIf="salesOrderForm.controls.requestedByUserId.invalid">
+                            <span [hidden]="!salesOrderForm.get('requestedByUserId').hasError('invalidUser')">{{
+                                'Please
+                                select a value from the options' | translate }}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Expected Delivery Date"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input matInput [matDatepicker]="picker2" formControlName="deliveredDatetime" appPlaceholder
+                            [showPlaceholder]="false" [placeholderText]="'Expected Date'|translate">
+                        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                        <mat-datepicker #picker2></mat-datepicker>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <textarea matInput appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Description'|translate" formControlName="description" autocomplete="off"
+                            rows="2"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <textarea matInput appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Comments'|translate" formControlName="comments" autocomplete="off"
+                            rows="2"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="sub-order-header">{{"Sub Orders"|translate}}</div>
+            <div>
+                <div class="ovi-row-gap" *ngIf="data?.deliveryStatusId !== 'DLS-DLD'">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Sub Order Items"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-drpdwn-top-box" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" (selectionChange)="getSubOrder($event)"
+                                [placeholderText]="'Sub Order Item'|translate" formControlName="subOrderItemId">
+                                <mat-option>
+                                    <ngx-mat-select-search [formControl]="searchControl"
+                                        (ngModelChange)="applySearch($event, 'subItem')"
+                                        [placeholderLabel]="'Search....'|translate"
+                                        [noEntriesFoundLabel]="'No matching options'">
+                                    </ngx-mat-select-search>
+                                </mat-option>
+                                <mat-option *ngFor="let data of subOrderList" [value]="data.id"
+                                    [ngStyle]="{display: (existSubOrderItems?.includes(data.id) || false) ? 'none' : 'block'}">
+                                    {{data.name | translate}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Item Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false"
+                                (selectionChange)="additionalItemMaster($event)"
+                                [placeholderText]="'Sub Order Item'|translate" formControlName="itemMasterId" multiple>
+                                <mat-option>
+                                    <ngx-mat-select-search [formControl]="searchControl"
+                                        (ngModelChange)="applySearch($event, 'item')"
+                                        [placeholderLabel]="'Search....'|translate"
+                                        [noEntriesFoundLabel]="'No matching options'">
+                                    </ngx-mat-select-search>
+                                </mat-option>
+                                <mat-option *ngFor="let data of itemList" [value]="data.id"
+                                    [ngStyle]="{display: (suborderItemIds?.includes(data.id) || false) ? 'none' : 'flex'}">
+                                    {{data.name | translate}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn" style="display: flex; align-items: center; gap: 10px;">
+                        <button mat-button class="active-btn" style="margin-top: 15px"
+                            [disabled]="!salesOrderForm.controls['subOrderItemId']?.dirty"
+                            appDebounceClick [debounceTime]="500" (debounceClick)="addChildDeliveryInfo()">{{"Add"|translate}}</button>
+                        <button mat-button class="active-btn" style="margin-top: 15px" appDebounceClick
+                            [debounceTime]="500" (debounceClick)="clearSubOrders()">{{"Clear"|translate}}</button>
+                    </div>
+                </div>
+                <div *ngIf="subOrderDeliveryList.length">
+                    <angular-table-component [id]="'Sub-order'" [type]="'ng-table'" [tableData]="subOrderDeliveryList"
+                        [columns]="['Item', 'Status', 'Delete']" [columnData]="['itemMasterName', 'status', 'Delete']"
+                        (triggerAction)="newtriggerAction($event)">
+                    </angular-table-component>
+                </div>
+            </div>
+
+            <div *ngIf="deliveryDetailsData.length" formArrayName="details" class="expand-panal-container">
+                <mat-expansion-panel *ngFor="let detail of deliveryDetailsData;let i = index" hideToggle
+                    [expanded]="expandedIndex === i" [formGroupName]="i" (opened)="togglePanel(i)"
+                    class="sales-order-expand">
+                    <mat-expansion-panel-header (keydown.enter)="fixClick()">
+                        <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                            <div>
+                                <div class="ovi-fnt-sze14" style="font-weight: 600;">{{detail.itemMasterName}}</div>
+                            </div>
+                            <mat-slide-toggle class="sales-order-slider-btn"
+                                (change)="subOrderStatus(i, $event.checked);" (click)="$event.stopPropagation();"
+                                [checked]="detail.status"></mat-slide-toggle>
+                        </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <div *ngIf="detail.deliveryDetails">
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Sub Order Items"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-drpdwn-top-box"
+                                    appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false"
+                                         formControlName="itemMasterId"
+                                        [placeholderText]="'Sub Order Item'|translate" [disabled]="true">
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl"
+                                                (ngModelChange)="applySearch($event, 'subItem')"
+                                                [placeholderLabel]="'Search....'|translate"
+                                                [noEntriesFoundLabel]="'No matching options'">
+                                            </ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option *ngFor="let data of subOrderList" [value]="data.id">
+                                            {{data.name | translate}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Item Name"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false"
+                                        (selectionChange)="updateItemMaster($event)" [disabled]="data?.deliveryStatusId == 'DLS-DLD'"
+                                        [placeholderText]="'Sub Order Item'|translate" multiple>
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl"
+                                                (ngModelChange)="applySearch($event, 'item')"
+                                                [placeholderLabel]="'Search....'|translate"
+                                                [noEntriesFoundLabel]="'No matching options'">
+                                            </ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option *ngFor="let data of itemList" [value]="data.id"
+                                            [style.display]="!subIndexOrderItems[i].includes(data.id)? 'flex' : 'none'">
+                                            {{data.name | translate}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div *ngIf="data?.deliveryStatusId !== 'DLS-DLD'" class="ovi-row-three-clmn" style="display: flex; align-items: center;">
+                                <button mat-button class="active-btn" style="margin-top: 15px" appDebounceClick
+                                    [debounceTime]="500"
+                                    (debounceClick)="updateChildDeliveryInfo(i, detail.deliveryDetails, $event);">{{"Add"|translate}}</button>
+                            </div>
+                        </div>
+                        <div style="padding-bottom: 10px;">
+                            <angular-table-component [id]="'Sub-order'" [type]="'ng-table'"
+                                [tableData]="detail.deliveryDetails" [columns]="['Item', 'Status', 'Delete']"
+                                [columnData]="['itemMasterName', 'status', 'Delete']"
+                                (triggerAction)="updateTriggerAction(i, $event)">
+                            </angular-table-component>
+                        </div>
+                    </div>
+                </mat-expansion-panel>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data.id" mat-button class="active-btn" appDebounceClick [debounceTime]="500"
+            [disabled]="salesOrderForm.invalid" (debounceClick)="saveSalesOrder()">{{"Create"|translate}}
+        </button>
+        <button *ngIf="data.id && data?.deliveryStatusId !== 'DLS-DLD'" mat-button class="active-btn" appDebounceClick [debounceTime]="500"
+            [disabled]="salesOrderForm.invalid" (debounceClick)="updateSalesOrder()">{{"Update"|translate}}
+        </button>
+    </div>
+</div>

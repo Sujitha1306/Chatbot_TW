@@ -1,0 +1,37 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div class="manage-body">
+    <tw-header-new-component  [type]="'new'" [component]="'ambulance'" [permission]="null" [dateFilter]="displayDate ? selectedDate : null" [toDateFilter]="displayDate ? selectedToDate : null" [rowFilter]="null"
+        [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="true" [groupFilter]="groupFilter" [locationId]="null" [multiDateEnable]="true" [isDateClear]="false"
+        [selectedView]="null" [multiView]="false" (selectedViewAction)="null" [excel]="displayExcel"
+        (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+    <div *ngIf="selectedView == 'table'" class="tw-content1">
+        <mat-tab-group (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+            <mat-tab label="{{'All Requests'|translate}}" [disabled]="this.enableTab">
+                <ng-template mat-tab-label >{{"All Requests"|translate}}</ng-template>
+                <tw-table-component *ngIf="selectedTab === 'All Requests'" [component]="'ambulance'" [columns]="displayedColumns1" [tableData]="tableData"
+                    [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+                    [eventColumn]="eventColumn" (eventAction)="eventAction($event)"
+                    [applyFilter]="applyFilterValue" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="rowClick($event)"
+                    [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table-with-header'"></tw-table-component>
+            </mat-tab>
+            <mat-tab  label="{{'My Requests'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFAMBMR')">
+                <ng-template mat-tab-label >{{"My Requests"|translate}}</ng-template>
+                <tw-table-component *ngIf="selectedTab === 'My Requests'" [component]="'ambulance'" [columns]="displayedColumns1" [tableData]="tableData"
+                    [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+                    [eventColumn]="eventColumn" (eventAction)="eventAction($event)"
+                    [applyFilter]="applyFilterValue" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="rowClick($event)"
+                    [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table-with-header'"></tw-table-component>
+            </mat-tab>
+            <mat-tab  label="{{'Manage Ambulance'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFAMBMA')">
+                <ng-template mat-tab-label >{{"Manage Ambulance"|translate}}</ng-template>
+                <tw-table-component *ngIf="selectedTab === 'Manage Ambulance'" [component]="'manage-amb'" [columns]="MTDisplayedColumns" [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="['Alerts']" [sortColumn]="sortColumn"
+                  [eventColumn]="['Schedule', 'Asset Name']" (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'assetId'" (rowClickAction)="rowClick($event)"
+                  [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null" [tableClass]="'tab-table'"></tw-table-component>
+            </mat-tab>
+            <mat-tab  label="{{'Manage View'|translate}}">
+                <ng-template mat-tab-label >{{"Manage View"|translate}}</ng-template>
+                <app-google-map *ngIf="showMap && selectedTab === 'Manage View'" [type]="'manage'"></app-google-map>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+</div>

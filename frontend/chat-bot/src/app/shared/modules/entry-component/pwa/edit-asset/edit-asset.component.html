@@ -1,0 +1,108 @@
+<div class="bottom-sheet-wrapper ovi-font-family">
+    <div class="bottom-sheet-content">
+    <div class="close-slider"><span class="close-slider-act-btn" (click)="dialogRef.close()" (keydown.enter)="fixClick()"></span></div>
+    <div class="title">{{ data?.id ? 'Update Asset' : 'Create Asset' }}</div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height: calc(100% - 70px);overflow: auto;overflow-x:hidden" [formGroup]="assetForm">
+        <div class="ovi-row-gap"style="display: flex; gap: 15px; padding: 5px 3px;">
+            <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg ">
+                <mat-label  class="ovi-lbl-text-size">{{"Asset No"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Serial No'|translate"
+                        formControlName="assetSerialNumber" required autocomplete="off">
+                    <mat-error *ngIf="assetForm.controls.assetSerialNumber.invalid" class="error-txt-1">
+                        <span  [hidden]="!assetForm.controls['assetSerialNumber'].errors.required">{{"Asset
+                            number required"|translate}}</span>
+                        <span  [hidden]="!assetForm.controls['assetSerialNumber'].errors.maxlength">{{"Maximmum
+                            allowed characters are 64"|translate}} </span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg ">
+                <mat-label  class="ovi-lbl-text-size">{{"Asset Name"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Name'|translate"
+                        formControlName="assetName" required autocomplete="off">
+                    <mat-error *ngIf="assetForm.controls.assetName.invalid" class="error-txt-1">
+                        <span  [hidden]="!assetForm.controls['assetName'].errors.required">{{"Asset name
+                            required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label  class="ovi-lbl-text-size">{{"Asset Category"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Category'|translate"
+                        formControlName="assetCategoryId" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let asset of assetCategoryList" [value]="asset.code">
+                            {{asset.value}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label  class="ovi-lbl-text-size">{{"Asset Type"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Type'|translate" formControlName="assetTypeId"
+                        [disableOptionCentering]="true">
+                        <mat-option *ngFor="let assetType of assetTypeList" [value]="assetType.code">
+                            {{assetType.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="assetForm.controls.assetTypeId.invalid" class="error-txt-1">
+                        <span  [hidden]="!assetForm.controls['assetTypeId'].errors.required">{{"Asset type
+                            required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <span style="color:#086284;">Basic details</span>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg ">
+                <mat-label  class="ovi-lbl-text-size">{{"Manufacturer"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Manufacturer'|translate"
+                        formControlName="manufacturer">
+                    <mat-error *ngIf="assetForm.controls.manufacturer.invalid" class="error-txt">
+                        <span  [hidden]="!assetForm.controls['manufacturer'].errors.maxlength">{{"Maximmum
+                            allowed characters are 64"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg ">
+                <mat-label  class="ovi-lbl-text-size">{{"Commissioned Date"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <input  matInput [matDatepicker]="Commissionedpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Commissioned Date'|translate"
+                         formControlName="commissionedOn">
+                    <mat-datepicker-toggle matSuffix [for]="Commissionedpicker"></mat-datepicker-toggle>
+                    <mat-datepicker #Commissionedpicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+            <span style="color:#086284;"> Assigned</span>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label  class="ovi-lbl-text-size">{{"Owned by Department"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select  formControlName="ownerDepartmentId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Owned by Department'|translate">
+                        <mat-option *ngFor="let department of departmentList" [value]="department.id">
+                            {{ department.name }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label  class="ovi-lbl-text-size">{{"Asset Owner"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select  formControlName="ownerId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Owner'|translate">
+                        <mat-option *ngFor="let user of userList" [value]="user.id">
+                            {{ user.name }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+    <div class="pwa-footer">
+        <button mat-button class="pwa-active-btn" (click)="saveAsset()"> {{ data?.id ? 'Update' : 'Create' }}</button>
+    </div>
+    </div>
+</div>

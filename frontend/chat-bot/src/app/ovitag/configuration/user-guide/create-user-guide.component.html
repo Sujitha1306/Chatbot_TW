@@ -1,0 +1,172 @@
+<div class="input-component-holder ovi-font-family" style="height:100%;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create User Guide"|translate}}</div>
+        <div *ngIf="data">{{"Modify User Guide"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div style="display:flex;height:calc(100% - 140px);overflow:hidden;">
+        <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="flex:1;overflow:auto;min-width:0;" [formGroup]="userGuideForm">
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Resources Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Resources Type'|translate" formControlName="resourceType" (selectionChange)="getResourceFilter($event.value)" matSelectSearch>
+                            <mat-option *ngFor="let item of resTypList" [value]="item.code">
+                                {{item.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="userGuideForm.controls.resourceType.invalid">
+                            <span [hidden]="!userGuideForm.controls['resourceType'].errors.required">{{"Resources Type is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Resources Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Resources Name'|translate" formControlName="resourceCode" matSelectSearch>
+                            <mat-option *ngFor="let item of resNameList" [value]="item.code">
+                                {{item.name}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="userGuideForm.controls.resourceCode.invalid">
+                            <span [hidden]="!userGuideForm.controls['resourceCode'].errors.required">{{"Resources Name is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Title"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Title'|translate" formControlName="title" autocomplete="off">
+                        <mat-error *ngIf="userGuideForm.controls.title.invalid">
+                            <span [hidden]="!userGuideForm.controls['title'].errors.required">{{"Title is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Preferred Language"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate" formControlName="preferedLanguage" matSelectSearch>
+                            <mat-option *ngFor="let data of languageList" [value]="data.code">
+                                {{data.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2 formControlName="description"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status" [disableOptionCentering]="true">
+                            <mat-option value="deprecated">{{"Deprecated"|translate}}</mat-option>
+                            <mat-option value="archived">{{"Archived"|translate}}</mat-option>
+                            <mat-option value="draft">{{"Draft"|translate}}</mat-option>
+                            <mat-option value="active">{{"Active"|translate}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn">
+                    <div style="margin-top:11px" class="doc-section">
+                        <div *ngIf="!isFileSelected" class="doc-upload-area">
+                            <button class="file-upload-button">
+                                <input type="file" #fileInput accept="image/x-png,image/jpeg,.pdf,.txt"
+                                    title="" class="custom-file-input" id="userGuideFile"
+                                    (change)="handleFileSelect($event)" />
+                                {{"Choose File"|translate}}
+                            </button>
+                        </div>
+                        <div *ngIf="isFileSelected && selectedFileObj" class="document-row">
+                            <span class="doc-type-badge" [ngClass]="'ext-' + (docTypeShortCode | lowercase)">{{ docTypeShortCode }}</span>
+                            <div class="doc-row-info">
+                                <span class="doc-row-name">{{ selectedFileObj.fileName }}</span>
+                                <span class="doc-row-type">{{ selectedFileObj.fileType }}<span *ngIf="selectedFileObj.fileSize"> &middot; {{ formatBytes(selectedFileObj.fileSize) }}</span></span>
+                            </div>
+                            <div class="doc-row-actions">
+                                <button mat-icon-button matTooltip="{{'Preview'|translate}}" (click)="openDocumentPreview()">
+                                    <mat-icon>visibility</mat-icon>
+                                </button>
+                                <button mat-icon-button matTooltip="{{'Remove'|translate}}" (click)="removeFile()">
+                                    <mat-icon>delete_outline</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="doc-preview-panel" *ngIf="selectedPreviewDoc">
+            <div class="doc-preview-header">
+                <div class="doc-preview-title">
+                    <mat-icon class="doc-preview-file-icon">insert_drive_file</mat-icon>
+                    <div class="doc-preview-info">
+                        <span class="doc-preview-name">{{ selectedPreviewDoc.fileName }}</span>
+                        <span class="doc-preview-type">{{ selectedPreviewDoc.fileType }}</span>
+                    </div>
+                </div>
+                <div class="doc-preview-header-actions">
+                    <button mat-icon-button matTooltip="{{'Zoom out'|translate}}" (click)="zoomOut()" [disabled]="zoomLevel <= 0.5">
+                        <mat-icon>zoom_out</mat-icon>
+                    </button>
+                    <span class="zoom-level-label" (click)="resetZoom()" matTooltip="{{'Reset zoom'|translate}}">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+                    <button mat-icon-button matTooltip="{{'Zoom in'|translate}}" (click)="zoomIn()" [disabled]="zoomLevel >= 4">
+                        <mat-icon>zoom_in</mat-icon>
+                    </button>
+                    <button mat-icon-button [matTooltip]="isPreviewFullscreen ? 'Exit fullscreen' : 'Fullscreen'" (click)="togglePreviewFullscreen()">
+                        <mat-icon>{{ isPreviewFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                    </button>
+                    <button mat-icon-button class="doc-preview-close-btn" (click)="closeDocumentPreview()" matTooltip="{{'Close preview'|translate}}">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+            </div>
+            <div class="doc-preview-body" (wheel)="onPreviewWheel($event)">
+                <div *ngIf="previewLoading" class="doc-preview-loader">
+                    <mat-spinner diameter="36"></mat-spinner>
+                </div>
+                <div *ngIf="!previewLoading"
+                     class="doc-preview-zoom-wrapper"
+                     [style.transform]="'scale(' + zoomLevel + ')'"
+                     [style.paddingBottom.%]="zoomLevel > 1 ? (zoomLevel - 1) * 100 : 0"
+                     [style.paddingRight.%]="zoomLevel > 1 ? (zoomLevel - 1) * 100 : 0">
+                    <ng-container [ngSwitch]="previewTypeKey">
+                        <iframe *ngSwitchCase="'pdf'" [src]="previewSafeUrl" class="doc-preview-iframe" frameborder="0"></iframe>
+                        <img *ngSwitchCase="'image'" [src]="previewSafeUrl" class="doc-preview-image" alt="Document preview"/>
+                        <pre *ngSwitchCase="'text'" class="doc-preview-text">{{ previewTextContent }}</pre>
+                        <div *ngSwitchCase="'excel'" class="doc-preview-placeholder">
+                            <mat-icon>table_chart</mat-icon>
+                            <span>Excel preview not available</span>
+                        </div>
+                        <div *ngSwitchCase="'word'" class="doc-preview-placeholder">
+                            <mat-icon>description</mat-icon>
+                            <span>Word preview not available</span>
+                        </div>
+                        <div *ngSwitchCase="'ppt'" class="doc-preview-placeholder">
+                            <mat-icon>slideshow</mat-icon>
+                            <span>PowerPoint preview not available</span>
+                        </div>
+                        <div *ngSwitchCase="'video'" class="doc-preview-placeholder">
+                            <mat-icon>videocam</mat-icon>
+                            <span>Video preview not available</span>
+                        </div>
+                        <div *ngSwitchCase="'audio'" class="doc-preview-placeholder">
+                            <mat-icon>audiotrack</mat-icon>
+                            <span>Audio preview not available</span>
+                        </div>
+                        <div *ngSwitchDefault class="doc-preview-placeholder">
+                            <mat-icon>description</mat-icon>
+                            <span>Preview not available for this file type</span>
+                        </div>
+                    </ng-container>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" appDebounceClick (debounceClick)="saveUserGuide()" [debounceTime]="300" cdkFocusInitial [disabled]="userGuideForm.invalid">{{ data?.id ? 'Update' : 'Create' }}</button>
+    </div>
+</div>

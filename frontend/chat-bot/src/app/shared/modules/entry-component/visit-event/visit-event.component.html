@@ -1,0 +1,204 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div > {{"Manage visit"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div> 
+    </div>
+    <div>
+        <div class="banner-container">
+            <div *ngIf="visitorData" style="display: flex; padding: 5px 10px; gap: 20px;">
+                <span class="banner-text"><img height="15px" width="15px" class="svg-blue" alt="visitor" src="../../../../../assets/icons/visitor-id 1.svg"/>{{visitorData.identifier}}</span>
+                <span class="banner-text"><img height="15px" width="15px" class="svg-blue"  alt="user" src="../../../../../assets/icons/user 1.svg"/>{{visitorData.fullName}}</span>
+                <span *ngIf="visitorData.gender" class="banner-text">
+                    <span class="material-icons  ovi-fnt-sze16" style="padding: 0;"
+                        [ngStyle]="{'color': visitorData.gender !== 'Male' ? '#e648a2' : '#039df6'}">
+                        {{visitorData.gender !== 'Male' ? 'female' : 'male'}}</span>
+                    <span *ngIf="visitorData.birthDate">{{ visitorData.birthDate | age }}
+                        <span class="ovi-fnt-sze10">Yrs</span></span>
+                </span>
+                <span *ngIf="visitorData.addVisitorCount !== null && visitorData.addVisitorCount > 0" class="banner-text"><img height="15px" width="15px" class="svg-blue"  alt="user" src="../../../../../assets/icons/users 1.svg"/>{{visitorData.addVisitorCount}}</span>
+                <span *ngIf="visitorData.tagId !== null" class="banner-text"><img height="15px" width="15px" class="svg-blue"  alt="coaster" src="../../../../../assets/Alert/common_icons/coaster.svg"/>{{visitorData.tagId}}</span>
+            </div>
+            <div class="tracking-container">
+                <div *ngFor="let status of statusList; let i = index" class="tracking-step">
+
+                    <div class="circle" [ngClass]="(status.date && status.date.split(' ')[0] === currentDate) ? ((statusCode === 'VIS-VEF' || visitorData.visitorStatusId === 'VIS-VEF') && status.code === 'VIS-VES' ? 'red-circle' : 'current-date-circle')  : 
+                        (status.date && status.date.split(' ')[0] !== currentDate) ? 'active-circle' : ''">
+                        <img [src]="status.url" alt="{{ status.value }}" />
+                    </div>
+                  <div *ngIf="i !== statusList.length - 1" class="dotted-line" [ngClass]="{'active-dotted-line': status.date !== null && statusList[i + 1].date !== null}" [style.--index]="i"></div>
+
+                  <div class="value">{{ status.value }}</div>
+                  <div *ngIf="status.user !== null" class="value-1">{{ status.user }}</div>
+                  <div class="value-2">{{ status.date | date: 'dd MMM yyyy hh:mm a' }}</div>
+                </div>
+                <div *ngIf="visitorData && visitorData.visitorStatusId !== 'VIS-CO' && visitorData.visitorStatusId !== 'VIS-VEF'&& statusCode !== 'VIS-VEF' && statusCode !== 'VIS-CA'" style="padding-top: 8px;">
+                    <button *ngIf="(statusCode !== 'VIS-AC' || statusCode !== 'VIS-RQ') && !isButtonShow"  mat-button class="active-btn"
+                       appDebounceClick [debounceTime]="600" (click)="updateStatus(statusCode,'success')">{{ buttonName |translate}}</button>&nbsp;
+                    <button *ngIf="(statusCode !== 'VIS-VEF' && statusCode !== 'VIS-AR' && statusCode!=='VIS-CO'&&statusCode!=='VIS-DP') && !isButtonShow"  mat-button class="active-btn"
+                       appDebounceClick [debounceTime]="600" (click)="updateStatus(statusCode,'failed')">{{ statusCode==="VIS-AC" ? "Failed" : "Cancel" |translate}}</button>
+                </div>
+            </div>
+        </div>
+        <div>
+            <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+                <mat-tab>
+                    <ng-template mat-tab-label style="gap: 5px;">
+                        <img height="16px" width="16px" class="svg-icon" alt="info"  src="../../../../../assets/icons/info 1.svg">
+                        <span>{{"Info" | translate}}</span>
+                    </ng-template>
+                    <div class="info-container">
+                        <div class="info-content" style="margin-bottom: 10px">
+                            <div class="info-header">{{"Visitor Details"|translate}}</div>
+                            <div *ngIf="visitorData" style="display: flex; gap: 20px; padding: 10px 0; flex-wrap: wrap;">
+                                <span style="padding: 0 10px;" *ngIf="visitorData.visitorTypeName">
+                                    <div class="info-lable">{{"Visitor Type"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.visitorTypeName}}</div>
+                                </span>
+                                
+                                <span style="padding: 0 10px;"*ngIf="visitorData.visitorEventStatusName">
+                                    <div class="info-lable">{{"Status"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.visitorEventStatusName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.locationName">
+                                    <div class="info-lable">{{"Meeting Location"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.locationName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.pfEntityGroupName">
+                                    <div class="info-lable">{{"Access Level"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.pfEntityGroupName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.phoneNumber">
+                                    <div class="info-lable">{{"Mobile Number"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.phoneNumber}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.email">
+                                    <div class="info-lable">{{"Email"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.email}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.birthCountryName">
+                                    <div class="info-lable">{{"Country Of Birth"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.birthCountryName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.citizenshipCountryName">
+                                    <div class="info-lable">{{"Country Of Citizenship"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.citizenshipCountryName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.organizationName">
+                                    <div class="info-lable">{{"Company Name"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.organizationName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.organizationLocationName">
+                                    <div class="info-lable">{{"Company Location"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.organizationLocationName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.state">
+                                    <div class="info-lable">{{"State"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.state}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.address">
+                                    <div class="info-lable">{{"Company Address"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.address}}</div>
+                                </span>
+                                <span style="padding: 0 10px;"*ngIf="visitorData.isTechnicalAccess">
+                                    <div class="info-lable">{{"Technical Data Access/Discussion"|translate}} </div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{ visitorData.isTechnicalAccess === "true" ? "Yes" :"No"}}</div>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-content" style="margin-bottom: 10px">
+                            <div class="info-header">{{"Schedule Details"|translate}}</div>
+                            <div *ngIf="visitorData" style="display: flex; gap: 20px; padding: 10px 0; flex-wrap: wrap;">
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Schedule Type"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.scheduleTypeName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Schedule Datetime"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.scheduleTime | date: 'dd MMM yyyy hh:mm a'}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Departure Datetime"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.depatureDatetime | date: 'dd MMM yyyy hh:mm a'}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Duration (In Hours)"|translate}}</div>
+                                    <div class="ovi-fnt-sze13" style="font-weight: 600;">{{visitorData.duration}}</div>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-header">{{"Documents"|translate}}</div>
+                            <div *ngIf="attachmentInfo" style="display: flex; gap: 20px; padding: 10px 0; flex-wrap: wrap;">
+                                <div *ngIf="attachmentInfo.fileType === 'application/pdf'">
+                                    <!-- <iframe [src]="attachmentInfo.fileUrl" width="100px" height="100px"></iframe> -->
+                                    <img height="70px" width="70px" src="../../../../../assets/Alert/common_icons/pdf_green.svg" alt="pdf" (click)="getFileDownload(attachmentInfo)" (keydown.enter)="fixClick()"/>
+                                    <div>{{attachmentInfo.fileName}}</div>
+                                </div>
+                                <div *ngIf="attachmentInfo.fileType.startsWith('image/')">
+                                    <img [src]="attachmentInfo.fileUrl" alt="img" width="50px" height="50px" (click)="getFileDownload(attachmentInfo)" (keydown.enter)="fixClick()"/>
+                                    <div>{{attachmentInfo.fileName}}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </mat-tab>
+                <mat-tab>
+                    <ng-template mat-tab-label style="gap: 5px;">
+                        <img height="16px" width="16px" class="svg-icon" src="../../../../../assets/icons/alert 2.svg"  alt="alert" >
+                        <span>{{"Alerts" | translate}}</span>
+                    </ng-template>
+                </mat-tab>
+                <mat-tab>
+                    <ng-template mat-tab-label style="gap: 5px;">
+                        <img height="16px" width="16px" class="svg-icon" src="../../../../../assets/icons/movement-history 1.svg" alt="movement" >
+                        <span>{{"Movement History" | translate}}</span>
+                    </ng-template>
+                    <div class="movement-date-container ">
+                        <div style="width: 225px; display: flex;">
+                            <span class="movement-date-lable">{{"From Date"|translate}}</span>
+                            <span class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="width: 140px;">
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput autocomplete="off"  [matDatepicker]="from" [formControl]="fromDate" 
+                                    appPlaceholder [showPlaceholder]="false" [placeholderText]="'fromDate'|translate">
+                                    <mat-datepicker-toggle matSuffix [for]="from" class="ovi-fnt-sze15"></mat-datepicker-toggle>
+                                    <mat-datepicker #from></mat-datepicker>
+                                </mat-form-field>
+                            </span>
+                        </div>
+                        <div style="width: 225px; display: flex;">
+                            <span class="movement-date-lable">{{"To Date"|translate}}</span>
+                            <span class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="width: 140px;">
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput autocomplete="off"  [matDatepicker]="to" [formControl]="toDate" 
+                                    appPlaceholder [showPlaceholder]="false" [placeholderText]="'toDate'|translate">
+                                    <mat-datepicker-toggle matSuffix [for]="to" class="ovi-fnt-sze15"></mat-datepicker-toggle>
+                                    <mat-datepicker #to></mat-datepicker>
+                                </mat-form-field>
+                            </span>
+                        </div>
+                        <span>
+                            <button mat-button class="active-btn" style="line-height: 34px;" click="selectedDateRec()">{{"Get"|translate}}</button>
+                        </span>
+                    </div>
+                    <tw-table-component [component]="'visitorEvent'" [columns]="displayedColumns" [tableData]="movementTableData"
+                        [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                        (eventAction)="eventAction($event)" [rowClick]="false" (rowClickAction)="null" [applyFilter]="null"
+                        [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+                    </tw-table-component>
+                </mat-tab>
+                <mat-tab>
+                    <ng-template mat-tab-label style="gap: 5px;">
+                        <img height="16px" width="16px" class="svg-icon" alt="history" src="../../../../../assets/icons/event-history 1.svg">
+                        <span>{{"Events History" | translate}}</span>
+                    </ng-template>
+                    <div style="height: calc(100Vh - 305px);">
+                        <tw-table-component [component]="'visitorEvent'" [columns]="displayedColumns" [tableData]="eventTableData"
+                        [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                        (eventAction)="eventAction($event)" [rowClick]="false" (rowClickAction)="null" [applyFilter]="null"
+                        [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]"></tw-table-component>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,70 @@
+<div class="mhv2-root ovi-font-family">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <div class="mhv2-header">
+    <div class="mhv2-header-left">
+      <div class="mhv2-header-badge">
+        <mat-icon>history_edu</mat-icon>
+      </div>
+      <div class="mhv2-header-text">
+        <div class="mhv2-title">{{ drillName | translate }}</div>
+        <div class="mhv2-subtitle">Personnel tracking · Drill activity log</div>
+      </div>
+    </div>
+    <button class="mhv2-close" mat-dialog-close>
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- ── Body ─────────────────────────────────────────────── -->
+  <div class="mhv2-body">
+
+    <!-- Loading -->
+    <div class="mhv2-loading" *ngIf="isLoading">
+      <div class="mhv2-spinner">
+        <mat-icon class="mhv2-spin-ic">autorenew</mat-icon>
+      </div>
+      <div class="mhv2-loading-text">
+        <div class="mhv2-loading-title">Fetching drill data</div>
+        <div class="mhv2-loading-sub">This will only take a moment...</div>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div class="mhv2-empty" *ngIf="!isLoading && tableData.length === 0">
+      <div class="mhv2-empty-icon">
+        <mat-icon>inbox</mat-icon>
+      </div>
+      <div class="mhv2-empty-title">No records found</div>
+      <div class="mhv2-empty-desc">No personnel tracking data is available for this drill event.</div>
+    </div>
+
+    <!-- Table -->
+    <ng-container *ngIf="!isLoading && tableData.length > 0">
+      <tw-header-new-component
+        [type]="'new'"
+        [component]="'musteringHistory'"
+        [permission]="null"
+        [dateFilter]="null"
+        [rowFilter]="null"
+        [selectDropdown]="null"
+        [selectedName]="null"
+        [locationId]="null"
+        [selectedView]="null"
+        (selectedViewAction)="null"
+        (headerEventAction)="headerEventAction($event)"
+        [groupFilter]="[]">
+      </tw-header-new-component>
+      <angular-table-component
+        [id]="'musteringHistoryV2'"
+        [type]="'ng-table'"
+        [tableData]="tableData"
+        [columns]="['Name', 'From Location', 'To Location', 'Time']"
+        [columnData]="['inchargeName', 'srcLocationName', 'locationName', 'scheduleTime']"
+        (triggerAction)="null"
+        [applyFilter]="applyFilterValue">
+      </angular-table-component>
+    </ng-container>
+
+  </div>
+</div>

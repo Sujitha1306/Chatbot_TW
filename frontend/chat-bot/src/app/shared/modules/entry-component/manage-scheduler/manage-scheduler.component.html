@@ -1,0 +1,212 @@
+<div style="height: 100%;overflow: hidden;">
+    <mat-toolbar *ngIf="!['TW-SMU']?.includes(scheduleInput?.status)" class="input-header">
+        <div class="header-name">{{"Manage Scheduler"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div [formGroup]="SchedulerForm" style="overflow-x: hidden;" [ngStyle]="{'height' : ['TW-SMU']?.includes(scheduleInput?.status) ? 'calc(100% - 60px)' : 
+    'calc(100% - 150px)','overflow-y': scheduleInput?.entityType === 'location' || scheduleInput?.entityType === 'asset' ? 'hidden' : 'scroll'}">
+        <div class="mat-custom-form-field-box popup-margin" style="overflow: hidden;width: 100%;">
+            <div style="display: block;height: 100%;">
+                <div class="grp-flex-class">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="example-form ovi-sch-field-gap">
+                            <mat-label class="ovi-lbl-text-size">{{"Group Name"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Group Name'|translate"  [disableOptionCentering]="true"
+                                    formControlName="groupName" matSelectSearch #group>
+                                    <mat-option *ngFor="let group of groupList" [value]="group.id" (click)="changeGroup(group.id)">
+                                        {{group.name}} ({{group.entityTypeName}})
+                                    </mat-option>
+                                </mat-select>
+                                <mat-icon *ngIf="SchedulerForm.controls.groupName.value !== null && SchedulerForm.controls.groupName.value !== ''" matSuffix appTooltip tooltipText="Groupname View" placement="bottom" 
+                                    (click)="$event.stopPropagation();getGroupDataView(SchedulerForm.controls.groupName.value)" class="ovi-prmry-clr ovi-fnt-sze21"  (keydown.enter)="fixClick()"
+                                    style="height: 23px; width: 26px; cursor: pointer;">
+                                    groups
+                                </mat-icon>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="scheduleInput?.entityType !== null" class="ovi-row-three-clmn">
+                        <button *ngIf="groupMappingId === null" mat-button class="active-btn" style="margin-top: 20px;" appDebounceClick cdkFocusInitial [debounceTime]="300"
+                            [disabled]="!isEnable" (click)="updateEntityGroup()">{{"Add"| translate}}</button>
+                        <button *ngIf="groupMappingId !== null" mat-button class="active-btn" style="margin-top: 20px;" appDebounceClick cdkFocusInitial [debounceTime]="300"
+                            [disabled]="!isEnable" (click)="updateEntityGroup()">{{"Update"| translate}}</button>
+                    </div>
+                </div>
+                <div class="grp-flex-class">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="example-form ovi-sch-field-gap">
+                            <mat-label class="ovi-lbl-text-size">{{"Shift"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type'|translate"  [disableOptionCentering]="true"
+                                    formControlName="shift" (selectionChange)="onShiftChange($event.value)">
+                                    <mat-option *ngFor="let shift of shiftDetails" [value]="shift.id">
+                                        {{shift.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="example-form ovi-sch-field-gap">
+                            <mat-label class="ovi-lbl-text-size">{{"From Date"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'FromDate'|translate" autocomplete="off"  formControlName="shiftFromDate" [matDatepicker]="picker3" 
+                                [readonly]="this.entityId !== null && SchedulerForm.controls.groupName.value !== null && SchedulerForm.controls.groupName.value !== ''">
+                                <mat-datepicker-toggle matSuffix [for]="picker3" [disabled]="this.entityId !== null && SchedulerForm.controls.groupName.value !== null && 
+                                SchedulerForm.controls.groupName.value !== ''"></mat-datepicker-toggle>
+                                <mat-datepicker #picker3></mat-datepicker>
+                                <mat-error *ngIf="SchedulerForm.controls.shiftFromDate.invalid">
+                                    <span >{{"Please select a valid date"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="example-form ovi-sch-field-gap">
+                            <mat-label class="ovi-lbl-text-size">{{"To Date"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'ToDate'|translate" autocomplete="off"  formControlName="shiftToDate" [matDatepicker]="picker2" 
+                                [readonly]="this.entityId !== null && SchedulerForm.controls.groupName.value !== null && SchedulerForm.controls.groupName.value !== ''">
+                                <mat-datepicker-toggle matSuffix [for]="picker2" [disabled]="this.entityId !== null && SchedulerForm.controls.groupName.value !== null && 
+                                SchedulerForm.controls.groupName.value !== ''"></mat-datepicker-toggle>
+                                <mat-datepicker #picker2></mat-datepicker>
+                                <mat-error *ngIf="SchedulerForm.controls.shiftToDate.invalid">
+                                    <span>{{"Please select a valid date"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <mat-divider class="divider"></mat-divider>
+        <div class="mat-custom-form-field-box popup-margin">
+            <div style="height:100%;display: flex;flex-direction: row;overflow-y: hidden;overflow-x: auto;padding: 5px;">
+                <div class="exp-class">
+                    <span class="ovi-popup-title-text-size top-styl">{{"MANAGE EXCEPTIONS"|translate}}</span>
+                    <div class="ovi-lbl-text-size" style="padding-top:10px ;">{{"Week Off"|translate}}</div>
+                    <div style="width: 35%;display: contents;" class="ovi-lbl-text-size">
+                        <span *ngFor="let day of daysOfWeek; let i = index"
+                            style="display: inline-block;margin-right: 7px;margin-bottom: 15px;">
+                            <span>
+                                <button mat-button class="date-btn" class="margin-r-1"
+                                    [ngClass]="weekOff.indexOf(day.code) > -1 ? 'active-day' : 'week-day'"
+                                    [ngStyle]="{'opacity': this.entityId !== null ? '50%' : ''}"
+                                    (click)="this.entityId === null ? getWeekOff(day.code) : ''">{{day.value | slice:0:3}}</button>
+                            </span>
+                        </span>
+                    </div>
+                    <div style="display: flex;gap: 18px;flex-direction: row;flex-wrap: wrap;">
+                        <div class="example-form ovi-sch-field-gap" style="max-width: 236px;">
+                            <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" [disableOptionCentering]="true"
+                                    formControlName="type" [disabled]="SchedulerForm.controls.exceptionId.value != null">
+                                    <mat-option *ngFor="let type of exceptionType" [value]="type.code">
+                                        {{type.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="example-form ovi-sch-field-gap" style="max-width: 236px;">
+                            <mat-label class="ovi-lbl-text-size">{{"Period"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Period'|translate"  [disableOptionCentering]="true"
+                                    formControlName="period" [disabled]="SchedulerForm.controls.exceptionId.value != null">
+                                    <mat-option *ngFor="let period of exceptionPeriod" [value]="period.code">
+                                        {{period.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div style="gap: 2%;"
+                        [ngStyle]="SchedulerForm.controls.period.value === 'HPT-DRG' ? {'display': 'flex'} : {'display': 'block'}">
+                        <div class="ovi-row-one-clmns ovi-sch-field-gap"
+                            [ngStyle]="SchedulerForm.controls.period.value === 'HPT-DRG' ? {'max-width': '245px'} : {}">
+                            <mat-label class="ovi-lbl-text-size"
+                                *ngIf="SchedulerForm.controls.period.value !== 'HPT-DRG'">{{"Date"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size"
+                                *ngIf="SchedulerForm.controls.period.value === 'HPT-DRG'">{{"FromDate"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Date'|translate"  autocomplete="off" 
+                                    formControlName="fromDate" [matDatepicker]="picker"
+                                    [matDatepickerFilter]="SchedulerForm.controls.type.value === 'ORD-LEV' ? holidayDateFilter : ''"
+                                    (dateChange)="dateChange($event.target.value)">
+                                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                <mat-datepicker #picker></mat-datepicker>
+                                <mat-error *ngIf="SchedulerForm.controls.fromDate.invalid">
+                                    <span > {{"Please select a valid date"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-one-clmns ovi-sch-field-gap" *ngIf="SchedulerForm.controls.period.value === 'HPT-DRG'"
+                            style="max-width: 245px;">
+                            <mat-label class="ovi-lbl-text-size">{{"ToDate"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Date'|translate" autocomplete="off"
+                                     formControlName="toDate" [matDatepicker]="picker1"
+                                    [min]="SchedulerForm.controls['fromDate'].value"
+                                    [matDatepickerFilter]="SchedulerForm.controls.type.value === 'ORD-LEV' ? holidayDateFilter : ''"
+                                    (dateChange)="dateChange($event.target.value)">
+                                <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                <mat-datepicker #picker1></mat-datepicker>
+                                <mat-error *ngIf="SchedulerForm.controls.toDate.invalid">
+                                    <span >{{'Please select a valid date'|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="ovi-row-one-clmns ovi-sch-field-gap" *ngIf="SchedulerForm.controls.type.value !== 'ORD-LEV'">
+                        <mat-label class="ovi-lbl-text-size">{{"Shift"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type'|translate" [disableOptionCentering]="true"
+                                formControlName="selectedShift">
+                                <mat-option *ngFor="let shift of shiftFilterDetails" [value]="shift.id">
+                                    {{shift.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div>
+                        <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="bindData()"
+                            [disabled]="(SchedulerForm.controls.selectedShift.value == null && SchedulerForm.controls.type.value !== 'ORD-LEV') || SchedulerForm.controls.fromDate.value === null || (SchedulerForm.controls.toDate.value === null && SchedulerForm.controls.period.value === 'HPT-DRG') ||
+                                                                                    SchedulerForm.controls.fromDate.invalid || SchedulerForm.controls.toDate.invalid || SchedulerForm.controls.type.value == null"
+                            *ngIf="SchedulerForm.controls.exceptionId.value == null">{{"Add"|translate}}</button>
+                        <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="bindData()"
+                            [disabled]="SchedulerForm.controls.fromDate.invalid || SchedulerForm.controls.toDate.invalid"
+                            *ngIf="SchedulerForm.controls.exceptionId.value != null">{{"update"|translate}}</button>
+                        <button mat-button class="active-btn margin-r-1" style="height: fit-content;"
+                            (click)="clearFields('exception')"
+                            *ngIf="SchedulerForm.controls.exceptionId.value != null">{{"clear"|translate}}</button>
+                    </div>
+                </div>
+                <div style="height: 100%;margin-right: 50px;">
+                    <app-calendar [calendarInput]="calendarData" (calendarUpdatedData)="calendarUpdatedData($event)"></app-calendar>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 10px;">
+                <div class="ovi-popup-title-text-size ovi-font-family">{{"EXCEPTIONS"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="table-disp" style="width: 98%;margin: 10px 0px 10px 0px">
+                <angular-table-component [id]="'formBuilder'" [type]="'ng-table'"
+                    [tableData]="tableDataActive"
+                    [columns]="['Type', 'Period','EventDate','Shift','EditRemove']"
+                    [columnData]="['overrideStatusName', 'holidayPatternName','date','shiftName','editRemove']"
+                    [pageSizeOptions]="[5, 10, 15, 20, 30]" (triggerAction)="triggerAction($event)">
+                </angular-table-component>
+            </div>
+        </div>
+    </div>
+    <div class="input-footer" style="text-align: right !important;">
+        <button mat-button class="active-btn margin-r-1" style="height: fit-content;" mat-dialog-close
+        close-button>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="saveEntityGroupData()" *ngIf="!data?.entityGroup && this.entityData?.length === 0"
+        [disabled]="SchedulerForm.controls.shift.value === null || (SchedulerForm.controls.groupName.value === null && !(['TW-SMU']?.includes(this.scheduleInput?.status)))">{{"Save"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" style="height: fit-content;" (click)="updateEntityGroupData()" *ngIf="data?.entityGroup || this.entityData?.length > 0">{{"Update"|translate}}</button>
+    </div>
+</div>

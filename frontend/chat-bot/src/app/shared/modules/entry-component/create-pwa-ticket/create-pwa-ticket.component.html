@@ -1,0 +1,135 @@
+<div class="loader-container" *ngIf="isloading">
+    <div class="spinner">
+        <div class="bounce1"></div>
+        <div class="bounce2"></div>
+        <div class="bounce3"></div>
+    </div>
+</div>  
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div> {{"Create Ticket"|translate}}</div>
+        <div (click)="closeDialog()" (keydown.enter)="fixClick()"><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: auto;height:calc(100% - 130px);overflow-x: hidden;">
+        <div [formGroup]="taskForm">
+            <div class="ovi-row-gap" style="display: flex; gap: 10px; padding: 5px 3px;flex-direction: column;">
+                <div class="ovi-row-one-clmns" style="height: 25px;display: flex;align-items: center;">
+                    <div>
+                        <mat-label class="ovi-lbl-text-size">{{"Choose Ticket"|translate}} :</mat-label>
+                    </div>
+                    <div class="radio-button">
+                        <mat-radio-group formControlName="ticketId" (change)="onTicketChange($event.value)">
+                            <mat-radio-button class="cst-mgn_1" *ngFor="let option of ticketDataList"
+                                [value]="option.code">
+                                {{option.value | translate}} </mat-radio-button>
+                        </mat-radio-group>
+                    </div>
+                </div>
+                <div style="display: flex;gap: 10px;align-items: center;">
+                    <div *ngIf="taskForm.controls['ticketId'].value === 'PR-AT'" class="ovi-row-one-clmns" style="width: 287px;">
+                        <mat-label class="ovi-lbl-text-size">{{"Asset"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="line-height: 22px;top: 6px;" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset'|translate" autocomplete="off" formControlName="assetName">
+                            <mat-error *ngIf="taskForm.controls['assetName'].invalid">
+                                <span *ngIf="taskForm.controls['assetName'].hasError('required')">
+                                    {{"Asset is required" | translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="taskForm.controls['ticketId'].value !== 'PR-AT'" class="ovi-row-one-clmns"style="width: 287px;">
+                        <mat-label class="ovi-lbl-text-size">{{"Location"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="line-height: 22px;top: 6px;" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" autocomplete="off" formControlName="locationName">
+                            <mat-error *ngIf="taskForm.controls['locationName'].invalid">
+                                <span *ngIf="taskForm.controls['locationName'].hasError('required')">
+                                    {{"Location is required" | translate}}
+                                </span>
+                            </mat-error> 
+                        </mat-form-field>
+                    </div>
+                    <div style="display: flex;align-items: center;height: 52px;" (click)="openQRCodeDialog()" (keydown.enter)="fixClick()">
+                        <mat-icon class="ovi-fnt-sze25" style="display: flex;justify-content: center;align-items: center; color: #111212; margin-top: 8px;">qr_code</mat-icon>
+                    </div>
+                </div>
+                <div class="ovi-row-one-clmns" style="width: 325px;">
+                    <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="example-full-width form-field-task" style="line-height: 19px;" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate"
+                            [disableOptionCentering]="true" formControlName="category"
+                            (selectionChange)="getTaskList('TAC-TKT', $event.value)">
+                            <mat-option *ngFor="let option of categoryList" [value]="option.code">
+                                {{option.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="taskForm.controls['category'].invalid">
+                            <span *ngIf="taskForm.controls['category'].hasError('required')">
+                                {{"Category is required" | translate}}
+                            </span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-one-clmns" style="width: 325px;">
+                    <mat-label class="ovi-lbl-text-size">{{"Task"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="example-full-width form-field-task" style="line-height: 19px;" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Task'|translate" [disableOptionCentering]="true"
+                            formControlName="taskId" (selectionChange)="selectOnchange($event)">
+                            <mat-option *ngFor="let option of taskDataList" [value]="option.id">
+                                {{option.name}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="taskForm.controls['taskId'].invalid">
+                            <span *ngIf="taskForm.controls['taskId'].hasError('required')">
+                                {{"Task is required" | translate}}
+                            </span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-one-clmns" style="width: 325px;">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="line-height: 19px;" appearance="outline">
+                        <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate"
+                            formControlName="description" rows=2></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-one-clmns" style="width: 325px;">
+                    <button class="ovi-fnt-sze14"
+                        [ngClass]="!taskForm.controls['taskId'].value || !taskForm.controls['taskId'].value ? 'file-upload-button-disabled' : 'file-upload-button'"
+                        [disabled]="!taskForm.controls['taskId'].value || !taskForm.controls['taskId'].value">
+                        <input type="file"
+                            *ngIf="taskForm.controls['taskId'].value && taskForm.controls['taskId'].value" multiple
+                            #fileInput accept="image/x-png,image/jpeg, .pdf, .txt" title="" class="custom-file-input"
+                            id="file3" (change)="handleFileSelect($event); onFileSelect(fileInput);" />
+                        {{"Choose File"|translate}}
+                    </button>
+                    <span class="file-info" style="position: relative;top: 10px;"
+                        *ngIf="taskForm.controls['taskId'].value && taskForm.controls['taskId'].value && !isFileSelected">{{"Please
+                        select .jpeg / .png / .pdf / .txt file format only"|translate}}</span>
+                        <div *ngIf="isFileSelected">
+                            <span *ngFor="let info of attachFiles; let i = index" class="file-info"
+                                style="display: flex;align-items: center; flex-wrap: wrap; word-break: break-word; max-width: 100%;">
+                                <span style="flex: 1;">{{info.fileName}}</span>
+                                <span>
+                                    <mat-icon class="ovi-prmry-clr ovi-fnt-sze22" style="cursor: pointer;position: relative; top: 2px; right: 5px;"
+                                     (click)="getFilePerview(info)" (keydown.enter)="fixClick()">launch
+                                    </mat-icon>
+                                </span>
+                                <span style="color: red; cursor: pointer;" (click)="removeData(info)" (keydown.enter)="fixClick()">
+                                    <mat-icon *ngIf="fileInfo">highlight_off</mat-icon>
+                                </span>
+                            </span>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr" style="padding-right:25px;">
+        <button mat-button class="cancle-btn" style="margin-right: 5px;"
+        (click)="closeDialog()">{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn"  appDebounceClick [debounceTime]="600" (debounceClick)="saveTask()"
+            cdkFocusInitial [disabled]="!(taskForm.controls['category'].value && taskForm.controls['taskId'].value && (taskForm.controls['locationName'].value || taskForm.controls['assetName'].value))"
+            >{{"Submit"|translate}}
+        </button>
+    </div>
+</div>  

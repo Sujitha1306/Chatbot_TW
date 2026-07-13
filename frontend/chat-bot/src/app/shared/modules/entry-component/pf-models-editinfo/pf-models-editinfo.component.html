@@ -1,0 +1,137 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Model"|translate}}</div>
+        <div *ngIf="data">{{"Manage Model"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height: calc(100% - 140px) ;overflow: auto;" [formGroup]="pfModelsForm">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Model Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Model Name'|translate" formControlName="pfname">
+                    <mat-error *ngIf="pfModelsForm.controls.pfname.invalid" class="error-txt">
+                        <span [hidden]="!pfModelsForm.controls['pfname'].errors.required">
+                            {{"Model Name is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Model Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Type'|translate"
+                        formControlName="modelTypeName">
+                        <mat-option *ngFor="let option of modelTypes" [value]="option.code"
+                            (click)="getModelTypeData(option.code)">{{option.value}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="pfModelsForm.controls.modelTypeName.invalid" class="error-txt">
+                        <span [hidden]="!pfModelsForm.controls['modelTypeName'].errors.required">
+                            {{"Model Type is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Target Database"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Target Databases'|translate" formControlName="targetDb">
+                        <mat-option *ngFor="let value of targetDbList" [value]="value.code">{{value.name}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="selectedModelType === 'MT-API'" class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"API Url"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" formControlName="pfurl" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'API Url'|translate">
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="selectedModelType === 'MT-ENT'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Model Entity"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Model Entity'|translate" formControlName="entity">
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="selectedModelType === 'MT-ENT'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Model Entity Table"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Model Entity Table'|translate" formControlName="entityTable">
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="selectedModelType === 'MT-ENT'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Model EntityColumn"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Model EntityColumn'|translate" formControlName="entityColumn">
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Appterms"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Appterms'|translate"
+                        formControlName="isAppTerm">
+                        <mat-option *ngFor="let value of apptermsList" [value]="value.code">{{value.name}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Config Key"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" formControlName="configKeyId" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Config Key'|translate">
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Action Type"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" formControlName="actionType" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Action Type'|translate">
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Model Output Params"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" formControlName="outputParams" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Output Params'|translate">
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Model Input Params"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput type="text" formControlName="inputParams" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Input Params'|translate">
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="selectedModelType === 'MT-QRY'" class="ovi-row-one-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Model QueryString"|translate}} </mat-label>
+                <mat-form-field style="width: 98% !important;top: 3px;" appearance="outline">
+                    <textarea matInput rows=4 formControlName="queryString" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Model QueryString'|translate"></textarea>
+                </mat-form-field>
+            </div>
+
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data?.id" mat-button class="active-btn" appDebounceClick (debounceClick)="savePfModel()"
+            cdkFocusInitial [disabled]="pfModelsForm?.invalid" [debounceTime]="1000">{{"Save"|translate}}</button>
+        <button *ngIf="data?.id" mat-button class="active-btn " appDebounceClick (debounceClick)="updatedPfModel()"
+            [disabled]="pfModelsForm?.invalid" cdkFocusInitial [debounceTime]="1000">{{'Update' | translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,98 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div> 
+<div class="pwa-full-container ovi-font-family">
+    <div class="header">
+        <div class="ovi-fnt-sze16" style="color: white; font-weight: 600;">{{"Forms"|translate}}</div>
+        <div class="ovi-fnt-sze14" style="color: white; font-weight: 400;"> {{ "ComputedAssetName"|translate}}</div>
+        <button mat-icon-button mat-dialog-close aria-label="Close"
+            style="position: absolute; top: 8px; right: 8px; color: white;">
+            <mat-icon>highlight_off</mat-icon>
+        </button>
+    </div>
+    <div class="pwa-task-container">
+
+     <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="formTemplate">
+        <div class="ovi-row-gap " style="margin-right: 0px; flex-wrap:nowrap">
+            <div class="ovi-row-three-clmn  ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label  class="ovi-lbl-text-size">{{"Select"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select'|translate"
+                            formControlName="formTemplateId">
+                            <mat-option *ngFor="let form of formTemplateList" [value]="form.id">
+                                {{form.name}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn " style="margin-top: 16.5px;">
+                    <button  mat-button [disabled]="formTemplate.controls['formTemplateId'].value == null"
+                    class="active-btn margin-r-1" appDebounceClick (debounceClick)="getFormTemplateInfo();"
+                    [debounceTime]="800" cdkFocusInitial >{{"Add"|translate}}</button>
+            </div>
+        </div>
+     </div>
+        <div *ngIf="formBuilderSource?.length > 0">
+            <div class="content-container">
+                <mat-card class="card-list" *ngFor="let data of formBuilderSource">
+                    <div style="width: 100%; font-weight: 600; padding: 5px 0; overflow: hidden;">
+                    <span style="float: left; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        {{ data?.name }}
+                    </span>
+
+                    <span style="float: right;">
+                        <!-- <button mat-icon-button color="primary"(click)="viewHistory(data)" (keydown.enter)="fixClick()" aria-label="Edit" style="line-height:20px; height: 0px">
+                        <mat-icon style="padding-top:0px">preview</mat-icon>
+                        </button>
+                        <button mat-icon-button color="primary"(click)="formBuilder(data)" (keydown.enter)="fixClick()" aria-label="Edit" style="line-height:20px; height: 0px">
+                        <mat-icon style="padding-top:0px">launch</mat-icon>
+                        </button> -->
+                        <button mat-icon-button color="warn"(click)="deleteForm(data)" (keydown.enter)="fixClick()" aria-label="Delete" style="line-height:20px; height: 0px">
+                        <mat-icon style="padding-top:0px">delete</mat-icon>
+                        </button>
+                    </span>
+                    </div>
+
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="content-texts">
+                            <span class="card-label">{{"Comments"|translate}}</span>
+                            <span class="task-data-text">{{data?.comments}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"Created On"|translate}}</span>
+                            <span class="task-data-text">{{ data?.createdOn| date: 'dd MMM YY'}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"Created By"|translate}}</span>
+                            <span class="task-data-text">{{data?.modifiedUser}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"Modified On"|translate}}</span>
+                            <span class="task-data-text">{{data?.modifiedOn| date: 'dd MMM YY'}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"Modified By"|translate}}</span>
+                            <span class="task-data-text">{{data?.modifiedUser}}</span>
+                        </div>
+                        <div class="content-texts">
+                            <span class="card-label">{{"Form Status"|translate}}</span>
+                            <span class="task-data-text">{{data?.entityFormStatusName}}</span>
+                        </div>
+                    </div>
+                </mat-card>
+            <span *ngIf="hasMore()" class="ovi-fnt-sze10" style="text-align: center; color: #717171; cursor: pointer;" (click)="loadMore()" (keydown.enter)="fixClick()">
+              {{"More"|translate}}
+            </span>
+            </div>
+        </div>
+
+        <div *ngIf="formBuilderSource?.length === 0" class="ovi-fnt-sze12" style="display:flex;justify-content: center;margin-top:5px">
+            {{"No records found"|translate}}
+        </div>
+    </div>
+</div>

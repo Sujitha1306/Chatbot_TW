@@ -1,0 +1,313 @@
+<div class="font-style1">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="1" class="arrow">
+            <div id="arrowbox"><span> {{"Environment"|translate}} </span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value;getLocations(HCselected);" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList;" value="{{i.link}}">{{i.name}}</option>
+                </select>
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'asset-utiby-byid'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'env-sum' && HCselected != 'asset-utiby-byid'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'asset-utiby-byid'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <div class="custom-button" [ngClass] = "HCselected == 'sensor-utilz-byloc'?selected['selectedId']== HCselected && selected['toDate'] == toDate && selected['locId'] == locationId.value && selected['decibelStart'] == decibelStart.value && selected['decibelEnd'] == decibelEnd.value? 'disabled-content' : 'none':HCselected == 'env-moni-rep'?selected['selectedId']== HCselected && selected['toDate'] == toDate && selected['locId'] == locationId.value && selected['envRep'] == selectedEnvReport.value && selected['freq'] == frequency.value?'disabled-content':'none': selected['selectedId']== HCselected && selected['todate'] == toDate ? 'disabled-content' : 'none' " (click)="getTemperature(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100"  (keydown.enter)="fixClick()" >
+                            {{"Get Insights"|translate}}
+                    </div>     
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getTemperature(HCselected)"  (keydown.enter)="fixClick()" >autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey"  width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" (click)="downloadExcel()" (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()" (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon" (click)="downloadPDF()" (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list> 
+</div>
+<div class="report-content ovi-font-family" [ngStyle]="pagebgcolor && {'background':pagebgcolor}" *ngIf="selected['selectedId']=='env-sum' && HCselected == reportData['prevselected']">
+    <div class="report-content-header" *ngIf="environmentReportModel.ER_CSH">{{"Current Summary"|translate}}</div>
+    <mat-grid-list [formGroup]="reportForm" [cols]="gridCols" rowHeight="50px">
+        <mat-grid-tile [ngStyle]="bgcolor && {'background':bgcolor}" *ngIf="environmentReportModel.ER_ALDD" [colspan]="environmentReportModelCols.ER_ALDD"
+            [rowspan]="environmentReportModelRows.ER_ALDD" class="oflw-style">
+            <div [id]="environmentReportModelId.ER_ALDD">
+                <select class="custom-select" formControlName="readerId">
+                    <option *ngFor="let reader of readers" [value]="reader.readerName">{{reader.readerName}}</option>
+                </select>
+            </div>
+        </mat-grid-tile>
+        <!-- <mat-grid-tile *ngIf="environmentReportModel.ER_ALDD" [colspan]="environmentReportModelCols.ER_ALDD"
+            [rowspan]="environmentReportModelRows.ER_ALDD" class="oflw-style">
+            <div [id]="environmentReportModelId.ER_ALDD">
+                <select class="custom-select">
+                    <option value="0">Location</option>
+                    <option value="1">Ward A</option>
+                    <option value="2">Ward B</option>
+                    <option value="3">Ward C</option>
+                </select>
+            </div>
+        </mat-grid-tile>
+
+
+        <mat-grid-tile *ngIf="environmentReportModel.ER_ALDD" [colspan]="environmentReportModelCols.ER_ALDD"
+            [rowspan]="environmentReportModelRows.ER_ALDD" class="oflw-style">
+            <div [id]="environmentReportModelId.ER_ALDD">
+                <select class="custom-select">
+                    <option value="0">Select Period</option>
+                    <option value="1">Last Week</option>
+                    <option value="2">Last Month</option>
+                    <option value="3">Last Year</option>
+                </select>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="environmentReportModel.ER_ALDD" [colspan]="environmentReportModelCols.ER_ALDD"
+            [rowspan]="environmentReportModelRows.ER_ALDD" class="oflw-style">
+            <div [id]="environmentReportModelId.ER_ALDD">
+                <input type="date" class="custom-input-date" placeholder="From Date" />
+                <input type="date" class="custom-input-date" placeholder="To Date" />
+            </div>
+        </mat-grid-tile>
+
+        <mat-grid-tile *ngIf="environmentReportModel.ER_ALDD" [colspan]="environmentReportModelCols.ER_ALDD"
+            [rowspan]="environmentReportModelRows.ER_ALDD" class="oflw-style">
+            <div [id]="environmentReportModelId.ER_ALDD">
+                <div class="button-icon">
+                    <div fxLayout="row" fxLayout="row wrap">
+                        <div class="custom-button" (click)="getReport();" fxFlex="100" fxFlex.lt-sm="100"
+                            fxFlex.sm="50">GET INSIGHTS</div>
+                    </div>
+                </div>
+            </div>
+        </mat-grid-tile> -->
+        <mat-grid-tile [ngStyle]="bgcolor && {'background':bgcolor}" *ngIf="environmentReportModel.ER_ALDD && reportForm.valid" [colspan]="environmentReportModelCols.ER_ALDD"
+            [rowspan]="environmentReportModelRows.ER_ALDD" class="oflw-style">
+            <div [id]="environmentReportModelId.ER_ALDD">
+                <div class="button-icon">
+                    <div fxLayout="row" fxLayout="row wrap">
+                        <div class="custom-button" (click)="getReport();"  (keydown.enter)="fixClick()"  fxFlex="100" fxFlex.lt-sm="100"
+                            fxFlex.sm="50">{{"GET INSIGHTS"|translate}}</div>
+                    </div>
+                </div>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <mat-grid-list [cols]="gridCols" rowHeight="165px">
+        <mat-grid-tile [ngStyle]="bgcolor && {'background':bgcolor}" *ngIf="environmentReportModel.ER_ARA" [colspan]="environmentReportModelCols.ER_ARA"
+            [rowspan]="environmentReportModelRows.ER_ARA" class="oflw-style">
+            <div class="widget-class font-style" [id]="environmentReportModelId.ER_ARA">
+                <div style="width:100%;height: 14%;">
+                    <div class="widget-header1">{{"Air Quality"|translate}}</div>
+                    <div style="width:6%;float:right;text-align: left;padding-left:5px;"><button mat-button (click)="getGroupBy('1hr')" [ngClass]="{'highlight' : groupType === '1hr'}">1 hr</button></div>
+                    <div style="width:6%;float:right;text-align: left;padding-left:5px;"><button mat-button (click)="getGroupBy('30mins')" [ngClass]="{'highlight' : groupType === '30mins'}">30 mins</button></div>
+                    <div style="width:6%;float:right;text-align: left;padding-left:5px;"><button mat-button (click)="getGroupBy('5mins')" [ngClass]="{'highlight' : groupType === '5mins'}">5 mins</button></div>
+                    <div style="width:6%;float:right;text-align: left;padding-left:5px;"><button mat-button (click)="getGroupBy('Live')" [ngClass]="{'highlight' : groupType === 'Live'}">Live</button></div>
+                    <div style="width:50%;padding-top:5px ">
+                        <div style="width:50%;float:right;text-align: left;padding-left:5px;
+                        font-weight: 600;">{{co2_status}}</div>
+                        <!-- <div class="air-sensor-normal"></div> -->
+                        <div [ngClass]="{ 'air-normal' : co2_status === 'Good' }"></div>
+                        <div [ngClass]="{ 'air-avg' : co2_status === 'Moderate' }"></div>
+                        <div [ngClass]="{ 'air-below' : co2_status === 'Unhealthy' }"></div>
+                        <div [ngClass]="{ 'air-poor' : co2_status === 'Hazardous' }"></div>
+                    </div>
+                </div>
+                <!-- <div class="widget-header1">Air Quality <div class="air-sensor-normal"></div></div> -->
+                <div class="widgetNoData ovi-font-family" *ngIf="!ER_ARA_barNoData">{{"No Data Found"|translate}}</div>
+                <div class="widget-body">
+                    
+                    <canvas baseChart height="260" width="1288" *ngIf="ER_ARA_barNoData"
+                        [type]="ER_ARA_barChartType" [datasets]="ER_ARA_barChartData"
+                        [labels]="ER_ARA_barChartLabels" [colors]="ER_ARA_barChartColors"
+                        [options]="ER_ARA_barChartOptions" [legend]="ER_ARA_barLegend"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+
+                </div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile [ngStyle]="bgcolor && {'background':bgcolor}" *ngIf="environmentReportModel.ER_ART" [colspan]="environmentReportModelCols.ER_ART"
+            [rowspan]="environmentReportModelRows.ER_ART" class="oflw-style">
+            <div class="widget-class font-style" [id]="environmentReportModelId.ER_ART">
+                <div class="widget-header">{{"Temperature"|translate}}</div>
+                <div class="widgetNoData ovi-font-family" *ngIf="!ER_ART_barNoData">{{"No Data Found"|translate}}</div>
+                <div class="widget-body">
+                    
+                    <canvas baseChart height="290" width="1288" *ngIf="ER_ART_barNoData"
+                        [type]="ER_ART_barChartType" [datasets]="ER_ART_barChartData"
+                        [labels]="ER_ART_barChartLabels" [colors]="ER_ART_barChartColors"
+                        [options]="ER_ART_barChartOptions" [legend]="ER_ART_barLegend"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+
+                </div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile [ngStyle]="bgcolor && {'background':bgcolor}" *ngIf="environmentReportModel.ER_ARH" [colspan]="environmentReportModelCols.ER_ARH"
+            [rowspan]="environmentReportModelRows.ER_ARH" class="oflw-style">
+            <div class="widget-class font-style" [id]="environmentReportModelId.ER_ARH">
+                <div class="widget-header">{{"Humidity"|translate}}</div>
+                <div class="widgetNoData ovi-font-family" *ngIf="!ER_ARH_barNoData">{{"No Data Found"|translate}}</div>
+                <div class="widget-body">
+                       
+                    <canvas baseChart height="290" width="1288" *ngIf="ER_ARH_barNoData"
+                        [type]="ER_ARH_barChartType" [datasets]="ER_ARH_barChartData"
+                        [labels]="ER_ARH_barChartLabels" [colors]="ER_ARH_barChartColors"
+                        [options]="ER_ARH_barChartOptions" [legend]="ER_ARH_barLegend"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+                </div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile [ngStyle]="bgcolor && {'background':bgcolor}" *ngIf="environmentReportModel.ER_ARP" [colspan]="environmentReportModelCols.ER_ARP"
+            [rowspan]="environmentReportModelRows.ER_ARP" class="oflw-style">
+            <div class="widget-class font-style" [id]="environmentReportModelId.ER_ARP">
+                <div class="widget-header">{{"Pressure"|translate}}</div>
+                <div class="widgetNoData ovi-font-family" *ngIf="!ER_ARP_barNoData">{{"No Data Found"|translate}}</div>
+                <div class="widget-body">
+                    
+                    <canvas baseChart height="290" width="1288" *ngIf="ER_ARP_barNoData"
+                        [type]="ER_ARP_barChartType" [datasets]="ER_ARP_barChartData"
+                        [labels]="ER_ARP_barChartLabels" [colors]="ER_ARP_barChartColors"
+                        [options]="ER_ARP_barChartOptions" [legend]="ER_ARP_barLegend"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+                </div>
+            </div>
+        </mat-grid-tile>
+        
+    </mat-grid-list>
+
+</div>
+<div *ngIf = "HCselected == 'sensor-utilz-byloc'">
+    <!-- ASSET UTILIZATION BY LOCATION REPORT-->
+    <div style="height: 60px;width: 100%;">
+        <div style="height: 100%; width: 20%; float: left;">
+            <span class="floating-label ovi-font-family ovi-fnt-sze13" style="padding-left: 5px; top: 2px; position: relative;">{{"Select Location"|translate}}</span>
+            <mat-select multiple class="custom-select ovi-font-family ovi-fnt-sze13" (change)="getLocUti()" [formControl]="locationId" style="padding-top: 5px; margin-left: 5px; width: calc(100% - 10px);" panelClass="custom-panel-class">
+                <mat-select-filter [array]="locationListDisplay" [displayMember]="'name'" (filteredReturn)="locationList=$event"></mat-select-filter>
+                <mat-option *ngFor="let loc of locationList; let j = index" [value]="loc.id">{{ loc.name }}</mat-option>
+            </mat-select>
+        </div>
+        <div style="margin-top : 10px;margin-left: 25px; height: 100%;width: 210px;float: left;">
+            <span class="floating-label ovi-font-family ovi-fnt-sze13" style="position: relative;font-weight: 600;">{{"Decibel From"|translate}}</span>
+            <input type="number" style="margin-left: 5px; width: 100px;height: 23px;" [formControl]="decibelStart">
+        </div>
+        <div style="margin-top : 10px;height: 100%;width: 210px;float: left;">
+            <span class="floating-label ovi-font-family ovi-fnt-sze13" style="position: relative;font-weight: 600;">{{"To"|translate}}</span>
+            <input type="number" style="margin-left: 5px; width: 100px;height: 23px;" [formControl]="decibelEnd">
+        </div>
+    </div>
+    <!-- ASSET TEMPERATURE CHART-->
+    <div class="list" [ngStyle] = "{display :selected['selectedId'] == 'sensor-utilz-byloc' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;overflow-x: auto;">
+        <canvas id="assetTemp" height="300" width="0"></canvas> 
+    </div>    
+</div>
+<div style="height: 60px;width: 100%;" *ngIf = "HCselected == 'env-moni-rep'">
+    <div style="height: 100%;width: 20%;float: left;">
+        <span class="floating-label ovi-font-family ovi-fnt-sze13" style="padding-left:5px;top:2px;position: relative;">{{"Choose Parameter"|translate}}</span>
+        <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="onEnvRepChange($event.target.value)" [formControl]="selectedEnvReport" style="padding-top: 5px;margin-left: 5px;">
+            <option *ngFor="let i of envReportType" value="{{i.value}}">{{i.name}}</option>
+        </select>
+    </div>
+    <div style="height: 100%;width: 20%;float: left;margin-left: 10px;">
+        <span class="floating-label ovi-font-family ovi-fnt-sze13" style="padding-left:5px;top:2px;position: relative;">{{"Data Frequency"|translate}}</span>
+        <select class="custom-select ovi-font-family ovi-fnt-sze13" [formControl]="frequency" style="padding-top: 5px;margin-left: 5px;">
+            <option *ngFor="let i of frequencyList; let j = index" value="{{i.value}}">{{i.code}}</option>
+        </select>
+    </div>
+    <div style="height: 100%;width: 25%;float: left;margin-left: 25px;" *ngIf="false">
+        <input  class="ovi-font-family ovi-fnt-sze15" type="text" style="height: 28px;margin-top: 14px;width: 80%;" placeholder="{{'Search for a location'|translate}}" #selectLoc (keyup)="getLocationlist($event)" [matAutocomplete]="auto"><span class="ovi-font-family" style="font-weight: 800;color: #133f8f;padding: 5px;cursor: pointer;margin-left: -1px;border: 0.3px solid #787373;" *ngIf="selectLoc.value != ''" (click)="selectLoc.value = ''" (keydown.enter)="fixClick()" >x</span>
+        <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let location of locationlist" (click)="setLocationID(location.id)" (keydown.enter)="fixClick()" value="{{location.fullName}}">
+        {{location.fullName}}
+        </mat-option>
+        </mat-autocomplete>
+    </div>
+    <div style="height: 100%;width: 25%;float: left;margin-left: 25px;" *ngIf="selectedEnvReport.value == 'all'">
+        <span class="floating-label ovi-font-family  ovi-fnt-sze13" style="padding-left:5px;top:2px;position: relative;">{{"Select Location"|translate}}</span>
+        <mat-select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="getLocUti()" [formControl]="locationId" style="padding-top: 5px;  margin-left: 5px; width: calc(100% - 10px);" panelClass="custom-panel-class">
+            <mat-select-filter [array]="locationListDisplay" [displayMember]="'name'" (filteredReturn)="locationList=$event"></mat-select-filter>
+            <mat-option *ngFor="let loc of locationList; let j = index" [value]="loc.id">{{ loc.name }}</mat-option>
+        </mat-select>
+    </div>
+    <div style="height: 100%;width: 25%;float: left;margin-left: 25px;" *ngIf="selectedEnvReport.value !== 'all'">
+        <span class="floating-label ovi-font-family ovi-fnt-sze13" style="padding-left:5px;top:2px;position: relative;">{{"Select Location"|translate}}</span>
+        <mat-select multiple class="custom-select ovi-font-family ovi-fnt-sze13" (change)="getLocUti()" [formControl]="locationId" style="padding-top: 5px; margin-left: 5px; width: calc(100% - 10px);" panelClass="custom-panel-class">
+            <mat-select-filter [array]="locationListDisplay" [displayMember]="'name'" (filteredReturn)="locationList=$event"></mat-select-filter>
+            <mat-option *ngFor="let loc of locationList; let j = index" [value]="loc.id" [disabled]="isOptionDisabled(loc.id)">{{ loc.name }}</mat-option>
+        </mat-select>
+    </div>
+</div>
+<!-- <div class="temperatureReport" *ngIf = "selected['selectedId'] == 'env-moni-rep' && HCselected == reportData['prevselected'] && !reportData['noRecords']"> -->
+    <mat-grid-list cols = 1 rowHeight = "430px" class="line-chart" [ngStyle]="{display: selected['selectedId'] == 'env-moni-rep' && HCselected == reportData['prevselected'] && !reportData['noRecords'] && !reportData['nullLocation']? 'block' : 'none'}" style="margin-right: 10px; margin-left: 10px;">
+        <mat-grid-tile>
+            <div class="chart-container ovi-font-family" *ngIf="selectedEnvReport.value == 'temp'" style="width: 100%; height: 96%; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 25px;">
+                <canvas id="temp-chart"></canvas>
+            </div>
+            <div class="chart-container ovi-font-family" *ngIf="selectedEnvReport.value == 'press'" style="width: 100%; height: 96%; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 25px;">
+                <canvas id="press-chart"></canvas>
+            </div>
+            <div class="chart-container ovi-font-family" *ngIf="selectedEnvReport.value == 'humid'" style="width: 100%; height: 96%; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 25px;">
+                <canvas id="humid-chart"></canvas>
+            </div>
+            <div class="chart-container ovi-font-family" *ngIf="selectedEnvReport.value == 'all'" style="width: 100%; height: 96%; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 25px;">
+                <canvas id="all-report-chart"></canvas>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div *ngIf="reportData['showTable']" [ngStyle]="{display: reportData['showTable'] && HCselected == reportData['prevselected']? 'block' : 'none'}" style="padding-top: 10px;">
+        <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']" [chartData]="reportData['charts']"></angular-table-component>
+    </div> 
+    <!-- </div> -->
+<div *ngIf="reportData['noRecords'] && HCselected == reportData['prevselected']&& selected['selectedId'] != 'emp-contact' && !reportData['nullLocation']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"No Records"|translate}}</div>
+<div *ngIf="reportData['nullLocation'] && HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Location Required"|translate}}</div>

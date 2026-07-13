@@ -1,0 +1,140 @@
+<div class="chat-container ovi-font-family">
+  <div class="chat-header">
+    <div class="chat-user-info">
+      <div class="chat-avatar chat-bg-color">
+        {{ initials(data) }}
+      </div>
+      <div class="chat-header-content">
+        <div *ngIf="data?.chatType === 'request'" class="chat-name"><span class="chat-req1">Req ID:</span>#{{ data?.requestId }}
+          <span class="chat-request">
+            ({{ data?.userName }})
+          </span>
+        </div>
+        <div *ngIf="data?.chatType === 'dm'" class="chat-name ovi-fnt-sze14">
+          {{ data?.userName | titlecase }}   <span class="chat-request">
+            ({{ data?.roleName | titlecase }})
+          </span>
+        </div>
+        <div  *ngIf="data?.chatType === 'request'" class="chat-role">👷{{ data?.roleName | titlecase }} </div>
+        <div class="chat-meta" *ngIf="data?.chatType === 'request'">
+          <span class="chat-location">📍{{ data?.sourceLocationName | titlecase }} →
+            {{ data?.destinationLocationName | titlecase }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <button mat-dialog-close class="chat-close-btn chat-bg-color"> ✕ </button>
+  </div>
+
+  <div class="chat-body" #chatBody (scroll)="onScroll(chatBody);$event.stopPropagation()">
+    
+      <div *ngIf="loading" class="chat-loader">
+        <mat-progress-spinner diameter="30" mode="indeterminate">
+        </mat-progress-spinner>
+      </div>
+    
+    <div *ngIf="isUpdated">
+    <div *ngIf="!messages.length" class="chat-empty">
+      No messages yet 👋
+    </div>
+
+    <div *ngFor="let msg of messages; let i = index; trackBy: trackByMsg">
+    
+      <div *ngIf="shouldShowDate(i)" class="chat-date-divider">
+        {{ getDateLabel(msg?.createdAt) }}
+      </div>
+      <div *ngIf="msg.isInvited" class="chat-invit-text">
+          {{ msg?.text }}
+      </div>
+      <div [ngClass]="msg.type === 'sent' ? 'msg sent' : 'msg received'" *ngIf="!msg.isInvited">
+          <div class="chat-username" *ngIf="msg.type === 'received' && (i === 0 || messages[i - 1]?.type !== 'received' || messages[i - 1]?.msgOwner !== msg.msgOwner)
+           ||  messages[i - 1]?.text?.includes('were added')">
+            {{ msg.msgOwner | titlecase }}
+          </div>
+        <div class="msg-bubble chat-bg-color">
+          <span *ngIf="msg.text" class="chat-text">{{ msg.text }}</span>
+
+          <img *ngIf="msg.image" [src]="msg.image" class="chat-image" (click)="openPreview(msg.image, 'image')" />
+
+          <div *ngIf="msg.file && !msg.video && !msg.audio" class="chat-file-card"
+            (click)="openPreview(msg.file, 'file', msg.fileName)">
+            <div class="chat-file-icon">📄</div>
+            <div class="chat-file-info">
+              <div class="chat-file-name" [title]="msg.fileName">
+                {{ msg.fileName }}
+              </div>
+              <div class="chat-file-type">
+                {{ getFileType(msg.fileName) }}
+              </div>
+            </div>
+            <div class="chat-file-action">⬇</div>
+          </div>
+           <div *ngIf="msg.video" class="file-msg" (click)="openPreview(msg.file, 'file', msg.fileName)">📑 {{ msg.fileName }}
+           </div>
+    
+          <video *ngIf="msg.video" [src]="msg.video" controls class="chat-video"></video>
+    
+          <audio *ngIf="msg.audio" [src]="msg.audio" controls></audio>
+    
+          <div style="display: flex; align-items: center; gap: 5px;">
+            <div class="msg-time" [ngStyle]="{'text-align':msg.type === 'sent' ? 'right' : 'left'}">
+              {{ msg.time }}
+            </div>
+            <div *ngIf="msg?.type === 'sent'"><mat-icon class="tick-icon" [ngStyle]="{'color': msg.isRead === true ? '#fff' : '#f0f0f091'}" style=" height: 10px;width: 14px;font-size: 12px;">done_all</mat-icon></div>
+          </div>
+    
+        </div>
+      </div>
+    </div>
+    <div class="chat-preview-overlay" *ngIf="previewData">
+      <div class="chat-preview-box">
+        <div class="chat-preview-actions">
+          <button class="chat-menu-btn chat-bg-color" (click)="toggleMenu()">⋮</button>
+          <div class="chat-menu-list" *ngIf="showMenu">
+            <div (click)="downloadFile()">Download</div>
+          </div>
+        </div>
+        <button class="chat-close-btn chat-bg-color" (click)="closePreview()">✕</button>
+        <div class="chat-image-wrapper" *ngIf="previewType === 'image'">
+          <div class="chat-zoom-controls">
+            <button class="chat-bg-color" (click)="zoomIn()">+</button>
+            <button class="chat-bg-color" (click)="zoomOut()">-</button>
+            <button class="chat-bg-color" (click)="resetZoom()">⟲</button>
+          </div>
+          <img [src]="previewData" class="chat-preview-img" [style.transform]="'scale(' + zoomLevel + ')'" />
+
+        </div>
+        <iframe *ngIf="previewType === 'file'" [src]="previewData" class="chat-preview-frame"></iframe>
+        <div *ngIf="showUnsupportedPreview" class="file-fallback">
+          <p>Preview not available for this file</p>
+          <button (click)="downloadFile()">Download</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-footer">
+    <div class="attach-wrapper">
+      <button class="attach-btn" (click)="toggleAttachMenu()">➕</button>
+      <div class="attach-menu" *ngIf="showAttachMenu">
+        <label class="attach-item">🖼️ Image
+          <input type="file" hidden accept="image/*" (change)="onFileSelected($event, 'image')" />
+        </label>
+        <label class="attach-item">🎥 Video
+          <input type="file" hidden accept="video/*" (change)="onFileSelected($event, 'video')" />
+        </label>
+        <label class="attach-item">📑 Document
+          <input type="file" hidden accept=".pdf,.doc,.docx,.xls,.xlsx" (change)="onFileSelected($event, 'document')" />
+        </label>
+      </div>
+    </div>
+    <input type="text" [(ngModel)]="messageText" placeholder="Type a message..." (keyup.enter)="sendMessage()" />
+    <span><button *ngIf="messageText?.trim()" class="send-btn chat-bg-color"
+        (click)="sendMessage()"> ➤ </button> </span>
+    <span><button *ngIf="!messageText?.trim()" class="mic-btn" [ngClass]="isRecording ? 'chat-mic-stop-col' : 'chat-bg-color'"
+       (click)="toggleRecording()"> 🎤</button>
+    </span>
+  </div>
+
+</div>

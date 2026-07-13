@@ -1,0 +1,59 @@
+<div class="input-component-holder ovi-font-family" style="height:100%;width:100%">
+<div class="ovi-pop-hdr">
+  <div>{{"Linked Asset"|translate}}</div>
+  <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+</div>
+
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 90px)">
+    <div class="ovi-row-gap">
+      <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg"
+        style="display: flex; flex-direction: column;gap: 5px;">
+        <mat-label class="ovi-lbl-text-size">Asset</mat-label>
+        <mat-form-field appearance="outline">
+          <input matInput placeholder="Select Parent Asset" [formControl]="parentAssetControl" appTypeHit
+            [readonly]="isParentAssetLocked" [matAutocomplete]="!isParentAssetLocked ? autoParent : null"
+            (typeHit)="onParentAssetTypeHit($event)">
+
+          <!-- <button *ngIf="isParentAssetLocked" matSuffix mat-icon-button (click)="clearParentAsset()">
+            <mat-icon>close</mat-icon>
+          </button> -->
+
+          <mat-autocomplete #autoParent="matAutocomplete">
+            <mat-option *ngFor="let asset of parentAssets" (click)="onParentAssetSelect(asset)">
+              {{ asset.assetName }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+      </div>
+
+      <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg"
+        style="display: flex; flex-direction: column;gap: 5px;">
+        <mat-label class="ovi-lbl-text-size">Linked Asset</mat-label>
+        <mat-form-field appearance="outline">
+          <input matInput placeholder="Select Linked Asset" [formControl]="assetForm.controls['childAssetSerialNumber']"
+            [matAutocomplete]="autoLinked" appTypeHit (typeHit)="onUserTypeHit($event)">
+          <mat-autocomplete #autoLinked="matAutocomplete">
+            <mat-option *ngFor="let asset of assets" [value]="asset.assetSerialNo" (click)="onChildAssetSelect(asset)">
+              {{ asset.combinedAsset }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-three-clmn" style="margin-top:20px;">
+        <button mat-raised-button class="active-btn" [disabled]="(!assetForm.controls['childAssetSerialNumber'].value ||assetLinked != true)"
+          (click)="add()">Add</button>
+      </div>
+
+    </div>
+    <angular-table-component [id]="'linkedasset'" [type]="'ng-table'" [tableData]="tableData"
+      [columns]="assetDisplayedColumns" [columnData]="assetCoulms"
+      (triggerAction)="eventAction($event)"></angular-table-component>
+</div>
+<div class="ovi-pop-ftr">
+  <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+  <button mat-button *ngIf="!data?.id" class="active-btn" appDebounceClick (debounceClick)=updateAsset()
+    [debounceTime]="300" cdkFocusInitial>{{'Save'|translate}}</button>
+</div>
+</div>

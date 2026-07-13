@@ -1,0 +1,344 @@
+<div style="width: 100%;height: 100%;" class="ovi-font-family">
+    <div class="pwa-patient-min-header">
+        <div class="pwa-patient-user">
+            <div class="pwa-patient-avatar" (click)="patientId == null ? openPwaProfile($event) : ''"
+                (keydown.enter)="fixClick()">{{ firstLetter}}</div>
+            <div>
+                <div class="pwa-patient-name">{{userName}}</div>
+                <div class="pwa-patient-sub">{{facilityName}}</div>
+            </div>
+        </div>
+
+        <div class="pwa-patient-highlight" *ngIf="locId || assetId">
+            <span class="pickup-icon">{{ locId ? '📍' : assetId ? '🧰' : ''}}</span>
+            <div style="display: flex; min-width: 244px;align-items: center; justify-content: space-between;">
+                <div style="display: flex;flex-direction: column;">
+                    <span style="font-weight: 600;opacity: 0.8;" class="pickup-text ovi-fnt-sze13">{{ locId ? 'Location'
+                        : assetId ? 'Asset' : ''}}</span>
+                    <span class="pickup-text ovi-fnt-sze1">{{dataGenerate | titlecase}}</span>
+                </div>
+                <!-- <div (click)="openQRCodeDialog()" (keydown.enter)="fixClick()">
+                    <mat-icon class="ovi-fnt-sze23">qr_code</mat-icon>
+                </div> -->
+                 <div style="display: flex;align-items: center;height: 45px;" (click)="changePage()" *ngIf="locId && configData.enableTicket" (keydown.enter)="fixClick()">
+                    <div class="porter-toggle-checkbox">
+                        <input id="status" type="checkbox" name="switchReq"
+                        (click)="changePage()">
+                        <label for="status">
+                            <div class="status-switch" [attr.data-checked]="'Ticket'" [attr.data-unchecked]="'Porter'"></div>
+                        </label>
+                    </div>
+                    
+                    <!-- <mat-icon class="ovi-fnt-sze25" style="display: flex;justify-content: center;align-items: center; color: var(--primary-bg-color); margin-top: 8px;">assignment_add</mat-icon> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="!patientId || guestUser" style="height: calc(100vh - 240px);overflow: auto;">
+        <div [formGroup]="taskManageForm" style="padding:10px;">
+            <div *ngIf="false" class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                <mat-form-field appearance="outline">
+                    <input matInput formControlName="searchText" (keyup)="searchFiletr($event.target.value)"
+                        autocomplete="off" appPlaceholder [showPlaceholder]="true"
+                        [placeholderText]="'Search'|translate">
+                </mat-form-field>
+            </div>
+            <div>
+                <div *ngIf="assetId" class="pwa-patient-backcol pwa-paient-list" (click)="createMainOpen()"
+                    (keydown.enter)="fixClick()">
+                    <mat-icon style="padding:0 10px;display: flex;align-items: center;">engineering</mat-icon>
+                    <span class="ovi-fnt-sze12">Maintenance</span>
+                </div>
+
+                <div *ngIf="assetId" class="pwa-patient-backcol pwa-paient-list" (click)="createTicketOpen()"
+                    (keydown.enter)="fixClick()">
+                    <mat-icon style="padding:0 10px;display: flex;align-items: center;">confirmation_number</mat-icon>
+                    <span class="ovi-fnt-sze12">Ticket</span>
+                </div>
+
+                <div class="pwa-patient-backcol pwa-paient-list" *ngFor="let data of taskList; let i=index"
+                    (click)="onItemClick(data, i)" (keydown.enter)="fixClick()">
+                    <span class="material-icons"
+                        style="padding:0 10px;display: flex;align-items: center;">playlist_add_check</span>
+                    <span class="ovi-fnt-sze12" style="position: relative;left: 12px"> {{ data.entityName
+                        }}
+                    </span>
+                </div>
+
+                <div class="pwa-patient-backcol pwa-paient-list" *ngFor="let item of formTemplateList; let i=index"
+                    (click)="getFormDetail(item, i)" (keydown.enter)="fixClick()">
+                    <mat-icon style="padding:0 10px;display: flex;align-items: center;">check_circle</mat-icon>
+                    <span class="ovi-fnt-sze12">{{item.entityName}} </span>
+                </div>
+            </div>
+
+            <div *ngIf="!this.assetId" class="pwa-patient-exp-col">
+                <div *ngIf="!lastReqId" style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <mat-accordion>
+                            <mat-expansion-panel *ngFor="let data of gdaData" class="pwa-patient-transport" [expanded]="true">
+                                <mat-expansion-panel-header>
+                                    <div
+                                        style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                                        <div style="display:flex; align-items:center;">
+                                            <span class="pwa-patient-icon">👨‍🏭</span>
+                                            <div style="display: flex; flex-direction: column;">
+                                                <span class="ovi-fnt-sze15" style="min-width:180px; font-weight: 600;">
+                                                    {{
+                                                    data.value + ' Services' }} </span>
+                                                <span *ngIf="selectedItem" class="ovi-fnt-sze9"
+                                                    style="font-weight: 600; height: 12px; max-width: fit-content; 
+                                                    border: 1px solid #e6f0ff; padding: 0px 9px 2px 6px; border-radius: 15px; background: #e6f0ff; color: gray; margin-left: -2px;">
+                                                    Selected: <span class="ovi-fnt-sze10">
+                                                        {{selectedItem?.value}}
+                                                    </span> </span>
+                                            </div>
+                                            <div class="pwa-count-badge">
+                                                {{ GDAGroup?.length }} items
+                                            </div>
+                                        </div>
+                                    </div>
+                                </mat-expansion-panel-header>
+                                <div class="mob-card-gda">
+                                    <div class="gda-item" *ngFor="let items of GDAGroup">
+                                        <div class="gda-row">
+                                        <span class="pwa-patient-icon">
+                                            {{ iconMap[items.code] || '👨‍🏭' }}
+                                        </span>
+                                            <div class="gda-name">
+                                                {{ items.value }}
+                                            </div>
+                                            <!-- <div class="gda-tag">
+                                                Linen
+                                            </div> -->
+                                            <mat-radio-button [checked]="selectedItem === items"
+                                                (click)="onItemCheck(items)">
+                                            </mat-radio-button>
+                                        </div>
+                                        <div *ngIf="selectedItem === items">
+                                            <div style="display: flex;flex-direction: column;" class="pwa-patient-field-heigh">
+                                                <div style="padding:5px 10px 0px 10px;">
+                                                    <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}} <span
+                                                            class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-input-box-pdg" appearance="outline">
+                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate"
+                                                            formControlName="remarksgda">
+                                                    </mat-form-field>
+                                                    <div class="tw-edit-footer">
+                                                        <div class="tw-edit-save-btn close-btn" (click)="closeMenu()">
+                                                            <mat-icon class="ovi-fnt-sze18 make-icon-center" style="height: auto;width: auto;">close</mat-icon>
+                                                        </div>
+                                                         <div class="tw-edit-save-btn done-btn" (click)="!taskManageForm.controls.remarksgda.invalid && createPorterReq(items, 'GDA')" [class.disabled-btn]="taskManageForm.controls.remarksgda.invalid">
+                                                            <mat-icon class="ovi-fnt-sze18 make-icon-center" style="height: auto;width: auto;">done</mat-icon>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </mat-expansion-panel>
+                        </mat-accordion>
+                    </div>
+                    <div *ngIf="configData?.verifyLocCategory && locDetail?.locationCategoryId == 'LC_Nursing Station'">
+                        <mat-accordion>
+                            <mat-expansion-panel *ngFor="let data of patientdata">
+                                <mat-expansion-panel-header>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                                        <div style="display:flex; align-items:center; width:100%;">
+                                            <span class="pwa-patient-icon">🧑‍🦽‍➡️</span>
+                                            <span class="ovi-fnt-sze15" style="min-width:180px; font-weight: 600;">
+                                                {{data.value}}
+                                            </span>
+                                            <div class="pwa-count-badge success-badge">
+                                                {{"Required"|translate}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </mat-expansion-panel-header>
+                                <div style="display: flex;flex-direction: column;">
+                                    <div style="padding: 10px 0px 0px 5px;" *ngIf="!guestUser || data.code == 'PR-PR'"
+                                        class="pwa-patient-field-heigh">
+                                        <mat-label class="ovi-lbl-text-size" style="display: flex;align-items: center;gap:5px">
+                                            <span class="ovi-fnt-sze14">👤</span>{{"Patient Name"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-input-box-pdg" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="true"
+                                                [placeholderText]="'Enter patient Name'|translate" formControlName="patientName"
+                                                id="patientName" appTypeHit (typeHit)="searchPatient($event)" [matAutocomplete]="patientId">
+                                            <mat-autocomplete autoActiveFirstOption [displayWith]="getPatientName.bind(this, i)"
+                                                #patientId="matAutocomplete">
+                                                <mat-option *ngFor="let option of searchPatientlist" (keydown.enter)="fixClick()"
+                                                    (click)="getSearchDetails(option, 'patient');" value="{{option.id}}">
+                                                    <div class="tot-wid-styl">{{option.fullName}}
+                                                        <span *ngIf="option.mainidentifier !== null">(
+                                                            {{option.mainidentifier}}</span>
+                                                        <span *ngIf="option.mainidentifier !== null && option.bedName === null">
+                                                            )</span>
+                                                        <span *ngIf="option.bedName !== null">, {{option.bedName}} )</span>
+                                                    </div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="padding: 5px 0px 0px 5px;" *ngIf="guestUser" class="pwa-patient-field-heigh">
+                                        <mat-label class="ovi-lbl-text-size" style="display: flex;align-items: center;gap:5px">
+                                            <span class="ovi-fnt-sze14">📜</span>{{"Remarks"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-input-box-pdg" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="true"
+                                                [placeholderText]="'Addv special instructions'|translate" formControlName="remarks">
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="padding: 5px 0px 0px 5px;" class="pwa-patient-field-heigh">
+                                        <mat-label class="ovi-lbl-text-size" style="display: flex;align-items: center;gap:5px">
+                                            <span class="ovi-fnt-sze14">📍</span>{{"To Location"|translate}} <span
+                                                class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-input-box-pdg" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="true"
+                                                [placeholderText]="'Enter destination room / ward...'|translate"
+                                                formControlName="destinationLocation" id="taskLocation" appTypeHit
+                                                (typeHit)="searchTaskLocationList($event)" [matAutocomplete]="autoLoc">
+                                            <mat-autocomplete autoActiveFirstOption
+                                                [displayWith]="this.taskLocationEnabled === true ? getTaskLocationList.bind(taskLocationList) : ''"
+                                                #autoLoc="matAutocomplete">
+                                                <mat-option *ngFor="let option of taskLocationList" [value]="option.id">
+                                                    <div class="tot-wid-styl" (click)="getTaskLocationID(option.id)"
+                                                        (keydown.enter)="fixClick()">
+                                                        {{option.fullName}}</div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                            <mat-error *ngIf="taskManageForm.controls.destinationLocation.invalid" class="error-txt-1">
+                                                <span [hidden]="!taskManageForm.controls['destinationLocation'].errors.required">
+                                                    {{"Location is required."| translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                    <div
+                                        style="display: flex; align-items: center; gap: 20px; border: 1px solid #d3d3d3ad; height: 44px; border-radius: 7px; margin-bottom: 10px; margin-left: 6px;">
+                                        <mat-label class="ovi-lbl-text-size" style="display: flex;align-items: center;gap:5px">
+                                            <span class="ovi-fnt-sze16">🧑‍🦽‍➡️</span>{{"No of porters"|translate}}
+                                        </mat-label>
+                                        <div style="width: 110px;top: 10px;">
+                                            <div style="display: flex;margin-top: 2px;margin-left: 10px;">
+                                                <button class="ovi-fnt-sze17"
+                                                    style=" cursor: pointer; color: white; border: 5px solid #fcfff9; border-radius: 50%; font-weight: 700; height: 32px; width: 123px;"
+                                                    [ngClass]="taskManageForm.controls['visitorCount'].value == 1 ? 'vstrcnt-bg-colr' : 'ovi-prmry-bg-clr'"
+                                                    (click)="updateVisitorCount('decrement');">-</button>
+                                                <button class="ovi-prmry-clr ovi-fnt-sze18"
+                                                    style=" background: transparent; border: 0px; height: 30px; font-weight: 600;">
+                                                    <input matInput appPlaceholder [showPlaceholder]="false"
+                                                        [placeholderText]="''|translate" #availableVisitors="matInput"
+                                                        formControlName="visitorCount" autocomplete="off" [readonly]="true"
+                                                        class="ovi-fnt-sze20">
+                                                </button>
+                                                <button class="ovi-fnt-sze16"
+                                                    style=" cursor: pointer; color: white; border: 5px solid #fcfff9; border-radius: 30px; font-weight: 600; height: 30px;"
+                                                    [ngClass]="taskManageForm.controls['visitorCount'].value >= this.maxVisitorLimit ? 'vstrcnt-bg-colr' : 'ovi-prmry-bg-clr'"
+                                                    (click)="updateVisitorCount('increment'); ">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </mat-expansion-panel>
+                    
+                        </mat-accordion>
+                    </div>
+                    <div class="pwa-patient-backcol pwa-paient-list" *ngFor="let data of serviceGroup; let i=index"
+                        (click)="openPorterRqs(data, i)" (keydown.enter)="fixClick()">
+                        <mat-icon style="padding:0 10px;display: flex;align-items: center;">accessible</mat-icon>
+                        <span class="ovi-fnt-sze14">{{data.value}}</span>
+                    </div>
+                </div>
+                <div *ngIf="lastReqId" class="lastReq">
+                    <div>
+                        Thank you for raising request, your request no is <b>{{lastReqId}}</b>. Someone shall be
+                        assisting shortly.
+                    </div>
+                    <br />
+                    <div>
+                        <span style="color: blue;" (click)="lastReqId = null" (keydown.enter)="fixClick()">Click here
+                        </span>to
+                        raise another ticket
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="patientId" style="height: calc(100vh - 240px); overflow: auto;">
+        <div [formGroup]="taskManageForm" style="padding: 10px 0px 0px 10px;">
+            <div *ngIf="false" class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                <mat-form-field appearance="outline">
+                    <input matInput formControlName="searchText" (keyup)="searchFiletr($event.target.value)"
+                        autocomplete="off" appPlaceholder [showPlaceholder]="true"
+                        [placeholderText]="'Search'|translate">
+                </mat-form-field>
+            </div>
+            <div style="display: flex;flex-direction: column;row-gap: 12px;padding-top: 5px;">
+                <div class="act-radio-button" style="display: flex;justify-content: center; height: 40px;">
+                    <mat-radio-group formControlName="assetLoction"
+                        style="display: flex;gap: 10px;width: 88%; max-width: 350px;">
+                        <mat-radio-button class="act-radio" *ngFor="let data of filterAssetType" [value]="data.code">
+                           <span style="font-size: 15px;">{{ patienticon[data.code] }}</span> {{ data.value }}</mat-radio-button>
+                    </mat-radio-group>
+                </div>
+                <div style="display: flex;justify-content: center;width: 100%;">
+                    <div class="ovi-matfrmfld-textarea-top-box" style="width: 88%; max-width: 350px;">
+                        <mat-label class="ovi-lbl-text-size"> 📝 {{"Description"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                            <textarea input matInput appPlaceholder [showPlaceholder]="true"
+                                [placeholderText]="'Nearby Location'|translate" maxlength="100" rows=3
+                                formControlName="description"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div style="display: flex;justify-content: center;width: 100%;">
+                    <button mat-button class="active-btn" style="width: 88%; max-width: 350px;"
+                        (click)="porterReqData1.length == 0 ? createPorterReq() : ''">{{"Porter
+                        Request"|translate}}</button>
+                </div>
+                <div style="display: flex;flex-direction: column;row-gap: 10px;">
+                    <div style="display: flex;justify-content: center;width: 100%;" *ngFor="let det of porterReqData">
+                        <div class="card" style="padding: 5px;">
+                            <div style="display: flex;flex-direction: column;row-gap: 10px;">
+                                <div style="display: block;">
+                                    <span style="margin-right: 15px;">{{det.requestTime | date: 'shortTime'}}</span>
+                                    <span style="font-weight: 600;">{{det.statusName}}</span>
+                                </div>
+                                <div style="display: block;">
+                                    <div style="display: flex;flex-direction: row;column-gap: 18px;">
+                                        <div style="display: flex;flex-direction: column;">
+                                            <div class="ovi-fnt-sze-sml">Pickup</div>
+                                            <div style="font-weight: 600;">{{det['sourceLocName']}}</div>
+                                        </div>
+                                        <div style="display: flex;flex-direction: column;">
+                                            <div class="ovi-fnt-sze-sml">Drop</div>
+                                            <div style="font-weight: 600;">{{det['destinationLocName']}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: block;">
+                                    <div style="display: flex;flex-direction: row;column-gap: 18px;">
+                                        <div style="display: flex;flex-direction: column;">
+                                            <div class="ovi-fnt-sze-sml">Assigned to</div>
+                                            <div style="font-weight: 600;">{{det['performerName']}}</div>
+                                        </div>
+                                        <div style="display: flex;flex-direction: column;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="pwa-patient-footer" *ngIf="!patientId">
+        <div class="pwa-patient-actions">
+            <button class="active-btn margin-r-1 mrgn-styl_" mat-button style="height: 45px; width: -webkit-fill-available;"
+                [disabled]="taskManageForm.controls.destinationLocation.invalid" (click)="savePatientRequest()"
+                cdkFocusInitial>Submit Request</button>
+        </div>
+    </div>
+</div>

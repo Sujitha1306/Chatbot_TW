@@ -1,0 +1,338 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;" appWindowResize (resized)="onWindowResized($event)">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!gwId">{{"Create Gateway"|translate}}</div>
+        <div *ngIf="gwId">{{"Modify Gateway"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+   <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;" 
+   [ngStyle]="{'height':selectedIndex !== 2 ? 'calc(100% - 155px)' : 'calc(100% - 95px)'}" >
+    <mat-tab-group (selectedTabChange)="tabClick($event, null, null)" [selectedIndex]="selectedIndex" >
+        <mat-tab label="{{'Engine'|translate}}" [formGroup]="facilityForm">
+            <ng-template mat-tab-label >{{"Engine"|translate}}</ng-template>
+            <div style="overflow: hidden;">
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"ID"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'ID'|translate" formControlName="gatewayId"
+                                    [(value)]="data.gatewayId" readonly>
+                                <mat-error *ngIf="facilityForm.controls.gatewayId.invalid">
+                                    <span [hidden]="!facilityForm.controls['gatewayId'].errors.required">{{"ID
+                                        is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate"
+                                    formControlName="gatewayName" maxlength="26" [readonly]="!isNameEdit">
+                                <mat-error *ngIf="facilityForm.controls.gatewayName.invalid">
+                                    <span [hidden]="!facilityForm.controls['gatewayName'].errors.required">{{"Name is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="ovi-popup-title-text-size">{{"FACILITY"|translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Choose Facility"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Facility Name'|translate" formControlName="facilityId"
+                                    [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of facilityListbyCustomer" [value]="data.facilityId"
+                                        (keydown.enter)="fixClick()" (click)="getFacility(data)">{{data.facilityName}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="facilityForm.controls.facilityId.invalid">
+                                    <span [hidden]="!facilityForm.controls['facilityId'].errors.required">
+                                        {{"Facility ID is required"|translate}}.</span>
+                                    <span [hidden]="!facilityForm.controls['facilityId'].errors.requireMatch">
+                                        {{"Already Facility Taken"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Facility Topic Type"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Facility Topic Type'|translate"
+                                    formControlName="facilityTopicType" [disableOptionCentering]="true">
+                                    <mat-option (keydown.enter)="fixClick()" (click)="getTopicType(data)" *ngFor="let data of facilityTopicTypeList"
+                                        [value]="data.code">
+                                        {{data.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="facilityForm.controls.facilityTopicType.invalid">
+                                    <span 
+                                        [hidden]="!facilityForm.controls['facilityTopicType'].errors.required">{{"Facility
+                                        Topic Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn" style="position: relative;align-content: center;top: 5px;">
+                                <button mat-button
+                                    class="cancle-btn" (click)="clear('facility')">{{"Cancel"|translate}}</button>
+                                <button *ngIf="!this.isEdit" mat-button class="active-btn" appDebounceClick
+                                    (debounceClick)="saveFacility()" [debounceTime]="300" cdkFocusInitial
+                                    [disabled]="facilityForm.invalid">{{"Add"|translate}}</button>
+                                <button *ngIf="this.isEdit" mat-button class="active-btn"
+                                    appDebounceClick (debounceClick)="updatesFacility()" [debounceTime]="300"
+                                    cdkFocusInitial [disabled]="facilityForm.invalid || !facilityForm.dirty">{{"Update"|translate}}</button>
+                    </div>
+                </div>
+                <div class="ovi-row-gap" *ngIf="facilitys.length" style="padding: 4px;display: block;padding-top: 20px;">
+                    <angular-table-component [id]="'facility'" [type]="'ng-table'" [tableData]="facilitys"
+                        [columns]="['Facility Id', 'Facility Name', 'Facility Topic Type', 'Action']"
+                        [columnData]="['facilityId', 'facilityName', 'facilityTopicTypeName', 'Action']"
+                        [menuButton]="gwId ? facilityMenu : ''"
+                        (triggerAction)="triggerAction($event)">
+                    </angular-table-component>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab *ngIf="facilityData.length" label="{{'Instance'|translate}}" [formGroup]="serverForm">
+            <ng-template mat-tab-label >{{"Instance"|translate}}</ng-template>
+            <div>
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name"
+                                    [errorStateMatcher]="matcher" maxlength="26" autocomplete="off">
+                                <mat-error *ngIf="serverForm.controls.name.invalid">
+                                    <span [hidden]="!serverForm.controls['name'].errors.required">{{"Name is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Select Server"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Server'|translate" formControlName="twServerId">
+                                    <mat-option *ngFor="let data of selectServerList" [value]="data.id" (keydown.enter)="fixClick()" (click)="filterTable(data.id, 'server')">
+                                        {{data.name }}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="serverForm.controls.twServerId.invalid">
+                                    <span [hidden]="!serverForm.controls['twServerId'].errors.required">{{"Server List
+                                        is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Version"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Version'|translate"
+                                    formControlName="gwMasterId">
+                                    <mat-option *ngFor="let data of masterselectionList['MT-APP']" [value]="data.id">
+                                        {{data.subTypeName}} - {{data.versionId}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="serverForm.controls.gwMasterId.invalid">
+                                    <span [hidden]="!serverForm.controls['gwMasterId'].errors.required">{{"Version is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Cloud Brokers"|translate}} <span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Cloud Brokers'|translate" formControlName="cloudBroker"
+                                    (change)="onChange($event.target.value)" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of cloudList" [value]="data.id">
+                                        {{ data.host }}({{ data.username }})
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="serverForm.controls.cloudBroker.invalid">
+                                    <span [hidden]="!serverForm.controls['cloudBroker'].errors.required">{{"Broker is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Local Brokers"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Local Brokers'|translate" formControlName="localBroker"
+                                    (change)="onChange($event.target.value)" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of brockerList" [value]="data.id">
+                                        {{data.username}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ">
+                        <div  style="padding-top: 25px;">
+                            <mat-checkbox formControlName="isEnabled" class="ovi-lbl-text-size">{{"isEnable"|translate}}</mat-checkbox>
+                        </div>
+                    </div>
+                    <app-license style="width: 100%" *ngIf="isServerEdit" [licenseData]="licenseData"></app-license>
+                </div>
+                <div class="ovi-row-three-clmn " style="width: 100%;position: relative;top: 20px; ">
+                        <div class="ovi-pop-ftr" style="padding-left: 0px; padding-top: 5px;">
+                            <button mat-button  class="cancle-btn"
+                                (click)="clear('server')">{{"Cancel"|translate}}</button>
+                            <button *ngIf="!isServerEdit" mat-button class="active-btn " appDebounceClick
+                                (debounceClick)="saveServer()" [debounceTime]="300" cdkFocusInitial
+                                [disabled]="this.serverForm.invalid">{{"Add"|translate}}</button>
+                            <button *ngIf="isServerEdit" mat-button class="active-btn " appDebounceClick
+                                (debounceClick)="updateServer(editServerId)" [debounceTime]="300" cdkFocusInitial
+                                [disabled]="this.serverForm.invalid || !serverForm.dirty">{{"update"|translate}}</button>
+                        </div>
+                </div>
+            </div><br>
+            <div class="ovi-row-gap" style="padding: 4px;display: block;padding-top: 10px;" *ngIf="serverTableData?.length !== 0">
+                <angular-table-component [id]="'server'" [type]="'ng-table'" [tableData]="serverTableData"
+                [columns]="['Name', 'Instance Name', 'Is Enable', 'Action']"
+                [columnData]="['name', 'twServerName', 'isEnable', 'Action']"
+                [menuButton]="serverMenu"
+                (triggerAction)="triggerAction($event)">
+                </angular-table-component>
+            </div>
+        </mat-tab>
+        <mat-tab *ngIf="serverData.length" label="{{'Jobs'|translate}}" [formGroup]="jobServerForm">
+            <ng-template mat-tab-label >{{"Jobs"|translate}}</ng-template>
+            <div class="job-tree" [ngStyle]="{'height':taskList?.length !== 0 ? 'calc(100% - 2px)' : ''}">
+                <div></div>
+                <div [style.height.px]="this.popHeight">
+                    <mat-list>
+                        <mat-list-item *ngFor="let server of serverData" (keydown.enter)="fixClick()" (click) = "getJobServer(server)"
+                        [ngClass] = "selectedRow && selectedRow.id == server.id ? 'selected-entity-list' : 'non-selected-entity-list'" 
+                        style="border-bottom: 1.5px solid #e8e8e8;">{{server.name}}</mat-list-item>
+                    </mat-list>
+                </div>
+            </div>
+            <div style="width: calc(100% - 270px);float: left;height : calc(100% - 2px);padding-left: 10px;">            
+            <div>
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="jobName"
+                                    maxlength="26" autocomplete="off">
+                                    <mat-error *ngIf="jobServerForm.controls.jobName.invalid">
+                                        <span [hidden]="!jobServerForm.controls['jobName'].errors.required">
+                                            {{"Name is required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Job"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline" required>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Job'|translate" formControlName="gwJob"
+                                    [disableOptionCentering]="true" (selectionChange)="getpfConfig($event.value)">
+                                    <mat-option *ngFor="let data of masterselectionList['MT-JOB']" [value]="data.id">
+                                        {{data.subTypeName}} - {{data.versionId}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                    <div class="row-field">
+                        <div style="padding-top: 25px;">
+                            <mat-checkbox formControlName="isEnabled" class="ovi-lbl-text-size">{{"isEnable"|translate}}</mat-checkbox>
+                        </div>
+                    </div>
+                </div>
+                <div class="ovi-row-gap" [formGroup]="gwConfigForm">
+                    <span class="ovi-fnt-sze15" style="font-weight: 600;">{{"CONFIG"|translate}}</span>
+                    <mat-divider style="width: 100%;"></mat-divider>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Config"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Config'|translate" formControlName="configJob"
+                                    [disableOptionCentering]="true" (selectionChange)="selectedTypConfig($event.value)">
+                                    <mat-option *ngFor="let data of pfConfigList" [value]="data.code">{{data.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="gwConfigForm.controls.configJob.invalid">
+                                    <span [hidden]="!gwConfigForm.controls['configJob'].errors.required">
+                                        {{"Config is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Select Config"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Config'|translate" (selectionChange)="selectedConfig($event.value, true)"
+                                    formControlName="configId" *ngIf="multiConfig" multiple>
+                                    <mat-option *ngFor="let data of configTypeData" [value]="['GJT-MF','GJT-FA'].includes(gwConfigForm.controls.configJob.value) ? data.facilityId : data.id">
+                                        {{['GJT-MF','GJT-FA'].includes(gwConfigForm.controls.configJob.value) ? data['facilityName'] : data['name']}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Config'|translate" (selectionChange)="selectedConfig($event.value, false)"
+                                    formControlName="configId" *ngIf="!multiConfig">
+                                    <mat-option *ngFor="let data of configTypeData" [value]="['GJT-MF','GJT-FA'].includes(gwConfigForm.controls.configJob.value) ? data.facilityId : data.id">
+                                        {{['GJT-MF','GJT-FA'].includes(gwConfigForm.controls.configJob.value) ? data['facilityName'] : data['name']}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-hint *ngIf="multiDataExist == false">
+                                    <span style="color:red;">*{{"Need to select more than one"|translate}}.</span>
+                                </mat-hint>
+                                <mat-error *ngIf="gwConfigForm.controls.configId.invalid">
+                                    <span [hidden]="!gwConfigForm.controls['configId'].errors.required">
+                                        {{"Job Type Config is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                </div>
+                <div class="ovi-row-three-clmn " style="width: 100%;position: relative;top: 15px; ">
+                    <div class="ovi-pop-ftr ">
+                        <button mat-button style="margin-top: 20px; margin-right: 10px; height: 38px"
+                            class="cancle-btn" (click)="clear('job')">{{"Cancel"|translate}}</button>
+                        <button *ngIf="!isJobEdit" mat-button class="active-btn" style="margin-top: 20px;" appDebounceClick
+                            (debounceClick)="saveJob('job')" [disabled]="this.jobServerForm.invalid || this.gwConfigForm.invalid  || multiDataExist == false" [debounceTime]="300"
+                                cdkFocusInitial>{{"Add"|translate}}</button>
+                        <button *ngIf="isJobEdit" mat-button class="active-btn" style="margin-top: 20px;" appDebounceClick
+                            [disabled]="this.jobServerForm.invalid || this.gwConfigForm.invalid || multiDataExist == false || (!this.jobServerForm.dirty && !this.gwConfigForm.dirty)" (debounceClick)="updateJob('job', this.mappingId)" [debounceTime]="300"
+                                cdkFocusInitial>{{"update"|translate}}</button>
+                    </div>
+                </div>
+            </div><br>
+            <div class="ovi-row-gap" style="display: block;padding-top: 10px;" *ngIf="jobTableData?.length !== 0">
+                <angular-table-component [id]="'job'" [type]="'ng-table'" [tableData]="jobTableData"
+                    [columns]="['Name', 'Type', 'Version', 'Is Enable', 'Action']"
+                    [columnData]="['name','gwMasterSubValue', 'versionId', 'isEnable', 'Action']"
+                    [menuButton]="jobMenu"
+                    (triggerAction)="triggerAction($event)">
+                </angular-table-component>
+            </div>
+            <div *ngIf="taskTableData?.length !== 0 && taskList?.length === 0" class="no-task">{{"No records Found"|translate}}</div>
+            <div class="ovi-row-gap" style="display: block;" *ngIf="taskList?.length !== 0">
+                <div class="form-row" style="margin-top: 15px;">
+                    <div class="ovi-popup-title-text-size">{{"Task List"|translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+                <angular-table-component [id]="'task'" [type]="'ng-table'" [tableData]="taskList"
+                    [columns]="['Name', 'Version', 'Is Editable', 'Action']"
+                    [columnData]="['gwMasterSubValue', 'versionId', 'is_enable_but', 'Action']"
+                    [menuButton]="taskMenu"
+                    (triggerAction)="triggerAction($event)">
+                </angular-table-component>
+            </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr" *ngIf="selectedIndex === 0">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!gwId" class="active-btn" appDebounceClick [disabled]="!this.facilitys.length"
+            (debounceClick)="createAllFacility()" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+        <button mat-button *ngIf="gwId" class="active-btn" appDebounceClick (debounceClick)="updateAllFacility(data.id)"
+            [debounceTime]="300" cdkFocusInitial [disabled]="!facilityForm.controls.gatewayName.dirty && this.facilityData?.length >= this.facilitys?.length">{{"update"|translate}}</button>
+    </div>
+</div>

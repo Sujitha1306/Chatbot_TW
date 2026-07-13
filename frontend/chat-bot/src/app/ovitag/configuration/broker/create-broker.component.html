@@ -1,0 +1,212 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Broker"|translate}}</div>
+        <div *ngIf="data">{{"Modify Broker"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);"  [formGroup]="brokerForm">
+        <div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Broker Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Broker Type'|translate" formControlName="brokerId" [disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of brokerList" [value]="data.code">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="brokerForm.controls.brokerId.invalid">
+                                <span [hidden]="!brokerForm.controls['brokerId'].errors.required">{{"Broker Type is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Select Server"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Server'|translate" formControlName="twServerId">
+                            <mat-option *ngFor="let data of selectServerList" [value]="data.id">
+                                {{data.name }}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="brokerForm.controls.twServerId.invalid">
+                            <span [hidden]="!brokerForm.controls['twServerId'].errors.required">{{"Server is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Mosquitto Host"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mosquitto Host'|translate" formControlName="mosquittoHost"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="brokerForm.controls.mosquittoHost.invalid">
+                                <span [hidden]="!brokerForm.controls['mosquittoHost'].errors.required">{{"Mosquitto Host is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT Port"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'MQTT Port'|translate" formControlName="mqttPort"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="brokerForm.controls.mqttPort.invalid" class="error-txt-1">
+                                <span [hidden]="!brokerForm.controls['mqttPort'].errors.pattern">{{"Enter valid
+                                    port number (e.g. 1883)"|translate}}</span>
+                                <span [hidden]="!brokerForm.controls['mqttPort'].errors.required">{{"Mqtt Port is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT protocol"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'MQTT Protocol'|translate" formControlName="mqttProtocol" [disableOptionCentering]="true"
+                                [disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of mqttPorts" [value]="data.name">
+                                    {{data.name | uppercase }}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="brokerForm.controls.mqttProtocol.invalid">
+                                <span [hidden]="!brokerForm.controls['mqttProtocol'].errors.required">{{"Mqtt protocol is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Websocket Port"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Websocket Port'|translate"
+                                formControlName="websocketPort" [errorStateMatcher]="matcher" autocomplete="off">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Websocket Protocol"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Websocket Protocol Type'|translate" formControlName="websocketProtocol"
+                                [disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of webSocketProtocols" [value]="data.text">
+                                    {{data.text | uppercase }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"User Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'User Name'|translate"
+                                formControlName="facilityUserName" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="brokerForm.controls.facilityUserName.invalid">
+                                <span [hidden]="!brokerForm.controls['facilityUserName'].errors.required">{{"Username is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Password"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput  type="password" appPlaceholder [showPlaceholder]="false" [placeholderText]="'local Password'|translate"
+                                formControlName="facilityPassword" [errorStateMatcher]="matcher"
+                                autocomplete="new-password">
+                            <mat-error *ngIf="brokerForm.controls.facilityPassword.invalid">
+                                <span [hidden]="!brokerForm.controls['facilityPassword'].errors.required">{{"Password is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ">
+                    <div  style="padding-top:25px;">
+                        <mat-label class="ovi-lbl-text-size" style="padding: 0px 68px 0px 5px;">{{"Enable SSL"|translate}}&nbsp;</mat-label>
+                            <mat-slide-toggle #ssl formControlName="sslEnabled"
+                            [disabled]="this.brokerForm.controls.maEnabled.value === true"
+                            (change)="changelocalValue(ssl, 'SSL')"></mat-slide-toggle>
+                    </div>
+                </div>
+                <div class="ovi-row-three-clmn ">
+                        <mat-label class="ovi-lbl-text-size">{{"SSL Certificate"|translate}}</mat-label>
+                        <div class="cert-upload">
+                            <div class="broker-cert" style="float: left;">
+                                <span style="float: left;" *ngIf="this.data?.id && brokerForm.controls['sslEnabledFile'].value"> SSL Certificate Uploaded</span>
+                                <label *ngIf="this.brokerForm.controls.sslEnabled.value === true && !(this.data?.id && brokerForm.controls['sslEnabledFile'].value)"
+                                mat-button style="cursor: pointer;">
+                                <span class="file-style">{{sslInput?.value}}</span>
+                                    <mat-icon class="file-icon" style="padding-right: 20px;float: right;">insert_drive_file</mat-icon>
+                                    <input #sslInput type="file" id="File" (change)="handleFileSelect($event, 'SSL')" style="display: none;"
+                                    accept=".pem, .cer, .crt, .key, .pkc8, .txt" [required]="this.brokerForm.controls.sslEnabled.value">
+                                </label>
+                                <mat-icon *ngIf="this.data?.id && brokerForm.controls['sslEnabledFile'].value"
+                                class="file-icon" style="padding-right: 20px;float: right;">insert_drive_file</mat-icon>
+                                <mat-icon *ngIf="brokerForm.controls['sslEnabledFile'].value" class="file-close"
+                                (keydown.enter)="fixClick()" (click)="removeLocalFile('SSL')">highlight_off</mat-icon>
+                            </div>
+                    </div>
+                </div>
+                <div class="ovi-row-three-clmn ">
+                    <div  style="padding-top:27px;">
+                        <mat-label class="ovi-lbl-text-size" style="padding: 0px 50px 0px 5px;">{{"Enable Broker"|translate}}&nbsp;</mat-label>
+                            <mat-slide-toggle formControlName="isActive"></mat-slide-toggle>
+                    </div>
+                </div>
+            </div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ">
+                    <div  style="padding-top:25px;">
+                        <mat-label class="ovi-lbl-text-size" style="padding: 0px 68px 0px 5px;">{{"Enable MA"|translate}}&nbsp;</mat-label>
+                            <mat-slide-toggle #ma formControlName="maEnabled"
+                            (change)="changelocalValue(ma, 'MA');enableMA($event);"></mat-slide-toggle>
+                    </div>
+                </div>
+                <div class="ovi-row-three-clmn ">
+                        <mat-label class="ovi-lbl-text-size">{{"MA Certificate"|translate}}</mat-label>
+                        <div class="cert-upload">
+                            <div class="broker-cert" style="float: left;">
+                                <span style="float: left;" *ngIf="this.data?.id && brokerForm.controls['maEnabledFile'].value"> {{"MA Certificate Uploaded"|translate}}</span>
+                                <label *ngIf="this.brokerForm.controls.maEnabled.value === true && !(this.data?.id && brokerForm.controls['maEnabledFile'].value)"
+                                mat-button style="cursor: pointer;">
+                                <span class="file-style">{{"maInput?.value"|translate}}</span>
+                                    <mat-icon class="file-icon" style="padding-right: 20px;float: right;">insert_drive_file</mat-icon>
+                                    <input #maInput type="file" id="File" (change)="handleFileSelect($event, 'MA')" style="display: none;"
+                                    accept=".pem, .cer, .crt, .key, .pkc8, .txt" [required]="this.brokerForm.controls.maEnabled.value">
+                                </label>
+                                <mat-icon *ngIf="this.data?.id && brokerForm.controls['maEnabledFile'].value"
+                                class="file-icon" style="padding-right: 20px;float: right;">insert_drive_file</mat-icon>
+                                <mat-icon *ngIf="brokerForm.controls['maEnabledFile'].value" class="file-close"
+                                (keydown.enter)="fixClick()" (click)="removeLocalFile('MA')">highlight_off</mat-icon>
+                            </div>
+                    </div>
+                </div>
+                <div class="ovi-row-three-clmn ">
+                        <mat-label class="ovi-lbl-text-size">{{"MA Key"|translate}}</mat-label>
+                        <div class="cert-upload">
+                            <div class="broker-cert" style="float: left;">
+                                <span style="float: left;" *ngIf="this.data?.id && brokerForm.controls['maEnabledKeyFile'].value"> {{"MA Key File Uploaded"|translate}}</span>
+                                <label *ngIf="this.brokerForm.controls.maEnabled.value === true && !(this.data?.id && brokerForm.controls['maEnabledKeyFile'].value)"
+                                mat-button style="cursor: pointer;">
+                                <span class="file-style">{{"maKey?.value"|translate}}</span>
+                                    <mat-icon class="file-icon" style="padding-right: 20px;float: right;">insert_drive_file</mat-icon>
+                                    <input #maKey type="file" id="File" (change)="handleFileSelect($event, 'MAKey')" style="display: none;"
+                                    accept=".pem, .cer, .crt, .key, .pkc8, .txt" [required]="this.brokerForm.controls.maEnabled.value">
+                                </label>
+                                <mat-icon *ngIf="this.data?.id && brokerForm.controls['maEnabledKeyFile'].value"
+                                class="file-icon" style="padding-right: 20px;float: right;">insert_drive_file</mat-icon>
+                                <mat-icon *ngIf="brokerForm.controls['maEnabledKeyFile'].value" class="file-close"
+                                (keydown.enter)="fixClick()" (click)="removeLocalFile('MAKey')">highlight_off</mat-icon>
+                            </div>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button style=" margin-right: 10px;" class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!this.data?.id" mat-button class="active-btn" appDebounceClick
+        (debounceClick)="saveBroker()" [debounceTime]="300"cdkFocusInitial
+        [disabled]="this.brokerForm.invalid">{{"Create"|translate}}</button>
+        <button *ngIf="this.data?.id" mat-button class="active-btn" appDebounceClick
+        (debounceClick)="updateBroker()" [debounceTime]="300" cdkFocusInitial
+        [disabled]="brokerForm.invalid">{{"Update"|translate}}</button>
+    </div>
+</div>

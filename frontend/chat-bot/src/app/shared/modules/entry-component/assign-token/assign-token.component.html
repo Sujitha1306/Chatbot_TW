@@ -1,0 +1,198 @@
+<div *ngIf="bannerlabel !== null" class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div >{{'Assign Token' | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div>
+        <app-banner [type]="'TW-PD'" [bannerData]="bannerlabel"></app-banner>
+    </div>
+<div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 150px);margin-top: 0px;" [formGroup]="tokenForm">
+    <div class="form-row popup-margin">
+        <div class="ovi-row-gap">
+            <div *ngIf="this.enableAssignToken && this.data.type !== 'Open'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{'Billing Token' | translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="example-full-width form-field" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Token'|translate" formControlName="token"
+                        appTypeHit (typeHit)="searchToken($event)" [matAutocomplete]="auto" autocomplete="off"
+                        [readonly]="tokenGenerated !== null">
+                    <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                        <mat-option *ngFor="let token of tokenList" [value]="token.tokenNumber" (keydown.enter)="fixClick()" 
+                        appDebounceClick (debounceClick)="getBillingTokenDetails(token)">
+                            {{token.tokenNumber}}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="tokenForm.controls.token.invalid" class="ovi-fnt-sze10" style="padding-top: 5px;">
+                        <span [hidden]="!tokenForm.controls['token'].errors.required">{{"Token number is
+                            required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="!this.enableAssignToken && assignFloorDetails?.length > 0 && this.data.type !== 'Open'" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size"> {{"Assigned Floor"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assigned Floor'|translate" formControlName="assignFloorId" 
+                        [disabled]="tokenGenerated !== null">
+                            <mat-option *ngFor="let o of assignFloorDetails; let i = index" [value]="o.floorId"
+                                (keydown.enter)="fixClick()" appDebounceClick (debounceClick)="assignedFloorCookie(o.floorId)">{{o.floorName}}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="tokenForm.controls.assignFloorId.invalid" class="error-txt-1">
+                            <span [hidden]="!tokenForm.controls['assignFloorId'].errors.required">
+                                {{"Assigned Floor is required"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div *ngIf="this.visitTypeId === 'VT-HC'" class="ovi-row-three-clmn">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"VIP "|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select formControlName="vipTypeId">
+                            <mat-option *ngFor="let data of vipList" [value]="data.code">{{data.value | translate}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="tokenForm.controls.vipTypeId.invalid" class="ovi-fnt-sze10"
+                            style="padding-top: 5px;">
+                            <span [hidden]="!tokenForm.controls['vipTypeId'].errors.required">{{"VIP is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div *ngIf="this.visitTypeId === 'VT-HC'" class="ovi-row-three-clmn custom-material-design">
+                <div class="example-form" style="padding: 0px 0px 10px 20px;">
+                    <mat-label class="ovi-lbl-text-size" style="padding-right: 10px;"> {{"Diabetic "|translate}}</mat-label>
+                    <div style="margin-top: 3px;">
+                        <mat-radio-group class="example-radio-group" formControlName="isDiabetic">
+                            <mat-radio-button [value]="null">{{'None' | translate}}</mat-radio-button>&nbsp;
+                            <mat-radio-button (click)="onChangeClinicalDetails(true, 'isDiabetic')" [value]="true"
+                                (keydown.enter)="fixClick()">
+                                {{'Diabetic' | translate}}</mat-radio-button>&nbsp;
+                            <mat-radio-button (click)="onChangeClinicalDetails(false, 'isDiabetic')" [value]="false"
+                                (keydown.enter)="fixClick()">
+                                {{"Non Diabetic"|translate}}</mat-radio-button>
+                        </mat-radio-group>
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="this.visitTypeId === 'VT-HC'" class="assign-fast-vul-preg" style="margin-top: 27px;margin-left: 5px;margin-right: 15px;">
+                <span class="assign-info-space-around" style="padding-right: 10px;">
+                    <mat-checkbox [checked]="patientInfo[0]?.isFasting" (change)="onChangeClinicalDetails($event, 'isFasting')">
+                        {{"Fasting"|translate}}</mat-checkbox>
+                </span>
+            
+                <span class="assign-info-space-around" style="padding-right: 10px;">
+                    <mat-checkbox [checked]="patientInfo[0]?.isVulnerable" (change)="onChangeClinicalDetails($event, 'isVulnerable')">
+                        {{"Vulnerable"|translate}}
+                    </mat-checkbox>
+                </span>
+            
+                <span class="assign-info-space-around" style="padding-right: 10px;">
+                    <mat-checkbox [checked]="patientInfo[0]?.isPregnant"  [disabled]="patientInfo[0]['gender'] === 'Male'"
+                    (change)="onChangeClinicalDetails($event, 'isPregnant')">
+                        {{"Pregnant"|translate}}</mat-checkbox>
+                </span>
+            </div>
+            <div *ngIf="!(this.data?.type === 'Open' || (!this.enableAssignToken && assignFloorDetails?.length === 0))" class="row-field" [ngStyle]="{'display':(this.data?.type === 'Open' || (!this.enableAssignToken && assignFloorDetails?.length === 0)) && tokenGenerated !== null ? 'none' : ''}">
+                <div class="example-submit-form" style="margin-left: 1px;" style="margin-left: 1px;" [ngStyle]="{'margin-top': this.data?.type === 'Open' || 
+                (!this.enableAssignToken && assignFloorDetails?.length === 0) ? '120px' : '21px'}">
+                    <button mat-button [disabled]="this.data?.type === 'Open' && tokenGenerated === null ? false : this.enableAssignToken ? 
+                    this.tokenId === null || tokenGenerated !== null : !this.enableAssignToken && assignFloorDetails?.length > 0 ?
+                    tokenForm.controls['assignFloorId'].invalid || tokenGenerated !== null : tokenGenerated !== null"
+                    class="active-btn" appDebounceClick [debounceTime]="300" (debounceClick)="generateToken()">
+                    {{this.data?.type === 'Open' || (!this.enableAssignToken && assignFloorDetails?.length === 0) ? 'Generate Token' : 'Generate' | translate}}</button>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="this.data?.type === 'Open' || (!this.enableAssignToken && assignFloorDetails?.length === 0)" style="display: flex; justify-content: center;">
+            <div class="row-field" [ngStyle]="{'display':(this.data?.type === 'Open' || (!this.enableAssignToken && assignFloorDetails?.length === 0)) && tokenGenerated !== null ? 'none' : ''}">
+                <div class="example-submit-form" style="margin-left: 1px;" style="margin-left: 1px;" [ngStyle]="{'margin-top': this.data?.type === 'Open' || 
+                (!this.enableAssignToken && assignFloorDetails?.length === 0) ? '120px' : '21px'}">
+                    <button mat-button [disabled]="this.data?.type === 'Open' && tokenGenerated === null ? false : this.enableAssignToken ? 
+                    this.tokenId === null || tokenGenerated !== null : !this.enableAssignToken && assignFloorDetails?.length > 0 ?
+                    tokenForm.controls['assignFloorId'].invalid || tokenGenerated !== null : tokenGenerated !== null"
+                    class="active-btn" appDebounceClick [debounceTime]="300" (debounceClick)="generateToken()">
+                    {{this.data?.type === 'Open' || (!this.enableAssignToken && assignFloorDetails?.length === 0) ? 'Generate Token' : 'Generate' | translate}}</button>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="tokenGenerated !== null" class="form-row">
+            <div class="ovi-popup-title-text-size ovi-font-family" style="margin-top: 5px;">{{"Token Details"|translate}}</div>
+        </div>
+        <mat-divider *ngIf="tokenGenerated !== null" class="divider"></mat-divider>
+        <div *ngIf="tokenGenerated !== null" class="ovi-row-gap" style="margin-top: 5px;">
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{'Process Counter Token' | translate}}</mat-label>
+                <mat-form-field class="example-full-width form-field" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Process Counter Token'|translate" formControlName="enrolledToken"
+                    autocomplete="off" readonly>
+                </mat-form-field>
+            </div>
+            <div *ngIf="!this.enableAssignToken && assignFloorDetails?.length > 0 && this.data?.type !== 'Open'" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size"> {{"Assigned Floor"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assigned Floor'|translate" formControlName="assignFloorId" disabled>
+                            <mat-option *ngFor="let o of assignFloorDetails; let i = index" [value]="o.floorId"
+                                (keydown.enter)="fixClick()" (click)="assignedFloorCookie(o.floorId)">{{o.floorName}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div *ngIf="this.enableAssignToken && this.data.type !== 'Open'" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+              <mat-label class="ovi-lbl-text-size">{{"Token Type"|translate}}</mat-label>
+                <mat-form-field class="example-full-width form-field" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Token Type'|translate" formControlName="tokenTypeId" disabled>
+                        <mat-option *ngFor="let type of tokenTypeList" [value]="type.code" (keydown.enter)="fixClick()">{{type.value}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div *ngIf="false" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Visit Type"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Visit Type'|translate" formControlName="visitTypeId" [disableOptionCentering]="true" disabled>
+                    <mat-option *ngFor="let type of visitTypeList" [value]="type.code">
+                        {{ type.value }}
+                    </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{'Mobile No' | translate}}</mat-label>
+                <mat-form-field class="example-full-width form-field" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile No'|translate" formControlName="mobileNo"
+                    autocomplete="off" readonly>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="tokenGenerated !== null" class="ovi-lbl-text-size ovi-fnt-sze14"
+        style="font-weight: 600;padding: 5px">{{"Preview Token"|translate}}
+        <div id="tokenData" style="display: flex; flex-wrap: wrap; margin-top: 5px; gap: 40px; padding: 10px;">
+            <div class="ovi-fnt-sze18" 
+                style="border: 2px solid #000; width: 305px; font-weight: 600; background-color: #f9f9f9; display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; width: 100%; justify-content: space-between;">
+                    <img [src]="customerLogo" alt="Logo"
+                        style="height: 40px; width: 40px; object-fit: contain; padding-left: 5px" />
+                    <div class="ovi-fnt-sze14"  style="display: flex; gap: 100px; padding: 0 5px">
+                        <span>{{ currentDate | date: 'dd-MMM-yyyy' }}</span>
+                        <span>{{ currentDate | date: 'hh:mm a' }}</span>
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="ovi-fnt-sze20"  style="display: flex; flex-direction: column; align-items: center;">
+                        {{ "Token Number" | translate }}
+                        <br>
+                        <span class="ovi-fnt-sze-xxlrg" 
+                            style="font-weight: bolder;padding-bottom: 10px">{{this.tokenGenerated}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ovi-pop-ftr">
+    <button *ngIf="this.enablePrintToken" mat-button class="active-btn"  appDebounceClick (debounceClick)="printAssignToken()"
+    [debounceTime]="300" [disabled]="tokenGenerated === null">{{"Print Token"|translate}} </button>&nbsp;
+    <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"| translate}}</button>
+</div>

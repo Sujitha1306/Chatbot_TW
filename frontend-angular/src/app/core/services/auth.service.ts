@@ -15,9 +15,12 @@ export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
   private getStoredUser(): User | null {
-    if (typeof window === 'undefined') return null;
-    const raw = localStorage.getItem('tw_user');
-    return raw ? JSON.parse(raw) : null;
+    return {
+      id: 'demo-user-001',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      role: 'admin'
+    };
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
@@ -65,8 +68,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('tw_token');
+    return 'dummy_token';
   }
 
   isAuthenticated(): boolean {

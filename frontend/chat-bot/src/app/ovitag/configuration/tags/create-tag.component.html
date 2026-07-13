@@ -1,0 +1,380 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+        <div class="ovi-pop-hdr">
+            <div *ngIf="!dataValue.serialNumber">{{"Create Device"|translate}}</div>
+            <div *ngIf="dataValue.serialNumber">{{"Modify Device"|translate}}</div>
+            <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+        </div>
+
+    
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 135px);"  [formGroup]="tagForm">
+        <div *ngIf = "showForm">
+        <div *ngIf="!dataValue" class="ovi-row-gap">
+            <div Class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Device Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device Type'|translate" formControlName="tagTypeId"
+                            (selectionChange)="getTagAssociateType($event.value)">
+                            <mat-option *ngFor="let tag of tagTypeList" [value]="tag.code">
+                                {{tag.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </div>
+
+            <div Class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Serial Number"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Serial Number'|translate" formControlName="serialNumber"
+                            autocomplete="off">
+                        <mat-error *ngIf="!tagForm.controls.serialNumber.valid" class="error-txt">
+                            <span [hidden]="!tagForm.controls['serialNumber'].errors.required">{{"serial number
+                                required. (eg: 200000001)"|translate}}</span>
+                        </mat-error>
+                        <mat-error *ngIf="tagForm.controls.serialNumber.invalid" class="error-txt">
+                            <span [hidden]="!tagForm.controls['serialNumber'].errors.pattern">{{"Invalid
+                                serial!"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+        
+            
+        </div>
+
+        <div class="ovi-row-gap" *ngIf="dataValue">
+            <div Class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Serial Number"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Serial Number'|translate" formControlName="serialNumber"
+                            autocomplete="off" [readonly]="dataValue">
+                    </mat-form-field>
+            </div>
+
+            <div Class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Device Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device Type'|translate" formControlName="tagTypeId" [disableOptionCentering]="true"
+                            (selectionChange)="getTagAssociateType($event.value)">
+                            <mat-option *ngFor="let tag of tagTypeList" [value]="tag.code">
+                                {{tag.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </div>
+        </div>
+
+        <div *ngIf="dataValue" [formGroup]="assoicatedForm">
+            <div class="ovi-row-gap" *ngIf="dataValue">
+                <div Class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Associated Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Associated Type'|translate"
+                                formControlName="tagAssociationType"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let associate of tagAssociatedList" (keydown.enter)="fixClick()"
+                                    (click)="getAssociationTypeChange(associate.code)" [value]="associate.code">
+                                    {{associate.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+
+
+                <div Class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Associate Entity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field hintLabel="{{'*All the above fields are mandatory'|translate}}"
+                            class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Associate Entity'|translate" id="associateEntity"
+                            appTypeHit (typeHit)="searchAssociation($event)" formControlName="tagAssociationId"
+                                [value]="tagAsType == data.tagAssociationType ? data.mainidentifier+','+data.tagAssociationName : ''"
+                                [matAutocomplete]="auto" autocomplete="off">
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.associatedEnabled === true ? getAssociateNameList.bind(searchList) : ''"
+                                #auto="matAutocomplete"
+                                (optionSelected)="getAssociationDetail($event.option.value)">
+                                <mat-option *ngFor="let search of searchList" [value]="search.id">
+                                    <div class="tag-tbl-wd">
+                                        <span
+                                            *ngIf="search.mainidentifier != null">{{search.mainidentifier}},</span>
+                                        <span>{{search.firstName ? search.firstName : (search.assetName ? search.assetName : search.name)}}</span>
+                                    </div>
+                                </mat-option>
+                                <mat-error
+                                    *ngIf="assoicatedForm.controls.tagAssociationId.invalid">
+                                    <span [hidden]="!assoicatedForm.controls['tagAssociationId'].errors.requireMatch">{{"Please select
+                                        value from the option"|translate}}</span>
+                                    <span [hidden]="!assoicatedForm.controls['tagAssociationId'].errors.required">{{"Location description required."|translate}}</span>
+                                </mat-error>
+                            </mat-autocomplete>
+                        </mat-form-field>
+                </div>
+            </div>
+
+            <div style="display: flex;justify-content: flex-end;margin-right: 80px;">
+                <div>
+                        <span  *ngIf="!data.tagAssociationId">
+                            <button mat-button appDebounceClick class="active-btn "
+                                (debounceClick)="createAssociateTag()" cdkFocusInitial
+                                [disabled]="assoicatedForm.invalid || disableAssociateType"
+                                [debounceTime]="300">{{"Associate"|translate}}</button>
+                        </span>
+                        <span
+                            *ngIf="dataValue.tagAssociationId && tagAsId && tagAsType && (tagAsId != dataValue.tagAssociationId || tagAsType != dataValue.tagAssociationType)">
+                            <button mat-button appDebounceClick class="active-btn "
+                                [disabled]="assoicatedForm.invalid || disableAssociateType"
+                                (debounceClick)="replaceAssociateTag()" [debounceTime]="300"
+                                cdkFocusInitial>{{"Replace"|translate}}</button>
+                        </span>
+                        <span  *ngIf="data.tagAssociationId">
+                            <button mat-button appDebounceClick class="active-btn "
+                                [disabled]="assoicatedForm.invalid" (debounceClick)="removeAssociateTag()"
+                                cdkFocusInitial-matTooltip 
+                                [debounceTime]="300">{{"Remove"|translate}}</button>
+                        </span>
+                </div>
+            </div>
+        </div>
+        <mat-tab-group [selectedIndex]="selectedIndex" (selectedTabChange)="tabClick($event)" headerPosition="above" >
+            <mat-tab  label="{{'Basic Info'|translate}}" class="active-btn">
+                <ng-template mat-tab-label >{{"Basic Info"|translate}}</ng-template>
+                <div style="overflow: hidden;">
+                    <div class="mat-tab-content-devc">
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Mac ID"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mac ID'|translate" formControlName="macId" autocomplete="off" >
+                                        <mat-error *ngIf="tagForm.controls.macId.invalid" class="error-txt">
+                                            <span [hidden]="!tagForm.controls['macId'].errors.pattern">{{"Invalid Mac
+                                                Id!"|translate}}</span>
+                                            <span [hidden]="!tagForm.controls['macId'].errors.required">{{"Mac Id is
+                                                required. (eg: a23456b12345)"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Connectivity status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Connectivity status'|translate" [disabled]="dataValue.serialNumber && tagConfig?.battery_status_database === 'clickhouse'"
+                                            (selectionChange)="onStatusChange($event.value)" formControlName="status"
+                                            required>
+                                            <mat-option *ngFor="let obj of statusList" [value]="obj.code">
+                                                {{obj.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="!tagForm.controls.status.valid" class="error-txt">
+                                            <span [hidden]="!tagForm.controls['status'].errors.required">{{"Status
+                                                required!"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                </div>
+                        
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Hardware Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hardware Type'|translate" formControlName="hwtype"
+                                            required [disableOptionCentering]="true">
+                                            <mat-option *ngFor="let type of HardwareTypes" [value]="type.code">
+                                                {{type.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="!tagForm.controls.hwtype.valid" class="error-txt">
+                                            <span [hidden]="!tagForm.controls['hwtype'].errors.required">{{"Hardware Type
+                                                required!"|translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+
+                            <div *ngIf="deviceType == 'TT-IN'" Class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Tag Category"|translate}} </mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag Category'|translate"
+                                        formControlName="tagCategoryId">
+                                        <mat-option value="null"></mat-option>
+                                        <mat-option *ngFor="let tag of tagCategoryList" [value]="tag.code">
+                                            {{tag.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="stateId">
+                                        <mat-option *ngFor="let obj of stateId" [value]="obj.code">
+                                            {{obj.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Software Version"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Software Version'|translate" formControlName="swVersion" autocomplete="off" >
+                                    </mat-form-field>
+                            </div>
+                        
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Manufacture Date"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                       
+                                        <input matInput [matDatepicker]="picker"  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Manufacture Date'|translate"
+                                            [max]="today" formControlName="manufacturer">
+                                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                        <mat-datepicker #picker></mat-datepicker>
+                                        <mat-error *ngIf="tagForm.controls.manufacturer.invalid" class="error-txt">
+                                            <span [hidden]="!tagForm.controls['manufacturer'].errors.pattern">
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Regulations"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Regulations'|translate" formControlName="regulation" autocomplete="off" >
+                                    </mat-form-field>
+                            </div>
+                           <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Frequency Range"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Frequency Range'|translate" formControlName="frequencyRange" autocomplete="off" >
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Temperature Range"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Temperature Range'|translate"
+                                            formControlName="temperatureRange">
+                                    </mat-form-field>
+                            </div>
+                        
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Warn On Perimeter Breach"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Warn On Perimeter Breach'|translate"
+                                            formControlName="warnOnPerimeterBreach"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let option of perimeterBreachOption" [value]="option.code">
+                                                {option.value, select, ON {ON} OFF {OFF}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate" formControlName="comments" autocomplete="off" >
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </mat-tab>
+
+            
+            <mat-tab *ngIf="this.deviceType === 'TT-WTMT'"  label="{{'Additional Info'|translate}}" class="active-btn margin-r-1">
+                <ng-template mat-tab-label >{{"Additional Info"|translate}}</ng-template>
+                <div [ngStyle]="{height : dataValue ? '250px' : ''}">
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Billing Type"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Type'|translate" formControlName="billingType" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Value Status"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Value Status'|translate" formControlName="valueStatus" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                    
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Working Voltage"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Working Voltage'|translate" formControlName="workingVoltage" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Installation Method"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Installation Method'|translate" formControlName="installationMethod" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                    
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Communication"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Communication'|translate" formControlName="communication" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Communication Interval"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Communication Interval'|translate" formControlName="communicationInterval" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                    
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"GPS Location Coordinates (x,y)"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'GPS Location Coordinates'|translate" formControlName="gpsLocationCoordinates" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Current Location"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Current Location'|translate" formControlName="currentLocation" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                    
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Measurement Grade"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Measurement Grade'|translate" formControlName="measurementGrade" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Gross Weight"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gross Weight'|translate" formControlName="grossWeight" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                    
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Size"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Size'|translate" formControlName="size" autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Environment Temperature"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Environment Temperature'|translate" formControlName="environmentTemperature"  autocomplete="off" >
+                                </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+         
+
+            <mat-tab  label="{{'Association History'|translate}}" *ngIf="dataValue" class="mat-tbl-styl">
+                <ng-template mat-tab-label >{{"Association History"|translate}}</ng-template>
+             <div style="padding:10px;">
+                <tw-table-component [component]="'coaster-tag'" [columns]="tagDisplayedColumns" [tableData]="tagHistory" [iconHeader]="[]" [iconColumn]="['Associated Time','Disassociated Time']" [sortColumn]="[]"
+                [eventColumn]="[]" [permissionControl]="[]" [applyFilter]="applyFilterValue" [pagination]="[{length: lengthAH, pageSize: pageSizeAH}]"></tw-table-component>
+            </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+   </div> 
+    <div class="ovi-pop-ftr"> 
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!dataValue" class="active-btn" appDebounceClick
+            [disabled]="tagForm.invalid || isDisabled" (debounceClick)="saveTag()" [debounceTime]="300"
+            cdkFocusInitial>{{"Create"|translate}}</button>
+        <button mat-button *ngIf="dataValue" class="active-btn" appDebounceClick
+            [disabled]="tagForm?.invalid || isDisabled" (debounceClick)="updateTag(dataValue.serialNumber)"
+            [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+        </div>
+    </div>

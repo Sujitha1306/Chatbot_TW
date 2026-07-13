@@ -1,0 +1,184 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div >{{"Manage Location"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);" [formGroup]="dailyManageForm">
+        <div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label  class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select formControlName="isAvailable"[disableOptionCentering]="true">
+                                <mat-option  *ngFor="let data of statustypes" (keydown.enter)="fixClick()" (click)="statusChange(data.code)"
+                                    [value]="data.code">{data.value, select, Active {Active} Inactive {Inactive}} </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size"> {{"Consulting Doctor"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here for Doctor'|translate" (keyup)="searchDoctor($event.target.value, 'doctor', $event)"
+                                [matAutocomplete]="doctor" formControlName="userId">
+                            <mat-autocomplete autoActiveFirstOption [displayWith]="this.doctorEnabled === true ? getDoctorList.bind(doctorList) : ''" #doctor="matAutocomplete">
+                                <mat-option *ngFor="let option of doctorList" [value]="option.id">
+                                    <div class="tot-wid-styl">{{option.name}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
+                </div>
+           </div>
+
+            <div class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label  class="ovi-lbl-text-size">{{"Language"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select [disabled]="inactive && dailyManageForm.controls['isAvailable'].value === false" formControlName="languages">
+                                <mat-option *ngFor="let data of languageList" [value]="data.code">{{data.value}}</mat-option>
+                               </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn"style="margin-left:7px;">
+                        <mat-label  class="ovi-lbl-text-size">{{"Gender"|translate}}</mat-label>
+                        <div class="radio-button">
+                            <mat-radio-group [disabled]="inactive && dailyManageForm.controls['isAvailable'].value === false" formControlName="gender">
+                                <mat-radio-button class="cst-mgn_1" *ngFor="let o of genderList; let i = index" [checked]="dailyManageForm.controls.gender.value === o.code" [value]="o.code">{{o.value}}</mat-radio-button>
+                            </mat-radio-group>
+                    </div>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Capacity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'capacity'|translate" formControlName="capacity"
+                                autocomplete="off" [readonly]="(inactive && dailyManageForm.controls['isAvailable'].value === false) || (disableCapacity)">
+                            <mat-error *ngIf="dailyManageForm.controls.capacity.invalid">
+                                <span  [hidden]="!dailyManageForm.controls['capacity'].errors.required">{{"Capacity is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Queue Length"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Queue Length'|translate" formControlName="queueLength"
+                                autocomplete="off" [readonly]="(inactive && dailyManageForm.controls['isAvailable'].value === false) || (disableQueueLength)">
+                            <mat-error *ngIf="dailyManageForm.controls.queueLength.invalid">
+                                <span  [hidden]="!dailyManageForm.controls['queueLength'].errors.required">{{"Queue
+                                    Length is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+            <div *ngIf="isTestInBatch">
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"From Time"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'From Time'|translate" formControlName="fromTime"
+                                readonly>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"To Time"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'To Time'|translate" formControlName="toTime" readonly>
+                        </mat-form-field>
+                </div>
+            </div>
+            <div class="form-row">
+                <div  class="ovi-popup-title-text-size top-styl">{{"TEST LOCATION MAPPING"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap">
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label  class="ovi-lbl-text-size">{{"Location Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="alternateLocationId" [attr.disabled]="inactive && dailyManageForm.controls['isAvailable'].value === false"
+                                (selectionChange)="onGetAllTestsByLocation($event.value, fromLocationName, $event.value)"
+                                [errorStateMatcher]="matcher"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let location of locationList" [value]="location.id">
+                                    {{location.floorName}}, {{location.name}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="dailyManageForm.controls.alternateLocationId.invalid">
+                                <span 
+                                    [hidden]="!dailyManageForm.controls['alternateLocationId'].errors.required">{{"Location
+                                    is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                        <div *ngIf="is_status === true">{{confirm_test_status}}</div>
+                        <div *ngIf="inactiveCheck === true">
+                            <mat-checkbox style="margin-left: 3px;" class="inactive-check-box" [checked]="isCheck"
+                                (change)="onCheck($event, 'inactiveCheck')"></mat-checkbox>
+                            <span  class="inactive-check-box-text">Do you want to Inactivate {{fromLocationName}} ?</span>
+                        </div>
+                        <div  style="margin-left: -32px;margin-top: 15px;" *ngIf="manageRoom === true">
+                            <mat-checkbox class="inactive-check-box" [checked]="roomChange"
+                                (change)="onCheck($event, 'manageRoom')"></mat-checkbox>
+                            <span  class="inactive-check-box-text">Map {{toLocationName[0].name}} tests to {{fromLocationName}}
+                                ?</span>
+                        </div>
+                </div>
+                <div class="ovi-row-two-clmn">
+                        <div *ngIf="isAlternateLoc">
+                            <mat-label class="ovi-lbl-text-size">
+                                <mat-checkbox [checked]="checkedTestGroup1"
+                                    (change)="changeTestGroup($event, 'ultrasound')">{{testGroupName1 | uppercase}}
+                                </mat-checkbox>
+                            </mat-label>
+                            <mat-card>
+                                <mat-card-content>
+                                    <mat-list role="list" class="test-list">
+                                        <div style="width:100%;" *ngFor="let test of ultrasound">
+                                            <mat-list-item role="listitem">
+                                                <div>{{test.testName}}</div>
+                                            </mat-list-item>
+                                        </div>
+                                    </mat-list>
+                                </mat-card-content>
+                            </mat-card>
+                            <mat-label class="ovi-lbl-text-size">
+                                <mat-checkbox [checked]="checkedTestGroup2"
+                                    (change)="changeTestGroup($event, 'mammography')">{{testGroupName2 | uppercase}}
+                                </mat-checkbox>
+                            </mat-label>
+                            <mat-card>
+                                <mat-card-content>
+                                    <mat-list role="list" class="test-list">
+                                        <div style="width:100%;" *ngFor="let test of mammography">
+                                            <mat-list-item role="listitem">
+                                                <div>{{test.testName}}</div>
+                                            </mat-list-item>
+                                        </div>
+                                    </mat-list>
+                                </mat-card-content>
+                            </mat-card>
+                        </div>
+                        <mat-label  *ngIf="!isAlternateLoc" class="ovi-lbl-text-size">{{"Tests"|translate}}</mat-label>
+                        <mat-card *ngIf="!isAlternateLoc">
+                            <mat-card-content>
+                                <mat-list role="list" class="test-list">
+                                    <div style="width:100%;" *ngFor="let test of testDetailsByLocation">
+                                        <mat-list-item role="listitem">
+                                            <div>{{test}}</div>
+                                        </mat-list-item>
+                                    </div>
+                                </mat-list>
+                            </mat-card-content>
+                        </mat-card>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button  mat-button mat-dialog-close class="cancle-btn">{{"Cancel"|translate}}</button>
+
+       <button *ngIf="inactiveCheck === true"  mat-button class="active-btn" appDebounceClick [disabled]="enableButton"
+        (debounceClick)="updateDailyManagement(data.locationId)" [debounceTime]="300"cdkFocusInitial>{{"Save"|translate}}</button>
+       <button *ngIf="manageRoom === true"  mat-button class="active-btn" appDebounceClick [disabled]="enableManage"
+        (debounceClick)="updateDailyManagement(data.locationId)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+       <button *ngIf="inactiveCheck === false && manageRoom === false"  mat-button  class="active-btn" appDebounceClick [disabled]="dailyManageForm.invalid"
+        (debounceClick)="updateDailyManagement(data.locationId)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+    </div>
+</div>

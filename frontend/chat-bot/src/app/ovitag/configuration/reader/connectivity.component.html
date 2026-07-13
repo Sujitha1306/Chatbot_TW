@@ -1,0 +1,77 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Connectivity"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+        <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"  style="overflow: auto;height:calc(100% - 85px);"[formGroup]="connectivityForm">
+            <div class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <div style="display: flex;align-items: baseline;margin-top: 15px;">
+
+                        <mat-label class="ovi-lbl-text-size"
+                            style="display: flex;flex-direction: row; white-space: nowrap;" required>{{"Reader
+                            Connectivity Type"|translate}}
+                            <span class="mandatory-field"> * </span>
+                        </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="padding-left: 5%!important"
+                            appearance="outline">
+                            <mat-select formControlName="readertype">
+                                <mat-option *ngFor="let Reader of Readerconnectivity" [value]="Reader.code">
+                                    {{Reader.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="connectivityForm.controls.readertype.invalid" class="error-txt-1">
+                                <span
+                                    [hidden]="!connectivityForm.controls['readertype'].errors.required">{{"ReaderConnectivityType
+                                    is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <mat-divider  style="position: relative;top: 5px;"></mat-divider>
+            <div class="ovi-row-gap" >
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size" style="margin-top: 15px;"> {{"User"|translate}}
+                            <span class="mandatory-field"> * </span>
+                        </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'User'|translate" formControlName="ap_ssid"
+                                autocomplete="off">
+                            <mat-error *ngIf="connectivityForm.controls.ap_ssid.invalid" class="error-txt-1">
+                                <span [hidden]="!connectivityForm.controls['ap_ssid'].errors.required">{{"User name
+                                    is required"|translate}}.</span>
+                                <span [hidden]="!connectivityForm.controls['ap_ssid'].errors.minlength">{{"Minimum
+                                    allowed characters are 3"|translate}} </span>
+                                <span [hidden]="!connectivityForm.controls['ap_ssid'].errors.maxlength">{{"Maximmum
+                                    allowed characters are 25"|translate}} </span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size" style="margin-top: 15px;">{{"Password"|translate}}
+                            <span class="mandatory-field"> * </span>
+                        </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput [type]="hide ? 'password' : 'text'" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Password'|translate"
+                                formControlName="ap_ssid_pwd" autocomplete="off">
+                            <mat-icon  class="ovi-fnt-sze18" matSuffix (keydown.enter)="fixClick()" (click)="hide = !hide">{{hide ?
+                                'visibility_off' : 'visibility'}}</mat-icon>
+                            <mat-error *ngIf="connectivityForm.controls.ap_ssid_pwd.invalid" class="error-txt-1">
+                                <span [hidden]="!connectivityForm.controls['ap_ssid_pwd'].errors.required">{{"Password
+                                    is required"|translate}}.</span>
+                                <span
+                                    [hidden]="!connectivityForm.controls['ap_ssid_pwd'].errors.minlength">{{"Password must
+                                    be at least 6 characters"|translate}}</span>
+
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <div class="ovi-pop-ftr">
+            <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+            <button mat-button class="active-btn" appDebounceClick (debounceClick)="publish()" [debounceTime]="300"
+                [disabled]='connectivityForm.invalid'>{{"Publish"|translate}}</button>
+        </div>

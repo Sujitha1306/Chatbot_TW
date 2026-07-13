@@ -1,0 +1,59 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="pwa-full-container ovi-font-family">
+    <div class="pwa-task-container">
+        <div class="pwa-tab-container">
+                <span style="display: flex; align-items: center; justify-content: center;">
+                    <mat-icon class="pwa-custome-icon-style ovi-fnt-sze22" (click)="onClick(null)" (keydown.enter)="fixClick()">add</mat-icon>
+                </span>
+        </div>
+        <div style="padding: 0 12px; margin: 5px 0px 0px 0px;"
+            class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin ovi-matfrmfld-input-box-pdg search-field">
+            <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh">
+                <mat-icon matPrefix class="pwa-search">search</mat-icon>
+                <input matInput [(ngModel)]="searchText" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onSearchChange($event)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+            </mat-form-field>
+        </div>
+        <div class="ovi-fnt-sze12" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 20px; ">
+            <span style="color: #889093;">{{totalRecords}}&nbsp;Asset</span>
+            <span style="display: flex; gap: 12px; align-items: center;">
+                <span style="display: flex; gap: 3px; color: #889093;">
+                <mat-icon style="color: #889093;" class="pwa-custome-icon-style" (click)="toggleFilter()" (keydown.enter)="fixClick()">sort</mat-icon>
+            </span>
+            </span>
+        </div>
+        <div class="content-container">
+            <mat-card class="card-list" *ngFor="let data of visibleData" (click)="onClick(data)" (keydown.enter)="fixClick()">
+                <div style="display: flex; font-weight: 600; padding-bottom: 5px;">
+                    <img class="icon" src="../../../../../../assets/Menus/task-asset.svg" alt="Icon" />
+                    <span>{{data?.assetName}}</span>
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div class="content-texts">
+                        <span class="card-label">{{"Asset No"|translate}}</span>
+                        <span class="task-data-text">{{data?.assetSerialNumber}}</span>
+                    </div>
+                    <div class="content-texts">
+                        <span class="card-label">{{"Asset Type"|translate}}</span>
+                        <span class="task-data-text">{{data?.assetTypeName}}</span>
+                    </div>
+                    <div class="content-texts" *ngIf="data?.tagSerialNumber">
+                        <span class="card-label">{{"Location"|translate}}</span>
+                        <span class="task-data-text">{{data?.currentLocationName}}<span *ngIf="data?.floorName">, {{ data?.floorName }}</span></span>
+                    </div>
+                    <div class="content-texts" *ngIf="data?.tagSerialNumber">
+                        <img class="icon" src="../../../../../../assets/Alert/common_icons/coaster-g.svg" alt="Icon" />
+                        <span class="task-data-text">{{data?.tagSerialNumber}}</span>
+                   </div>
+                </div>
+            </mat-card>
+            <span *ngIf="totalRecords > pageSize" class="ovi-fnt-sze10" style="text-align: center; color: #717171; cursor: pointer;"
+            (click)="moreData()" (keydown.enter)="fixClick()">{{"More"|translate}}</span>
+        </div>
+    </div>
+</div>

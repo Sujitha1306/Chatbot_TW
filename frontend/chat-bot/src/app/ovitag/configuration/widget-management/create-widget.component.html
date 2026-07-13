@@ -1,0 +1,190 @@
+<div class="custom-dialog-box">
+    <mat-toolbar class="input-header">
+        <div class="header-name">{{"Modify Widget"|translate}}</div>
+        <div class="header-close">
+            <button mat-icon-button mat-dialog-close class="close-button ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </div>
+    </mat-toolbar>
+
+    <div class="form-body-large mat-custom-form-field-box popup-margin">
+    <mat-tab-group style="height: 100%;" (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+        <mat-tab label="{{'Basic Details'|translate}}" >
+            <div [formGroup]="widgetForm">
+            <div class="form-row block-3">
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Code"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" formControlName="code" autocomplete="off"  readonly>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="widgetName" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="widgetType" [disableOptionCentering]="true">
+                                <mat-option *ngFor="let type of chartTypes" [value]="type.code">{{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Name"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Name'|translate" formControlName="modelName" autocomplete="off"  readonly>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Target DB"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Type'|translate" formControlName="targetDb" autocomplete="off"  readonly>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Type"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="modelType"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let model of modelTypes" [value]="model.code">{{model.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Input Param"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Input Param'|translate" formControlName="inputParam" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Output Param"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Output Param'|translate" formControlName="outputParam" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="isActive">
+                                <mat-option *ngFor="let data of status" [value]="data.code" disabled>{data.name, select, Active {Active} Inactive {Inactive}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row block-3">
+                <div class="row-field-5" *ngIf="data[0].modelTypeId == 'MT-QRY'">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Query String"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <textarea matInput rows="3" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Query String'|translate" formControlName="modelQueryString"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-5" *ngIf="data[0].modelTypeId == 'MT-API'">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model URL"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model URL'|translate" formControlName="modelUrl" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-5">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Map"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <textarea matInput rows="3" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Map'|translate" formControlName="modelMap"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </mat-tab>
+        <mat-tab label="{{'Preview'|translate}}" *ngIf="showPreview" style="height: 100%;">
+            <div style="height: 100%;max-height: 460px">
+            <div style="height: 50%;overflow-x: auto;display: flex;flex-direction: column;align-items: center;">
+                <div style="height: 78%;width:100%;display: flex;flex-direction: row;justify-content: center;align-items: center;">
+                <textarea class="ovi-fnt-sze15" style="background: hsl(0deg 3% 22%);color: #e0e0e0;width: 85%;height:95%;resize: none;" id="myTextArea" cols=50 rows=25></textarea>
+                <mat-icon *ngIf="isHelp" style="color: #b3adad;margin-left: 10px;cursor: pointer;" class="material-icons-outlined" matTooltip="Help" (keydown.enter)="fixClick()" (click)="openPage()">info</mat-icon>
+                </div>
+                <button mat-button class="active-btn margin-r-1" style="margin-top: 2px !important;margin-right: -20px !important;" cdkFocusInitial [disabled]="chartUpdate" (click)="updateChart()">{{"Update Chart"|translate}}</button>
+            </div>
+            <div *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'chart'" style="width: 92%;display: flex;height: 50%;margin-left: 40px;overflow-x: auto;">
+                <canvas baseChart
+                  [type]="widgetDetails['chartType']" [datasets]="widgetDetails['datasets']"
+                  [labels]="widgetDetails['labels']" [colors]="widgetDetails['colors']"
+                  [options]="widgetDetails['options']" >
+                </canvas>
+            </div>
+            <div *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'card'" style="margin-top: 15px;height: 40%;width: 35%;display: block;margin-left: 34%;">
+                <mat-grid-list [cols]="widgetDetails['maxCol']" rowHeight="100%" [gutterSize]="'15px'">
+                  <mat-grid-tile
+                    [colspan] = "widgetDetails['detail'][0].col" [rowspan]= "1" [ngStyle]="{background: widgetDetails['detail'][0]['bg-color']}"
+                    style="border-radius: 10px;">
+                      <mat-grid-tile-header class="ovi-fnt-sze18" [ngStyle]="{background: 'transparent', color: widgetDetails['detail'][0]['color']}" style="justify-content: center;font-weight: 600">{{widgetDetails['detail'][0].title}}</mat-grid-tile-header>
+                      <div *ngIf = "widgetDetails['detail'][0].icon != ''">
+                        <div style="float: left">
+                          <img [src]="widgetDetails['detail'][0].icon" [width] = "widgetDetails['detail'][0].iconWidth" style="float: left; margin-right:20px;object-fit: contain;" alt="asset-icon">
+                        </div>
+                        <div style="float: right;font-weight: 800;padding: 10px 10px;" [ngStyle]="{'font-size': widgetDetails['detail'][0]['fontSize'], color: widgetDetails['detail'][0]['fontColor']}">
+                          {{widgetDetails['detail'][0].data}}
+                        </div>
+                      </div>
+                      <div *ngIf = "widgetDetails['detail'][0].icon == ''" style="font-weight: 600;" [ngStyle]="{'font-size': widgetDetails['detail'][0]['fontSize'], color: widgetDetails['detail'][0]['fontColor']}">
+                        <div *ngFor = "let data of widgetDetails['detail'][0].data.data; let i = index">
+                          <span style="float: left;"> {{widgetDetails['detail'][0].data.label[i] }}  </span>
+                          <span style="float: right;"> &nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;&nbsp;{{widgetDetails['detail'][0].data.data[i] }} </span>
+                        </div>
+                      </div>
+                  </mat-grid-tile>
+                </mat-grid-list>
+              </div>
+              <div style="width: 100%; height: 13%;" *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'header'">
+                <div style="width: 70%; height: 100%;border-radius: 10px;margin-left: 17%;margin-top: 7%; display: flex; justify-content: flex-start; align-items: center;" [ngStyle]="{background: widgetDetails['detail'][0]['bg-color']}">
+
+                    <img *ngIf="widgetDetails['detail'][0].icon != ''" [src]="widgetDetails['detail'][0].icon" [width] = "widgetDetails['detail'][0].iconWidth" style="object-fit: contain; margin-left: 25px;" alt="asset-icon">
+
+                    <h1 style="font-weight: 200; margin-left: 25px;" [ngStyle]="{background: 'transparent',color: widgetDetails['detail'][0]['fontColor'], 'font-size': widgetDetails['detail'][0]['fontSize']}">{{widgetDetails['detail'][0].title}}</h1>
+
+                </div>
+              </div>
+              <div *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'table'" style="width: 92%;height: 50%;margin-left: 35px;overflow-x: auto;">
+                <angular-table-component [tableData]="this.widgetDetails['table']" [columns]="this.widgetDetails['tableColumns']" [id]="'dashWid'" [tableStyle]="tableStyling" [styles] = "styles"></angular-table-component>
+              </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+    </div>
+    <div class="input-footer-pad" style="padding-bottom: 10px;">
+        <button mat-button class="cancle-btn" mat-dialog-close *ngIf="selectedIndex != 0">{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" cdkFocusInitial *ngIf="selectedIndex == 0" 
+         appDebounceClick (debounceClick)="updateWidget()" [debounceTime]="300" [disabled]="!widgetForm.dirty">{{"Update"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" cdkFocusInitial *ngIf="selectedIndex != 0" 
+         appDebounceClick (debounceClick)="saveWidget()" [debounceTime]="300" [disabled] ="!isPreview">{{"Save"|translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,542 @@
+<div #canvasContainer class="three-container">
+    <!-- Selectors Wrapper -->
+    <div class="selectors-wrapper" *ngIf="!compactUi">
+        <!-- Block Selector -->
+        <div class="block-selector">
+            <label for="blockSelect">Block</label>
+            <select id="blockSelect" (change)="onBlockChange($event)" [(ngModel)]="selectedBlockId">
+                <option *ngFor="let block of blocks" [value]="block.id">
+                    {{ block.name }}
+                </option>
+            </select>
+        </div>
+
+        <!-- Floor Selector -->
+        <div class="floor-selector">
+            <label for="floorSelect">Floor</label>
+            <select id="floorSelect" (change)="onFloorChange($event)" [(ngModel)]="selectedFloorId">
+                <option *ngFor="let floor of filteredFloors" [value]="floor.id">
+                    {{ floor.name }}
+                </option>
+            </select>
+        </div>
+
+        <!-- Config Button and Dropdown -->
+        <div class="config-container">
+            <button class="config-btn-inline" (click)="toggleConfigMenu()" [class.active]="isConfigOpen"
+                title="Configuration Settings">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                Config
+            </button>
+
+            <!-- Settings Dropdown -->
+            <div class="config-dropdown" *ngIf="isConfigOpen">
+                <div class="dropdown-header">
+                    <div class="dh-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9"/>
+                        </svg>
+                        <h4>Map Settings</h4>
+                    </div>
+                </div>
+                <div class="dropdown-content">
+
+                    <div class="cfg-section-label">Appearance</div>
+
+                    <div class="setting-item vertical-group">
+                        <span class="setting-label">Wall Color</span>
+                        <div class="color-picker-row">
+                            <input type="color" [(ngModel)]="tempWallColor" title="Choose Wall Color">
+                            <input type="text" [(ngModel)]="tempWallColor" class="hex-input" placeholder="#000000">
+                            <button class="apply-color-btn" (click)="applyWallColor()">OK</button>
+                        </div>
+                    </div>
+                    <div class="setting-item vertical-group">
+                        <span class="setting-label">Foundation Color</span>
+                        <div class="color-picker-row">
+                            <input type="color" [(ngModel)]="tempFoundationColor" title="Choose Foundation Color">
+                            <input type="text" [(ngModel)]="tempFoundationColor" class="hex-input" placeholder="#000000">
+                            <button class="apply-color-btn" (click)="applyFoundationColor()">OK</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Wall Width</span>
+                        <div class="color-picker-row" style="width: auto;">
+                            <input type="number" [(ngModel)]="tempWallWidth" class="hex-input" step="0.05" min="0.05" max="1.0" style="width: 64px;">
+                            <button class="apply-color-btn" (click)="applyWallWidth()">OK</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Label Height</span>
+                        <div class="color-picker-row" style="width: auto;">
+                            <input type="number" [(ngModel)]="tempLabelHeight" class="hex-input" step="0.1" min="0.1" max="5.0" style="width: 64px;">
+                            <button class="apply-color-btn" (click)="applyLabelHeight()">OK</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Label Size</span>
+                        <div class="color-picker-row" style="width: auto;">
+                            <input type="number" [(ngModel)]="tempLabelScale" class="hex-input" step="0.1" min="0.1" max="5.0" style="width: 64px;">
+                            <button class="apply-color-btn" (click)="applyLabelScale()">OK</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Map View</span>
+                        <select [(ngModel)]="mapViewMode" (change)="onMapViewModeChange()" class="view-select">
+                            <option value="landscape">Landscape</option>
+                            <option value="urban">Urban</option>
+                            <option value="default">Standard</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Map Tiles</span>
+                        <select [(ngModel)]="mapConfig.mapTileType" (change)="onTileTypeChange()" class="view-select">
+                            <option value="google_road">Google Road</option>
+                            <option value="google_satellite">Google Satellite</option>
+                            <option value="google_hybrid">Google Hybrid</option>
+                            <option value="google_terrain">Google Terrain</option>
+                            <option value="osm">OpenStreetMap</option>
+                        </select>
+                    </div>
+
+                    <div class="cfg-section-label">Visibility</div>
+
+                    <div class="toggle-grid">
+                        <div class="tg-item">
+                            <span>Show Path</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="isGraphVisible" (change)="toggleGraph()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Wire Frame</span>
+                            <label class="toggle-switch"><input type="checkbox" (change)="toggleWireframe()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Persp. Lock</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="isPerspectiveLock" (change)="togglePerspectiveLock()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Eagle View</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="isEagleTopView" (change)="toggleEagleTopView()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Pan Only</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="isPanOnlyMode" (change)="togglePanOnlyMode()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Show Rooms</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showRooms" (change)="toggleRooms()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Labels</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showLabels" (change)="toggleLabels()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Icons</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showIcons" (change)="toggleIcons()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Readers</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showReaders" (change)="toggleReaders()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Live Tags</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showMqttMarkers" (change)="toggleMqttMarkers()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Levels</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showLevels" (change)="toggleShowLevels()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Room Select</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="canSelectRooms" (change)="toggleRoomSelection()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Floor Image</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showFloorImage" (change)="toggleFloorImage()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Foundation</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showFoundation" (change)="toggleFoundation()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Corr. Walls</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showCorridorWalls" (change)="toggleCorridorWalls()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Room Walls</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showRoomWalls" (change)="toggleRoomWalls()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Doors</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showDoors" (change)="toggleDoors()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Geo Boundary</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showGeoPolygon" (change)="toggleGeoPolygon()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Surroundings</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showSurroundings" (change)="toggleSurroundings()"><span class="slider"></span></label>
+                        </div>
+                        <div class="tg-item">
+                            <span>Fog</span>
+                            <label class="toggle-switch"><input type="checkbox" [checked]="showFog" (change)="toggleFog()"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <div class="cfg-section-label">Floor Default View</div>
+
+                    <div class="floor-default-panel">
+                        <div class="fdp-floor-name">{{ selectedFloor?.name || 'No floor selected' }}</div>
+
+                        <div class="fdp-row">
+                            <span class="fdp-label">Current Zoom</span>
+                            <span class="fdp-value">{{ zoomValue }}%</span>
+                        </div>
+                        <div class="fdp-row">
+                            <span class="fdp-label">Current Rotation</span>
+                            <span class="fdp-value">{{ currentRotationDeg }}°</span>
+                        </div>
+
+                        <div class="fdp-saved" *ngIf="floorDefaultExists">
+                            <span class="fdp-saved-label">Saved:</span>
+                            <span class="fdp-saved-vals">Zoom {{ savedFloorDefaultZoom }}%&nbsp;/&nbsp;Rot {{ savedFloorDefaultTheta }}°</span>
+                        </div>
+                        <div class="fdp-saved fdp-no-default" *ngIf="!floorDefaultExists">
+                            No default saved for this floor
+                        </div>
+
+                        <div class="fdp-actions">
+                            <button class="fdp-btn fdp-save-btn"
+                                (click)="saveFloorDefaultView()"
+                                [disabled]="isFloorDefaultSaving || !selectedFloorId">
+                                <span *ngIf="!isFloorDefaultSaving">Save Current View</span>
+                                <span *ngIf="isFloorDefaultSaving">Saving…</span>
+                            </button>
+                            <button class="fdp-btn fdp-clear-btn"
+                                *ngIf="floorDefaultExists"
+                                (click)="clearFloorDefault()"
+                                [disabled]="isFloorDefaultSaving">
+                                Clear
+                            </button>
+                        </div>
+
+                        <div class="fdp-status fdp-status-success" *ngIf="floorDefaultSaveStatus === 'success'">
+                            ✓ Saved successfully
+                        </div>
+                        <div class="fdp-status fdp-status-error" *ngIf="floorDefaultSaveStatus === 'error'">
+                            ✕ Save failed
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Loading Indicator -->
+    <div class="action-loader" *ngIf="isActionLoading">
+        <div class="mini-spinner"></div>
+        <span>Applying...</span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading Floor Plan...</p>
+    </div>
+
+    <!-- No Data Overlay -->
+    <div class="loading-overlay" *ngIf="noDataFound && !isLoading" style="background: rgba(0,0,0,0.7);">
+        <div class="no-data-content" style="text-align: center; color: white;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <h3>No Floor Layout Available</h3>
+            <p>The 3D layout for this floor has not been uploaded yet.</p>
+            <button (click)="resetToDefaultBlock()" class="go-back-btn">
+                <span>Refresh Page</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel" *ngIf="!compactUi && false">
+        <button class="control-btn" (click)="resetCamera()" title="Reset Camera View">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+            </svg>
+            Reset View
+        </button>
+
+        <button class="control-btn" (click)="toggleWireframe()" title="Toggle Wireframe">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M3 15h18" />
+                <path d="M9 3v18" />
+                <path d="M15 3v18" />
+            </svg>
+            Wireframe
+        </button>
+
+        <button class="control-btn" *ngIf="true || isFirstFloor" (click)="toggleGraph()"
+            [title]="isGraphVisible ? 'Hide Map Path' : 'Show Map Path'" [class.active]="isGraphVisible">
+            <i class="fas fa-project-diagram"></i>
+            Map Path
+        </button>
+
+        <!-- Multiple Map View Button, aligned with other control buttons -->
+        <button class="control-btn" *ngIf="showMultiMapButton" (click)="multipleMapView.emit()"
+            title="Open Multiple Map View">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            Multiple Map View
+        </button>
+
+        <button class="control-btn route-clear-btn" (click)="clearRoute()" *ngIf="startRoom || endRoom"
+            title="Clear Navigation">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Clear Route
+        </button>
+    </div>
+
+    <!-- Room Info Panel -->
+    <div class="room-info-panel" *ngIf="!compactUi && selectedRoom">
+        <div class="panel-header">
+            <div class="panel-accent-strip"></div>
+            <div class="panel-header-inner">
+                <div class="room-icon-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/>
+                    </svg>
+                </div>
+                <div class="room-title">
+                    <h3>{{ selectedRoom.name }}</h3>
+                    <span class="room-type">{{ selectedRoom.locationTypeName }}</span>
+                </div>
+                <button class="close-btn" (click)="deselectRoom()" title="Close">×</button>
+            </div>
+        </div>
+        <div class="panel-content">
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <span class="meta-label">ID</span>
+                    <span class="meta-value">{{ selectedRoom.id }}</span>
+                </div>
+                <div class="meta-card">
+                    <span class="meta-label">Level</span>
+                    <span class="meta-value">{{ selectedRoom.locationTypeLevel }}</span>
+                </div>
+                <div class="meta-card" *ngIf="selectedRoom.children && selectedRoom.children.length > 0">
+                    <span class="meta-label">Sub-loc.</span>
+                    <span class="meta-value">{{ selectedRoom.children.length }}</span>
+                </div>
+            </div>
+
+            <div class="routing-section">
+                <div class="routing-card">
+                    <div class="route-inputs">
+                        <div class="route-input-group">
+                            <div class="route-autocomplete">
+                                <div class="input-prefix">
+                                    <div class="dot-icon start"></div>
+                                </div>
+                                <input class="route-input" type="text" [(ngModel)]="startSearchValue"
+                                    (ngModelChange)="onStartInputChanged()" (focus)="openStartDropdown()"
+                                    (blur)="closeStartDropdown()" placeholder="Start" autocomplete="off"
+                                    [class.selected-start]="hasValidStartSelection()" />
+                                <button class="route-clear-input-btn" type="button" *ngIf="startSearchValue"
+                                    (mousedown)="$event.preventDefault()" (click)="clearStartInput()" title="Clear">
+                                    ×
+                                </button>
+                                <div class="route-suggestions" *ngIf="isStartDropdownOpen">
+                                    <button class="route-suggestion" type="button"
+                                        *ngFor="let room of getStartSuggestions()"
+                                        (mousedown)="selectStartSuggestion(room)">
+                                        <i class="fas fa-location-dot suggestion-icon"></i>
+                                        <span class="route-suggestion-id">{{ getRoomDisplayLabel(room) }}</span>
+                                    </button>
+                                    <div class="route-no-results" *ngIf="getStartSuggestions().length === 0">
+                                        <i class="fas fa-search-minus no-results-icon"></i>
+                                        <span>No rooms found for "{{ startSearchValue }}"</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="route-icon-btn" type="button" (click)="confirmStartFromInput()"
+                                title="Set start" [class.disabled]="!hasValidStartSelection()"
+                                [disabled]="!hasValidStartSelection()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 22V4" />
+                                    <path d="M4 4h14l-2 5 2 5H4" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="route-input-group">
+                            <div class="route-autocomplete">
+                                <div class="input-prefix">
+                                    <i class="fas fa-location-dot pin-icon text-rose"></i>
+                                </div>
+                                <input class="route-input" type="text" [(ngModel)]="destinationSearchValue"
+                                    (ngModelChange)="onDestinationInputChanged()" (focus)="openDestinationDropdown()"
+                                    (blur)="closeDestinationDropdown()" placeholder="Destination" autocomplete="off"
+                                    [class.selected-destination]="hasValidDestinationSelection()" />
+                                <button class="route-clear-input-btn" type="button" *ngIf="destinationSearchValue"
+                                    (mousedown)="$event.preventDefault()" (click)="clearDestinationInput()"
+                                    title="Clear">
+                                    ×
+                                </button>
+                                <div class="route-suggestions" *ngIf="isDestinationDropdownOpen">
+                                    <button class="route-suggestion" type="button"
+                                        *ngFor="let room of getDestinationSuggestions()"
+                                        (mousedown)="selectDestinationSuggestion(room)">
+                                        <i class="fas fa-location-dot suggestion-icon"></i>
+                                        <span class="route-suggestion-id">{{ getRoomDisplayLabel(room) }}</span>
+                                    </button>
+                                    <div class="route-no-results" *ngIf="getDestinationSuggestions().length === 0">
+                                        <i class="fas fa-search-minus no-results-icon"></i>
+                                        <span>No rooms found for "{{ destinationSearchValue }}"</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="route-icon-btn" type="button" (click)="confirmDestinationFromInput()"
+                                title="Set destination" [class.disabled]="!hasValidDestinationSelection()"
+                                [disabled]="!hasValidDestinationSelection()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0Z" />
+                                    <path d="M12 10a3 3 0 1 0 0.001 0Z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="route-swap-container">
+                        <button class="route-swap-btn" type="button" (click)="swapStartAndDestination()" title="Swap">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8 7l-3 3" />
+                                <path d="M8 7l3 3" />
+                                <path d="M8 21V7" />
+                                <path d="M16 17l-3-3" />
+                                <path d="M16 17l3-3" />
+                                <path d="M16 3v14" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="route-stats" *ngIf="startRoom && endRoom && routeDistance && routeTime">
+                <div class="stat-item">
+                    <i class="fas fa-ruler-combined"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value">{{ routeDistance }}</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <div class="stat-info">
+                        <span class="stat-label">Est. Time</span>
+                        <span class="stat-value">{{ routeTime }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey-action" *ngIf="startRoom && endRoom">
+                <button class="journey-btn" (click)="startJourney()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v8" />
+                        <path d="m8 12 4 4 4-4" />
+                    </svg>
+                    Start
+                </button>
+                <button class="control-btn route-clear-btn" (click)="clearRoute()" title="Clear Navigation">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5" />
+                        <path d="M12 19l-7-7 7-7" />
+                    </svg>
+                    Clear Route
+                </button>
+            </div>
+
+            <p class="deselect-hint">Click the room again or press × to deselect</p>
+        </div>
+    </div>
+
+    <!-- Navigation Controls (Bottom Right) -->
+    <div class="navigation-controls" *ngIf="!compactUi">
+        <div class="rotation-control">
+            <button class="nav-btn compass-btn" (mousedown)="onCompassMouseDown($event)" title="Drag to Rotate">
+                <div class="compass-icon">
+                    <svg viewBox="0 0 100 100" class="axis-svg">
+                        <!-- Solid Axis Lines -->
+                        <line x1="50" y1="50" x2="50" y2="10" class="axis-line solid" />
+                        <line x1="50" y1="50" x2="85" y2="70" class="axis-line solid" />
+                        <line x1="50" y1="50" x2="15" y2="70" class="axis-line solid" />
+
+                        <!-- Dashed Axis Lines -->
+                        <line x1="50" y1="50" x2="50" y2="90" class="axis-line dashed" />
+                        <line x1="50" y1="50" x2="15" y2="30" class="axis-line dashed" />
+                        <line x1="50" y1="50" x2="85" y2="30" class="axis-line dashed" />
+                    </svg>
+                    <div class="center-dot" [style.transform]="'translate(' + pivotX + 'px, ' + pivotY + 'px)'"></div>
+                </div>
+            </button>
+        </div>
+        <div class="zoom-controls">
+            <div class="zoom-value-display">{{ zoomValue }}%</div>
+            <button class="nav-btn zoom-btn" (click)="resetCamera()" title="Reset Camera View" *ngIf="!compactUi">
+                <mat-icon>center_focus_strong</mat-icon>
+            </button>    
+            <button class="nav-btn zoom-btn" (click)="zoomIn()" title="Zoom In">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </button>
+            <button class="nav-btn zoom-btn" (click)="zoomOut()" title="Zoom Out">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions" *ngIf="!compactUi">
+        <p><strong>Hospital Floor Plan:</strong> Drag Building to Rotate | Drag Background (or Shift+Drag) to Pan |
+            Scroll to Zoom | Click Rooms for Details</p>
+    </div>
+
+    <!-- Reader Information Tooltip -->
+    <div class="reader-tooltip" *ngIf="activeReader" [style.left.px]="readerDialogPos.x"
+        [style.top.px]="readerDialogPos.y">
+        <div class="tooltip-content">
+            <div class="reader-name">{{ activeReader.readerName }}</div>
+            <div class="reader-type">{{ activeReader.readerTypeName }}</div>
+        </div>
+        <div class="tooltip-arrow"></div>
+    </div>
+</div>

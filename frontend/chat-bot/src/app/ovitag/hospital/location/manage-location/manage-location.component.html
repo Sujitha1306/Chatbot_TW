@@ -1,0 +1,474 @@
+<div class="ovi-font-family" style="width: 100%; height: calc(100% - 60px);display: flex;justify-content: flex-start;flex-direction: row;">
+    <div class="loading-spinner" *ngIf="isLoading">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <div *ngIf ="windWidth >= 500" style="width:300px;float: left;height:100%;" [resizableMinWidth]="300" appResizable>
+        <div  class="ovi-prmry-bg-clr ovi-prmry-wht-clr ovi-fnt-sze14"  style="text-align: center;padding: 12px;">
+            <span >{{"Manage Location"|translate}}</span>
+        </div>
+
+        <div *ngIf="locationList[0]?.children[0]?.children?.length > 0" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="margin: 0px 0px 10px 0px;"  [formGroup]="blockForm">
+            <div style="width: 100%;">
+                <div style="display: flex;background-color: #eeeff1;padding: 5px;">
+                    <div style="display: flex;flex-direction: column;row-gap: 5px;width: 90%;">
+                        <div style="width: 100%;" *ngIf="enableBlockInfo">
+                            <div class="ovi-fnt-sze11" style="white-space: nowrap;padding: 5px 0px 5px 5px;display: flex;">
+                                <div class="block-floor-header">
+                                    <span class="block-floor-header-name">Block:&nbsp;</span>
+                                    <span class="ovi-fnt-sze12 selected-block-floor-name">{{selectedBlock?.name}}</span>
+                                </div>
+                                 <div class="block-floor-header">
+                                    <span class="block-floor-header-name" style="padding-left: 5px;">Floor:&nbsp;</span>
+                                    <span class="ovi-fnt-sze12 selected-block-floor-name">{{selectedFloor?.name}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ovi-row-gap" *ngIf="!enableBlockInfo" style="margin: 5px 0px 0px 5px;">
+                            <div style="display: flex;">
+                                <div class="row-field-3 ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label style="color: #837d7d;" class="ovi-lbl-text-size">{{"Block"|translate}}</mat-label>
+                                     <button mat-icon-button disableRipple style="cursor: pointer;height: 0px;width: 20px;">
+                                        <mat-icon style="margin-top: -10px;font-size: 20px;" (click)="addMore = false;getLocationType(locationList[0], true)"
+                                        [ngStyle]="{'color': (selectedRow?.id === locationList[0]?.id) && isAddlocation ? 'var(--primary-bg-color)' : '#00000024'}" appTooltip tooltipText="{{'Add'|translate}}">add_circle</mat-icon>
+                                    </button>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Block'|translate" formControlName="blockId" [disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of blockList" [value]="data.id"
+                                            (click)="getBlockWithFloor('floor')" (keydown.enter)="fixClick()">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                                </div>
+                                <div style="display: inline-flex;margin-top: 25px;">
+                                    <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;"
+                                    (click)="addMore = false;getLocationType(selectedBlock, true)" (keydown.enter)="fixClick()">
+                                        <mat-icon style="margin-left: 10px;" 
+                                        [ngStyle]="{'color': selectedRow?.id === selectedBlock?.id && isAddlocation ? 'var(--primary-bg-color)' : '#00000024'}"appTooltip tooltipText="{{'Add'|translate}}">add_box</mat-icon>
+                                    </button>
+                                    <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;"
+                                    (click)="addMore = false;getLocationType(selectedBlock, false)" (keydown.enter)="fixClick()">
+                                        <mat-icon style="margin-left: 10px;font-size: 18px;" 
+                                        [ngStyle]="{'color': selectedRow?.id === selectedBlock?.id && !isAddlocation ? 'var(--primary-bg-color)' : '#00000024'}"appTooltip tooltipText="{{'Edit'|translate}}">edit</mat-icon>
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="display: flex;">
+                                <div class="row-field-3 ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label style="color: #837d7d;" class="ovi-lbl-text-size">{{"Floor"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Floor'|translate" formControlName="floorId" [disableOptionCentering]="true">
+                                            <mat-option *ngFor="let data of floorList" [value]="data.id" (click)="getFilteredLocationData(locationList);" (keydown.enter)="fixClick()">
+                                                {{data.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                                </div>
+                                <div style="display: inline-flex;margin-top: 15px;">
+                                    <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;"
+                                    (click)="addMore = false;getLocationType(selectedFloor, true)" (keydown.enter)="fixClick()">
+                                        <mat-icon style="margin-left: 10px;"
+                                        [ngStyle]="{'color': selectedRow?.id === selectedFloor?.id && isAddlocation ? 'var(--primary-bg-color)' : '#00000024'}"appTooltip tooltipText="{{'Add'|translate}}">add_box</mat-icon>
+                                    </button>
+                                    <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;"
+                                    (click)="addMore = false;getLocationType(selectedFloor, false)" (keydown.enter)="fixClick()">
+                                        <mat-icon style="margin-left: 10px;font-size: 18px;" 
+                                        [ngStyle]="{'color': selectedRow?.id === selectedFloor?.id && !isAddlocation ? 'var(--primary-bg-color)' : '#00000024'}"appTooltip tooltipText="{{'Edit'|translate}}">edit</mat-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <mat-icon (click)="enableBlockInfo = !enableBlockInfo" (keydown.enter)="fixClick()" style="padding-top: 0px;margin-left: 4px;">{{!enableBlockInfo ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}}</mat-icon>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- FLAT TREE TABLE FOR LARGE DATA -->
+        <div  class="ovi-fnt-sze10" [ngStyle]="{'height': enableBlockInfo ? 'calc(100% - 100px)' : 'calc(100% - 200px)'}" style="overflow: auto;margin-top: 1px;" *ngIf="!isNestedTree">
+            <mat-tree [dataSource]="flatDataSource" [treeControl]="treeFlatControl">
+                <!-- This is the tree node template for leaf nodes -->
+                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding style="min-height: 35px;padding-left: 15px;" class="ovi-fnt-sze10">
+                    <div [id]="node.id" style="margin: 0px 1px -0px 1px;width: calc(100% - 3px);padding-bottom: 5px;border-radius: 4px" 
+                    [ngClass]="node.id === selectedRow?.id && isAddlocation ? 'add-selected-tree' : node.id === selectedRow?.id && !isAddlocation ? 'selected-tree' : ''"
+                    [ngStyle]="{'padding-left': node?.children?.length === 0 && node?.locationTypeLevel !== 4 ? '30px' : '10px'}">
+                        <div style="display: inline-block;padding-left: 5px;width: calc(100% - 35px)" class="ovi-fnt-sze12" appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom"
+                        (click)="addMore = false;getLocationType(node, false)" (keydown.enter)="fixClick()" [ngStyle]="{'padding-top': node?.locationTypeLevel === 4 ? '5px' : ''}">
+                            {{node.name}}
+                        </div>
+                        <div *ngIf="node.id == selectedRow?.id && node?.locationTypeLevel !== 4" style="display: inline-block" (click)="addMore = false;getLocationType(node, true)" (keydown.enter)="fixClick()">
+                            <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;">
+                                <mat-icon style="margin-top: -10px;"
+                                [ngClass]="(selectedRow?.id === node?.id) && isAddlocation ? 'selected-add-box' : 'unselected-add-box'"appTooltip tooltipText="{{'Add'|translate}}">add_box</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </mat-tree-node>
+                <!-- This is the tree node template for expandable nodes -->
+                <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding style="min-height: 35px;">
+                  <div [id]="node.id" style="margin: 0px 1px -0px 1px;width: calc(100% - 3px);padding-bottom: 5px;"  class="ovi-fnt-sze10">
+                        <div style="display: inline-block">
+                            <button mat-icon-button disableRipple matTreeNodeToggle style="cursor: pointer;height: 30px;width: 30px;">
+                                <span class="material-icons ovi-prmry-clr" style="font-size: 20px !important" [ngClass]="treeFlatControl .isExpanded(node) ? 'collapse-icon' : 'expand-icon'" >{{treeFlatControl.isExpanded(node) ? 'remove_circle_outline' : 'add_circle_outline' }}</span>
+                            </button>
+                        </div>
+                        <div style="padding-bottom: 5px;display: inline-block; width: calc(100% - 40px);border-radius: 4px" 
+                        [ngClass]="node.id === selectedRow?.id && isAddlocation ? 'add-selected-tree' : node.id === selectedRow?.id && !isAddlocation ? 'selected-tree' : ''">
+                            <div style="display: inline-block;padding-left: 5px;width: calc(100% - 40px);" class="ovi-fnt-sze12" matTooltip="{{'Edit'|translate}}"
+                            (click)="addMore = false;getLocationType(node, false)" (keydown.enter)="fixClick()">
+                                {{node.name}}
+                            </div>
+                            <div *ngIf="node.id == selectedRow?.id && node?.locationTypeLevel !== 4" style="display: inline-block" (click)="addMore = false;getLocationType(node, true)" (keydown.enter)="fixClick()">
+                                <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;">
+                                <mat-icon style="margin-top: -10px;"
+                                [ngClass]="(selectedRow?.id === node?.id) && isAddlocation ? 'selected-add-box' : 'unselected-add-box'"appTooltip tooltipText="{{'Add'|translate}}">add_box</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </mat-tree-node>
+              </mat-tree>              
+        </div> 
+        <!-- NESTED TREE TABLE-->
+            
+        <div style="overflow: auto;margin-top: 10px;" *ngIf="isNestedTree"  class="ovi-fnt-sze10"
+        [ngStyle]="{'height': !enableBlockInfo ? 'calc(100% - 160px)' : 'calc(100% - 60px)'}"> 
+            <mat-tree #tree *ngIf = "selectedRow && dataSource" [dataSource]="dataSource" [treeControl]="treeControl">
+
+                <!-- without children -->
+                <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle style="min-height: 30px;padding-left: 15px;"  class="ovi-fnt-sze10">
+                    <div [id]="node.id" style="margin: 0px 1px -0px 1px;width: calc(100% - 3px);padding-bottom: 5px;border-radius: 4px" 
+                    [ngClass]="node.id === selectedRow?.id && isAddlocation ? 'add-selected-tree' : node.id === selectedRow?.id && !isAddlocation ? 'selected-tree' : ''">
+                        <div style="display: inline-block;padding-left: 5px;width: calc(100% - 35px);" appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom"
+                        (click)="addMore = false;getLocationType(node, false)" (keydown.enter)="fixClick()" [ngStyle]="{'padding-top': node?.locationTypeLevel === 4 ? '5px' : ''}">
+                            {{node.name}}
+                        </div>
+                        <div *ngIf="node.id == selectedRow?.id && node?.locationTypeLevel !== 4" style="display: inline-block" (click)="addMore = false;getLocationType(node, true)" (keydown.enter)="fixClick()">
+                            <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;">
+                                <mat-icon style="margin-top: -10px;"
+                                [ngClass]="(selectedRow?.id === node?.id) && isAddlocation ? 'selected-add-box' : 'unselected-add-box'"appTooltip tooltipText="{{'Add'|translate}}">add_box</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </mat-tree-node>
+
+                <!-- with children -->
+                <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChildren">
+                    <div [id]="node.id" style="margin: 0px 1px -0px 1px;width: calc(100% - 3px);padding-bottom: 5px;"  class="ovi-fnt-sze10">
+                        <div [ngStyle]="{'display': node?.children[0]?.labelPoint === 'false' ? 'none' : 'inline-block'}">
+                            <button mat-icon-button disableRipple matTreeNodeToggle style="cursor: pointer;height: 30px;width: 30px;">
+                                <span class="material-icons ovi-prmry-clr" style="font-size: 20px !important" [ngClass]="treeControl.isExpanded(node) ? 'collapse-icon' : 'expand-icon'">{{treeControl.isExpanded(node) ? 'remove_circle_outline' : 'add_circle_outline' }}</span>
+                            </button>
+                        </div>
+                        <div style="padding-bottom: 5px;display: inline-block; width: calc(100% - 40px);border-radius: 4px" 
+                        [ngClass]="node.id === selectedRow?.id && isAddlocation ? 'add-selected-tree' : node.id === selectedRow?.id && !isAddlocation ? 'selected-tree' : ''">
+                            <div style="display: inline-block;padding-left: 5px;width: calc(100% - 40px);" matTooltip="{{'Edit'|translate}}"
+                            (click)="addMore = false;getLocationType(node, false)" (keydown.enter)="fixClick()">
+                                {{node.name}}
+                            </div>
+                            <div *ngIf="node.id == selectedRow?.id && node?.locationTypeLevel !== 4" style="display: inline-block" (click)="addMore = false;getLocationType(node, true)" (keydown.enter)="fixClick()">
+                                <button mat-icon-button disableRipple style="cursor: pointer;height: 30px;width: 30px;">
+                                <mat-icon style="margin-top: -10px;"
+                                [ngClass]="(selectedRow?.id === node?.id) && isAddlocation ? 'selected-add-box' : 'unselected-add-box'"appTooltip tooltipText="{{'Add'|translate}}">add_box</mat-icon>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding-left: 15px;" [class.tree-hide]="!treeControl.isExpanded(node)">
+                        <ng-container matTreeNodeOutlet></ng-container>
+                    </div>
+                </mat-nested-tree-node>
+            </mat-tree>
+        </div>
+
+    </div>
+    <div [ngStyle]="{width: windWidth >= 500 ? 'calc(100% - 305px)' : 'calc(100%)'}" *ngIf = "showInput">
+        <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 40px);"  [formGroup]="locationForm">
+            <mat-tab-group class="location-tab" style="overflow-y: auto;width: calc(100%);height: calc(100% - 5px);" (selectedTabChange)="tabClick($event)" [selectedIndex]="selectedTabIndex">
+                <mat-tab  label="{{'Summary'|translate}}">
+                    <ng-template mat-tab-label >{{'Summary'|translate}}</ng-template>
+                    <div class="ovi-row-gap">
+                            <div *ngIf="level === 3" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Parent Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Parent Name'|translate" formControlName="parentId" [disableOptionCentering]="true" readonly ="!isAddlocation">
+                                        <mat-option *ngFor="let data of parentList" [value]="data.id"
+                                        (click)="manageLogicaParent(data)">
+                                            {{data.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div *ngIf="level === 3" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Logical Parent Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Logical Parent Name'|translate" formControlName="logicalParentId" [disableOptionCentering]="true" readonly ="!isAddlocation"
+                                    (selectionChange)="getParentId($event.value)">
+                                        <mat-option *ngFor="let data of logicalParentList" [value]="data.id">
+                                            {{data.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="locationTypeId" [disableOptionCentering]="true" readonly ="!isAddlocation"
+                                    (selectionChange)="getLocationTypeConfig($event.value)">
+                                        <mat-option *ngFor="let type of locationTypes" [value]="type.id">
+                                            {{type.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'name'|translate" matInput formControlName="name" autocomplete="off" [errorStateMatcher]="matcher">
+                                    <mat-error *ngIf="locationForm.controls.name.invalid">
+                                        <span  [hidden]="!locationForm.controls['name'].errors.required">{{"Location name is required"|translate}}.</span>
+                                        <span [hidden]="!locationForm.controls['name'].errors.maxlength">{{"Maximum allowed digit is 64"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                                       
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Short Name"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'shortName'|translate" [errorStateMatcher]="matcher" matInput formControlName="shortName" autocomplete="off">
+                                    <mat-error *ngIf="locationForm.controls.shortName.invalid">
+                                        <span [hidden]="!locationForm.controls['shortName'].errors.maxlength">{{"Maximum allowed digit is 10"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+
+                            </div>
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size" >{{"Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate" formControlName="status"[disableOptionCentering]="true">
+                                        <mat-option *ngFor="let status of statusList" [value]="status.id">
+                                            {{status.name}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>                     
+                        
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"  *ngIf = "level == 3">
+                                <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}  <span *ngIf="level > 2" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" formControlName="locationCategoryId" (selectionChange)="getCategoryConfig($event.value)">
+                                        <mat-option *ngFor="let category of categoryList" [value]="category.code">
+                                            {{category.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"  *ngIf = "level == 3">
+                                <mat-label class="ovi-lbl-text-size" >{{"Care Setting"|translate}} <span *ngIf="level > 2" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Care Setting'|translate" formControlName="careSettingId">
+                                        <mat-option *ngFor="let careSetting of careSettingList" [value]="careSetting.code">
+                                            {{careSetting.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>                      
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Polygon Color"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'polygonColor'|translate" matInput formControlName="polygonColor" autocomplete="off" [errorStateMatcher]="matcher">
+                                    <mat-error *ngIf="locationForm.controls.polygonColor.invalid">
+                                        <span [hidden]="!locationForm.controls['polygonColor'].errors.mismatch">{{"Should be valid color"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Label Style"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <div style="width: 100%;display: flex;position: relative;">
+                                    <div style="width: calc(100% - 42px);">
+                                        <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Label Style'|translate" matInput #autocompleteTrigger="matAutocompleteTrigger" [matAutocomplete]="auto" formControlName="labelStyle" autocomplete="off">                                        
+                                    </div>
+                                    <div style="width: 25px;">
+                                        <mat-icon appDebounceClick matSuffix class="ovi-prmry-clr ovi-fnt-sze20" style="margin:-8px 0 0;cursor: pointer;" (debounceClick)="locStyling()" [debounceTime]="300">mode_edit</mat-icon>                                 
+                                    </div>
+                                    <div style="width: 22px;">
+                                        <mat-icon appDebounceClick matSuffix class="ovi-fnt-sze20" style="margin:-8px 0 0;cursor: pointer;color: #9f9fa1;" (click)="localcopy(locationForm.controls['labelStyle'].value)" (keydown.enter)="fixClick()">file_copy</mat-icon>
+                                    </div>                                       
+                                    </div>
+                                    <mat-autocomplete #auto="matAutocomplete" autoActiveFirstOption class="custom-manage-loc-autocomplete" classList="custom-manage-loc-autocomplete">
+                                        <app-common-styling [existStyle]="locationForm.controls['labelStyle'].value" [label] = "locationForm.controls['name'].value" (updatedStyle)="changeStyle($event)" (cancelStyle)="closeStyle($event)"></app-common-styling>
+                                    </mat-autocomplete>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Mobile Label Style"|translate}}</mat-label>
+                                <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                                    <textarea appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile Label Style'|translate" matInput formControlName="labelStyleMobile"></textarea>
+                                </mat-form-field>
+                                <mat-error *ngIf="locationForm.get('labelStyleMobile').hasError('invalidJson')"  class="ovi-fnt-sze14" style="color: red;">{{"Invalid JSON Format"|translate}}</mat-error>
+                            </div>
+                        
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Location Identifier"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'locationIdentifier'|translate" matInput formControlName="locationIdentifier" autocomplete="off" [errorStateMatcher]="matcher">
+                                    <mat-error *ngIf="locationForm.controls.locationIdentifier.invalid">
+                                        <span [hidden]="!locationForm.controls['locationIdentifier'].errors.maxlength">{{"Maximum allowed digit is 32"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                            <div  *ngIf = "level == 2" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Floor No"|translate}} <span *ngIf="level ==2" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input type = "number" appPlaceholder [showPlaceholder]="false" [placeholderText]="'floorNo'|translate" matInput formControlName="floorNo" autocomplete="off" [errorStateMatcher]="matcher">
+                                    <mat-error *ngIf="locationForm.controls.floorNo.invalid">
+                                        <span [hidden]="!locationForm.controls['floorNo'].errors.maxlength">{{"max 3 Number should be allowed."|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                            <div  *ngIf = "level != 2" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size" >{{"Location Description"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'locationDescription'|translate" matInput formControlName="locationDescription" autocomplete="off" [errorStateMatcher]="matcher">
+                                    <mat-error *ngIf="locationForm.controls.locationDescription.invalid">
+                                        <span [hidden]="!locationForm.controls['locationDescription'].errors.maxlength">{{"Maximum allowed digit is 64"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>   
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"  >
+                                <mat-label class="ovi-lbl-text-size">{{"Workflow"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Workflow'|translate" formControlName="workFlowId" multiple>
+                                        <mat-option *ngFor="let category of workFlowList" [value]="category.code">
+                                            {{category.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>           
+                            <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg"  *ngIf = "level == 0 || level == 1 || level == 2">
+                                <mat-label class="ovi-lbl-text-size" >{{"Aspects"|translate}}  <span *ngIf="level ==2" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Aspects'|translate" matInput formControlName="aspects" autocomplete="off"
+                                    (keypress)="onAspectsChange()">
+                                    <mat-error *ngIf="locationForm.controls.aspects.invalid" style="margin-top: 5px;">
+                                        <span>{{"Coordinates must be in [x,y] format without spaces."|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                            <div style="margin-top: 15px; display: flex;align-items: center;" *ngIf = "level == 0 || level == 1 || level == 2">
+                                <div  class="row-field">
+                                    <span class="img-styl_2" >
+                                        <div class="img-styl_3">
+                                            <label mat-button>
+                                                {{"Upload Image"|translate}}
+                                                <input type="file" id="File" accept="image/*" (change)="uploadImage($event)" class="disp-none" #input>
+                                            </label>
+                                        </div>
+                                    </span>
+                                </div>
+                                <span  class="row-field cur-ptr" style="display : inline-block" *ngIf="mapControl.imageData">
+                                    <span class="img-styl">
+                                        <img [src]="mapControl.imageData" alt="location" class="img-styl_1"
+                                        accept="image/x-png, image/gif, image/jpeg" (error)="mapControl.imageData = null;">
+                                    </span>
+                                </span>
+                            </div>
+                      
+                        <div  *ngIf = "level == 3">
+                            <div style="display: inline-block; margin-top: 20px;">
+                                <mat-checkbox formControlName="isQuickLocation"></mat-checkbox>
+                                <mat-label class="ovi-lbl-text-size" style="margin-left: 5px;">{{"Is often Navigated Location ?"|translate}}</mat-label>
+                            </div>
+                            <div style="display: inline-block; margin-top: 20px; margin-left: 10px;">
+                                <mat-checkbox formControlName="isSearchPriority"></mat-checkbox>
+                                <mat-label class="ovi-lbl-text-size" style="margin-left: 5px;">{{"Is search priority ?"|translate}}</mat-label>
+                            </div>
+                        </div>
+                    </div>
+                </mat-tab>
+                <mat-tab  label="{{'Map'|translate}}">
+                    <ng-template mat-tab-label >{{'Map'|translate}}</ng-template>
+                    <div style="margin-top: 10px;">
+                        <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="10px" style="margin: 0px 10px;">
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100"  fxFlex.lg="100" fxFlex.md="25" fxFlex.sm="25">
+                                <div class="ovi-fnt-sze-75-per" style="text-align: center;">{{"Display Label"|translate}}</div>
+                                <span class="ovi-fnt-sze-60-per">0</span>
+                                <mat-slider [disabled] = "(level == 1 || level == 2) && showChild" min="0" max="200" name="tagging" #tagging
+                                    [step]="level > 1 || (level == 1 && showChild) ? 20 : 10"
+                                    [value]="mapControl.disLocLevel" [thumbLabel]="true"
+                                    (change)="mapControl.disLocLevel = $event.value">
+                                </mat-slider>
+                                <span class="ovi-fnt-sze-60-per">200</span>
+                            </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100"  fxFlex.lg="100" fxFlex.md="25" fxFlex.sm="25">
+                                <div *ngIf = "level < 3 && mapControl.imageData">
+                                    <div class="ovi-fnt-sze-75-per" style="text-align: center;">{{"Min Zoom"|translate}}</div>
+                                    <span class="ovi-fnt-sze-60-per">0</span>
+                                    <mat-slider [disabled] = "!showChild" min="0" max="200" name="tagging" #tagging [step]="level > 1 || (level == 1 && showChild) ? 20 : 10"
+                                        [value]="mapControl.minZoom" [thumbLabel]="true"
+                                        (change)="mapControl.minZoom = $event.value;getMap()">
+                                    </mat-slider>
+                                    <span class="ovi-fnt-sze-60-per">200</span>
+                                </div>
+                            </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100" fxFlex.md="25" fxFlex.sm="25">
+                                <div *ngIf = "level < 3 && mapControl.imageData">
+                                    <div class="ovi-fnt-sze-75-per" style="text-align: center;">{{"Default Zoom"|translate}}</div>
+                                    <span class="ovi-fnt-sze-60-per">0</span>
+                                    <mat-slider [disabled] = "!showChild" min="0" max="200" name="tagging" #tagging [step]="level > 1 || (level == 1 && showChild) ? 20 : 10"
+                                        [value]="mapControl.defaultZoom" [thumbLabel]="true"
+                                        (change)="mapControl.defaultZoom = $event.value;getMap()">
+                                    </mat-slider>
+                                    <span class="ovi-fnt-sze-60-per">200</span>
+                                </div>
+                            </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100"  fxFlex.lg="100" fxFlex.md="25" fxFlex.sm="25">
+                                <div *ngIf = "level < 3 && mapControl.imageData">
+                                    <div class="ovi-fnt-sze-75-per" style="text-align: center;">{{"Mobile Orientation"|translate}}</div>
+                                    <span class="ovi-fnt-sze-60-per">0</span>
+                                    <mat-slider [disabled] = "!showChild" min="0" max="360" name="tagging" #tagging [step]="level > 1 || (level == 1 && showChild) ? 20 : 10"
+                                        [value]="mapControl.orient" [thumbLabel]="true"
+                                        (change)="mapControl.orient = $event.value;">
+                                    </mat-slider>
+                                    <span class="ovi-fnt-sze-60-per">360</span>
+                                </div>
+                            </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100"  fxFlex.lg="100" fxFlex.md="25" fxFlex.sm="25">
+                                <div *ngIf = "(level == 1 || level == 2) && mapControl.imageData">
+                                    <mat-slide-toggle style="width: 100%;padding-top: 30px;" [checked]= "showChild" (change)="showChild = !showChild;getMap()">{{level == 1 ? 'Block view' : 'Map view'}} </mat-slide-toggle>
+                                </div>
+                            </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100"  fxFlex.lg="100" fxFlex.md="25" fxFlex.sm="25">
+                                <div *ngIf = "level == 2 && this.locationForm.controls.locationTypeId.value == 2">
+                                    <mat-slide-toggle style="width: 100%; padding-top: 30px;" [checked]="isMapView" (change)="toggleMapView($event.checked)">{{ isMapView ? 'LatLng View' : 'ImageView'}}</mat-slide-toggle>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="floorMap" style="height: 80%;margin: 0px 5px;background-color: #edf4f7;"></div>
+
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+        <div>
+            <button mat-button  class="ovi-prmry-bg-clr ovi-prmry-wht-clr"  style="float: right; margin-right : 5px;font-weight: 600;border-radius: 8px;  min-width: 88px; " appDebounceClick cdkFocusInitial
+            [ngStyle]="{color: locationForm.valid && enableSave &&  !openAutocom ? 'white' : 'grey'}" *ngIf = "isAddlocation" (debounceClick)="saveLocation(true)" [debounceTime]="600" [disabled]="!locationForm.valid || !enableSave || openAutocom">{{"Save & Create"|translate}}</button>
+            <button mat-button class="ovi-prmry-bg-clr ovi-prmry-wht-clr"  style="float: right; margin-right : 5px;font-weight: 600;border-radius: 8px; min-width: 88px;" appDebounceClick cdkFocusInitial  (debounceClick)="saveLocation(false)"
+            [ngStyle]="{color: locationForm.valid && enableSave &&  !openAutocom ? 'white' : 'grey'}" [debounceTime]="600" [disabled]="!locationForm.valid || !enableSave || openAutocom">{{"Save"|translate}}</button>
+            <button mat-button class="ovi-prmry-bg-clr ovi-prmry-wht-clr"  style="float: right; margin-right : 5px;font-weight: 600;border-radius: 8px; min-width: 88px;" [disabled]="openAutocom" mat-dialog-close
+            [ngStyle]="{color: !openAutocom ? 'white' : 'grey'}">{{"Close"|translate}}</button>
+            <button mat-button  class=" ovi-prmry-wht-clr"  style="float: left; margin : 0 px 5px; background:#ff1212;font-weight: 600;border-radius: 8px; min-width: 88px;margin-left: 5px;" appDebounceClick cdkFocusInitial  (debounceClick)="deleteLocation()"
+            *ngIf = "!isAddlocation && !openAutocom && selectedRow?.children?.length == 0" [debounceTime]="600">{{"Delete"|translate}}</button>
+            <button mat-button  class="ovi-prmry-bg-clr ovi-prmry-wht-clr" style="float: left; margin-left : 5px;font-weight: 600;border-radius: 8px;min-width: 88px; " appDebounceClick cdkFocusInitial  (debounceClick)="mapConfigAll()"
+            [ngStyle]="{color: locationForm.valid ? 'white' : 'grey'}" *ngIf = "!isAddlocation && !openAutocom && selectedRow?.parentId" [disabled]="!locationForm.valid" [debounceTime]="600">{{"Apply to All"|translate}}</button>
+
+        </div>
+    </div>
+
+</div>

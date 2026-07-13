@@ -1,0 +1,79 @@
+<div class="tw-header ip-header block-1">
+  <div class="row-field">
+    <div class="tw-view-full-width-flex">
+      <div class="row">
+        <div style="display: flex">
+          <span class="tw-filter-new" style="width: 75%;">
+            <input matInput #filter [(ngModel)]="this.filterValue"  [ngModelOptions]="{ standalone: true }" style="padding: 5px;" (keyup)="headerEventTrigger('applyFilter', $event.target.value, '')"
+              appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" autocomplete="off">
+          </span>
+          <span [formGroup]="dateForm" *ngIf="this.selectedDate !== null">
+            <mat-form-field class="tw-date-picker" appearance="outline">
+              <input matInput [matDatepicker]="picker" class="tw-input-date" appPlaceholder [showPlaceholder]="true" [placeholderText]="'From Date'|translate"
+                [max]="today" (dateChange)="headerEventTrigger('dateFilter', $event.target.value, '')" formControlName="fromDate" />
+              <mat-datepicker-toggle matSuffix [for]="picker" style="padding-right:2px;"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row-field">
+    <div [formGroup]="worklistForm"  class="tw-view-full-width block-2" style="display:flex;float: right;">
+      <div class="tw-btn" style="padding-top:0px !important; margin-left:11px;"
+        *ngIf="activate_btn && activate_btn.indexOf('BT_ALLEN') > -1 && specialityLoc !== null">
+        <div class="tw-event-action-btn" [ngStyle]="{'visibility': isEnroll !== true ? 'hidden' : ''}">
+          <button  mat-button class="action-btn" (click)="headerEventTrigger('enroll', '', '')"
+            style="border-radius: 4px !important;">{{"Enroll"|translate}}</button>
+        </div>
+      </div>
+      <span class="box-1"style="display: flex;padding-right: 10px; height: 40px;"
+      [ngStyle]="{'visibility': specialityLoc === null ? 'hidden' : ''}">
+        <mat-label class="ip-label01 ovi-font-family">{{"Filter"|translate}}</mat-label>
+        <mat-select class="ip-select01 ovi-font-family" style="width: 150px;" formControlName="defaultWorkList" [disableOptionCentering]="true"
+          (selectionChange)="headerEventTrigger('manageWorklist', $event.value, '')">
+          <mat-option [value]="'All'">All</mat-option>
+          <mat-option *ngFor="let loc of specialityLoc;" [value]="loc.id">{{loc.name}}</mat-option>
+        </mat-select>
+      </span>
+      <div class="tw-btn" style="padding-top:0px !important"
+        *ngIf="activate_btn && activate_btn.indexOf('BT_ALLEN') > -1 && specialityLoc === null">
+        <div class="tw-event-action-btn" [ngStyle]="{'visibility': isEnroll !== true ? 'hidden' : ''}">
+          <button  mat-button class="action-btn" (click)="headerEventTrigger('enroll', '', '')"
+            style="border-radius: 4px !important;">{{"Enroll"|translate}}</button>
+        </div>
+      </div>
+      <div class="row box-1">
+        <div style="display: flex;margin-top:-3%;">
+          <mat-label class="ip-label02 ovi-font-family" [ngClass]="{'ovi-grey-clr': selectedName == null,'ovi-prmry-bg-clr': selectedName != null}">
+            <img src="/assets/Alert/IP/notepad.png" alt="notepad" style="width:14px;height:16px">
+          </mat-label>
+          <mat-select class="ip-select02 ovi-font-family" style="width: 140px;" formControlName="selectDropdown2" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action'|translate" 
+           (selectionChange)="headerEventTrigger('manageAction', $event.value, selectedName)">
+            <mat-option *ngFor="let obj of manageAction;" [disabled]="this.selectedName == null" [value]="obj.id">
+              {{obj.value}}</mat-option>
+          </mat-select>
+        </div>
+      </div>
+      <div class="tw-btn" style="padding-left: 10px;padding-top:1px !important">
+        <div style="display: flex">
+          <button  mat-button class="mat-display-4 toggle-btn1"
+            [disabled]="!this.multiView"
+            [ngClass]="selectedTab == 'table' ? 'select-view' : 'unselect-table-view'"
+            (click)="selectedTabEvent('table');headerEventTrigger('manageView', '', '')"><em class="material-icons"  appTooltip tooltipText="{{'List View'|translate}}" placement="bottom"
+              style="padding-bottom: 2px;">{{"menu"|translate}}</em></button>
+          <button  mat-button class="toggle-btn2" *ngIf="this.multiView"
+            [ngClass]="selectedTab == 'card' ? 'select-view' : 'unselect-card-view'"
+            (click)="selectedTabEvent('card');headerEventTrigger('manageView', '', '')"><em class="material-icons"  appTooltip tooltipText="{{'Card View'|translate}}" placement="bottom"
+              style="padding-bottom: 2px;">crop_landscape</em></button>
+        </div>
+      </div>
+      <div class="tw-refresh-icon" style="float:right">
+        <span><i class="material-icons"  appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom" (click)="headerEventTrigger('refreshPage', '', '');filterValue=null;"
+            style="cursor: pointer; float: right;" (keydown.enter)="fixClick()">autorenew</i>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

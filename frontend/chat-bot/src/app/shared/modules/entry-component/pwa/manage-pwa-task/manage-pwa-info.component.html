@@ -1,0 +1,149 @@
+<div class="ovi-font-family">
+    <div class="close-slider"><span class="close-slider-act-btn" (click)="close()" (keydown.enter)="fixClick()"></span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 20px;">
+        <span>{{"Ticket"|translate}}</span>
+        <span>
+            <button *ngIf="data.statusId !== 'RQ-CO'" mat-button style="min-width: 0; padding: 0;" [matMenuTriggerFor]="menu">
+                <mat-icon class="pwa-custome-icon-style">more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+                <button *ngIf="data.statusId === 'RQ-CR'" mat-menu-item (click)="statusUpdate('RQ-IP')">{{"Inprogress"|translate}}</button>
+                <button *ngIf="data.statusId === 'RQ-IP'" mat-menu-item (click)="statusUpdate('RQ-CO')">{{"Complete"|translate}}</button>
+                <button *ngIf="data.statusId === 'RQ-CR'" mat-menu-item (click)="statusUpdate('RQ-CA')">{{"Cancel"|translate}}</button>
+            </mat-menu>
+        </span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center; padding-top: 10px;">
+        <span *ngFor="let tab of tabs" style="display: flex;flex-direction: column;align-items: center;" [ngStyle]="{'padding-right': tab.name === 'Form' ? '4px' : ''}"
+            (click)="selectTab(tab.name)" (keydown.enter)="fixClick()">
+            <span class="context-btn" style="height: 25px; width: 25px; color: #1672a1;box-shadow: #00000026 0px 5px 10px;"
+                [class.tab]="selectedTab === tab.name">
+                <mat-icon *ngIf="tab.iconType === 'icon'" class="pwa-custome-icon-style ovi-fnt-sze22">{{tab.iconName}}</mat-icon>
+                <img *ngIf="tab.iconType === 'img'" class="svg-icon" [class.active]="selectedTab === tab.name" height="16px" width="16px" [src]="tab.iconName" alt="tabs"/>
+            </span>
+            <span class="ovi-fnt-sze10">{{tab.name}}</span>
+        </span>
+    </div>
+    <div>
+        <div *ngIf="selectedTab === 'Info'">
+            <div class="info-grid-container">
+                <div class="info-grid-item">
+                    <span class="info-label">{{"Contex"|translate}}</span>
+                    <span class="info-value" style="display: flex; align-items: center; gap: 5px;">
+                        <img height="16px" width="16px" alt="task" 
+                            [src]="data['requestCategoryId'] === 'PR-AT' ? '../../../../../assets/Menus/task-asset.svg' :
+                            data['requestCategoryId'] === 'PR-LC' ? '../../../../../assets/Menus/task-location.svg' :
+                            data['requestCategoryId'] === 'PR-PA' ? '../../../../../assets/Menus/task-patient.svg' :
+                            '../../../../../assets/Menus/task-general.svg'" />
+                            <span>{{data.requestCategoryId === 'PR-AT' ?
+                        'Asset' : data.requestCategoryId === 'PR-LC' ? 'Location' :
+                        data.requestCategoryId === 'PR-PA' ? 'Patient' : 'General'}}</span>
+                    </span>
+                </div>
+                <div class="info-grid-item">
+                    <span class="info-label">{{"Category"|translate}}</span>
+                    <span class="info-value">{{data.activityCategoryName}}</span>
+                </div>
+                <div class="info-grid-item">
+                    <span class="info-label">{{data.requestCategoryId === 'PR-AT' ?
+                        'Asset' : data.requestCategoryId === 'PR-LC' ? 'Location' :
+                        data.requestCategoryId === 'PR-PA' ? 'Patient' : 'General'}}
+                    </span>
+                    <span class="info-value">{{data.nonPerformerName}}</span>
+                </div>
+                 <div class="info-grid-item">
+                    <span class="info-label">{{"Status"|translate}}</span>
+                    <span class="info-value">{{data.statusName}}</span>
+                </div>
+                 <div class="info-grid-item">
+                    <span class="info-label">{{"Assigned Type"|translate}}</span>
+                    <span class="info-value">{{data.performerType === 'RT-RO' ? 'Role' : 
+                        data.performerType === 'RT-US' ? 'User' : 'Department'}}</span>
+                </div>
+                <div class="info-grid-item">
+                    <span class="info-label">{{"Assigned to"|translate}}</span>
+                    <span class="info-value">{{data.performerName}}</span>
+                </div>
+                 <div class="info-grid-item">
+                    <span class="info-label">{{"Schedule Time"|translate}}</span>
+                    <span class="info-value">{{data.scheduleDate | date: 'hh:mm a'}}</span>
+                </div>
+                <div class="info-grid-item">
+                    <span class="info-label">{{"Description"|translate}}</span>
+                    <span class="info-value">{{data.comments}}</span>
+                </div>
+            </div>
+            <button *ngIf="data.statusId === 'RQ-CR'" mat-button class="file-upload-button"
+             style="width: 100%;" (click)="reAssign(data)">{{"Re-Assign"|translate}}</button>
+        </div>
+        <div *ngIf="selectedTab === 'Document'">
+            <div>
+                <span style="display: flex;gap: 5px;padding: 5px 0;min-height: 120px;">
+                    <div style="display: flex; gap: 10px; padding: 3px 8px;position: relative;"
+                     *ngFor="let attach of attachFiles" (click)="getFileDownload(attach)" (keydown.enter)="fixClick()">
+                         <mat-icon class="ovi-fnt-sze15" style="position: absolute;right: -2px;top: -2px;
+                            height: fit-content;width: fit-content;padding: 0;cursor: pointer;" 
+                            (click)="removeAttachment(attach)" (keydown.enter)="fixClick()">highlight_off</mat-icon>
+                        <img *ngIf="attach.fileType === 'image/png' || attach.fileType === 'image/jpeg'" height="45px" width="45px"
+                            alt="attachFile" [src]="attach.fileUrl" />
+                
+                        <img *ngIf="attach.fileType === 'application/pdf'" height="45px" width="45px" alt="PDF"
+                            src="../../../../../../assets/Alert/common_icons/pdf_green.svg" />
+                    </div>
+                </span>
+                <div *ngIf="attachFiles.length == 0" class="no-data-text">
+                    <span>{{"Data not found"|translate}}</span>
+                </div>
+                <button mat-button class="file-upload-button" style="width: 100%;" (click)="uploadfile()" >{{"Upload"|translate}}
+                    <mat-icon class="pwa-custome-icon-style" style="padding-bottom: 3px;">
+                        cloud_upload
+                    </mat-icon>
+                </button>
+            </div>
+        </div>
+        <div *ngIf="selectedTab === 'Form'">
+            <div *ngIf="ticketformBuilderSource.length" style="display: flex; gap: 5px;padding: 10px 0;">
+                <div *ngFor="let form of ticketformBuilderSource" (click)="formBuilder(form)"
+                    style="display: flex; width: 120px; align-items: center;position: relative;" (keydown.enter)="fixClick()">
+                    <mat-icon class="ovi-fnt-sze15" style="position: absolute;right: -6px;top: -3px;
+                        height: fit-content;width: fit-content;padding: 0;cursor: pointer;" (click)="deleteForm(form)" (keydown.enter)="fixClick()">highlight_off</mat-icon>
+                    <img height="20px" width="20px" style="padding: 0 3px;" src="../../../../../assets/Menus/task-form.svg" alt="form" />
+                    <span class="upload-form-title">{{form.name}}</span>
+                </div>
+            </div>
+            <div *ngIf="ticketformBuilderSource.length == 0" class="no-data-text">
+                <span>{{"Data not found"|translate}}</span>
+            </div>
+        </div>
+        <div *ngIf="selectedTab === 'History'">
+            <div *ngIf="ticketEvents.length == 0" class="no-data-text">
+                <span>{{"Data not found"|translate}}</span>
+            </div>
+            <ng-conatiner *ngIf="ticketEvents.length">
+                <div style="display: flex;flex-direction: column;gap: 12px;">
+                    <mat-card *ngFor="let data of ticketEvents" style="padding: 8px;">
+                        <div class="info-value">{{data.name}}</div>
+                        <div class="info-grid-container" style="grid-template-columns: repeat(4, 1fr);">
+                            <div class="info-grid-item">
+                                <span class="info-label">{{"Status"|translate}}</span>
+                                <span class="info-value">{{data.statusName}}</span>
+                            </div>
+                            <div class="info-grid-item">
+                                <span class="info-label">{{"EventTime"|translate}}</span>
+                                <span class="info-value">{{data.eventTime | date:"d MMM, hh:mm a"}}</span>
+                            </div>
+                            <div class="info-grid-item">
+                                <span class="info-label">{{"Modified User"|translate}}</span>
+                                <span class="info-value">{{data.createdUser}}</span>
+                            </div>
+                            <div *ngIf="data.comments" class="info-grid-item">
+                                <span class="info-label">{{"Remarks"|translate}}</span>
+                                <span class="info-value">{{data.comments}}</span>
+                            </div>
+                        </div>
+                    </mat-card>
+                </div>
+            </ng-conatiner>
+        </div>
+    </div>
+</div>

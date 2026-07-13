@@ -1,0 +1,117 @@
+<div class="ovi-font-family" style="height: 95%;margin-block-start: 12px;margin-inline-start: 12px;margin-inline-end: 12px;">
+    <div style="height: 40px;width: 100%;">
+        <div style="display: contents;">
+            <span class="ovi-fnt-sze20" style="font-weight: 700;"> {{"Widget"|translate}} </span>
+            <span class="ovi-fnt-sze16" style="font-weight: 600;"> - {{"Dashboard"|translate}}</span>
+            <span class="ovi-fnt-sze16" style="font-weight: 600;color: white;" *ngIf="selectedLayout.value"> {{dashboardData[selectedLayout.value]?.code}}</span>
+        </div>
+        <button mat-icon-button style="width: auto; float: right;" (click)="widgetClose()">
+            <mat-icon class="ovi-fnt-sze25" style="line-height: 8px !important; margin-top: 5px;">highlight_off</mat-icon>
+        </button>
+    </div>
+    <mat-divider></mat-divider>  
+    <div id="widget" class="loading-spinner" *ngIf="spinLoader">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <div style="width: 100%;height: 10%;padding-right: 5px;" *ngIf="!spinLoader">
+        <div style="height: 100%;width: 80px;float: right;margin-right: 10px;margin-top:10px">
+            <button [ngStyle] = "{ background : (dashboardData[selectedLayout.value]?.isFactory && (activate_btn && (activate_btn.indexOf('BT_DBDEL') == -1))) || (dashboardData[selectedLayout.value]?.isFactory && !isFactoryLay.value) || (dashboardData[selectedLayout.value]?.isFactory && activate_btn.indexOf('BT_DBFAC') == -1) ? '#c0c3c5' : '#1e8fc8'}" style="border-radius: 3px;border: 5px;margin-top: 17px;height: 35px;width: 80px;color: white;cursor: pointer;
+            touch-action: none;user-select: none;" [disabled]="(dashboardData[selectedLayout.value]?.isFactory && (activate_btn && (activate_btn.indexOf('BT_DBDEL') == -1))) || (dashboardData[selectedLayout.value]?.isFactory && !isFactoryLay.value) || (dashboardData[selectedLayout.value]?.isFactory && activate_btn.indexOf('BT_DBFAC') == -1)" (click)="deleteWidgets()"  matTooltip="{{'Delete Layout'|translate}}">{{"DELETE"|translate}}</button>
+        </div>
+        <div style="height: 100%;width: 80px;float: right;margin-right: 10px;margin-top:10px">
+            <button [ngClass]="{'ovi-prmry-bg-clr': enableSave || nameChange || isFactoryChange,'bg-disabled': !(enableSave || nameChange || isFactoryChange)}"
+            style="border-radius: 3px;border: 5px;margin-top: 17px;height: 35px;width: 80px;color: white;cursor: pointer;touch-action: none;user-select: none;" 
+            [disabled]="(!enableSave && !nameChange && !isFactoryChange)" (click)="saveWidgets()"  matTooltip="{{'Save Layout'|translate}}">{{"SAVE"|translate}}</button>
+        </div>
+        <div style="float: right;width: 10%;padding-top: 30px;margin-right: 10px;">
+            <mat-checkbox class="example-margin" [disabled]="activate_btn && (activate_btn.indexOf('BT_DBFAC') == -1)" [formControl]="isFactoryLay" (change)="changeFactory($event)">{{"Factory"|translate}}</mat-checkbox>
+        </div>
+        <div class="custom-name" style="float: right;width: 15%;margin-right: 15px;">
+            <mat-label class="ovi-lbl-text-size">{{"Layout Name"|translate}}</mat-label>
+            <mat-form-field  class="ovi-lbl-text-size" style="width: 100%;float: right;" appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Layout Name'|translate" [formControl]="layoutName" autocomplete="off"  (keyup)="layNameChange($event.target.value)">
+                <mat-hint>{{"name should be unique"|translate}}</mat-hint>
+            </mat-form-field>
+        </div>
+        <div class="custom-name" style="float: right;width: 15%;margin-right: 15px;">
+            <mat-label class="ovi-lbl-text-size">{{"Select Layout"|translate}}</mat-label>
+            <mat-form-field  class="ovi-lbl-text-size" style="width: 100%;float: right;" appearance="outline">
+                <mat-select [formControl]="selectedLayout" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Layout'|translate" (selectionChange)="changeLayout()">
+                    <mat-option *ngFor = "let lay of userLayouts"  [value]="lay.id">
+                        <span [ngClass] = "lay.userId ? '' : 'layout-type-css'">{{lay.userId ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '&nbsp;F&nbsp;'}}</span>
+                        {{ lay.dashboardName }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div class="dash-wid-search-input">
+            <span style="width: 85%; float: left;"><input type="text" class="dash-wid-search-icon" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate"
+                [formControl]="filterKey" (keyup)="applyFilter(filterKey.value)"></span>
+            <span style="width: 15%; float: right;">
+                <button mat-icon-button id="search-icon" disabled style="width: 8%;">
+                    <mat-icon class="ovi-fnt-sze25" style="line-height: 8px !important;color: black;vertical-align: bottom;">search</mat-icon>
+                </button>
+            </span>
+        </div>
+    </div>
+    <div style="width: 100%;margin-top: 30px;height: 65%;" *ngIf="!spinLoader">
+        <div style="width: 40%;height: 100%;background: #dcdcdc57;float: left;border-radius: 10px;box-shadow: 0px 0px 0px 1px grey;margin-left: 15px;">
+                <div class="ovi-popup-title-text-size" style="text-align: center;width: 100%; height:8% ;margin-top: 2%;cursor: default;">
+                    {{"Available Widgets"|translate}}
+                </div>
+                <mat-divider></mat-divider>
+            <mat-nav-list style="overflow-x:hidden; height: calc(100% - 65px);">
+                <mat-list-item *ngFor = "let wid of widgetList" style="cursor: initial;padding: 0 12px;" [disableRipple]="true">
+                    <div style="width: 90%;"  matTooltip="{{wid.widgetName | translate}}" >
+                        <input type="checkbox" style="width: 18px; height: 18px; float: left; cursor: pointer;" [checked]="wid.isActive"  
+                        [disabled]="wid.isActive" (click)="selectWidget($event.target.checked , wid, 'left')" #leftCheckboxes (keydown.enter)="fixClick()">
+                        <div style="width: 88%;float: right; margin-top: 2px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">{{wid.widgetName}}  ({{wid.widgetTypeId}})</div>
+                    </div>
+                    <button mat-icon-button style="width: 35px;" (click)="moveWidget(wid, true)" [disableRipple]="true">
+                        <mat-icon  matTooltip="{{'Add'|translate}}" class="ovi-fnt-sze20" style="color: black;padding-top: 0px;margin-left: 0px;touch-action: none;user-select: none;" 
+                            *ngIf="!wid.isActive">add</mat-icon>
+                    </button>
+                    <mat-divider></mat-divider>
+                </mat-list-item>
+            </mat-nav-list>
+        </div>
+        <div style="width: 15%;height: 100%;float: left;">
+            <div style="height: 50%;margin-block-start: 50px;text-align: center;margin-inline-start: 20px;">
+                <mat-icon class="ovi-fnt-sze40" style="line-height: 8px !important;vertical-align: bottom;margin-top: 150px;cursor: pointer;width: 35px;height: 35px;" 
+                (click)="widgetData['left'].length ? moveWidgets('left', true) : ''"  [matTooltip]="widgetData['left'].length ? 'Add widgets' : ''"
+                [ngStyle]="{color: widgetData['left'].length ? 'black' : 'gray'}" (keydown.enter)="fixClick()">forward</mat-icon>
+                <mat-icon class="ovi-fnt-sze40" style="line-height: 8px !important;color: black;vertical-align: middle;margin-top: -150px;margin-left: -29px;width: 35px;height: 35px;
+                transform: rotate(180deg);cursor: pointer;" 
+                (click)="widgetData['right'].length ? moveWidgets('right', false) : ''"  [matTooltip]="widgetData['right'].length ? 'Remove widgets' : ''"
+                [ngStyle]="{color: widgetData['right'].length ? 'black' : 'gray'}" (keydown.enter)="fixClick()">forward</mat-icon>
+            </div>
+        </div>
+        <div style="width: 40%;height: 100%;background: #dcdcdc57;float: right;border-radius: 10px;box-shadow: 0px 0px 0px 1px grey;margin-right: 10px;">
+                <div class="ovi-popup-title-text-size" style="text-align: center;width: 100%;margin-top: 2%;height:8%;cursor: default;">
+                    {{"Selected Widgets"|translate}}
+                </div>
+                <mat-divider></mat-divider>
+            <mat-nav-list style="overflow-x: hidden; height: calc(100% - 65px);">
+                <mat-list-item *ngFor = "let wid of activeWidget" style="cursor: initial;padding: 0 12px;" [disableRipple]="true">
+                <div style="width: 90%;"  matTooltip="{{wid.widgetName}}">
+                <input type="checkbox" style="width: 18px; height: 18px; float: left;cursor: pointer;" (click)="selectWidget($event.target.checked , wid, 'right')" #rightCheckboxes (keydown.enter)="fixClick()">
+                <div style="width: 88%;float: right; margin-top: 2px;text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">{{wid.widgetName}} ({{wid.widgetTypeId}})</div>
+                </div>
+                <button mat-icon-button style="width: 35px;" (click)="moveWidget(wid, false)" [disableRipple]="true" >
+                <mat-icon   matTooltip="{{'Delete'|translate}}" class="ovi-fnt-sze20" 
+                    style="color: black;padding-top: 0px;margin-left: 0px;
+                    touch-action: none;user-select: none;">delete_outline</mat-icon>
+                
+                </button>
+                <mat-divider></mat-divider>
+                </mat-list-item>
+            </mat-nav-list>            
+        </div>
+    </div>
+    <div class="ovi-fnt-sze14" style="word-wrap: break-word;padding-top: 7px;" *ngIf="!spinLoader">
+        {{"Note: Widget position and size can be changed in the dashboard by drag and drop."|translate}}
+    </div>
+</div>

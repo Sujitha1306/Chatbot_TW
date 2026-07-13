@@ -1,0 +1,471 @@
+    <div class="loading-spinner" *ngIf="isloading">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+        <div class="ovi-pop-hdr">
+        <div *ngIf="!this.modifyId">{{"Create Ambulance Request"|translate}}</div>
+        <div *ngIf="this.modifyId">{{"Modify Ambulance Request"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);">
+        <div [formGroup]="ambulanceRequestForm">
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size">{{"REQUEST DETAILS"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" [hidden] = "true">
+                        <mat-label class="ovi-lbl-text-size">{{"Request Type"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Request Type'|translate" formControlName="requestCategory"
+                            [disabled]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let data of ambRequestCategory" [value]="data.code">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div *ngIf="isSwapped" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"From"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'From'|translate" formControlName="destinationId"
+                            [disabled]="editAction || ['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let data of searchDestLocList" [value]="data.locationId"
+                                (click)="getDestCoordinates(data)" (keydown.enter)="fixClick()">
+                                    {{data.locationName}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="ambulanceRequestForm.controls.destinationId.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['destinationId'].errors.required">{{"To
+                                    location is required"|translate}}.</span>
+                            </mat-error>
+                            <mat-hint *ngIf="!this.isDestinationLoc">
+                                <span style="color:red;">{{"To location is required"|translate}}.</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label *ngIf="!isSwapped" class="ovi-lbl-text-size">{{"From"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-label *ngIf="isSwapped" class="ovi-lbl-text-size">{{"To"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input #sourceauto matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'From'|translate" style="text-overflow: ellipsis;"
+                                id="pickup" autocomplete="off" formControlName="sourceId" #sourceId="matInput"
+                                (keyup.enter)="getLocation(ambulanceRequestForm.controls['sourceId'].value)"
+                                [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) > -1">
+                            <img style="width: 35px;cursor: pointer;height: 26px;position: relative;bottom: 1px;" matSuffix
+                            (click)="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) === -1 ? getLocation(ambulanceRequestForm.controls['sourceId'].value) : ''"
+                            alt="nurse-call" src="/assets/Alert/common_icons/google-map.svg" (keydown.enter)="fixClick()">
+                            <mat-error *ngIf="ambulanceRequestForm.controls.sourceId.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['sourceId'].errors.required">{{"From location is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                            <mat-hint *ngIf="!this.isSourceLoc">
+                                <span style="color:red;">{{"From location is required"|translate}}</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Address"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Landmark'|translate" appTypeHit formControlName="landmark"
+                            [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                        </mat-form-field>
+                </div>
+                <div *ngIf="!isSwapped" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"To"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'To'|translate" formControlName="destinationId"
+                            [disabled]="editAction || ['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let data of searchDestLocList" [value]="data.locationId"
+                                (click)="getDestCoordinates(data)" (keydown.enter)="fixClick()">
+                                    {{data.locationName}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="ambulanceRequestForm.controls.destinationId.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['destinationId'].errors.required">{{"To
+                                    location is required"|translate}}.</span>
+                            </mat-error>
+                            <mat-hint *ngIf="!this.isDestinationLoc">
+                                <span style="color:red;">{{"To location is required"|translate}}.</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                <div *ngIf="!['RQ-IP', 'RQ-AR', 'RQ-CO', 'RQ-RJ', 'RQ-CA'].includes(ambulanceRequestForm.controls['status'].value)" class="swap-loc">
+                    <mat-divider style="width: 47%;margin-top: 5px;"></mat-divider>
+                    <span appTooltip tooltipText="{{'Swap'|translate}}" placement="right"
+                    (click)="isSwapped = !isSwapped;"><mat-icon class="swap-loc-icon">swap_horizontal_circle</mat-icon></span>
+                    <mat-divider style="width: 47%;margin-top: 5px;"></mat-divider>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                        <mat-label class="ovi-lbl-text-size">{{"Request Time"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="datetime-local" id="datepicker"
+                                [readonly]="!statusBasedFieldDisabled || ['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1"
+                                formControlName="startTime" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Request Time'|translate"
+                                (ngModelChange)="dateTimeValidation($event,'pickup')"
+                                (focusout)="searchAmbulance($event.target.value)" />
+                            <mat-error *ngIf="ambulanceRequestForm.controls.startTime.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['startTime'].errors.required">{{"Request
+                                    Time
+                                    is required"|translate}}.</span>
+                            </mat-error>
+                            <mat-hint *ngIf="this.pastPickupTime">
+                                <span style="color:red;">{{"*Please choose current or future date and time"|translate}}</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select formControlName="status" (selectionChange)="ambulanceStatusChange($event.value)"
+                            [disabled]="this.ambulanceRequestForm.controls['status'].value === 'RQ-CO'">
+                                <mat-option *ngFor="let request of selectedRequestStatus" value="{{request.code}}">
+                                    {{request.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="!hiddenInputs?.includes('zoneId')">
+                        <mat-label class="ovi-lbl-text-size">{{"Zone"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select formControlName="zoneId" [disabled]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let zone of zoneList" value="{{zone.code}}">
+                                    {{zone.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="this.ambulanceRequestForm.controls['status'].value === 'RQ-CA'">
+                        <mat-label class="ovi-lbl-text-size">{{"Reason"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="cancelReasonId" (selectionChange)="cancelReasonChange($event.value)">
+                                <mat-option *ngFor="let data of reasonList" value="{{data.code}}">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="ambulanceRequestForm.controls.cancelReasonId.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['cancelReasonId'].errors.required">{{"Reason is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="this.ambulanceRequestForm.controls['status'].value === 'RQ-CA' && ambulanceRequestForm.controls['cancelReasonId'].value === 'RCR-OT'">
+                        <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate" appTypeHit formControlName="comments" [readonly]="false">
+                            <mat-error *ngIf="ambulanceRequestForm.controls.comments.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['comments'].errors.required">{{"Comments is required"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="this.ambulanceRequestForm.controls['status'].value === 'RQ-RAS'">
+                        <mat-label class="ovi-lbl-text-size">{{"Reason"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select formControlName="statusReasonId">
+                                <mat-option *ngFor="let data of statusReasonList" value="{{data.code}}">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn " *ngIf="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                        <mat-checkbox formControlName="isAcknowledge" [checked]="this.isPriority"></mat-checkbox>&nbsp;
+                        <mat-label class="ovi-lbl-text-size">{{"Acknowledge"|translate}}</mat-label>
+            </div>
+            </div>
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size ">{{"PATIENT DETAILS"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Patient Name"|translate}} <span *ngIf="requiredInputs?.includes('patientName')" class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient Name'|translate" appTypeHit formControlName="patientName"
+                            [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                             <mat-error *ngIf="ambulanceRequestForm.controls.patientName.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['patientName'].errors.required">{{"Patient Name is required"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Gender"|translate}} <span *ngIf="requiredInputs?.includes('gender')" class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gender'|translate" formControlName="gender"
+                            [disabled]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let gender of genderList" [value]="gender.value">
+                                    {{gender.value}}
+                                </mat-option>
+                            </mat-select>
+                             <mat-error *ngIf="ambulanceRequestForm.controls.gender.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['gender'].errors.required">{{"Gender is required"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Age"|translate}} <span *ngIf="requiredInputs?.includes('age')" class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Age'|translate" formControlName="age" autocomplete="off" 
+                                [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                 <mat-error *ngIf="ambulanceRequestForm.controls.age.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['age'].errors.required">{{"Age is required"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Primary Contact No"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile No'|translate" formControlName="mobileNo" autocomplete="off" 
+                                [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                            <mat-error *ngIf="ambulanceRequestForm.controls.mobileNo.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['mobileNo'].errors.maxlength">{{"Please enter 10 digits only"|translate}}</span>
+                                <span [hidden]="!ambulanceRequestForm.controls['mobileNo'].errors.pattern">
+                                    {{"Please enter only number"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <textarea input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2 formControlName="remarks"
+                                [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1"></textarea>
+                            <mat-error *ngIf="ambulanceRequestForm.controls.remarks.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['remarks'].errors.maxlength">{{"Maximmum
+                                    allowed characters are 50"|translate}} </span>
+                                <span [hidden]="!ambulanceRequestForm.controls['remarks'].errors.pattern">
+                                    {{"Please enter only number and character"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Alternative Contact No"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Alternative Contact No'|translate" appTypeHit autocomplete="off" formControlName="alternateContact"
+                            [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                            <mat-error *ngIf="ambulanceRequestForm.controls.alternateContact.invalid">
+                                <span [hidden]="!ambulanceRequestForm.controls['alternateContact'].errors.maxlength">{{"Please enter 10 digits only"|translate}}</span>
+                                <span [hidden]="!ambulanceRequestForm.controls['alternateContact'].errors.pattern">
+                                    {{"Please enter only number"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Caller Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Caller Name'|translate" appTypeHit  autocomplete="off" formControlName="callerName"
+                            [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{'Key Complaint'|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Key Complaint'|translate" formControlName="requestConditionId"
+                            [disabled]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let data of requestCondition" [value]="data.code" (click)="getComments(data.code)" (keydown.enter)="fixClick()">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box" *ngIf="this.othersExist">
+                        <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <textarea input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2
+                                formControlName="requestConditionText"
+                                [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1"></textarea>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!hiddenInputs?.includes('pcrNo')">
+                        <mat-label class="ovi-lbl-text-size">{{"PCR Number"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'PCR Number'|translate" appTypeHit autocomplete="off" formControlName="pcrNo">
+                        </mat-form-field>
+                </div> 
+                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!hiddenInputs?.includes('dutySlipNo')">
+                        <mat-label class="ovi-lbl-text-size">{{"Duty Slip Number"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Duty Slip Number'|translate" appTypeHit formControlName="dutySlipNo">
+                        </mat-form-field>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size ">{{"ASSIGN AMBULANCE"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div style="width: 100%;" class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="!hiddenInputs?.includes('isautoAssigned')">
+                        <mat-label class="ovi-lbl-text-size">{{"Assign Ambulance"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Ambulance'|translate"
+                                formControlName="isautoAssigned"
+                                [disabled]="editAction || ['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option (click)="autoAssign=true;ambulanceCheck(autoAssign);" (keydown.enter)="fixClick()" [value]="true">Automatically</mat-option>
+                                <mat-option (click)="autoAssign=false;searchAmbulance(null);ambulanceCheck(autoAssign);" (keydown.enter)="fixClick()" [value]="false">Manually</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="!this.autoAssign">
+                        <mat-label class="ovi-lbl-text-size">{{"Select Ambulance"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Ambulance Name'|translate" formControlName="ambulanceId"
+                                [disabled]="editAction || ['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                               <mat-select-trigger>
+                                <ng-container *ngFor="let ambulance of searchAmbulanceList">
+                                    <span *ngIf="ambulance.id === ambulanceRequestForm.get('ambulanceId')?.value">
+                                        {{ ambulance.name }}
+                                    </span>
+                                </ng-container>
+                            </mat-select-trigger>
+                                <mat-option #matOption *ngFor="let ambulance of searchAmbulanceList"
+                                    (click)="getAmbulanceDetails(ambulance, matOption);checkAvailability(ambulance, 'amb')" (keydown.enter)="fixClick()"
+                                    [value]="ambulance.id">
+                                    <div class="act-wid-styl">
+                                        <mat-icon [ngStyle]="{'color': ambulance.isAvailable ? '#13a10e' : '#d13438'}"
+                                        style="font-size: 15px;margin: 4px 0px 0px 0px;">fiber_manual_record</mat-icon>
+                                        {{ambulance.name}}</div>
+                                </mat-option>
+                            </mat-select>
+                            <mat-hint *ngIf="this.searchAmbulanceList.length === 0 && !this.autoAssign">
+                                <span style="color:red;">{{"All ambulances are busy"|translate}}</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                 <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="!this.autoAssign && !hiddenInputs?.includes('ambulanceType')">
+                        <mat-label class="ovi-lbl-text-size">{{"Ambulance Type"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Ambulance Type'|translate" formControlName="ambulanceType" [disableOptionCentering]="true"
+                            [disabled]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                <mat-option *ngFor="let category of AssetAmbType" [value]="category.code">
+                                    {{category.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!this.autoAssign">
+                        <mat-label class="ovi-lbl-text-size">{{'Driver Name'|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <!-- <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Driver Name'|translate" appTypeHit formControlName="pilotId" readonly>
+                        </mat-form-field> -->
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Driver Name'|translate" formControlName="pilotId"
+                                [disabled]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                            <mat-select-trigger>
+                                <ng-container *ngFor="let option of pilotList">
+                                    <span *ngIf="option.id === ambulanceRequestForm.get('pilotId')?.value">
+                                        {{ option.name }}
+                                    </span>
+                                </ng-container>
+                            </mat-select-trigger>
+                                <mat-option #matOption *ngFor="let option of pilotList" (click)="checkAvailability(option, 'driver')" (keydown.enter)="fixClick()"
+                                    [value]="option.id">
+                                    <div class="act-wid-styl">
+                                        <mat-icon [ngStyle]="{'color': option.isAvailable ? '#13a10e' : '#d13438'}"
+                                        style="font-size: 15px;margin: 4px 0px 0px 0px;">fiber_manual_record</mat-icon>
+                                        {{option.name}}</div>
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="ambulanceRequestForm.controls.pilotId.invalid">
+                                <span
+                                [hidden]="!ambulanceRequestForm.controls['pilotId'].errors.required">{{"Driver Name is
+                                required"|translate}}.</span>
+                                <span [hidden]="!ambulanceRequestForm.controls['pilotId'].errors.requireMatch">{{"Please select
+                                    value from the option"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!this.autoAssign && !hiddenInputs?.includes('doctorId')">
+                        <mat-label class="ovi-lbl-text-size">{{"Doctor Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Doctor Name'|translate" id="doctor"
+                                    formControlName="doctorId" appTypeHit (typeHit)="searchDoctorNamelist($event)"
+                                    [matAutocomplete]="doctor" autocomplete="off"
+                                    [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                                    <mat-autocomplete autoActiveFirstOption
+                                        [displayWith]="this.doctorEnabled === true ? getBindingList.bind(doctorList) : ''"
+                                        #doctor="matAutocomplete">
+                                        <mat-option *ngFor="let option of doctorList"
+                                            [value]="option.id">
+                                            <div class="act-wid-styl">{{option.name}}</div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="ambulanceRequestForm.controls.doctorId.invalid">
+                                        <span
+                                        [hidden]="!ambulanceRequestForm.controls['doctorId'].errors.required">{{"Doctor Name is
+                                        required"|translate}}.</span>
+                                        <span [hidden]="!ambulanceRequestForm.controls['doctorId'].errors.requireMatch">{{"Please select
+                                            value from the option"|translate}}</span>
+                                    </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!this.autoAssign && !hiddenInputs?.includes('emtId')">
+                        <mat-label class="ovi-lbl-text-size">{{"EMT Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'EMT Name'|translate" id="emt"
+                            formControlName="emtId" appTypeHit (typeHit)="searchEMTNamelist($event)"
+                            [matAutocomplete]="emt" autocomplete="off"
+                            [readonly]="['RQ-AS','RQ-AR','RQ-IP','RQ-CO','RQ-RJ','RQ-CA'].indexOf(this.ambulanceRequestForm.controls['status'].value) !== -1">
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.emtEnabled === true ? getBindingEMTList.bind(emtList) : ''"
+                                #emt="matAutocomplete">
+                                <mat-option *ngFor="let option of emtList"
+                                    [value]="option.id">
+                                    <div class="act-wid-styl">{{option.name}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="ambulanceRequestForm.controls.emtId.invalid">
+                                <span
+                                [hidden]="!ambulanceRequestForm.controls['emtId'].errors.required">{{"EMT Name is
+                                required"|translate}}.</span>
+                                <span [hidden]="!ambulanceRequestForm.controls['emtId'].errors.requireMatch">{{"Please select
+                                    value from the option"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!hiddenInputs?.includes('assignedAttender')">
+                        <mat-label class="ovi-lbl-text-size">{{"Assigned Attender"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                             <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assigned Attender'|translate" appTypeHit formControlName="assignedAttender">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!hiddenInputs?.includes('assignedMedicalOfficer')">
+                        <mat-label class="ovi-lbl-text-size">{{"Assigned Nurse"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                             <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assigned Nurse'|translate" appTypeHit formControlName="assignedMedicalOfficer">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!hiddenInputs?.includes('assignedNurse')">
+                        <mat-label class="ovi-lbl-text-size">{{"Assigned Medical Officer"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                             <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assigned Nurse'|translate" appTypeHit formControlName="assignedNurse">
+                        </mat-form-field>
+                </div>
+            </div>
+        </div>
+</div>
+   <div class="ovi-pop-ftr">
+    <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+    <button mat-button
+        [disabled]="isSourceLoc === false || isDestinationLoc === false || this.isSaved === true || ambulanceRequestForm.invalid || this.pastPickupTime"
+        class="active-btn" [debounceTime]="500" appDebounceClick *ngIf="!this.modifyId"
+        (debounceClick)="SaveRequest()">{{"Send Request"|translate}}</button>
+    <button mat-button
+    [disabled]="ambulanceRequestForm.invalid || this.pastPickupTime || isSaved"
+    class="active-btn" [debounceTime]="500" appDebounceClick *ngIf="this.modifyId"
+        (debounceClick)="UpdateRequest(data.requestId)">{{"Update Request"|translate}}</button>
+    <button mat-button
+        *ngIf="data.status === 'RQ-AS' && activate_btn && (activate_btn.indexOf('BT_WB_PRT_AR') > -1 || activate_btn.indexOf('BT_WB_PRT_CO') > -1)"
+        class="active-btn" appDebounceClick
+        [debounceTime]="500" (debounceClick)="UpdateRequestStatus(data, 'RQ-AR')">{{"Arrived"|translate}}</button>
+    <button mat-button
+        *ngIf="(data.status === 'RQ-AR' || data.status === 'RQ-IP') && activate_btn && (activate_btn.indexOf('BT_WB_PRT_AR') > -1 || activate_btn.indexOf('BT_WB_PRT_CO') > -1)"
+        class="active-btn" appDebounceClick
+        [debounceTime]="500" (debounceClick)="UpdateRequestStatus(data, 'RQ-CO')">{{"Complete"|translate}}</button>
+   </div>
+</div>

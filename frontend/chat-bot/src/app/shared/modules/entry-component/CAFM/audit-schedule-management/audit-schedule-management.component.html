@@ -1,0 +1,58 @@
+<div class="ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <span class="ovi-pop-hdr-name">{{"Manage Audit"|translate}}
+            <ng-container *ngIf="getAuditHeaderDetails()">
+                ({{ getAuditHeaderDetails() }})
+            </ng-container>
+        </span>
+        <span class="ovi-pop-hdr-close">
+            <button mat-icon-button mat-dialog-close close-button>
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </span>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="height:calc(100% - 85px);overflow: hidden;">
+        <div class="loading-spinner" *ngIf="isloading">
+            <div class="spinnerload">
+                <div class="spin1"></div>
+                <div class="spin2"></div>
+                <div class="spin3"></div>
+            </div>
+        </div>
+        <div class="manage-body">
+            <tw-header-new-component [component]="'audit-schedule-management'" [type]="'new'" [permission]="null"
+                [dateFilter]="null" [multiView]="false" [rowFilter]="null" [manageAction]="null"
+                [selectDropdown]="selectDropdown" [selectedName]="selectedName !== null ? selectedName : true"
+                [selectedView]="null" (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)"
+                [groupFilter]="parentFilter"></tw-header-new-component>
+                <div *ngIf="selectedAuditData?.length" style="display: flex;justify-content: flex-end;padding: 3px 5px;">
+                <button mat-button class="print-btn" (click)="auditData()">Audit</button>
+            </div>
+            <mat-tab-group (selectedTabChange)="tabChanged($event)">
+                <mat-tab  label="{{'Audit'|translate}}">
+                   <ng-template mat-tab-label>{{"Audit"|translate}} {{ totalNonAuditRecords? ' (' + totalNonAuditRecords + ')' : '' }}</ng-template>  
+                    <tw-table-component [component]="'audit-schedule-management'" [columns]="displayedColumns"
+                        [tableData]="tableData" (checkBoxAction)="checkBoxAction($event)" [iconHeader]="iconHeader"
+                        [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                        (eventAction)="eventAction($event)" [rowId]="'id'" [rowClick]="false"
+                        (rowClickAction)="null" [rowDbClick]="false" (rowDbClickAction)="null"
+                         [applyFilter]="applyFilterValue"
+                        [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+                    </tw-table-component>
+                </mat-tab>
+                <mat-tab label="{{'Audited'|translate}}">
+                    <ng-template mat-tab-label>{{"Audited"|translate}} {{ totalAuditRecords? ' (' + totalAuditRecords + ')' : '' }}</ng-template>  
+                    <tw-table-component [component]="'audit-schedule-management'" [columns]="displayedColumns"
+                        [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn"
+                        [sortColumn]="sortColumn" [eventColumn]="eventColumn" (eventAction)="eventAction($event)"
+                        [rowId]="'id'" [rowClick]="false"
+                        (rowClickAction)="null" [rowDbClick]="false" (rowDbClickAction)="null" [applyFilter]="applyFilterValue"
+                        [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+                    </tw-table-component>
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+
+    </div>
+</div>

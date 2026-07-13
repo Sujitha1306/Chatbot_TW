@@ -1,0 +1,45 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+<div class="ovi-pop-hdr">
+        <div >{{"Manage KPI"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+</div>
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow:auto;overflow-x:hidden;height:calc(100% - 80px); width : calc(100% - 25px)">
+    <div class="ovi-row-gap" [formGroup]="entityForm">
+      <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{ "Target" | translate }} <span class="mandatory-field">*</span></mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Target'|translate" formControlName="target">
+            <mat-error *ngIf="entityForm.controls['target'].invalid">
+              <span *ngIf="entityForm.controls['target'].errors?.required">
+                {{"Target is Required" | translate}}
+              </span>
+              <span *ngIf="entityForm.controls['target'].touched && entityForm.controls['target'].errors?.pattern">
+                {{"Target supports only number format with up to two decimals. Please enter a valid number format" | translate}}
+              </span>
+            </mat-error>
+        </mat-form-field>     
+      </div>
+      <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
+          <mat-label  class="ovi-lbl-text-size">{{"Unit Of Measure"|translate}}</mat-label>
+          <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+              <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Unit of Measure'|translate" formControlName="unitOfMeasure">
+          </mat-form-field>
+      </div>
+      <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label  class="ovi-lbl-text-size">{{"Frequency"|translate}}</mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Frequency'|translate" formControlName="frequencyId"
+                [disableOptionCentering]="true">
+                <mat-option *ngFor="let data of frequencyList" [value]="data.code">
+                    {{data.value}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+<div class="ovi-pop-ftr" style="text-align: right;">
+    <button mat-button class="active-btn"  mat-dialog-close  >{{"Cancel"|translate}}</button>
+     <button  mat-button class="active-btn" [disabled]="entityForm.invalid" appDebounceClick (debounceClick)="UpdateData()" [debounceTime]="300">{{"Save"|translate}}</button>
+</div>  
+</div>

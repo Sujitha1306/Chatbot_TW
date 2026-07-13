@@ -1,0 +1,109 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{ data !== null ? 'Modify' : 'Create' }} API KEY</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: auto;height:calc(100% - 90px);" [formGroup]="apikeyGroup">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Key Name'|translate"
+                        formControlName="keyName">
+                </mat-form-field>
+            </div>
+             <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Key Type'|translate"
+                        formControlName="keyType" [disableOptionCentering]="true">                                              
+                        <mat-option  [value]="'GLOBAL'">{{"Global"|translate}}</mat-option>
+                        <!-- <mat-option  [value]="'CUSTOMER'">{{"Customer"|translate}}</mat-option>
+                        <mat-option  [value]="'REGION'">{{"Region"|translate}}</mat-option> -->
+                        <mat-option  [value]="'FACILITY'">{{"Facility"|translate}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box" >
+                <span *ngIf="apikeyGroup.controls.keyType.value != 'GLOBAL'">
+                <mat-label class="ovi-lbl-text-size">{{"Facility Name"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                      <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Customer Id'|translate"
+                        formControlName="facilityId" [disableOptionCentering]="true"> 
+                            <mat-option [value]="null"> ------- All ------- </mat-option>
+                            <mat-option *ngFor="let data of facilityList" [value]="data.facilityId">
+                            {{ data.displayName }}
+                            </mat-option>
+                        </mat-select>
+                </mat-form-field>
+                </span>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label  class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate"
+                        formControlName="roleId" [disableOptionCentering]="true" matSelectSearch>
+                        <mat-option *ngFor="let role of roleList" [value]="role.id">
+                            {{role.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                <mat-label class="ovi-lbl-text-size">{{"Expired Date"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                    <!-- <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Expired At'|translate"
+                        type="datetime-local" formControlName="expiredAt"> -->
+                        <input matInput [matDatepicker]="expirypicker"  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Expired At'|translate"  formControlName="expiredAt">
+                        <mat-datepicker-toggle matSuffix [for]="expirypicker"></mat-datepicker-toggle>
+                        <mat-datepicker #expirypicker></mat-datepicker>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate"
+                        formControlName="status" [disableOptionCentering]="true"   [disabled]="!this.data">
+                         <mat-option  [value]="'ACTIVE'">{{"Active"|translate}}</mat-option>
+                        <mat-option  [value]="'REVOKED'">{{"Revoked"|translate}}</mat-option>
+                         <mat-option *ngIf="apikeyGroup.controls.keyType.value != 'GLOBAL'"  [value]="'RENEWAL'">{{"Renewal"|translate}}</mat-option>
+                        <!--<mat-option  [value]="'SUSPENDED'">{{"Suspended"|translate}}</mat-option>
+                        <mat-option  [value]="'ROTATED'">{{"Rotated"|translate}}</mat-option> -->
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box" *ngIf="data && apikeyGroup.controls.status.value != 'ACTIVE'">
+                <mat-label class="ovi-lbl-text-size">{{"Status Reason"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                    <textarea matInput rows="2" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Status Reason'|translate" formControlName="statusReason"></textarea>
+                </mat-form-field>
+            </div>
+             <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box ">
+                <mat-label class="ovi-lbl-text-size">{{"Content"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <textarea matInput rows="4" appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Content'|translate" formControlName="content"></textarea>
+                </mat-form-field>
+            </div>
+        </div>
+            <div class="ovi-token-box" *ngIf="data?.token">
+                <div class="ovi-token-header">
+                    <mat-label class="ovi-lbl-text-size">{{"Token" | translate}} : </mat-label>
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Key Name'|translate" class="ovi-token-textarea"
+                        formControlName="token">
+                    <button mat-button type="button" class="ovi-copy-btn">
+                        <mat-icon (click)="localcopy(apikeyGroup.controls['token'].value)">content_copy</mat-icon>
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn " appDebounceClick (debounceClick)="saveApiKey()" [debounceTime]="300"
+            cdkFocusInitial [disabled]="this.apikeyGroup.invalid">{{ data?.id ? 'Update' : 'Create' }}</button>
+    </div>
+</div>

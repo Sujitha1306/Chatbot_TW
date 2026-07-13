@@ -1,0 +1,242 @@
+<div class="cpa-root ovi-font-family" [formGroup]="patientadmitForm">
+
+  <!-- ── Header ── -->
+  <div class="cpa-header">
+    <div class="cpa-hdr-left">
+      <div class="cpa-hdr-icon">
+        <mat-icon>person_add</mat-icon>
+      </div>
+      <span class="cpa-hdr-title">{{ "Create Patient" | translate }}</span>
+    </div>
+    <button class="cpa-close-btn" mat-dialog-close>
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- ── Body ── -->
+  <div class="cpa-body">
+
+    <!-- Card 1: Patient Lookup -->
+    <div class="cpa-card">
+      <div class="cpa-card-hdr">
+        <span class="cpa-card-accent"></span>{{ "Patient Lookup" | translate }}
+      </div>
+      <div class="cpa-lookup-row">
+        <mat-form-field appearance="outline" class="cpa-ff cpa-lookup-input">
+          <input matInput #uhid
+                 placeholder="{{ 'Enter Patient ID to prefill' | translate }}"
+                 formControlName="mainidentifier"
+                 (keyup)="clearUHID($event)"
+                 (keyup.enter)="getUHID($event.target.value)"
+                 autocomplete="off">
+        </mat-form-field>
+        <button class="cpa-btn-search" [disabled]="!uhid.value"
+                appDebounceClick [debounceTime]="300" cdkFocusInitial
+                (click)="getUHID(uhid.value)">
+          <mat-icon>search</mat-icon>
+          {{ "Search" | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Card 2: Basic Information -->
+    <div class="cpa-card">
+      <div class="cpa-card-hdr">
+        <span class="cpa-card-accent"></span>{{ "Basic Information" | translate }}
+      </div>
+
+      <!-- Row 1: First Name | Middle Name | Last Name -->
+      <div class="cpa-grid-3">
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "First Name" | translate }} <span class="cpa-req">*</span></label>
+          <mat-form-field appearance="outline" class="cpa-ff">
+            <input matInput formControlName="firstName"
+                   placeholder="{{ 'First name' | translate }}" autocomplete="off">
+            <mat-error *ngIf="patientadmitForm.controls['firstName'].hasError('required')">
+              {{ "First name is required" | translate }}
+            </mat-error>
+            <mat-error *ngIf="patientadmitForm.controls['firstName'].hasError('pattern')">
+              {{ "Numbers and special characters are not allowed" | translate }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "Middle Name" | translate }}</label>
+          <mat-form-field appearance="outline" class="cpa-ff">
+            <input matInput formControlName="middleName"
+                   placeholder="{{ 'Middle name' | translate }}" autocomplete="off">
+          </mat-form-field>
+        </div>
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "Last Name" | translate }}</label>
+          <mat-form-field appearance="outline" class="cpa-ff">
+            <input matInput formControlName="lastName"
+                   placeholder="{{ 'Last name' | translate }}" autocomplete="off">
+          </mat-form-field>
+        </div>
+
+      </div>
+
+      <!-- Row 2: Mobile | DOB | Gender -->
+      <div class="cpa-grid-3">
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "Mobile" | translate }}</label>
+          <div class="cpa-phone-row">
+            <mat-form-field appearance="outline" class="cpa-ff cpa-ff-code">
+              <input matInput formControlName="countryCode"
+                     [matAutocomplete]="countryCode" placeholder="+91"
+                     (blur)="clearInvalidCountryCode('countryCode')">
+              <mat-autocomplete #countryCode="matAutocomplete" panelWidth="260px">
+                <mat-option *ngFor="let country of countryOptions | async"
+                            [value]="country.code"
+                            appTooltip [tooltipText]="country.value" placement="bottom"
+                            (click)="getPhoneValidate(country.code, 'code')">
+                  {{ country.code }} ({{ country.value }})
+                </mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="patientadmitForm.controls['countryCode'].hasError('pattern')">
+                {{ "Code (e.g. +91)" | translate }}
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="cpa-ff cpa-ff-phone">
+              <input matInput formControlName="mobileNo"
+                     placeholder="{{ 'Phone number' | translate }}"
+                     autocomplete="off" (input)="onMobileInput()">
+              <mat-error *ngIf="patientadmitForm.controls['mobileNo'].hasError('pattern')">
+                {{ "Invalid mobile number" | translate }}
+              </mat-error>
+              <mat-error *ngIf="patientadmitForm.controls['mobileNo'].hasError('invalidPhone')">
+                {{ phoneMessage | translate }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "Date of Birth" | translate }}</label>
+          <mat-form-field appearance="outline" class="cpa-ff">
+            <input matInput [matDatepicker]="picker" formControlName="birthDate"
+                   placeholder="{{ 'Select date' | translate }}"
+                   autocomplete="off" [max]="today">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "Gender" | translate }}</label>
+          <div class="cpa-radio-row">
+            <mat-radio-group formControlName="gender" (change)="getGenderType($event.value)">
+              <mat-radio-button *ngFor="let o of genderList" [value]="o"
+                                [checked]="patientadmitForm.controls['gender'].value === o.code"
+                                class="cpa-radio">
+                {{ o.value | translate }}
+              </mat-radio-button>
+            </mat-radio-group>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Enable Login row -->
+      <div class="cpa-login-toggle">
+        <mat-checkbox formControlName="userCreation" (keydown.enter)="fixClick()"
+                      (change)="onChange($event)">
+        </mat-checkbox>
+        <span class="cpa-login-lbl">{{ "Enable Login Creation" | translate }}</span>
+      </div>
+
+    </div>
+
+    <!-- Card 3: Login Access (conditional) -->
+    <div class="cpa-card" *ngIf="isChecked">
+      <div class="cpa-card-hdr">
+        <span class="cpa-card-accent"></span>{{ "Login Access" | translate }}
+      </div>
+      <div class="cpa-grid-2">
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "E-Mail (Username)" | translate }} <span class="cpa-req">*</span></label>
+          <mat-form-field appearance="outline" class="cpa-ff">
+            <input matInput formControlName="userName"
+                   placeholder="{{ 'Email address' | translate }}"
+                   autocomplete="new-password"
+                   [errorStateMatcher]="matcher"
+                   role="presentation">
+            <mat-error *ngIf="patientadmitForm.controls['userName'].hasError('required')">
+              {{ "E-Mail is required" | translate }}
+            </mat-error>
+            <mat-error *ngIf="patientadmitForm.controls['userName'].hasError('email')">
+              {{ "Invalid E-Mail" | translate }}
+            </mat-error>
+            <mat-error *ngIf="patientadmitForm.controls['userName'].hasError('emailExists')">
+              {{ "Sorry, E-Mail already exists!" | translate }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="cpa-field">
+          <label class="cpa-lbl">{{ "Password" | translate }}<span class="cpa-req">*</span></label>
+          <mat-form-field appearance="outline" class="cpa-ff">
+            <input matInput formControlName="cnfrmNewPassword"
+                   [type]="hide ? 'password' : 'text'"
+                   placeholder="{{ 'Password' | translate }}"
+                   autocomplete="new-password"
+                   [errorStateMatcher]="matcher"
+                   maxlength="26">
+            <span matSuffix (click)="hide = !hide"
+                  class="material-icons cpa-pwd-toggle"
+                  tabindex="0" role="button"
+                  (keydown.enter)="hide = !hide"
+                  (keydown.space)="hide = !hide">
+              {{ hide ? 'visibility_off' : 'visibility' }}
+            </span>
+            <mat-error *ngIf="patientadmitForm.controls['cnfrmNewPassword'].hasError('pattern')">
+              {{ "Password must include uppercase, digit, and symbol (8–12 chars)" | translate }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+          <div class="cpa-field">
+    <label class="cpa-lbl">{{ "Confirm Password" | translate }}<span class="cpa-req">*</span></label>
+    <mat-form-field appearance="outline" class="cpa-ff">
+      <input matInput formControlName="confirmPassword"
+             [type]="hideConfirmPassword ? 'password' : 'text'"
+             placeholder="{{ 'Confirm Password' | translate }}"
+             autocomplete="new-password"
+             [errorStateMatcher]="matcher"
+             maxlength="12">
+      <button mat-icon-button matSuffix type="button"
+              (click)="hideConfirmPassword = !hideConfirmPassword">
+        <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-error *ngIf="patientadmitForm.controls['confirmPassword'].hasError('required')">
+        {{ "Confirm Password is required" | translate }}
+      </mat-error>
+      <mat-error *ngIf="patientadmitForm.controls['confirmPassword'].hasError('passwordMismatch')">
+        {{ "Passwords do not match" | translate }}
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="cpa-footer">
+    <button class="cpa-btn-ghost" mat-dialog-close>{{ "Cancel" | translate }}</button>
+    <button *ngIf="!data?.id" class="cpa-btn-primary"
+            [disabled]="patientadmitForm?.invalid"
+            appDebounceClick [debounceTime]="300" (debounceClick)="savePatient()">
+      <mat-icon>person_add</mat-icon>
+      {{ "Create" | translate }}
+    </button>
+  </div>
+
+</div>

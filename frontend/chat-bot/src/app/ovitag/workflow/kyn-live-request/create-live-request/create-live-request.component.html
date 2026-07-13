@@ -1,0 +1,143 @@
+<div class="manage-body container-fluid ovi-font-family">
+    <mat-toolbar class="block-1" style="height: 50px; background: #eee; font-weight: 600;">
+        <div style="width: 260px;">
+            <div style="float: left;">
+                <button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                    <mat-icon class="icon-style" style="padding: 15px 5px 0;">highlight_off</mat-icon>
+                </button>
+            </div>
+            <span style="float: right; margin-top: 7px;">
+                <div class="title-Name">{{"Request a live telecast"|translate}}</div>
+            </span>
+        </div>
+    </mat-toolbar>
+    <div style="height: calc(100% - 105px); overflow-x: hidden; overflow-y: auto;" [formGroup]="liveRequestForm">
+        <div class="form-row live-blocks">
+            <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="100" class="row-field-live">
+                <div class="example-form">
+                    <mat-form-field class="row-field-live">
+                        <input class="type-field" matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Title'|translate" formControlName="titleId">
+                        <mat-error *ngIf="liveRequestForm.controls.titleId.invalid">
+                            <span [hidden]="!liveRequestForm.controls['titleId'].errors.required">
+                                {{"Title is required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="100" class="row-field-live">
+                <div class="example-form">
+                    <mat-form-field style="width: 100%;" appearance="fill">
+                        <mat-label>{{"Tell about the event"|translate}}</mat-label>
+                        <textarea class="type-field" matInput (input)="updateCounter($event)"
+                            formControlName="eventAbout"></textarea>
+                        <mat-error *ngIf="liveRequestForm.controls.eventAbout.invalid">
+                            <span [hidden]="!liveRequestForm.controls['eventAbout'].errors.required">
+                                {{"About the event is required"|translate}}.</span>
+                            <span [hidden]="!liveRequestForm.controls['eventAbout'].errors.maxlength">
+                                {{"Maximmum allowed characters are 70"|translate}} </span>
+                        </mat-error>
+                    </mat-form-field>
+                    <div class="ovi-fnt-sze12" style="float: right; margin-top: -20px;">{{ charCount }} / 70</div>
+                </div>
+            </div>
+            <span style="align-items: center;">
+                <mat-icon class="label-icon">access_time</mat-icon>
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="50" class="row-field-live">
+                    <div class="example-form">
+                        <mat-form-field class="row-field-live">
+                            <mat-label>{{"Date & time"|translate}}</mat-label>
+                            <input class="type-field" matInput [ngxMatDatetimePicker]="picker"
+                                formControlName="eventDate">
+                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                            <ngx-mat-datetime-picker class="custom-ngx-calander" #picker></ngx-mat-datetime-picker>
+                            <mat-error *ngIf="liveRequestForm.controls.eventDate.invalid">
+                                <span [hidden]="!liveRequestForm.controls['eventDate'].errors.required">
+                                    {{"EventDate is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </span>
+            <span style="align-items: center;">
+                <mat-icon class="label-icon">timer</mat-icon>
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="50" class="row-field-live">
+                    <div class="example-form">
+                        <mat-form-field class="row-field-live">
+                            <mat-label>{{"Live video duration"|translate}}</mat-label>
+                            <input class="type-field" matInput value="00:00:00" formControlName="duration">
+                            <mat-error *ngIf="liveRequestForm.controls.duration.invalid">
+                                <span [hidden]="!liveRequestForm.controls['duration'].errors.required">
+                                    {{"duration is required"|translate}}.</span>
+                                <span [hidden]="!liveRequestForm.controls['duration'].errors.pattern">
+                                    {{"Please enter a valid duration in this format HH:mm:ss"|translate}}
+                                </span>
+                                <span [hidden]="!liveRequestForm.controls['duration'].errors.invalidDuration">
+                                    {{"Duration cannot be '00:00:00'"|translate}}.
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </span>
+            <span style="align-items: center;">
+                <mat-icon class="label-icon">location_on</mat-icon>
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="50" class="row-field-live">
+                    <div class="example-form">
+                        <mat-form-field class="row-field-live">
+                            <mat-label>{{"Event Location"|translate}}</mat-label>
+                            <mat-select class="type-field" formControlName="location">
+                                <mat-option *ngFor="let option of eventLocationList"
+                                    (click)="locationDetails(option.name)" [value]="option.id"  (keydown.enter)="fixClick()">
+                                    {{option.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="liveRequestForm.controls.location.invalid">
+                                <span [hidden]="!liveRequestForm.controls['location'].errors.required">
+                                    {{"Event Location is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </span>
+            <span style="align-items: center;">
+                <mat-icon class="label-icon">category</mat-icon>
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="100" fxFlex.sm="50" class="row-field-live">
+                    <div class="example-form">
+                        <mat-form-field class="row-field-live">
+                            <mat-label>{{"Event Category"|translate}}</mat-label>
+                            <mat-select class="type-field" formControlName="category">
+                                <mat-option *ngFor="let option of eventCategoryList"
+                                    (click)="categoryDetails(option.name)" [value]="option.id" (keydown.enter)="fixClick()">
+                                    {{option.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="liveRequestForm.controls.category.invalid">
+                                <span [hidden]="!liveRequestForm.controls['category'].errors.required">
+                                    {{"Event category is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </span>
+            <span *ngIf="false">
+                <span class="close-align">
+                    <mat-icon *ngIf="filePassed" class="icon-style" style="color: #d61820; cursor: pointer;"
+                        (click)="uploadRemove()" (keydown.enter)="fixClick()">highlight_off</mat-icon>
+                </span>
+                <div style="float: right;">
+                    <button *ngIf="!filePassed" mat-button class="file-upload-button">
+                        <input type="file" #fileInput accept="video/mp4" class="custom-file-input" id="file3"
+                            (change)="onSelectFile($event)" />
+                        {{"upload URL"|translate}}</button>
+                    <div style="width: 145px;">{{contentName}}</div>
+                </div>
+            </span>
+        </div>
+    </div>
+    <div class="input-footer">
+        <div style="float: right; margin: 7px;">
+            <button mat-button style="background: #d61820;" appDebounceClick [disabled]="liveRequestForm.invalid"
+                (debounceClick)="createScheduleId()" [debounceTime]="300">{{"Submit"|translate}}</button>
+        </div>
+    </div>
+</div>

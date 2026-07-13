@@ -1,0 +1,1469 @@
+<div class="input-component-holder container ovi-font-family" appWindowResize (resized)="onWindowResized($event)"
+    (resizedWidth)="onWindowResizedWidth($event)" [component]="'pop-up'" [style.height.px]="popHeight"
+    [style.width.px]="popWidth">
+    <mat-toolbar class="input-header block-1">
+        <div style="display: flex;width: 100%">
+            <div  *ngIf="this.type === 'template' && this.routineID === null && this.selectedTab !== 'Task' && this.selectedTab !== 'Task List'"  class="header-name" [ngClass]="this.entityId ? 'close-align-wrk-large':'close-align-wrk'">
+                {{"Create Routine Template"|translate}}</div>
+            <div  *ngIf="this.type === 'template' && this.routineID !== null && this.selectedTab !== 'Task' && this.selectedTab !== 'Task List'"  class="header-name" [ngClass]="this.entityId ? 'close-align-wrk-large':'close-align-wrk'"
+                style="text-overflow: ellipsis;">{{"Modify Routine Template"|translate}}</div>
+            <div  *ngIf="this.type !== 'template' && this.selectedTab !== 'Task' && selectedTab !== 'Easy Pick' && this.data.type !== 'modify'"  class="header-name" [ngClass]="this.entityId ? 'close-align-wrk-large':'close-align-wrk'">
+                {{"Manage Task"|translate}}</div>
+                <div  *ngIf="this.type !== 'template' && this.data.type !== 'modify' && (this.selectedTab === 'Task' || this.selectedTab === 'Easy Pick')"  class="header-name" [ngClass]="this.entityId ? 'close-align-wrk-large':'close-align-wrk'">
+                {{"Create Task"|translate}} </div>
+                <div  *ngIf="this.type !== 'template' && this.data.type === 'modify' && this.selectedTab === 'Task List'"  class="header-name" [ngClass]="this.entityId ? 'close-align-wrk-large' : 'close-align-wrk'">
+                {{"Modify Task"|translate}} </div>
+            <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+        </div>
+    </mat-toolbar>
+    <!-- style="overflow-x: hidden;overflow-y:auto;" -->
+    <div class="add-routine" [ngClass]="(selectedTab === 'Task List' && this.entityId && this.data.type !== 'modify') || (selectedTab === 'Task History' && this.entityId) ? 'tsk-list-body' : 'tsk-body' && (selectedTab === 'Task' && this.entityId)
+    || (selectedTab === 'Easy Pick' && this.entityId) ? 'create-task-body-fullpopup': 'task-popup-body' && (selectedTab === 'Manage Routine' && this.entityId) ? 'manage-rout-tsk-body':'tsk-body' && this.data.type !== 'modify' ? 'tsk-body' : ''" #scrollbottom>
+        <div class="mat-custom-form-field-box block-2"
+        [style.height.px]="selectedTab === 'Easy Pick' ? contentHeight + 5 : selectedTab === 'Manage Routine'
+        || selectedTab === 'Task History' ? contentHeight: contentHeight">
+            <app-patient-banner *ngIf="this.entityId" [patientDetail]="detail"></app-patient-banner>
+            <mat-tab-group  (selectedTabChange)="onTabChanged($event)"  [selectedIndex]="selectedTabIndex">
+                <mat-tab *ngIf="this.permissionTab?.indexOf('Task') > -1 || this.permissionTab?.indexOf('Task List') > -1" label="{{labeltext | translate}}">
+                    <div *ngIf="this.permissionTab?.indexOf('Task List') > -1 && this.data.type !== 'modify'" class="tw-popup-content-tbl block-7"
+                        style="padding: 5px 25px 5px 25px;">
+                        <div style="padding-left: 20px;width: 150px;display: flex;flex-direction: row;" class="example-form">
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input  matInput (keyup)="applyFilter($event.target.value, 'Task List')" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" [(ngModel)]="search"  [ngModelOptions]="{ standalone: true }">
+                            </mat-form-field>
+                            <div [ngClass]=" 'tw-refresh-icon'" style="float:right;margin-top:2px; padding-left: 5px;">
+                                <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom" (click)="refershPage()"
+                                  style="cursor: pointer; float: right;" (keydown.enter)="fixClick()">autorenew</i>
+                                </span>
+                              </div>
+                        </div>
+                        <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'" style="margin-top: -15px;">
+                            <div class="tw-mat-table-overflow box-26" style="overflow-x: auto;">
+                                <table mat-table class="tw-table" [dataSource]="TkdataSource" matSort>
+                                    <caption style="display:none">Task List</caption>
+
+                                    <ng-container matColumnDef="S.No">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef
+                                            class="tw-manage-table-header" style="width: 5%;">
+                                            {{"S.No"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data; let i = index;" style="padding-right: 20px;width: 5%;">
+                                            {{i+1}}
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Type">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header" style="width: 5%;"> {{"Type"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;width: 5%;">
+                                            <span>
+                                                <img style="width:15px;margin: 15px 15px 5px 10px;" alt="task" src="../../../../../assets/Menus/task-general.svg" class="svg-icon">
+                                            </span>
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Name">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Name"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                            <span >{{data.activityName}}</span>
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Time">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Time"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                            <span >{{data.scheduleDate | date: 'hh:mm a, d MMM'}}</span>
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Task">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Task"|translate}}</th>
+                                            <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                <span *ngIf="data.performedCount !== null" matBadge="{{data.performedCount}}"
+                                                matBadgeOverlap="false">{{data.activityName}}</span>
+                                                <span *ngIf="data.performedCount === null">{{data.activityName}}</span>
+                                            </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Details">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Details"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.remarks}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Incharge">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Incharge"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.performerName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Location">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Location"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.destinationLocationName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Status">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Status"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" (click)="getAlertHis(data)" style="padding-right: 20px;color: blue;
+                                        cursor: pointer;" (keydown.enter)="fixClick()">{{data.statusName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Icon">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef
+                                            class="tw-manage-table-header">
+                                        </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;padding-left: 20px;">
+                                            <span *ngIf="data.requestTypeId === 'RQT-ROU'">
+                                                <button *ngIf="data.statusId === 'RQ-CR'"  mat-button
+                                                    class="rout-in-btn margin-r-1" appDebounceClick
+                                                    (debounceClick)="taskRoutineStatusChange(data, 'RQ-IP')" [debounceTime]="300"
+                                                    cdkFocusInitial>{{"IN"|translate}}</button>
+                                                <button *ngIf="data.statusId === 'RQ-IP'"  mat-button
+                                                    class="rout-out-btn margin-r-1" appDebounceClick
+                                                    (debounceClick)="taskRoutineStatusChange(data, 'RQ-CO')" [debounceTime]="300"
+                                                    cdkFocusInitial>{{"OUT"|translate}}</button>
+                                            </span>
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Select">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef
+                                            class="tw-manage-table-header">
+                                        </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;padding-left: 20px;">
+                                            <button *ngIf="data.type === 'Task' || (data.requestTypeId === 'RQT-ROU' && data.statusId === 'RQ-IP')"
+                                            mat-icon-button [matMenuTriggerFor]="menu" (click)="selectTask(data, data.type)">
+                                                <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                                            </button>
+                                            <mat-menu #menu="matMenu">
+                                                <button *ngIf="data.requestTypeId === 'RQT-ROU' && data.statusId === 'RQ-IP'"
+                                                mat-menu-item (click)="taskRoutineStatusChange(data, 'RQ-CR')">
+                                                    <span class="activity-edit">{{"Undo"|translate}}</span>
+                                                </button>
+                                            </mat-menu>
+                                        </td>
+                                    </ng-container>
+
+                                    <tr mat-header-row *matHeaderRowDef="TaskDisplayedColumns; sticky: true;"
+                                        class="tw-manage-table-header-row"></tr>
+                                    <tr mat-row *matRowDef="let data; columns: TaskDisplayedColumns; let i = index;"
+                                    [ngStyle]="{'background-color': this.taskSelectedName === this.data.requestId ||
+                                    this.selectedReqId === this.data.requestId ? '#D3D3D3' : ''}"
+                                    (click)="data.type === 'Task' ? selectRow(data,scrollbottom) : cancelTask()" (keydown.enter)="fixClick()">
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div  class="no-activity" *ngIf="!this.taskExist">{{"No Task Found"|translate}}</div>
+                    </div>
+                    <!-- *ngIf="this.permissionTab?.indexOf('Task') > -1 || this.isEditTask || this.taskExist"> -->
+                    <div *ngIf="false">
+                        <div class="mat-custom-form-field-box act-content" [formGroup]="createTaskForm"
+                        [style.max-height.px]="this.height">
+                            <mat-expansion-panel [expanded]="isTaskExpanded ? true : false">
+                                <mat-expansion-panel-header>
+                                    <mat-panel-title  class="ovi-popup-title-text-size top-styl">
+                                        {{"TASK DETAILS"|translate}}
+                                    </mat-panel-title>
+
+                                </mat-expansion-panel-header>
+                                <mat-divider class="divider"></mat-divider>
+                                <div class="form-row block-3">
+                                    <div class="row-field-6" *ngIf = "data.hasOwnProperty('type') && data.type == 'RQT-NC'">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Task Category"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Task Category'|translate" formControlName="workItemId"
+                                                    [disableOptionCentering]="true" [disabled]="this.isEditTask" (selectionChange)="checkTaskActivity($event.value)">
+                                                    <mat-option *ngFor="let data of activitySubType" [value]="data.code">{{data.value}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Task Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Task'|translate" id="taskSearch"
+                                                    formControlName="taskId" appTypeHit
+                                                    (typeHit)="searchTasklist($event)" [matAutocomplete]="task"
+                                                    autocomplete="off" [readonly]="this.isEditTask === true ? true : false">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.taskId === null && this.selectedTab === 'Task'  ? getTaskList.bind(taskList) : ''"
+                                                    #task="matAutocomplete">
+                                                    <mat-option *ngFor="let data of taskList" [value]="data.id"
+                                                        (onSelectionChange)="getTaskDetails(data.id);">
+                                                        <div class="act-wid-styl">{{data.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error *ngIf="createTaskForm.controls.taskId.invalid">
+                                                    <span  [hidden]="!createTaskForm.controls['taskId'].errors.required">{{"Task Name"|translate}}
+                                                        is required.</span>
+                                                    <span  [hidden]="!createTaskForm.controls['taskId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2
+                                                    formControlName="taskDescription"></textarea>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row block-3">
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Start Time"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input  matInput type="datetime-local" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Time'|translate"
+                                                    formControlName="taskStartTime" [readonly]="this.isEditTask === true ? true : false">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                        <mat-label  class="ovi-lbl-text-size">{{"Location"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search location'|translate"
+                                                id="taskLocation" appTypeHit (typeHit)="searchTaskLocationList($event)" [matAutocomplete]="autoLoc"
+                                                    formControlName="taskLocationId" [readonly]="this.isEditTask === true ? true : false">
+                                                <mat-autocomplete autoActiveFirstOption [displayWith]="this.taskLocationEnabled === true ? getTaskLocationList.bind(taskLocationList) : ''" #autoLoc="matAutocomplete">
+                                                    <mat-option *ngFor="let option of taskLocationList"
+                                                        [value]="option.id">
+                                                        <div class="tot-wid-styl" (click)="getTaskLocationID(option.id)" (keydown.enter)="fixClick()">{{option.fullName}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row block-3">
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Incharge Type"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Incharge Type'|translate" formControlName="taskInchargeType"
+                                                    [disableOptionCentering]="true" (selectionChange)="getTaskIncharge($event.value)"
+                                                    [disabled]="this.isEditTask === true || this.entityType === 'User' ? true : false">
+                                                    <mat-option *ngFor="let data of taskInchargeTypeList" [value]="data.code">
+                                                        {{data.value}}</mat-option>
+                                                </mat-select>
+                                                <mat-error *ngIf="createTaskForm.controls.taskInchargeType.invalid">
+                                                    <span  [hidden]="!createTaskForm.controls['taskInchargeType'].errors.required">{{"Incharge Type is required"|translate}}.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Incharge Value"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Incharge Value'|translate" id="taskIncharge"
+                                                    formControlName="taskInchargeId" appTypeHit (typeHit)="searchTaskUserNamelist($event)"
+                                                    [matAutocomplete]="auto" autocomplete="off"
+                                                    [readonly]="this.isEditTask === true || this.entityType === 'User' ? true : false">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.taskInchargeEnabled === true ? getTaskInchargeList.bind(taskInchargeList) : ''"
+                                                    #auto="matAutocomplete">
+                                                    <mat-option *ngFor="let option of taskInchargeList" [value]="option.id">
+                                                        <div class="act-wid-styl">{{option.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error *ngIf="createTaskForm.controls.taskInchargeId.invalid">
+                                                    <span  [hidden]="!createTaskForm.controls['taskInchargeId'].errors.required">{{"Incharge Value is required"|translate}}.</span>
+                                                    <span  [hidden]="!createTaskForm.controls['taskInchargeId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row block-3">
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" rows=2
+                                                    formControlName="remarks"></textarea>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-9">
+                                        <div class="example-form" *ngIf = "activityCategoryId != 'AC-HAZ'">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Gender"|translate}}</mat-label>
+                                            <div class="act-radio-button" style="margin-top: 10px;">
+                                                <mat-radio-group formControlName="gender" [disabled]="this.isEditTask === true ? true : false">
+                                                    <mat-radio-button class="act-radio" *ngFor="let o of genderList" [value]="o.code">
+                                                        {{o.value}}</mat-radio-button>
+                                                </mat-radio-group>
+                                            </div>
+                                        </div>
+                                        <div class="example-form" *ngIf = "activityCategoryId == 'AC-HAZ'">
+                                            <div style="margin-top: 22px;">
+                                                <mat-checkbox formControlName="isDummy">{{"Dummy"|translate}}</mat-checkbox>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- <div class="row-field-1">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">Status</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select  placeholder="Staus" formControlName="isActive"
+                                                    [disableOptionCentering]="true">
+                                                    <mat-option *ngFor="let data of statusList" [value]="data.code">
+                                                        {{data.value}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                    </div> -->
+                                    <div style="padding-top: 20px;" *ngIf="this.permissionTab?.indexOf('Task List') > -1 && this.data.type !== 'modify'">
+                                        <button  mat-mini-fab color="primary" (click)="this.createTaskForm.dirty ? updateTask() : ''"
+                                            matTooltip="{{'Save'|translate}}" [disabled]="!this.createTaskForm.dirty"
+                                            [ngStyle]="{'opacity': !this.createTaskForm.dirty ? '30%' : ''}" class="ovi-fnt-sze12"
+                                            style="background-color: green;margin-right: 10px;">
+                                            <img matListIcon iconsmall style="height: 15px; width: 15px" alt="ticket" src="/assets/Alert/IP/save-tick.svg">
+                                        </button>
+                                        <button  mat-mini-fab color="primary" (click)="cancelTask()" matTooltip="{{'Cancel'|translate}}"
+                                            style="background-color: #FC8C91;"> x
+                                        </button>
+                                        <!-- <img class="edit-activity-icon" style="cursor: pointer;" matListIcon iconsmall
+                                            [ngStyle]="{'opacity': !this.createTaskForm.dirty ? '60%' : ''}"
+                                            (click)="this.createTaskForm.dirty ? updateTask() : ''"
+                                            src="/assets/Alert/IP/check-mark.svg">
+                                        <img class="edit-activity-icon" style="cursor: pointer;" matListIcon iconsmall
+                                            (click)="cancelTask()" src="/assets/Alert/IP/cancel.svg"> -->
+                                    </div>
+                                </div>
+                            </mat-expansion-panel>
+                        </div>
+                    </div>
+                </mat-tab>
+                <mat-tab *ngIf="this.permissionTab?.indexOf('Task History') > -1" label="{{'Task History'|translate}}">
+                    <div class="tw-popup-content-tbl block-7" style="padding: 5px 25px 5px 25px;">
+                        <div style="padding-left: 20px;width: 150px;display: flex;flex-direction: row;" class="example-form">
+                            <mat-form-field class="example-full-width form-field" appearance="outline" style="margin-right: 10px;">
+                                <input  matInput (keyup)="applyFilter($event.target.value, 'Task History')" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" [(ngModel)]="search"  [ngModelOptions]="{ standalone: true }">
+                            </mat-form-field>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput  [matDatepicker]="picker" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" [(ngModel)]="historyDate"  [ngModelOptions]="{ standalone: true }"
+                                    autocomplete="off"  (dateChange)="getAllHistoryTask($event.target.value)">
+                                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                <mat-datepicker #picker></mat-datepicker>
+                            </mat-form-field>
+                        </div>
+                        <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'" style="margin-top: -15px;">
+                            <div class="tw-mat-table-overflow box-26" style ="overflow-x:auto;">
+                                <table mat-table class="tw-table" [dataSource]="TKHisDataSource" matSort>
+                                    <caption style="display:none">{{"Task History"|translate}}</caption>
+
+                                    <ng-container matColumnDef="S.No">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef
+                                            class="tw-manage-table-header" style="width: 5%;">
+                                            {{"S.No"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data; let i = index;" style="padding-right: 20px;width: 5%;">
+                                            {{i+1}}
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Type">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header" style="width: 5%;"> {{"Type"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;width: 5%;">
+                                            <span>
+                                                <img style="width:15px;margin: 15px 15px 5px 10px;" alt="task" src="../../../../../assets/Menus/task-general.svg" class="svg-icon">
+                                            </span>
+                                        </td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Name">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Name"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.routineTypeName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Task">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Task"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.activityName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Details">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Details"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.remarks}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Incharge">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Incharge"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.performerName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Location">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Location"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.destinationLocationName}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Time">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header">{{"Start Time"|translate}}</th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.startTime |
+                                            date: 'hh:mm a, d MMM'}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Completed Time">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Completed Time"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.endTime |
+                                            date: 'hh:mm a, d MMM'}}</td>
+                                    </ng-container>
+
+                                    <ng-container matColumnDef="Status">
+                                        <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                            class="tw-manage-table-header"> {{"Status"|translate}} </th>
+                                        <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.statusName}}</td>
+                                    </ng-container>
+
+                                    <tr mat-header-row *matHeaderRowDef="TaskHisDisplayedColumns; sticky: true;"
+                                        class="tw-manage-table-header-row"></tr>
+                                    <tr mat-row *matRowDef="let data; columns: TaskHisDisplayedColumns; let i = index;">
+                                    </tr>
+                                </table>
+                                <mat-paginator *ngIf="pageHit" [pageSizeOptions]="[10, 20, 50, 100]" (page)="eventTriggers($event)" [length]="length" showFirstLastButtons></mat-paginator>
+                            </div>
+                        </div>
+                        <div  class="no-activity" *ngIf="!this.taskHisExist">{{"No Task History Found"|translate}}</div>
+                    </div>
+                </mat-tab>
+                <mat-tab *ngIf="this.permissionTab?.indexOf('Easy Pick') > -1" label="{{'Easy Pick'|translate}}">
+                    <ng-template mat-tab-label >{{"Easy Pick"|translate}}</ng-template>
+                    <div *ngIf="selectedTask && activityCategoryList" class="left-task"  [formGroup]="easyPickForm">
+                        <div *ngIf ="windWidth >= 500" style="width:300px;float: left;border-bottom: 3px solid #D1D1D1;overflow-y: auto;" [resizableMinWidth]="300" appResizable
+                            [component]="'WorkFlow'" [style.height.px]="this.entityId ? contentHeight - 50: contentHeight - 65">
+                            <div class="ovi-fnt-sze13" style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600;height:10px;">
+                                <span  class="ovi-popup-title-text-size">{{"ACTIVITY CATEGORY"|translate}}</span>
+                            </div>
+                            <div *ngFor="let data of activityCategoryList">
+                                <div [ngClass]="selectedTask.code === data.code ? 'selected-task' : 'unselected-task'"
+                                (click)="data.code === 'RO-PO' ? getPorter(data) : getTaskActivity(data)" (keydown.enter)="fixClick()">
+                                    <span>
+                                        <img *ngIf="data.code === 'AC-NUR' || data.code === 'RO-NU'" style="width:16px;margin: 15px 15px 5px 10px;" alt="nurse-call"
+                                            src="/assets/Alert/IP/B_nurse-call.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'AC-AID'" style="width:16px;margin: 10px 15px 5px 10px;" alt="nurse-call"
+                                            src="/assets/Alert/IP/B_aid.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'AC-FB' || data.code === 'RO-FS'" style="width:25px;margin: 10px 15px 5px 10px;" alt="nurse-call"
+                                            src="/assets/Alert/IP/B_food.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'AC-HK' || data.code === 'RO-HK'" style="width:25px;margin: 5px 15px 5px 10px;" alt="nurse-call"
+                                            src="/assets/Alert/IP/B_housekeeping.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'AC-PR'" style="width:16px;margin: 15px 15px 5px 10px;"  alt="nurse-call"
+                                            src="/assets/Alert/IP/B_patient-relation.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'AC-BILL'" style="width:16px;margin: 15px 15px 5px 10px;"  alt="nurse-call"
+                                            src="/assets/Alert/IP/B_bill.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'AC-DOC'" style="width:16px;margin: 15px 15px 5px 10px;" alt="nurse-call"
+                                            src="/assets/Alert/IP/doctor-icon.svg" class="svg-icon">
+                                        <img *ngIf="data.code === 'RO-PO'" style="width:16px;margin: 15px 15px 5px 10px;" alt="nurse-call"
+                                            src="/assets/Menus/SMW_porter_management.svg">
+                                        <img *ngIf="data.code !== 'AC-NUR' && data.code !== 'RO-NU' && data.code !== 'AC-AID' &&
+                                            data.code !== 'AC-FB' && data.code !== 'RO-FS' && data.code !== 'AC-HK' && data.code !== 'RO-HK' &&
+                                            data.code !== 'AC-PR' && data.code !== 'AC-BILL' && data.code !== 'AC-DOC' && data.code !== 'RO-PO'" style="width:16px;margin: 15px 15px 5px 10px;"
+                                            src="/assets/Alert/IP/B_task.svg"  alt="nurse-call"class="svg-icon">
+                                    </span>
+                                    <div style="margin-top: 15px; margin-bottom: 15px;">{{data.value}}</div>
+                                </div>
+                                <mat-divider style="margin-bottom: 0px;"></mat-divider>
+                            </div>
+                        </div>
+                        <div [ngStyle]="{width: windWidth >= 500 ? 'calc(100% - 305px)' : 'calc(100%)'}" class="right-task">
+                            <div [style.height.px]="this.entityId ? contentHeight - 50 : contentHeight - 65" style="overflow-y: auto;">
+                                <div class="ovi-fnt-sze13" style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600; height:10px;">
+                                    <span  class="ovi-popup-title-text-size" >{{"SELECT TASK"|translate}}</span>
+                                </div>
+                                <div *ngIf="taskActivitiesList" style="overflow:auto;display: flex; padding: 0px 10px">
+                                    <div class="form-row block-3" style="width: 100%;">
+                                        <div class="row-field-2" style="text-align: center;" *ngFor="let data of taskActivitiesList"
+                                        [ngClass]="selectedTaskActivity.id === data.id ? 'selected-task-act' : 'unselected-task-act'"
+                                        (click)="getTaskActivityDetail(data)" (keydown.enter)="fixClick()">
+                                            <div class="easy-pick-task">{{data.name}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div *ngIf="taskActivitiesList" class="form-row block-3" style="margin-top: 5%;padding : 0px 10px">
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Time"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input  matInput type="datetime-local" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Start Time'|translate"
+                                                formControlName="easyTaskStartTime">
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <!-- <textarea  input matInput placeholder="Description" rows=2
+                                                [(ngModel)]="taskDescription"></textarea> -->
+                                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2
+                                                formControlName="easyTaskDescription"></textarea>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" rows=2
+                                                formControlName="easyTaskRemarks"></textarea>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                        <mat-label  class="ovi-lbl-text-size">{{"Location"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search location'|translate"
+                                                id="taskLocation" appTypeHit (typeHit)="searchTaskLocationList($event)" [matAutocomplete]="autoLoc"
+                                                formControlName="easyTaskLocation">
+                                                <mat-autocomplete autoActiveFirstOption [displayWith]="this.taskLocationEnabled === true ? getTaskLocationList.bind(taskLocationList) : ''" #autoLoc="matAutocomplete">
+                                                    <mat-option *ngFor="let option of taskLocationList"
+                                                        [value]="option.id">
+                                                        <div class="tot-wid-styl" (click)="getTaskLocationID(option.id);getUserDetails(option)" (keydown.enter)="fixClick()">{{option.fullName}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error *ngIf="easyPickForm.controls.easyTaskLocation.invalid">
+                                                    <span  [hidden]="!easyPickForm.controls['easyTaskLocation'].errors.required">{{"Location is required"|translate}}.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Incharge Type"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'incharge Type'|translate"
+                                                formControlName="easyTaskInchargeType" (selectionChange)="getTaskIncharge($event.value)"
+                                                [disabled]="this.entityType === 'User' ? true : false">
+                                                    <mat-option *ngFor="let data of taskInchargeTypeList" [value]="data.code">
+                                                        {{data.value}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-error *ngIf="easyPickForm.controls.easyTaskInchargeType.invalid">
+                                                    <span  [hidden]="!easyPickForm.controls['easyTaskInchargeType'].errors.required">{{"Incharge Type is required"|translate}}.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <div class="row-field-6">
+                                        <div class="example-form">
+                                            <mat-label  class="ovi-lbl-text-size">{{"Incharge Value"|translate}}</mat-label>
+                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Incharge'|translate" id="taskInchargeSearch"
+                                                formControlName="easyTaskInchargeId" appTypeHit
+                                                    (typeHit)="searchTaskUserNamelist($event)" [matAutocomplete]="taskInch"
+                                                    autocomplete="off" [readonly]="this.entityType === 'User' ? true : false">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.taskInchargeEnabled === true ? getInchargeList.bind(taskInchargeList) : ''"
+                                                    #taskInch="matAutocomplete">
+                                                    <mat-option *ngFor="let option of taskInchargeList" [value]="option.id">
+                                                        <div class="act-wid-styl">{{option.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error *ngIf="easyPickForm.controls.easyTaskInchargeId.invalid">
+                                                    <span  [hidden]="!easyPickForm.controls['easyTaskInchargeId'].errors.required">{{"Incharge Value is required"|translate}}.</span>
+                                                    <span  [hidden]="!easyPickForm.controls['easyTaskInchargeId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </mat-tab>
+                <mat-tab *ngIf="this.permissionTab?.indexOf('Manage Routine') > -1" label="{{'Manage Routine'|translate}}" [disabled]="false">
+                    <div *ngIf="false" style="display: flex;justify-content: flex-start;flex-direction: row;">
+                        <div *ngIf ="windWidth >= 500 && activity === true && this.routineID !== null &&
+                            ((this.type === 'template' && !activityData) || this.type !== 'template')"
+                            class="rout-left" [resizableMinWidth]="300" appResizable [component]="'WorkFlow'"
+                            [style.height.px]="this.entityId ? contentHeight + 10 : contentHeight + 62">
+                            <div style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600;">
+                                <span  class="ovi-fnt-sze13">{{"Routine"|translate}}</span>
+                                <span *ngIf ="this.type !== 'template'"><mat-icon style="float: right; margin-top: -2px;cursor: pointer;"
+                                    (click)="addMultiRoutine();" (keydown.enter)="fixClick()">add_circle</mat-icon></span>
+                            </div>
+                            <div class="ovi-fnt-sze16" style="overflow: auto;margin-top: 1px;">
+                                <mat-tree #tree *ngIf = "selectedRow && ACTreedataSource" [dataSource]="ACTreedataSource" [treeControl]="treeControl">
+                                    <!-- without children -->
+
+                                    <!-- with children -->
+                                    <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChildren">
+                                        <div [id]="node.routineId">
+                                            <div *ngIf="node.name || node.routineName" style="margin: -3px 1px -0px 1px;width: calc(100% - 3px);padding-bottom: 5px;"
+                                            [ngStyle]="{'display' :this.type === 'template' && node.routineName ? 'none' : ''}">
+                                                <div style="display: inline-block">
+                                                    <button mat-icon-button disableRipple matTreeNodeToggle style="cursor: pointer;height: 30px;width: 30px;">
+                                                        <span class="material-icons ovi-prmry-clr"  [ngClass]="treeControl.isExpanded(node) ? 'collapse-icon' : 'expand-icon'" 
+                                                        >{{treeControl.isExpanded(node) ? 'remove_circle_outline' : 'add_circle_outline' }}</span>
+                                                    </button>
+                                                </div>
+                                                <div style="padding-bottom: 5px;display: inline-block; width: calc(100% - 30px);"
+                                                [ngClass]="routineExist && (node.entityRoutineId ? node.entityRoutineId === parent : node.routineId === parent) ? 'selected-tree' : 'unselected-tree'">
+                                                    <div style="cursor: pointer;display: inline-block;padding-left: 5px;width: calc(100% - 40px);"
+                                                    (click)="cancelEditActivity(); node.entityRoutineId ? (node.entityRoutineId !== parent ? getRoutineActivityList(node.entityRoutineId) : '')
+                                                     : (node.routineId !== parent ? getRoutineActivityList(node.routineId) : '');" (keydown.enter)="fixClick()">
+                                                        {{node.name ? node.name : node.routineName}}
+                                                        <span *ngIf="node.routineStatusId === 'QS-CO'">
+                                                            <img style="width:16px;margin: 0px 15px -5px 10px;"  alt="Check" src="/assets/Alert/IP/check-mark.png" class="svg-icon">
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle style="min-height: 30px;font-size: 16px;padding-left: 15px;"> -->
+                                            <div *ngIf = "node.activityName" [id]="node.activityIdentifyingId" style="margin: 5px 1px 5px 1px;width: calc(100% - 3px);padding-bottom: 5px;"
+                                            [ngClass]="activityExist && (node.entityRoutineActivityId ? node.entityRoutineActivityId === child : node.activityIdentifyingId === child) ? 'selected-tree' : 'unselected-tree'">
+                                                <div style="cursor: pointer;display: inline-block;padding-left: 20px;width: calc(100% - 35px);"
+                                                (click)="activityExist = true;isActivityList=false;isAddRoutine = false;routineExist = false;
+                                                (node.entityRoutineActivityId ? child = node.entityRoutineActivityId : child = node.activityIdentifyingId);editActivity(node)" (keydown.enter)="fixClick()">
+                                                    {{node.activityName}}
+                                                </div>
+                                            </div>
+                                            <!-- </mat-tree-node> -->
+                                            <div style="padding-left: 25px;" [class.hidden]="!treeControl.isExpanded(node)">
+                                                <ng-container matTreeNodeOutlet></ng-container>
+                                            </div>
+                                        </div>
+                                    </mat-nested-tree-node>
+                                </mat-tree>
+                            </div>
+                        </div>
+                        <div [ngStyle]="{width: windWidth >= 500 && this.activity === true && this.routineID !== null &&
+                            ((this.type === 'template' && !activityData) || this.type !== 'template') ? 'calc(100% - 305px)' : 'calc(100%)',
+                            'border-left': this.routineID === null || activityData ? '3px solid darkgrey' : ''}"
+                            class="rout-right">
+                            <div [style.height.px]="this.entityId ? contentHeight - 90 : contentHeight - 10" style="overflow-y: auto;overflow-x: hidden;">
+                                <div [formGroup]="routineForm">
+                                    <div *ngIf="this.type !== 'template' && isAddRoutine">
+                                        <div class="ovi-fnt-sze13" style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600;">
+                                            <span  >{{"Create Routine"|translate}}</span>
+                                        </div>
+                                        <div class="form-row block-5" style="margin-top: 20px; width: 100%; flex-wrap: wrap;">
+                                            <div class="row-field-1">
+                                                <div class="example-form">
+                                                    <mat-label  class="ovi-lbl-text-size">{{"Routine Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Type'|translate"
+                                                            formControlName="routineTypeId">
+                                                            <mat-option *ngFor="let data of ipRoutineList" [value]="data.code">
+                                                                {{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                        <mat-error *ngIf="routineForm.controls.routineTypeId.invalid">
+                                                            <span 
+                                                                [hidden]="!routineForm.controls['routineTypeId'].errors.required">{{"Routine Type is required"|translate}}.</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-1 box-1">
+                                                <div class="example-form">
+                                                    <mat-label  class="ovi-lbl-text-size">{{"Add Routine Template"|translate}}</mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <input  appNoSpace matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" id="routineTemplate"
+                                                            appTypeHit (typeHit)="checkRoutine($event)" [matAutocomplete]="rout"
+                                                            formControlName="name">
+                                                        <mat-autocomplete autoActiveFirstOption #rout="matAutocomplete">
+                                                            <mat-option *ngFor="let option of routineNameList" [value]="option.name">
+                                                                <div (click)="getRoutineId(option.id)" (keydown.enter)="fixClick()">{{option.name}}</div>
+                                                            </mat-option>
+                                                        </mat-autocomplete>
+                                                        <mat-error *ngIf="routineForm.controls.name.invalid">
+                                                            <span  [hidden]="!routineForm.controls['name'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                                            <span  [hidden]="!routineForm.controls['name'].errors.required">
+                                                                {{"Routine Name is required"|translate}}</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-1">
+                                                <div class="example-form">
+                                                    <mat-label  class="ovi-lbl-text-size">{{"Schedule Type"|translate}}</mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate"
+                                                        formControlName="scheduleTypeId" [disableOptionCentering]="true" disabled>
+                                                            <mat-option *ngFor="let data of scheduleType" [value]="data.code">
+                                                                {{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-1 box-2">
+                                                <div class="example-form">
+                                                    <mat-label  class="ovi-lbl-text-size">{{"From Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <input  matInput [matDatepicker]="frompicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'From Date'|translate"
+                                                            formControlName="scheduleStart" required>
+                                                        <mat-datepicker-toggle matSuffix [for]="frompicker"></mat-datepicker-toggle>
+                                                        <mat-datepicker #frompicker></mat-datepicker>
+                                                        <mat-error *ngIf="routineForm.controls.scheduleStart.invalid">
+                                                            <span  [hidden]="!routineForm.controls['scheduleStart'].errors.required">{{"From Date is required"|translate}}.</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-1 box-3">
+                                                <div class="example-form">
+                                                    <mat-label  class="ovi-lbl-text-size">{{"To Date"|translate}}</mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <input  matInput [matDatepicker]="topicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'To Date'|translate"
+                                                            formControlName="scheduleEnd" [min]="today">
+                                                        <mat-datepicker-toggle matSuffix [for]="topicker"></mat-datepicker-toggle>
+                                                        <mat-datepicker #topicker></mat-datepicker>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-1 box-4">
+                                                <div class="example-form">
+                                                    <mat-label  class="ovi-lbl-text-size">{{"Start Time"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <input matInput  #date appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule'|translate" class="time-input"
+                                                            [value]="defaultscheduleTime" [ngxTimepicker]="timepicker" [disableClick]="true"
+                                                            formControlName="scheduleTime" required>
+                                                        <ngx-material-timepicker-toggle matSuffix [for]="timepicker">
+                                                        </ngx-material-timepicker-toggle>
+                                                        <ngx-material-timepicker #timepicker></ngx-material-timepicker>
+                                                        <mat-error *ngIf="routineForm.controls.scheduleTime.invalid">
+                                                            <span  [hidden]="!routineForm.controls['scheduleTime'].errors.required">{{"Start Time is required"|translate}}.</span>
+                                                        </mat-error>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <!-- <div fxFlex.xs="100" fxFlex.lg="10" fxFlex.md="10" fxFlex.sm="10" class="row-field">
+                                                <div class="add-activity-btn" style="padding-left: 25px;">
+                                                    <button  mat-button class="active-btn"
+                                                        [disabled]="routineForm.controls['name'].value == null || routineForm.controls['scheduleTime'].value == null ||
+                                                        routineForm.controls['scheduleStart'].value == null"
+                                                        (click)="assignRoutine(data)">ADD</button>
+                                                </div>
+                                            </div> -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <mat-accordion>
+                                    <div *ngIf="this.type === 'template' || this.routineID !== null && routineExist">
+                                        <!-- <mat-expansion-panel [expanded]="true">
+                                            <mat-expansion-panel-header>
+                                                <mat-panel-title  class="ovi-popup-title-text-size top-styl">
+                                                    ROUTINE DETAILS
+                                                </mat-panel-title>
+
+                                            </mat-expansion-panel-header>
+                                            <mat-divider class="divider"></mat-divider> -->
+                                            <div class="ovi-fnt-sze13" style="padding: 12px;background: #f1f1f1;color: #000000;font-weight: 600;">
+                                                <span >{{"Manage Routine"|translate}}</span>
+                                            </div>
+                                            <div class="mat-custom-form-field-box" [formGroup]="routineForm">
+                                                <div class="form-row block-5" [ngStyle]="{'width': this.activity === true ? '61%' : '86%'}" style="margin-top: 20px;">
+                                                    <div class="row-field-1 box-5">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" (selectionChange)="getRoutineTypeList($event.value)"
+                                                                    formControlName="contextTypeId" [disabled]="data.routineContextId">
+                                                                    <mat-option *ngFor="let data of contextList" [value]="data.code">
+                                                                        {{data.value}}
+                                                                    </mat-option>
+                                                                </mat-select>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row-field-1 box-5">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Routine Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Type'|translate" (selectionChange)="getScheduleType($event)"
+                                                                    formControlName="routineTypeId" [disabled]="this.data.routineId">
+                                                                    <mat-option *ngFor="let data of routineList" [value]="data.code">
+                                                                        {{data.value}}
+                                                                    </mat-option>
+                                                                </mat-select>
+                                                                <mat-error *ngIf="routineForm.controls.routineTypeId.invalid">
+                                                                    <span 
+                                                                        [hidden]="!routineForm.controls['routineTypeId'].errors.required">{{"Routine Type is required"|translate}}.</span>
+                                                                </mat-error>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row-field-1">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Schedule Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate"
+                                                            formControlName="scheduleTypeId" [disableOptionCentering]="true" [disabled]="this.entityId || this.data.scheduleTypeId">
+                                                                <mat-option *ngFor="let data of scheduleType" (click)="selectedRoutineSchedule(data.code)" [value]="data.code" (keydown.enter)="fixClick()">
+                                                                    {{data.value}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                            <mat-error *ngIf="routineForm.controls.scheduleTypeId.invalid">
+                                                                <span 
+                                                                    [hidden]="!routineForm.controls['scheduleTypeId'].errors.required">{{"Schedule Type is required"|translate}}.</span>
+                                                            </mat-error>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row-field-1 box-6">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Routine Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Name'|translate" autocomplete="off" formControlName="name"
+                                                                    [readonly]="routineEdit == true">
+                                                                <mat-error *ngIf="routineForm.controls.name.invalid">
+                                                                    <span 
+                                                                        [hidden]="!routineForm.controls['name'].errors.required">{{"Routine Name is required"|translate}}.</span>
+                                                                </mat-error>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <!-- <div class="row-field-1 box-7">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Speciality"|translate}}</mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <mat-select  placeholder="{{'Speciality'|translate}}"
+                                                                    formControlName="specialityId" [disabled]="routineEdit == true"
+                                                                    [disableOptionCentering]="true">
+                                                                    <mat-option *ngFor="let data of specialityList" [value]="data.id">
+                                                                        {{data.name}}
+                                                                    </mat-option>
+                                                                </mat-select>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div> -->
+                                                    <div class="row-field-1 box-8">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2
+                                                                    formControlName="description" [readonly]="routineEdit == true"></textarea>
+                                                                <mat-error *ngIf="routineForm.controls.description.invalid">
+                                                                    <span 
+                                                                        [hidden]="!routineForm.controls['description'].errors.required">{{"Description is required"|translate}}.</span>
+                                                                </mat-error>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="this.type !== 'template'" class="form-row block-6">
+                                                    <div class="row-field-6 box-9">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"From Date"|translate}}</mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <input  matInput [matDatepicker]="frompicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'From Date'|translate"
+                                                                    formControlName="scheduleStart"  [readonly]="routineEdit == true">
+                                                                <mat-datepicker-toggle matSuffix [for]="frompicker"
+                                                                    [disabled]="routineEdit == true"></mat-datepicker-toggle>
+                                                                <mat-datepicker #frompicker></mat-datepicker>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row-field-6 box-10">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"To Date"|translate}}</mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <input  matInput [matDatepicker]="topicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'To Date'|translate"
+                                                                   formControlName="scheduleEnd" [min]="today">
+                                                                <mat-datepicker-toggle matSuffix [for]="topicker"></mat-datepicker-toggle>
+                                                                <mat-datepicker #topicker></mat-datepicker>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row-field-6 box-11">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Start Time"|translate}}</mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <input matInput  #date appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule'|translate"
+                                                                    class="time-input" [value]="defaultscheduleTime"
+                                                                    [ngxTimepicker]="timepicker" [disableClick]="true"
+                                                                    formControlName="scheduleTime">
+                                                                <ngx-material-timepicker-toggle matSuffix [for]="timepicker">
+                                                                </ngx-material-timepicker-toggle>
+                                                                <ngx-material-timepicker #timepicker></ngx-material-timepicker>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="activity !== true" class="form-row block-5" style="width: 100%;">
+                                                    <div class="row-field-1 box-12">
+                                                        <div class="add-activity-btn">
+                                                            <button  mat-button class="active-btn margin-r-1" appDebounceClick
+                                                                [disabled]="this.routineForm.invalid || isDisabled"
+                                                                (debounceClick)="saveRoutine()" [debounceTime]="300"
+                                                                cdkFocusInitial>{{"SAVE"|translate}}</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div *ngIf="activity !== true && this.routineID !== null" class="mat-custom-form-field-box">
+                                                <div class="form-row block-5" style="width: 100%;">
+                                                    <div class="row-field-1 box-13" style="text-align: center;">
+                                                        <span  class="no-activity">{{'There are no activities available for this routine,' | translate}}<br>
+                                                           {{' to
+                                                            add
+                                                            activity
+                                                            click “ADD ACTIVITY” button' | translate}}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row block-5" style="width: 100%;">
+                                                    <div class="row-field-1 box-14">
+                                                        <div class="add-activity-btn">
+                                                            <button  mat-button class="active-btn margin-r-1" appDebounceClick
+                                                                [disabled]="this.routineForm.controls['routineId'].value === null"
+                                                                (debounceClick)="getActivity()" [debounceTime]="300" cdkFocusInitial>{{"ADD ACTIVITY"|translate}}</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <!-- </mat-expansion-panel> -->
+                                        <!-- <div class="form-row block-4" style="padding-top: 5px;">
+                                            <div  class="ovi-popup-title-text-size top-styl">ROUTINE DETAILS</div>
+                                        </div>
+                                        <mat-divider class="divider"></mat-divider> -->
+
+
+                                    </div>
+                                    <div *ngIf="!isAddRoutine && activity === true" [formGroup]="routineActivityForm" class="mat-custom-form-field-box"
+                                        style="overflow-y: auto;overflow-x: hidden;padding: 0px 10px 0px 10px;">
+                                        <mat-expansion-panel [expanded]="isExpanded ? true : false" style="border: 1px solid #D1D1D1;">
+                                            <mat-expansion-panel-header style="background: #f1f1f1;">
+                                                <mat-panel-title  class="ovi-popup-title-text-size top-styl ovi-fnt-sze13"
+                                                    style="color: #000000;font-weight: 600;">
+                                                    {{"Activity List"|translate}}
+                                                    <span style="margin-left: 15px;">
+                                                        <span class="material-icons ovi-prmry-clr" style="float: right; margin-top: -5px;"
+                                                            (click)="isExpanded = true;cancelEditActivity(data);" (keydown.enter)="fixClick()">
+                                                            add_circle_outline</span>
+                                                    </span>
+                                                </mat-panel-title>
+                                            </mat-expansion-panel-header>
+                                            <div class="form-row block-6" style="margin-top: 20px;">
+                                                <div *ngIf="!editActivities" class="row-field-1 box-16">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Activity Category"|translate}} <span
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity Category'|translate"
+                                                                formControlName="activityIdentifyingType" [disableOptionCentering]="true"
+                                                                (selectionChange)="getActivityType()">
+                                                                <mat-option *ngFor="let data of activityTypeList" [value]="data.code">
+                                                                    {{data.value}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                            <mat-error *ngIf="routineActivityForm.controls.activityIdentifyingType.invalid">
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.controls['activityIdentifyingType'].errors.required">{{"Activity
+                                                                    Type is required"|translate}}.</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="!editActivities" class="row-field-1 box-16">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Activity"|translate}} <span
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity'|translate"
+                                                                (selectionChange)="getActivityDetails($event)" formControlName="activityIdentifyingId"
+                                                                [disableOptionCentering]="true">
+                                                                <mat-option *ngFor="let data of activityList" [value]="data.id">
+                                                                    {{data.name}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                            <mat-error *ngIf="routineActivityForm.controls.activityIdentifyingId.invalid">
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.controls['activityIdentifyingId'].errors.required">{{"Activity
+                                                                    is required"|translate}}.</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="editActivities" class="row-field-1 box-17">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Activity"|translate}} <span
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity'|translate" readonly="true"
+                                                                formControlName="activityName" autocomplete="off">
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <!-- <div class="row-field-1 box-17">
+                                                        <div class="example-form">
+                                                            <mat-label  class="ovi-lbl-text-size">{{"Activity"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                                <input matInput  placeholder="{{'Activity'|translate}}" id="activitySearch"
+                                                                    formControlName="activityIdentifyingId" appTypeHit
+                                                                    (typeHit)="searchActivitylist($event)" [matAutocomplete]="act"
+                                                                    autocomplete="off">
+                                                                <mat-autocomplete autoActiveFirstOption
+                                                                    [displayWith]="this.activityId === null ? getActivityList.bind(activityList) : ''"
+                                                                    #act="matAutocomplete">
+                                                                    <mat-option *ngFor="let data of activityList" [value]="data.id"
+                                                                        (onSelectionChange)="getActivityDetails(data.id);date.value=null">
+                                                                        <div class="act-wid-styl">{{data.name}}</div>
+                                                                    </mat-option>
+                                                                </mat-autocomplete>
+                                                                <mat-error *ngIf="routineActivityForm.controls.activityIdentifyingId.invalid">
+                                                                    <span 
+                                                                        [hidden]="!routineActivityForm.controls['activityIdentifyingId'].errors.required">{{"Activity is required"|translate}}.</span>
+                                                                    <span 
+                                                                        [hidden]="!routineActivityForm.controls['activityIdentifyingId'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                                                </mat-error>
+                                                            </mat-form-field>
+                                                        </div>
+                                                    </div> -->
+                                                <div class="row-field-1 box-18">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Assign Type"|translate}} <span
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign Type'|translate"
+                                                                formControlName="inchargeType" (selectionChange)="getIncharge($event.value)">
+                                                                <mat-option *ngFor="let data of inchargeTypeList" [value]="data.code">
+                                                                    {{data.value}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                            <mat-error *ngIf="routineActivityForm.controls.inchargeType.invalid">
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.controls['inchargeType'].errors.required">{{"Assign
+                                                                    Type is required"|translate}}.</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1 box-19">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Assign To"|translate}} <span
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign To'|translate" id="inchargeSearch"
+                                                                formControlName="inchargeId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                                                [matAutocomplete]="inch" autocomplete="off">
+                                                            <mat-autocomplete autoActiveFirstOption
+                                                                [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                                                #inch="matAutocomplete">
+                                                                <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                                                    <div class="act-wid-styl">{{option.name}}</div>
+                                                                </mat-option>
+                                                            </mat-autocomplete>
+                                                            <mat-error *ngIf="routineActivityForm.controls.inchargeId.invalid">
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.controls['inchargeId'].errors.required">{{"Assign To is
+                                                                    required"|translate}}</span>
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.get('inchargeId').hasError('invalidAssign')">{{"Please
+                                                                    select value from the option"|translate}}</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1 box-23">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Location"|translate}}</mat-label>
+                                                        <!-- <mat-label *ngIf="routineForm.controls['routineTypeId'].value === 'ROU-STF'" 
+                                                                                                class="ovi-lbl-text-size">Location *</mat-label> -->
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" id="locationSearch"
+                                                                formControlName="locationId" appTypeHit (typeHit)="searchLocationList($event)"
+                                                                [matAutocomplete]="loc" autocomplete="off">
+                                                            <mat-autocomplete autoActiveFirstOption
+                                                                [displayWith]="this.locationId === null ? getLocationList.bind(locationList) : ''"
+                                                                #loc="matAutocomplete">
+                                                                <mat-option *ngFor="let option of locationList" [value]="option.id">
+                                                                    <div class="act-wid-styl">{{option.fullName}}</div>
+                                                                </mat-option>
+                                                            </mat-autocomplete>
+                                                            <mat-error *ngIf="routineActivityForm.controls.locationId.invalid">
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.controls['locationId'].errors.required">{{"Location is
+                                                                    required"|translate}}</span>
+                                                                <span 
+                                                                    [hidden]="!routineActivityForm.get('locationId').hasError('requireMatch')">{{"Please
+                                                                    select value from the option"|translate}}</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1 box-20">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Sequence"|translate}} <span *ngIf="selectedSchedule == 'SCT-ALW' && routineType !== 'ROU-EMG'"
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate" autocomplete="off" formControlName="sequence">
+                                                            <mat-error *ngIf="routineActivityForm.controls.sequence.invalid">
+                                                                <span  [hidden]="!routineActivityForm.controls['sequence'].errors.required">{{"Sequence
+                                                                    is required"|translate}}.</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1 box-21">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Priority"|translate}} <span *ngIf="selectedSchedule == 'SCT-ALW' && routineType !== 'ROU-EMG'"
+                                                                class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Priority'|translate" autocomplete="off" formControlName="priority">
+                                                            <mat-error *ngIf="routineActivityForm.controls.priority.invalid">
+                                                                <span  [hidden]="!routineActivityForm.controls['priority'].errors.required">{{"Priority
+                                                                    is required"|translate}}.</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1 box-22">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Duration"|translate}} <span *ngIf="selectedSchedule == 'SCT-ALW' && routineType !== 'ROU-EMG'"
+                                                                class="mandatory-field">*</span></mat-label>
+                                                                <div style="display: flex;">
+                                                                    <div style="width: 48%; display: inline-block; white-space: nowrap;">
+                                                                        <span class="ovi-lbl-text-size" style="padding: 0px 5px;position: relative;bottom: 3px;">Hrs</span>
+                                                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="width: 68% !important" appearance="outline">
+                                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hrs'|translate" autocomplete="off" formControlName="hours">
+                                                                            <mat-error *ngIf="routineActivityForm.controls.hours.invalid">
+                                                                                <span  [hidden]="!routineActivityForm.get('hours')?.hasError('required')">
+                                                                                    {{"Hours are required"|translate}}
+                                                                                </span>
+                                                                                <span  [hidden]="!routineActivityForm.get('hours')?.hasError('pattern')">
+                                                                                    {{"Hours must be between 00 and 23"|translate}}
+                                                                                </span>
+                                                                            </mat-error>
+                                                                        </mat-form-field>
+                                                                    </div>
+                                                                    <div style="width: 50%; display: inline-block; white-space: nowrap;">
+                                                                        <span class="ovi-lbl-text-size" style="padding: 0px 5px;position: relative;bottom: 3px;">Mins</span>
+                                                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="width: 68% !important" appearance="outline">
+                                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mins'|translate" autocomplete="off" formControlName="minutes">
+                                                                            <mat-error *ngIf="routineActivityForm.controls.minutes.invalid">
+                                                                                <span  [hidden]="!routineActivityForm.get('minutes')?.hasError('required')">
+                                                                                    {{"Minutes are required"|translate}}
+                                                                                </span>
+                                                                                <span  [hidden]="!routineActivityForm.get('minutes')?.hasError('pattern')">
+                                                                                    {{"Minutes must be between 00 and 59"|translate}}
+                                                                                </span>
+                                                                            </mat-error>
+                                                                        </mat-form-field>
+                                                                    </div>
+                                                                </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1 box-24">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="isActive">
+                                                                <mat-option *ngFor="let data of statusList" [value]="data.code">
+                                                                    {{data.value}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Weightage"|translate}}</mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Weightage'|translate" min="1" max="100" autocomplete="off" formControlName="weightage">
+                                                            <mat-error *ngIf="routineActivityForm.controls.weightage.invalid">
+                                                                <span  [hidden]="!routineActivityForm.controls['weightage'].errors.min">{{"Minimum value
+                                                                    is 1"|translate}}</span>
+                                                                <span  [hidden]="!routineActivityForm.controls['weightage'].errors.max">{{"Maximum value
+                                                                    is 100"|translate}}</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="selectedSchedule !== 'SCT-ALW'" class="row-field-1">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Schedule Type"|translate}}<span *ngIf="selectedSchedule != 'SCT-ALW'"
+                                                            class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate"
+                                                                formControlName="scheduleTypeId" [disableOptionCentering]="true">
+                                                                <mat-option *ngFor="let data of actScheduleTypeList" (click)="selectedActivitySchedule(data.code)"
+                                                                 [value]="data.code" (keydown.enter)="fixClick()"> {{data.value}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="activityScheduleId === 'SAT-BTM' || activityScheduleId === 'SAT-RGBT' || activityScheduleId === 'SAT-DBT'" class="row-field-1 box-15">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Schedule Time"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput  #date appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Time'|translate" class="time-input"
+                                                                [value]="defaultTime" [ngxTimepicker]="timepicker" [disableClick]="true"
+                                                                formControlName="time">
+                                                            <ngx-material-timepicker-toggle matSuffix [for]="timepicker">
+                                                            </ngx-material-timepicker-toggle>
+                                                            <ngx-material-timepicker #timepicker>
+                                                            </ngx-material-timepicker>
+                                                            <mat-error *ngIf="routineActivityForm.controls.time.invalid">
+                                                                <span  [hidden]="!routineActivityForm.controls['time'].errors.required">{{"Time is
+                                                                    required"|translate}}.</span>
+                                                            </mat-error>
+                                                            <mat-hint *ngIf="this.timeExist">
+                                                                <span style="color:red;">{{"Time already exist!"|translate}}</span>
+                                                            </mat-hint>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="activityScheduleId === 'SAT-RGAT' || activityScheduleId === 'SAT-RGBT'" class="row-field-1">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"Day Count"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Day Count'|translate" autocomplete="off" formControlName="dayCount">
+                                                            <mat-error *ngIf="routineActivityForm.controls.dayCount.invalid">
+                                                                <span  [hidden]="!routineActivityForm.controls['dayCount'].errors.required">{{"Day Count
+                                                                    is required"|translate}}</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="activityScheduleId === 'SAT-DAT' || activityScheduleId === 'SAT-DBT'" class="row-field-1 box-24">
+                                                    <div class="example-form">
+                                                        <mat-label  class="ovi-lbl-text-size">{{"On Day"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'On Day'|translate" formControlName="onDate" multiple>
+                                                                <mat-option *ngFor="let data of weekDaysList" [value]="data.code">
+                                                                    {{data.value}}
+                                                                </mat-option>
+                                                            </mat-select>
+                                                            <mat-error *ngIf="routineActivityForm.controls.onDate.invalid">
+                                                                <span  [hidden]="!routineActivityForm.controls['onDate'].errors.required">{{"On Day
+                                                                    is required"|translate}}</span>
+                                                            </mat-error>
+                                                        </mat-form-field>
+                                                    </div>
+                                                </div>
+                                                <div *ngIf="activityScheduleId !== 'SAT-BTM' && activityScheduleId !== 'SAT-ATM'" 
+                                                    class="row-field-1" style="display: flex; align-items: center;">
+                                                    <div class="example-form">
+                                                        <span class="act-mand">
+                                                            <mat-checkbox  formControlName="isRepeat">{{"Repeat"|translate}}</mat-checkbox>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1" style="display: flex; align-items: center;">
+                                                    <div class="example-form">
+                                                        <span class="act-mand">
+                                                            <mat-checkbox  formControlName="mandatory">{{"Mandatory"|translate}}</mat-checkbox>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="row-field-1" style="display: flex; align-items: center;">
+                                                    <div class="example-form">
+                                                        <span class="act-mand">
+                                                            <mat-checkbox  formControlName="isRecurring">{{"Recurring"|translate}}</mat-checkbox>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="ovi-pop-ftr" style="padding: 15px;">
+                                                <div class="row-field-1 box-25">
+                                                    <!-- <div *ngIf="editActivities !== true" class="rout-add-btn"> -->
+                                                    <!-- <button  mat-button class="active-btn margin-r-1" appDebounceClick
+                                                                                                [disabled]="this.routineActivityForm.invalid"
+                                                                                                (debounceClick)="addActivity(this.type);"
+                                                                                                [debounceTime]="300" cdkFocusInitial>ADD</button> -->
+                                                    <div *ngIf="editActivities !== true">
+                                                        <button  mat-mini-fab color="primary" (click)="addActivity(this.type);"
+                                                            matTooltip="{{'Add'|translate}}" [disabled]="this.routineActivityForm.invalid"
+                                                            [ngStyle]="{'opacity': this.routineActivityForm.invalid ? '30%' : ''}"
+                                                            style="background-color: green;margin-right: 10px;" class="ovi-fnt-sze12">
+                                                            <img matListIcon iconsmall style="height: 15px; width: 15px"  alt="ticket"
+                                                                src="/assets/Alert/IP/save-tick.svg">
+                                                        </button>
+                                                    </div>
+                                    
+                                                    <div *ngIf="editActivities === true">
+                                                        <button  mat-mini-fab color="primary" (click)="updateRoutineActivity(this.type, data)"
+                                                            matTooltip="{{'Save'|translate}}"
+                                                            [disabled]="!this.routineActivityForm.dirty || this.routineActivityForm.invalid"
+                                                            [ngStyle]="{'opacity': !this.routineActivityForm.dirty || this.routineActivityForm.invalid ? '30%' : ''}"
+                                                            style="background-color: green;margin-right: 10px;" class="ovi-fnt-sze12">
+                                                            <img matListIcon iconsmall style="height: 15px; width: 15px"  alt="ticket"
+                                                                src="/assets/Alert/IP/save-tick.svg">
+                                                        </button>
+                                                        <button  mat-mini-fab color="primary" (click)="cancelEditActivity(data)"
+                                                            matTooltip="{{'Cancel'|translate}}" style="background-color: #FC8C91;"> x
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </mat-expansion-panel>
+                                        <!-- <div class="form-row block-5">
+                                                                                <div  class="ovi-popup-title-text-size top-styl">ACTIVITY LIST</div>
+                                                                            </div>
+                                                                            <mat-divider class="divider"></mat-divider> -->
+                                    </div>
+                                </mat-accordion>
+                                <div class="tw-popup-content-tbl block-7" *ngIf="isActivityList === true"
+                                style="padding: 15px 10px 5px 10px;">
+                                    <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'">
+                                        <div class="tw-mat-table-overflow box-26" style ="overflow-x: auto;">
+                                            <table mat-table class="tw-table" [dataSource]="ACdataSource" matSort>
+                                                <caption style="display:none">Activity List</caption>
+
+                                                <ng-container matColumnDef="S.No">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef
+                                                        class="tw-manage-table-header">
+                                                        {{"S.No"|translate}} </th>
+                                                    <td mat-cell *matCellDef="let data; let i = index;" style="padding-right: 20px;">
+                                                        {{i+1}}
+                                                    </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="activityName">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                                        class="tw-manage-table-header">{{"Activity"|translate}}</th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                        {{data.activityName}}
+                                                    </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="activityCategory">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                                        class="tw-manage-table-header">{{"Activity Category"|translate}}</th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                        {{data.activityCategoryName}}
+                                                    </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="inchargeName">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                                        class="tw-manage-table-header">{{"Assigned To"|translate}}</th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                        {{data.inchargeName}}
+                                                    </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="locationName">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                                        class="tw-manage-table-header"> {{"Location"|translate}} </th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                        {{data.locationName}}
+                                                    </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="scheduleTypeName">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                                        class="tw-manage-table-header">{{"Schedule Type"|translate}}</th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                        {{data.scheduleTypeName}}
+                                                    </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="schedule">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef mat-sort-header
+                                                        class="tw-manage-table-header"> {{"Time"|translate}} </th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;"> {{data.schedule |
+                                                        date:'shortTime'}} </td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="isActive">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef
+                                                        class="tw-manage-table-header">
+                                                        {{"Status"|translate}} </th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.isActive ===
+                                                        true ? 'Active' : 'Inactive'}}</td>
+                                                </ng-container>
+
+                                                <ng-container matColumnDef="Select">
+                                                    <th scope="col"  mat-header-cell *matHeaderCellDef
+                                                        class="tw-manage-table-header">
+                                                    </th>
+                                                    <td mat-cell *matCellDef="let data" style="padding-right: 20px;padding-left: 20px;">
+                                                        <button mat-icon-button [matMenuTriggerFor]="menu"
+                                                            [ngStyle]="{'display': isActivityList === true ? 'none' : ''}">
+                                                            <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                                                        </button>
+                                                        <mat-menu #menu="matMenu">
+                                                            <button mat-menu-item (click)="editActivity(data,scrollbottom)"
+                                                                [disabled]="this.activityId == data.activityIdentifyingId">
+                                                                <span class="activity-edit">{{"Edit Activity"|translate}}</span>
+                                                            </button>
+                                                            <mat-divider></mat-divider>
+                                                            <button mat-menu-item (click)="deleteRoutineActivities(this.type, data)">
+                                                                <span class="activity-edit">{{"Remove Activity"|translate}}</span>
+                                                            </button>
+                                                        </mat-menu>
+                                                    </td>
+                                                </ng-container>
+
+                                                <tr mat-header-row *matHeaderRowDef="ACdisplayedColumns; sticky: true;"
+                                                    class="tw-manage-table-header-row"></tr>
+                                                <tr mat-row *matRowDef="let data; columns: ACdisplayedColumns; let i = index;"
+                                                    [ngStyle]="{'background-color': this.selectedName === this.data.entityRoutineActivityId ||
+                                                this.selectedName === this.data.routineActivityId && this.editActivities === true && this.editActivities === true ? '#D3D3D3' : ''}">
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div  class="no-activity" *ngIf="this.activityData === true">{{"No Activity Found"|translate}}</div>
+                                </div>
+                            </div>
+                            <div class="input-footer-1 block-7" style="padding-bottom: 10px;">
+                                <button *ngIf="this.selectedTab === 'Manage Routine' && routineExist && this.type !== 'template' && this.activity === true && this.routineStatusId !== 'QS-CO'"  mat-button class="active-btn"
+                                     mat-button appDebounceClick style="float: left;margin: 25px 0px 0px 10px;" (debounceClick)="endRoutine(data)"
+                                    [debounceTime]="300" cdkFocusInitial>{{"End Routine"|translate}}</button>
+
+                                <button *ngIf="this.selectedTab === 'Manage Routine' && routineExist && this.type !== 'template' && this.activity === true && this.routineEventStatus !== null && this.routineEventStatus !== 'QS-CL'"
+                                     mat-button class="active-btn" appDebounceClick style="float: left;margin: 25px 0px 0px 5px;"
+                                    (debounceClick)="cancelRoutine(data)" [debounceTime]="300" cdkFocusInitial>{{"Cancel Routine"|translate}}</button>
+
+                                <button *ngIf="this.selectedTab === 'Manage Routine' && routineExist && this.type !== 'template' && this.activity === true && this.routineEventStatus !== null && this.routineEventStatus === 'QS-CL'"
+                                     mat-button class="active-btn" appDebounceClick style="float: left;margin: 25px 0px 0px 5px;"
+                                    (debounceClick)="activateEntityRoutine(data)" [debounceTime]="300" cdkFocusInitial>{{"Activate Routine"|translate}}</button>
+
+                                <button  mat-button class="cancle-btn" style=" margin-right: 5px;margin-top: 20px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+
+                                <button *ngIf="this.selectedTab === 'Manage Routine' && this.type !== 'template' && this.isAddRoutine"  mat-button
+                                    class="active-btn" appDebounceClick [disabled]="(this.routineForm.controls['name'].invalid || this.routineForm.controls['scheduleTime'].invalid || this.routineForm.controls['scheduleStart'].invalid)"
+                                    (debounceClick)="assignRoutine(data)" [debounceTime]="300" cdkFocusInitial style="margin: 25px 0px 0px 0px;">{{"Save"|translate}}</button>
+
+                                <button *ngIf="this.selectedTab === 'Manage Routine' && this.type === 'template' && this.routineID !== null"  mat-button
+                                    class="active-btn" appDebounceClick [disabled]="!this.routineForm.dirty" style="margin: 25px 0px 0px 0px;"
+                                    (debounceClick)="updateRoutine(data)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+
+                                <button *ngIf="this.selectedTab === 'Manage Routine' && routineExist && this.type !== 'template' && this.routineID !== null"  mat-button
+                                    class="active-btn" appDebounceClick [disabled]="!this.routineForm.dirty" style="margin: 25px 0px 0px 0px;"
+                                    (debounceClick)="saveEntityRoutine(data)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+                            </div>
+                        </div>
+                    </div>
+                    <app-entity-routine-activity [displayHeader]="false" [maintenanceData]="staffRoutineData" ></app-entity-routine-activity>
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+    </div>
+
+    <div *ngIf="this.selectedTab !== 'Manage Routine' && this.selectedTab !== 'Task History'" class="input-footer-1 block-7"
+    [ngClass]="this.entityId && this.data.type !== 'modify' ? 'routine-footer-pad-full' : this.data.type !== 'modify' ? 'routine-footer-pad' : ''">
+        <button *ngIf="this.selectedTab !== 'Task List' && this.data.type !== 'modify'"  mat-button class="cancle-btn" style=" margin-right: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="this.selectedTab === 'Task List' && this.data.type === 'modify'"  mat-button class="cancle-btn" style=" margin-right: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="this.selectedTab === 'Task'"  mat-button class="active-btn margin-r-1" appDebounceClick [disabled]="this.createTaskForm.invalid"
+        (debounceClick)="saveTask()" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+        <button *ngIf="this.selectedTab === 'Easy Pick'"  mat-button class="active-btn margin-r-1" appDebounceClick
+        [disabled]="easyPickLocId || this.easyPickForm.invalid" (debounceClick)="saveTaskEasyPick()" [debounceTime]="600" cdkFocusInitial> {{"Save"|translate}}</button>
+        <button *ngIf="this.selectedTab === 'Task List' && this.data.type === 'modify'"  mat-button class="active-btn margin-r-1" appDebounceClick [disabled]="this.createTaskForm.invalid"
+        (debounceClick)="updateTask()" [debounceTime]="300" cdkFocusInitial>{{"update"|translate}}</button>
+    </div>
+</div>

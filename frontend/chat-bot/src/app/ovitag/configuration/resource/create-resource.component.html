@@ -1,0 +1,299 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div  *ngIf = "metaData?.type !== 'permission'">
+        {{ selectedData ? ('Manage Resource' | translate) : ('Create Resource' | translate) }}
+        </div>
+
+        <div *ngIf = "metaData?.type === 'permission'">
+        {{ selectedData ? ('Manage Permission' | translate) : ('Create Permission' | translate) }}
+        </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);">
+        <mat-tab-group [formGroup]="resourceForm" *ngIf = "metaData['type'] == 'resource'" class="cust-tab">
+            <mat-tab  label="{{'Config'|translate}}">
+              <ng-template mat-tab-label >{{"Config"|translate}}</ng-template>
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="resourceTypeId" [disableOptionCentering]="true"
+                                (selectionChange)="selectedType = $event.value; setCode();">
+                                    <mat-option *ngFor="let type of metaData['list']['type']" [value]="type.code">
+                                        {{type.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Target"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Target'|translate" formControlName="target">
+                                    <mat-option value="web">{{"web"|translate}}</mat-option>
+                                    <mat-option value="mobile">{{"mobile"|translate}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{ "Page" | translate }}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select [panelClass]="'tw-ngx-search-icon'" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Page' | translate"
+                                formControlName="page" (selectionChange)="getpageSearchData()">
+                                <mat-option>
+                                    <ngx-mat-select-search [formControl]="pageListSearch" [placeholderLabel]="'Search' | translate"
+                                        [noEntriesFoundLabel]="'No matching options' | translate">
+                                    </ngx-mat-select-search>
+                                </mat-option>
+                                <mat-option *ngFor="let page of pageOptions" [value]="page">
+                                    {{ page }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Code"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" formControlName="code">
+                                <mat-error *ngIf="resourceForm.controls.code.invalid" class="error-txt">
+                                    <span [hidden]="!resourceForm.controls['code'].errors.required">{{"Code is
+                                        required."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name">
+                                <mat-error *ngIf="resourceForm.controls.name.invalid" class="error-txt">
+                                    <span [hidden]="!resourceForm.controls['name'].errors.required">{{"Name is
+                                        required."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" formControlName="description">
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Parent Menu"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select [panelClass]="'tw-ngx-search-icon'" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Parent Menu'|translate"
+                                formControlName="parentId" (selectionChange)="filterMenu()">
+                                <mat-option>
+                                    <ngx-mat-select-search [formControl]="parentMenuSearch" [placeholderLabel]="'Search' | translate"
+                                        [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                                </mat-option>
+                                <mat-option [value]="'null'"> {{"No Parent"|translate}}</mat-option>
+                                <mat-option *ngFor="let menu of parentMenuList" [value]="menu.id">
+                                    {{menu.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Sequence"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput type="number" min="1" max ="20" maxlength="2" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate"
+                                formControlName="sequence" autocomplete="off">
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg"  *ngIf ="selectedType === 'RST-MN'">
+                            <mat-label class="ovi-lbl-text-size">{{"Icon Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Icon Name'|translate" formControlName="iconName">
+                            </mat-form-field>
+                    </div>
+                    <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg  ovi-mat-hint">
+                            <mat-label class="ovi-lbl-text-size">{{"Link Url"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Link Url'|translate" formControlName="link">
+                                <mat-hint class="error-txt-1">{{"(e.g.)"|translate}}{{linkUrlLike}}</mat-hint>
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"  *ngIf ="selectedType === 'RST-MN'">
+                            <mat-label class="ovi-lbl-text-size">{{"Check Url"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Check Url'|translate" formControlName="checkUrl">
+                                    <mat-option [value]="true">{{"Yes"|translate}}</mat-option>
+                                    <mat-option [value]="false">{{"No"|translate}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status"[disableOptionCentering]="true">
+                                    <mat-option [value]="true">{{"Active"|translate}}</mat-option>
+                                    <mat-option [value]="false">{{"Inactive"|translate}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" *ngIf= "false">
+                            <mat-label class="ovi-lbl-text-size">{{"Version"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Version'|translate" formControlName="version">
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" formControlName="category">
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Sub Category"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sub Category'|translate" formControlName="subCategory">
+                            </mat-form-field>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab  label="{{'Resource'|translate}}" style="height: 100%;">
+                <ng-template mat-tab-label >{{"Resource"|translate}}</ng-template>
+                <div class="res-content-body" style="height: 100%;">
+                <div style="height: 155px;">
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Permit All"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Permit All'|translate" formControlName="permitAll"[disableOptionCentering]="true">
+                                        <mat-option [value]="true">{{"Active"|translate}}</mat-option>
+                                        <mat-option [value]="false">{{"Inactive"|translate}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <div  *ngIf = "false">
+                                <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate" formControlName="role">
+                                        <mat-option>{{"Select"|translate}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate" multiple
+                                    (selectionChange)="getPermissionData()" formControlName="role" matSelectSearch>
+                                        <mat-option *ngFor="let role of metaData['list']['role']" [value]="role.id">{{role.name}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"User"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'User'|translate" multiple
+                                    (selectionChange)="getPermissionData()" formControlName="user"[disableOptionCentering]="true" matSelectSearch>
+                                        <mat-option *ngFor="let user of metaData['list']['user']" [value]="user.loginId">{{user.userName}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                    </div>
+                </div>
+                <div class="mat-table-overflow manage-component" style="height: calc(100% - 155px);padding: 0px 5px;">
+                    <angular-table-component [id]="'resource'" [type]="'ng-table'" [tableData]="dataSource"
+                    [columns]="['ID', 'Type','Name','Permission Status']"
+                    [columnData]="['id', 'type','name','status']">
+                    </angular-table-component>
+                </div>
+            </div>
+            </mat-tab>
+        </mat-tab-group>
+        <div [formGroup]="permissionForm"  *ngIf = "metaData['type'] == 'permission'" style="height: 100%;">
+            <div class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Select type"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select type'|translate" formControlName="type"
+                            (selectionChange)="selectedType = $event.value;permissionForm.controls.id.setValue(null);">
+                                <mat-option value="Login">{{"Login User"|translate}}</mat-option>
+                                <mat-option value="Role">{{"Role"|translate}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf = "selectedType == 'Role'">
+                        <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate"
+                            (selectionChange)="applyFilter()" formControlName="id">
+                                <mat-option *ngFor="let role of metaData['list']['role']" [value]="role.id">{{role.name}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="permissionForm.controls.id.invalid" class="error-txt">
+                                <span [hidden]="!permissionForm.controls['id'].errors.required">{{"Role is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"  *ngIf = "selectedType == 'Login'">
+                        <mat-label class="ovi-lbl-text-size">{{"User"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'User'|translate"
+                            (selectionChange)="applyFilter()" formControlName="id">
+                                <mat-option *ngFor="let user of metaData['list']['user']" [value]="user.loginId">{{user.userName}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="permissionForm.controls.id.invalid" class="error-txt">
+                                <span [hidden]="!permissionForm.controls['id'].errors.required">{{"User is
+                                    required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Resource Type"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Resource Type'|translate" multiple
+                            (selectionChange)="applyFilter()" formControlName="resourceType">
+                                <mat-option *ngFor="let type of metaData['list']['type']" [value]="type.code">{{type.value}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Page"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Page'|translate" multiple
+                            (selectionChange)="applyFilter()" formControlName="page">
+                                <mat-option *ngFor="let page of pageList" [value]="page">{{page}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Resource List"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Resource List'|translate" multiple
+                            (selectionChange)="getMappingData()" [disabled]="!permissionForm.controls.id.value" formControlName="resources">
+                                <mat-option *ngFor="let resource of resourceList" [value]="resource.id">
+                                    {{resource.name }} ( {{resource.code}} )
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                        <span class="res-list-hint" *ngIf="!permissionForm.controls.id.value">{{"Please select the"|translate}} {{permissionForm.controls.type.value}} {{"Name"|translate}}</span>
+                </div>
+            </div>
+            <div class="mat-table-overflow manage-component" style="height: calc(100% - 250px);padding: 0px 5px;overflow: auto;">
+                <angular-table-component [id]="'permission'" [type]="'ng-table'" [tableData]="dataSource"
+                [columns]="['ID', 'Type','Name','Permission Status']"
+                [columnData]="['id', 'type','name','status']">
+                </angular-table-component>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="active-btn" [disabled] = "metaData['type'] == 'permission' ? permissionForm.invalid || !permissionForm.dirty : resourceForm.invalid || !resourceForm.dirty"
+          appDebounceClick (debounceClick)="metaData['type'] == 'permission' ? permissionUpdate(true): resourceUpdate(true)" [debounceTime]="300">{{"Save"|translate}}</button>
+    </div>
+</div>

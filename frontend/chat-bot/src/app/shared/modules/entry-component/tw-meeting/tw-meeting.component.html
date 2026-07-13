@@ -1,0 +1,211 @@
+<!-- <div #jitsiContainer></div> -->
+<div class="popup"
+  [ngStyle]="{ top: position.top + 'px', left: position.left + 'px', width: size.width + 'px',height: isMinimized ? 'auto' : size.height + 'px'}">
+  <div class="ovi-pop-hdr" (mousedown)="onMouseDown($event)">
+    <div class="ovi-font-family ">Live video</div>
+    <div style="display: flex; gap: 15px;align-items: center; cursor: default;">
+      <!-- <span (click)="toggleMinimize()" style="margin-top: -18px;" class='material-icons'>minimize</span> -->
+      <span (click)="toggleMaximize()" (keydown.enter)="fixClick()">
+        <span *ngIf="!isMaximized" class="material-icons ovi-fnt-sze18">check_box_outline_blank</span>
+        <span *ngIf="isMaximized" style="transform: rotate(180deg); margin-top: 6px;"
+          class="material-icons ovi-fnt-sze18">filter_none</span>
+      </span>
+      <span (click)="onSelectedClose()" (keydown.enter)="fixClick()"><mat-icon class="ovi-fnt-sze23">highlight_off</mat-icon></span>
+    </div>
+  </div>
+  <div class="body-video ovi-font-family ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" *ngIf="!isMinimized"
+    [ngStyle]="{'height' : !isMaximized ? 'calc(100% - 54px)' : 'calc(100% - 100px)'}">
+    <div *ngIf="joined" class="banner-container">
+      <div class="banner-grid-row">
+        <div class="banner-col">
+          <span class="banner-item">
+            <span class="label">Patient Name :</span>
+            <span class="value">{{requestDetails.patientName}}</span>
+          </span>
+        </div>
+        <div class="banner-col">
+          <span class="banner-item">
+            <span class="label">Driver Name :</span>
+            <span class="value">{{requestDetails.pilotName}}</span>
+          </span>
+        </div>
+        <div class="banner-col">
+          <span class="banner-item">
+            <span class="label">Ambulance Name :</span>
+            <span class="value">{{requestDetails.ambulanceName}}</span>
+          </span>
+        </div>
+        <div class="banner-col">
+          <span class="banner-item">
+            <span class="label">Request Time :</span>
+            <span class="value">{{requestDetails.requestTime}}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="banner-grid-row">
+        <div class="banner-col">
+          <div class="banner-item truncate">
+            <span class="label">Source :</span>
+            <span class="value text-truncate">{{requestDetails.sourceAddress}}</span>
+          </div>
+        </div>
+        <div class="banner-col">
+          <span class="banner-item">
+            <span class="label">Destination :</span>
+            <span class="value">{{requestDetails.destinationAddress}}</span>
+          </span>
+        </div>
+        <div class="banner-col">
+          <div class="banner-item truncate">
+            <span class="label">Contact no :</span>
+            <span class="value text-truncate">{{requestDetails.nonPerformer[0].mobileNumber}}</span>
+          </div>
+        </div>
+        <div class="banner-col">
+          <div class="banner-item truncate">
+            <span class="label">Status :</span>
+            <span class="value text-truncate">{{requestDetails.statusName}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- <div *ngIf="!joined" style="display: flex;flex-direction: column;align-items: center;gap: 20px;">
+      <div id="preview-player" class="video-box"></div>
+      <div class="controls">
+        <button (click)="toggleMic()" [title]="mutedAudio ? 'Unmute Mic' : 'Mute Mic'">
+          <i class="material-icons">{{ mutedAudio ? 'mic_off' : 'mic' }}</i>
+        </button>
+        <button (click)="toggleCam()" [title]="mutedVideo ? 'Turn On Cam' : 'Turn Off Cam'">
+          <i class="material-icons">{{ mutedVideo ? 'videocam_off' : 'videocam' }}</i>
+        </button>
+        <button class="join-btn" (click)="joinCall()">Join Now</button>
+      </div>
+    </div> -->
+    <div style="height: 100%;width: 100%; display: flex;">
+      <div style="height: 100%;width: 75%;display: flex;align-items: center;flex-direction: column;">
+        <div class="main-video-box"
+          [ngClass]="{'single-user': agoraService.remoteUsers.length === 0,'two-users': agoraService.remoteUsers.length === 1}">
+          <div id="local-player" class="video-box">
+            <div class="mute-indicator">
+              <i class="material-icons" *ngIf="mutedAudio">mic_off</i>
+              <i class="material-icons" *ngIf="!mutedAudio">mic</i>
+            </div>
+          </div>
+          <div class="video-box" *ngFor="let user of filteredRemoteUsers" [id]="'user-'+user.uid">
+            <div class="mute-indicator">
+              <i class="material-icons" *ngIf="!user.hasAudio">mic_off</i>
+              <i class="material-icons" *ngIf="user.hasAudio">mic</i>
+            </div>
+          </div>
+        </div>
+        <div class="controls in-call">
+          <button (click)="toggleCam()" [title]="mutedVideo ? 'Turn On Cam' : 'Turn Off Cam'">
+            <i class="material-icons">{{ mutedVideo ? 'videocam_off' : 'videocam' }}</i>
+          </button>
+          <button (click)="toggleMic()" [title]="mutedAudio ? 'Unmute Mic' : 'Mute Mic'">
+            <i class="material-icons">{{ mutedAudio ? 'mic_off' : 'mic' }}</i>
+          </button>
+          <div *ngIf="host" class="leave-dropdown-container">
+            <button class="leave-btn-with-dropdown" (click)="toggleDropdown()" title="Leave or End">
+              <i class="material-icons">call_end</i>
+              <!-- <span class="label">Leave</span> -->
+              <i class="material-icons arrow">arrow_drop_up</i>
+            </button>
+
+            <div class="dropdown-menu" *ngIf="showDropdown">
+              <div class="dropdown-item" (click)="leaveCall()" (keydown.enter)="fixClick()">Leave</div>
+              <div class="dropdown-item" (click)="endMeeting()" (keydown.enter)="fixClick()">End meeting</div>
+            </div>
+          </div>
+
+          <!-- Normal Leave Button for Non-Hosts -->
+          <button *ngIf="!host" (click)="leaveCall()" class="leave-btn" title="Leave Call">
+            <i class="material-icons">call_end</i>
+          </button>
+          <!-- <button (click)="generateShareLink()" title="Invite Person">
+            <i class="material-icons">person_add</i>
+          </button> -->
+          <!-- <button title="More Options">
+            <i class="material-icons">more_vert</i>
+          </button> -->
+        </div>
+      </div>
+      <div class="sidebar">
+        <!-- Participants Section -->
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <span style="color: #747272; font-weight: 700;" class="ovi-fnt-sze14">Participants</span>
+          </div>
+          <div class="user-row" *ngFor="let user of participantList">
+            <div class="user-entry">
+              <div class="user-avatar">{{ user.name.charAt(0) }}</div>
+              <div class="user-name">{{ user.name }}</div>
+              <mat-icon *ngIf="user.muted" class="icon-muted">mic_off</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invite Section -->
+        <div class="sidebar-section">
+          <div class="sidebar-header">
+            <span style="color: #747272; padding: 0 5px; font-weight: 700;" class="ovi-fnt-sze16">Invite</span>
+          <div style="display: flex;position: relative;align-items: center;top: 3px;">
+            <div *ngIf="showSearch" class="ovi-matfrmfld-input-box-pdg">
+              <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh " >
+                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type a name'|translate" [(ngModel)]="searchText"  [ngModelOptions]="{ standalone: true }"
+                 (ngModelChange)="onSearchChange($event)" [matAutocomplete]="auto"/>
+                <mat-autocomplete #auto="matAutocomplete">
+                  <mat-option *ngFor="let option of SearchUserNameList"
+                  [value]="option.name" (onSelectionChange)="getOwnerDetails(option)">
+                    {{ option.name }}
+                  </mat-option>
+                </mat-autocomplete>
+                <!-- <span *ngIf="searchText"style="padding-right:5px;" matSuffix (click)="clearSearch()">
+                    <mat-icon style="font-size: 25px; color:#707070; margin-top: -1px;display:contents">highlight_off</mat-icon>
+                </span> -->
+              </mat-form-field>
+            </div>
+            <button mat-icon-button (click)="toggleSearch()">
+              <mat-icon style="padding-top:1px">search</mat-icon>
+            </button>
+          </div>
+          </div>
+          <div class="user-list" *ngFor="let user of userList">
+            <div class="user-invite">
+              <div style="display: flex;align-items: center;">
+              <span class="user-avatar">{{ user.name.charAt(0) }}</span>
+              <span>{{ user.name }}</span>
+              </div>
+              <div>
+              <ng-container *ngIf="user.isRejected">
+                <span style="color: #e53935; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                  <mat-icon style="font-size: 16px; height: 16px; width: 16px; color: #e53935;">call_end</mat-icon>
+                  Rejected
+                </span>
+              </ng-container>
+              <ng-container *ngIf="user.isCalling; else callButton">
+                <span>Calling...</span>
+              </ng-container>
+              <ng-template #callButton>
+                <button mat-icon-button (click)="callUser(user)" [title]="'Call ' + user.name">
+                  <mat-icon class="ovi-fnt-sze20" style="font-weight: 400px;">call</mat-icon>
+                </button>
+              </ng-template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resize resize-top" (mousedown)="onResizeMouseDown($event, 'top')"></div>
+    <div class="resize resize-right" (mousedown)="onResizeMouseDown($event, 'right')"></div>
+    <div class="resize resize-bottom" (mousedown)="onResizeMouseDown($event, 'bottom')"></div>
+    <div class="resize resize-left" (mousedown)="onResizeMouseDown($event, 'left')"></div>
+
+    <div class="resize resize-br" (mousedown)="onResizeMouseDown($event, 'bottom right')"></div>
+    <div class="resize resize-bl" (mousedown)="onResizeMouseDown($event, 'bottom left')"></div>
+    <div class="resize resize-tr" (mousedown)="onResizeMouseDown($event, 'top right')"></div>
+    <div class="resize resize-tl" (mousedown)="onResizeMouseDown($event, 'top left')"></div>
+  </div>

@@ -8,7 +8,7 @@ from backend.app.core.chatbot import TrackerWaveChatbot
 from backend.app.api.deps import require_api_key
 from backend.app.db.conversation_store import _store, Message
 from backend.app.core.formatter import build_chart_spec
-
+from backend.config.settings import settings
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
@@ -43,6 +43,11 @@ def get_chatbot() -> TrackerWaveChatbot:
 
 @router.post("/query", response_model=QueryResponse)
 def query(req: QueryRequest, _=Depends(require_api_key)):
+    req.filters = {
+        "facility_id": settings.target_facility_id,
+        "region_id": settings.target_region_id,
+        "customer_id": settings.target_customer_id,
+    }
     bot = get_chatbot()
     result = bot.process_query(
         user_question=req.question,
@@ -67,6 +72,11 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
     SSE streaming endpoint. Sends JSON events as they complete.
     Consumed via fetch + ReadableStream on the frontend.
     """
+    req.filters = {
+        "facility_id": settings.target_facility_id,
+        "region_id": settings.target_region_id,
+        "customer_id": settings.target_customer_id,
+    }
     pipeline = get_pipeline()
     
     # Optional auth user info from deps (if Phase 3 JWT used, req.session_id isn't strictly secure, but okay for MVP)

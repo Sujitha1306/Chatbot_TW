@@ -1,0 +1,225 @@
+<div *ngIf="data.screen === 'review'" class="container ovi-font-family">
+    <div style="overflow: auto; height: calc(100% - 60px);">
+        <mat-toolbar class="block-1" style="height: 80px;">
+            <div class="close-Btn">
+                <mat-icon class="icon-style ovi-fnt-sze25" style="padding: 5px 15px; cursor: pointer;"  (keydown.enter)="fixClick()"
+                    (click)="close(false)">close</mat-icon>
+            </div>
+            <div style="width: 60%;">
+                <div appTooltip [tooltipText]="userDetails.sourceTitle" 
+                 style="font-weight: 600;overflow: hidden;text-overflow: ellipsis; cursor: pointer;">
+                    {{userDetails.sourceTitle}}
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <img class="profile-photo"
+                        [src]="userDetails.userAvatarUrl === '' ? defaultImg : userDetails.userAvatarUrl"
+                        alt="Profile">
+                    <div *ngIf="data.type !== 'user'" class="user-Name">{{userDetails.userName}}</div>
+                    <div *ngIf="data.type === 'user'" class="user-Name">{{userDetails.name}}</div>
+                </div>
+            </div>
+        </mat-toolbar>
+        <div style="padding: 5px 20px;height: calc(100% - 90px);overflow: auto;">
+            <div *ngIf="data.type !== 'user'" style="display: flex; padding: 0 30px; gap: 10%; height: 60px;">
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">schedule</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">Posted date</span>
+                        <div class="kynDetails">{{userDetails.publishedAt | date:'MMM d, h:mm a'}}</div>
+                    </div>
+                </div>
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">location_on</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">Location</span>
+                        <div class="kynDetails">{{userDetails.locationValue}}</div>
+                    </div>
+                </div>
+                <div *ngIf="data.type !== 'post' && data.type !== 'notices'" style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">category</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">Category</span>
+                        <div class="kynDetails">{{userDetails.sourceCategoryValue}}</div>
+                    </div>
+                </div>
+            </div>
+            <mat-divider *ngIf="data.type !== 'user'" style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+            <div *ngIf="data.type !== 'user'" class="kynDetails" style="padding: 10px 35px;">Action</div>
+            <div *ngIf="data.type !== 'user'" style="display: flex; padding: 0 40px; gap: 10%; height: 60px">
+                <div>
+                    <span class="kyn-detailname">Deleted Status</span>
+                    <div class="kynDetails" style="color: #f44336;">{{userDetails.isDeleted === false? 'No' :
+                        'Deleted'}}
+                    </div>
+                </div>
+                <div>
+                    <span class="kyn-detailname">Deleted date</span>
+                    <div *ngIf="userDetails.isDeleted " class="kynDetails">{{userDetails.updatedAt | date:'MMM d, h:mm a'}}</div>
+                </div>
+            </div>
+            <mat-divider *ngIf="data.type !== 'user'" style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+            <div *ngIf="data.type !== 'user'" class="kynDetails" style="padding: 10px 35px;">Reported Content</div>
+            <div style="width: 100%; height: 70%;" *ngIf="userDetails.sourceUrl !== null && data.type !== 'post' && data.type !== 'user'">
+                <video controls class="video-content" autoplay>
+                    <source [src]="userDetails.sourceUrl" type="video/mp4">
+                </video>
+            </div>
+            <div *ngIf="data.type === 'post' && data.type !== 'user'" style="width: 90%; height: 80%;">
+                <img style="height: 100%; width: 100%; object-fit: contain;" [src]="userDetails.sourceUrl"
+                    alt="img">
+            </div>
+            <div *ngIf="userDetails.sourceUrl === null && data.type !== 'post' && data.type !== 'user'" style="width: 90%; height: 80%;">
+                <img style="height: 100%; width: 100%; object-fit: contain;" [src]="userDetails.sourceThumbnailUrl"
+                    alt="img">
+            </div>
+            <div *ngIf="data.type !== 'user'" class="kynDetails" style="padding: 10px 35px;">Description</div>
+            <div style="padding: 10px 35px;">
+                <ng-container *ngIf="isExpanded; else shortDescription">
+                    {{userDetails.sourceDescription}}
+                    <span style="display: contents; color: #797979;" (click)="toggleExpand()"  (keydown.enter)="fixClick()">less</span>
+                </ng-container>
+                <ng-template #shortDescription>
+                    {{ userDetails.sourceDescription | slice:0:150 }}
+                    <span *ngIf="userDetails.length && userDetails.sourceDescription.length > 150"
+                        style="display: contents; color: #f44336;" (click)="toggleExpand()"  (keydown.enter)="fixClick()">... more</span>
+                </ng-template>
+            </div>
+            <mat-divider style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+            <div class="kynDetails" style="padding: 10px 35px; display: flex;">
+                <div>{{userDetails.reports}}</div>&nbsp; Reports filed
+            </div>
+            <div style="padding: 10px 35px;">
+                <div fxLayout="column" class="mat-elevation-z4 manage-component table-align"
+                    [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px">
+                    <div class="mat-table-overflow" style="height: 100%;width: 100%;">
+                        <mat-table #table [dataSource]="ReportedDataSource" matSort
+                            style="height: calc(100% - 70px); overflow: auto;">
+                            <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                                <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header"
+                                    style="justify-content: flex-start;"> {{col.title}} </mat-header-cell>
+                                <mat-cell *matCellDef="let element">
+                                    <span *ngIf="col.colName != 'createdAt' && col.colName != 'reportedByName'">{{element[col.dataName]}}</span>
+                                    <span *ngIf="col.colName == 'reportedByName'" style="display: flex; align-items: center;">
+                                        <img class="profile-photo" [src]="element.reportedByImg"
+                                            alt="Profile">
+                                        <span>&nbsp; {{element[col.dataName]}}</span>
+                                    </span>
+                                    <span *ngIf="col.colName == 'createdAt'">{{element[col.dataName] | date : "MMM d, h:mm a"}}</span>
+                                </mat-cell>
+                            </ng-container>
+                            <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"
+                                style="min-height: 40px;height: 40px !important; border-bottom-width: 0px"
+                                (toggleChange)="onToggleChange($event,row)">
+                            </mat-row>
+                        </mat-table>
+                        <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons></mat-paginator>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <mat-divider class="divider"></mat-divider>
+    <div class="input-footer" style="padding: 0 65px;">
+        <button *ngIf="data.reportData.isDeleted === false" mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="deleteContent()"
+          style="background-color: #000000de; border-radius: 3px;" [debounceTime]="300">{{"Delete"|translate}}</button>
+    </div>
+</div>
+
+<div *ngIf="data.screen === 'byReview'" class="container ovi-font-family">
+    <div *ngIf="reportedByData" style="overflow: auto; height: calc(100% - 60px);">
+        <mat-toolbar class="block-1" style="height: 80px;">
+            <div class="close-Btn">
+                <mat-icon class="icon-style ovi-fnt-sze25" style="padding: 5px 15px; cursor: pointer;"
+                    (click)="close(false)"  (keydown.enter)="fixClick()">close</mat-icon>
+            </div>
+            <div style="width: 60%;">
+                <div style="font-weight: 600;overflow: hidden;text-overflow: ellipsis; cursor: pointer;">
+                    {{reportsBy !== undefined ? reportsBy.title : userDetails.sourceTitle}}
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <img *ngIf="reportsBy !== undefined" class="profile-photo"
+                        [src]="reportsBy.userProfile === '' ? defaultImg : reportsBy.userProfile"
+                        alt="Profile">
+                    <img *ngIf="reportsBy === undefined" class="profile-photo"
+                        [src]="userDetails.userAvatarUrl=== '' ? defaultImg : userDetails.userAvatarUrl"
+                        alt="Profile">
+                    <div class="user-Name">{{reportsBy !== undefined ? reportsBy.Name : userDetails.userName}}</div>
+                </div>
+            </div>
+        </mat-toolbar>
+        <div style="padding: 5px 20px;height: calc(100% - 90px);overflow: auto;">
+            <div style="display: flex; padding: 0 30px; gap: 10%; height: 60px;">
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">schedule</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">Posted date</span>
+                        <div class="kynDetails">{{(reportsBy !== undefined ? reportsBy.publishedAt : userDetails.publishedAt) | date:'MMM d, h:mm a'}}</div>
+                    </div>
+                </div>
+                <div style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">location_on</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">Location</span>
+                        <div class="kynDetails">{{reportsBy !== undefined ? reportsBy.locationValue : userDetails.locationValue}}</div>
+                    </div>
+                </div>
+                <div *ngIf="data.type !== 'post' && data.type !== 'notices'" style="display: -webkit-box;">
+                    <div class="kyn-icon">
+                        <mat-icon class="ovi-fnt-sze22">category</mat-icon>
+                    </div>
+                    <div>
+                        <span class="kyn-detailname">Category</span>
+                        <div class="kynDetails">{{reportsBy !== undefined ? reportsBy.locationValue : userDetails.sourceCategoryValue}}</div>
+                    </div>
+                </div>
+            </div>
+            <mat-divider style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+            <div class="kynDetails" style="padding: 10px 28px; display: flex;"> Report Reason </div>
+            <div style="padding: 5px 50px;">{{userDetails.reportReasonValue}}</div>
+            <mat-divider *ngIf="data.type !== 'user'" style="width: 90%; margin-left: 30px;" class="divider"></mat-divider>
+            <div class="kynDetails" style="padding: 10px 35px;">Reported Content</div>
+            <div style="width: 100%; height: 70%;" *ngIf="reportsBy !== undefined && data.type !== 'post'">
+                <video controls class="video-content" autoplay>
+                    <source [src]="reportsBy.sourceUrl.includes('.m3u8') ? reportsBy.rawDataUrl : reportsBy.sourceUrl" type="video/mp4">
+                </video>
+            </div>
+            <div *ngIf="data.type === 'post'" style="width: 90%; height: 80%;">
+                <img style="height: 100%; width: 100%; object-fit: contain;" [src]="reportsBy.sourceUrl"
+                    alt="img">
+            </div>
+            <div *ngIf="reportsBy !== undefined && reportsBy.sourceUrl === null && data.type !== 'post'" style="width: 90%; height: 80%;">
+                <img style="height: 100%; width: 100%; object-fit: contain;" [src]="reportsBy.sourceThumbnailUrl"
+                    alt="img">
+            </div>
+            <div *ngIf="reportsBy === undefined" class="blink" style="padding: 5px 50px;">Content Not Available</div>
+            <div class="kynDetails" style="padding: 10px 35px;">Description</div>
+            <div style="padding: 10px 35px;">
+                <ng-container *ngIf="isExpanded; else shortDescription">
+                    {{reportsBy !== undefined ? reportsBy.description : userDetails.sourceDescription}}
+                    <span style="display: contents; color: #797979;" (click)="toggleExpand()"  (keydown.enter)="fixClick()">less</span>
+                </ng-container>
+                <ng-template #shortDescription>
+                    {{(reportsBy !== undefined ? reportsBy.description : userDetails.sourceDescription) | slice:0:150 }}
+                    <span *ngIf="(userDetails.length && userDetails.sourceDescription.length > 150) &&
+                         (reportsBy !== undefined && reportsBy.description.length > 150)"
+                        style="display: contents; color: #f44336;" (click)="toggleExpand()"  (keydown.enter)="fixClick()">... more</span>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+    <mat-divider class="divider"></mat-divider>
+    <div class="input-footer" style="padding: 0 65px;">
+        <button *ngIf="data.reportData.isDeleted === false" mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="deleteByContent()"
+          style="background-color: #000000de; border-radius: 3px;" [debounceTime]="300">{{"Delete"|translate}}</button>
+    </div>
+</div>

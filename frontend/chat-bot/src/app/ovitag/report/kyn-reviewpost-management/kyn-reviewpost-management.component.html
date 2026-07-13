@@ -1,0 +1,148 @@
+<div class="ovi-font-family">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <span class="main-box">
+        <div class="title">{{"Kyn Analytics Report"|translate}}</div>
+        <div class="innerbox" [formGroup]="reportForm">
+            <!-- <div id="box1">TYPE</div>
+            <div id="box2" style="width: 8% !important;">
+                <mat-form-field class="select" appearance="none">
+                    <mat-select placeholder="Type"
+                        (selectionChange)="reportHeaderAction('report', $event)" formControlName="typeId">
+                        <mat-option *ngFor="let report of reportList" [value]="report.link">
+                            {{report.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div> -->
+
+            <div id="box1">{{"From"|translate}}</div>
+            <div id="box2">
+                <mat-form-field class="select" appearance="none">
+                    <input matInput [matDatepicker]="picker1" class="tw-input-date"
+                        formControlName="fromDate" placeholder="{{'From Date'|translate}}" [max]="today"
+                        (dateChange)="reportHeaderAction('fromDate', $event.target.value)" readonly />
+                    <mat-datepicker-toggle matSuffix [for]="picker1" style="padding-right:2px;"></mat-datepicker-toggle>
+                    <mat-datepicker #picker1></mat-datepicker>
+                </mat-form-field>
+            </div>
+
+            <div id="box1">{{"To"|translate}}</div>
+            <div id="box2">
+                <mat-form-field class="select" appearance="none">
+                    <input matInput [matDatepicker]="picker" class="tw-input-date"
+                        formControlName="toDate" placeholder="{{'To Date'|translate}}" [max]="today"
+                        (dateChange)="reportHeaderAction('toDate', $event.target.value)" readonly />
+                    <mat-datepicker-toggle matSuffix [for]="picker" style="padding-right:2px;"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+            </div>
+
+            <div id="box1">{{"Location"|translate}}</div>
+            <div id="box2">
+                <mat-form-field class="select" appearance="none">
+                    <mat-select placeholder="{{'Location'|translate}}" 
+                        (selectionChange)="reportHeaderAction('report', $event)" formControlName="locationId">
+                        <!-- <mat-option [value]="''">All</mat-option> -->
+                        <mat-option *ngFor="let report of reportData['locationList']" [value]="report.id">
+                            {{report.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="reportData['category']" id="box1">{{"Category"|translate}}</div>
+            <div *ngIf="reportData['category']" id="box2">
+                <mat-form-field class="select" appearance="none">
+                    <mat-select placeholder="{{'Category'|translate}}" 
+                        (selectionChange)="reportHeaderAction('category', $event)" formControlName="categoryId">
+                        <!-- <mat-option [value]="''">All</mat-option> -->
+                        <mat-option *ngFor="let report of reportData['categoriesList']" [value]="report.id">
+                            {{report.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="button-icon">
+                <button mat-button class="custom-button" [disabled]="!reportForm.controls.locationId.value && !reportForm.controls.categoryId.value" (click)="reportHeaderAction('Insights', null)">{{"Get Insights"|translate}}</button>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 0px; background: #d61820;
+                border-radius: 50%; width: 30px; height: 30px; text-align: center; margin-top: 5px;">
+                <i class="material-icons cur-ptr" style="padding-top: 6px; color: #fff;"
+                (click)="reportHeaderAction(null, null)" matTooltip="{{'Refresh'|translate}}" (keydown.enter)="fixClick()">autorenew</i>
+            </div>
+            <div style="margin: 6px 10px 0px auto;" width = 100px >
+                <img *ngIf="!reportData['enableExcel']" src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableExcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" appTooltip 
+                tooltipText="{{'Download as excel sheet'|translate}}" style="cursor: pointer;" (click)="reportHeaderAction('excel', null)"  (keydown.enter)="fixClick()">
+            </div>
+        </div>
+    </span>
+    <div class="ovi-font-family" style="padding-top: 10px;">
+        <mat-grid-list cols="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}"
+            [gutterSize]="'5px'" style="padding-bottom: 30px;">
+            <mat-grid-tile class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan"
+                [rowspan]="tile.rowspan" style="border-radius: 10px; display: flex;gap: 1%;">
+                <mat-grid-tile-header class="ovi-fnt-sze14" style="border-radius: 10px 10px 0px 0px; border: 1px solid white;font-weight: 600;color: white;height: 50px;background: #D61820 !important;
+                top: 0px;z-index: 100;text-align: center;justify-content: center;"
+                    *ngIf="tile.showHeader">{{tile.header}}</mat-grid-tile-header>
+                <mat-grid-tile-header class="ovi-fnt-sze22" style="font-weight: bold;align-items: center; padding-top: 25px; justify-content: center; background: white; color: grey; display: flex; height: inherit;" *ngIf="!tile.islist">{{tile.content}}</mat-grid-tile-header>
+            </mat-grid-tile>
+        </mat-grid-list>
+        <!-- <mat-grid-list cols="1" rowHeight="300px" [gutterSize]="'10px'" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+            <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="border-radius: 10px; border: 1px solid white">
+                <canvas id="requestCategorywiseSum" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+            </mat-grid-tile>
+        </mat-grid-list> -->
+        <div *ngIf="reportData['showTable']" class="list" style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;
+            box-shadow: 0px 3px 6px #00000029;">
+            <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px; background-color: #D61820;">
+                <span style="margin-left: 15px;">{{"Klips Analytics"|translate}}</span></mat-toolbar>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [id]="'shorts'" [type]="'ng-table'" [tableData]="reportData['shorts']"
+                    [columns]="['Name', 'Role', 'locationValue', 'categoryValue', 'isActive']"
+                    [columnData]="['Name', 'Role', 'locationValue','categoryValue', 'isActive']">
+                </angular-table-component>
+            </div>
+        </div>
+        <div *ngIf="reportData['showTable']" class="list" style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;
+            box-shadow: 0px 3px 6px #00000029;">
+            <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px; background-color: #D61820;">
+                <span style="margin-left: 15px;">{{"Telekast Analytics"|translate}}</span></mat-toolbar>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [id]="'video'" [type]="'ng-table'" [tableData]="reportData['video']"
+                    [columns]="['Name', 'Role', 'locationValue', 'categoryValue', 'isActive']"
+                    [columnData]="['Name', 'Role', 'locationValue','categoryValue', 'isActive']">
+                </angular-table-component>
+            </div>
+        </div>
+        <div *ngIf="reportData['showTable']" class="list" style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;
+            box-shadow: 0px 3px 6px #00000029;">
+            <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;background-color: #D61820;">
+                <span style="margin-left: 15px;">{{"Notice Analytics"|translate}}</span></mat-toolbar>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [id]="'journal'" [type]="'ng-table'" [tableData]="this.reportData['journal']"
+                [columns]="['Name', 'Role', 'locationValue', 'isActive']"
+                [columnData]="['Name', 'Role', 'locationValue', 'isActive']">
+                </angular-table-component>
+            </div>
+        </div>
+        <div *ngIf="reportData['showTable']" class="list" style="padding-bottom: 20px;border-radius: 10px;border: 1px solid white;
+            box-shadow: 0px 3px 6px #00000029;">
+            <mat-toolbar class="input-header block-1" style="height: 35px;border-radius: 10px 10px 0px 0px;background-color: #D61820;">
+                <span style="margin-left: 15px;">{{"Post Analytics"|translate}}</span></mat-toolbar>
+            <div style="position: relative;width: 100%;">
+                <angular-table-component [id]="'post'" [type]="'ng-table'" [tableData]="reportData['post']"
+                [columns]="['Name', 'Role', 'locationValue', 'isActive']"
+                [columnData]="['Name', 'Role', 'locationValue', 'isActive']">
+                </angular-table-component>
+            </div>
+        </div>
+    </div>
+</div>

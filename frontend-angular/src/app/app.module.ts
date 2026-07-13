@@ -37,7 +37,6 @@ import { ChatThreadComponent } from './features/chat/chat-thread/chat-thread.com
 import { ChatWelcomeComponent } from './features/chat/chat-welcome/chat-welcome.component';
 import { UserMessageComponent } from './features/chat/user-message/user-message.component';
 import { AssistantMessageComponent } from './features/chat/assistant-message/assistant-message.component';
-import { FacilityFilterComponent } from './features/chat/facility-filter/facility-filter.component';
 import { ChartSelectorComponent } from './features/chat/chart-selector/chart-selector.component';
 import { ChartRendererComponent } from './features/chat/chart-renderer/chart-renderer.component';
 import { SqlPanelComponent } from './features/chat/sql-panel/sql-panel.component';
@@ -54,7 +53,6 @@ import { DataTableComponent } from './features/chat/data-table/data-table.compon
     ChatWelcomeComponent,
     UserMessageComponent,
     AssistantMessageComponent,
-    FacilityFilterComponent,
     ChartSelectorComponent,
     ChartRendererComponent,
     SqlPanelComponent,

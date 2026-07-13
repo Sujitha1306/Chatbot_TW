@@ -1,0 +1,268 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Create"|translate}} {parentName, select, Region {{{"Region"|translate}}} Facility {{{"Facility"|translate}}} Customer {{{"Customer"|translate}}}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 97px);overflow: auto;">
+    <div  [formGroup]="customerForm">
+            <div class="ovi-row-gap">
+                <div *ngIf="!data" class="cust-type-section">
+                    <span class="ovi-lbl-text-size cust-type-label">{{"Customer Type"|translate}} :</span>
+                    <div class="cust-type-btns">
+                        <button mat-button class="cust-type-btn"
+                            [ngClass]="{'active': code === o.code || (code === '1' && i === 0)}"
+                            *ngFor="let o of customerType; let i = index"
+                            (click)="getCustType(o); customerForm.controls['customerTypeId'].setValue(o)">
+                            <mat-icon class="btn-icon">{{ {'1':'person','2':'location_on','3':'business'}[o.code] || 'person' }}</mat-icon>
+                            {{o.value | translate}}
+                        </button>
+                    </div>
+                </div>
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" *ngIf = "data">
+                   
+                        <mat-label class="ovi-lbl-text-size">{{"Parent Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Parent Name'|translate" [value]="data.name" readonly > 
+                        </mat-form-field>
+                
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" *ngIf = "data">
+                  
+                        <mat-label class="ovi-lbl-text-size">{{"Customer Type"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh    "appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Customer Type'|translate" [value]="parentName"readonly >
+                        </mat-form-field>
+               
+                </div>
+            </div>
+            <div class="ovi-row-gap" *ngIf="!data">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="(!data) && (code === '2' || code === '3' || data.customerTypeId == 1)">
+               
+                        <mat-label class="ovi-lbl-text-size">{{"Select Customer"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Customer'|translate" formControlName="customerId"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let cust_list of customerList" [value]="data.customerTypeId ? data.id : cust_list.id"
+                                    (onSelectionChange)=getRegionList(cust_list.id)>
+                                    {{cust_list.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="customerForm.controls.customerId.hasError('required')">{{"Select customer is required"|translate}}</mat-error>
+                        </mat-form-field>
+                  
+                </div>
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="code === '3'">
+                  
+                        <mat-label class="ovi-lbl-text-size">{{"Select Region"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Region'|translate" formControlName="regionId"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let region of regionList" [value]="region.id">
+                                    {{region.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="customerForm.controls.regionId.hasError('required')">{{"Select region is required"|translate}}</mat-error>
+                        </mat-form-field>
+                   
+                </div>
+            </div>
+
+            <div  class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
+                        <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh    ovi-matfrmfld-err"appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" #name="matInput" [errorStateMatcher]="matcher" autofocus autocomplete="off">
+                             <mat-error *ngIf="customerForm.controls.name.invalid">
+                                    {code, select, 1 {{{"Customer"|translate}}} 2 {{{"Region"|translate}}} 3 {{{"Facility"|translate}}}} {{"name is required. (Limit 3-64 letters)"|translate}} 
+                            </mat-error> 
+                        </mat-form-field>
+                </div>
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+             
+                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh   " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="isActive"[disableOptionCentering]="true">
+                                <mat-option  value=true>{{"Active"|translate}}</mat-option>
+                                <mat-option value=false>{{"Inactive"|translate}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+               
+                </div>
+            </div>
+            <div  class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                  
+                        <mat-label class="ovi-lbl-text-size">{{"Registration Address"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <textarea  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Registration Address'|translate" formControlName="regAddress" autocomplete="off" ></textarea>
+                        </mat-form-field>
+                  
+                </div>
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                 
+                        <mat-label class="ovi-lbl-text-size">{{"Billing Address"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Address'|translate" formControlName="billAddress"></textarea>
+                        </mat-form-field>
+              
+                </div>
+            </div>
+            <div  class="ovi-row-gap" *ngIf = "code=='1'">
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"GST Number"|translate}}</mat-label>
+               
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'GST Number'|translate" formControlName="gsTin" autocomplete="off">
+                        </mat-form-field>
+            
+                </div>
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+               
+                        <mat-label class="ovi-lbl-text-size">{{"License Pack"|translate}}</mat-label> 
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'License Pack'|translate" formControlName="licencePack"  autocomplete="off">
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            
+            <div  class="ovi-row-gap"  *ngIf = "code=='3' || parentName == 'Facility'">
+                <div  class="ovi-row-two-clmn">
+              
+                        <mat-label class="ovi-lbl-text-size">{{"No of Employee"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'No of Employee'|translate" formControlName="noOfEmployees"  autocomplete="off">
+                        </mat-form-field>
+             
+                </div>
+                <div  class="ovi-row-two-clmn">
+                 
+                        <mat-label class="ovi-lbl-text-size">{{"No of Devices"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'No of Devices'|translate" formControlName="noOfDevices"  autocomplete="off">
+                        </mat-form-field>
+                </div>
+            </div>
+            <div  class="ovi-row-gap">
+                <div class="ovi-row-two-clmn" *ngIf = "code =='3'">
+                        <mat-label class="ovi-lbl-text-size">{{"No of Beds"|translate}}</mat-label>
+                        <mat-form-field class="mat=fld-width" style="display: inline;"appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'No of Beds'|translate" formControlName="noOfBeds" autocomplete="off">
+                        </mat-form-field>
+                </div>
+                <div  class="ovi-row-two-clmn" *ngIf = "code !='3' && code !='2' && parentName != 'Facility'">
+                        <mat-label class="ovi-lbl-text-size">{{"Multi Campus"|translate}}</mat-label>
+                        <mat-form-field style="display: inline;" class="ovi-row-frmfld-wdh "appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Multi Campus'|translate" formControlName="isMulti"[disableOptionCentering]="true">
+                                <mat-option value=true>{{"Yes"|translate}}</mat-option>
+                                <mat-option value=false>{{"No"|translate}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+            </div>
+            
+            <div class="upload-section" *ngIf="code == '1'">
+                <div class="upload-grid">
+                    <div class="upload-area">
+                        <input type="file" id="logoFile" #logoFileInput accept="image/*" (change)="uploadImage($event)" class="file-input">
+                        <label for="logoFile" class="file-label" *ngIf="!logoImage">
+                            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                            <span class="upload-text">{{"Upload Logo Image"|translate}}</span>
+                            <span class="upload-hint">{{"Click to browse"|translate}}</span>
+                        </label>
+                        <div class="file-preview" *ngIf="logoImage">
+                            <img [src]="logoImage" alt="logo">
+                            <label for="logoFile" class="preview-overlay">
+                                <mat-icon class="overlay-icon">camera_alt</mat-icon>
+                                <span class="overlay-text">{{"Change"|translate}}</span>
+                            </label>
+                            <button type="button" class="remove-btn" (click)="logoImage = null; logoFileInput.value = ''">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="upload-area">
+                        <input type="file" id="bgFile" #bgFileInput accept="image/*" (change)="uploadBgImage($event)" class="file-input">
+                        <label for="bgFile" class="file-label" *ngIf="!bgImage">
+                            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                            <span class="upload-text">{{"Upload Background Image"|translate}}</span>
+                            <span class="upload-hint">{{"Click to browse"|translate}}</span>
+                        </label>
+                        <div class="file-preview" *ngIf="bgImage">
+                            <img [src]="bgImage" alt="bgImg">
+                            <label for="bgFile" class="preview-overlay">
+                                <mat-icon class="overlay-icon">camera_alt</mat-icon>
+                                <span class="overlay-text">{{"Change"|translate}}</span>
+                            </label>
+                            <button type="button" class="remove-btn" (click)="bgImage = null; bgFileInput.value = ''">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div formArrayName="contacts" *ngIf = "customerForm && false">
+                <div *ngFor="let contact of customerForm.controls.contacts.controls; let i=index">
+                <mat-divider *ngIf="customerForm.controls.contacts.controls.length > 1 && i > 0" >
+                </mat-divider>
+                <br>
+                    <div [formGroupName]="i" >
+                    
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-two-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Contact name"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Contact name'|translate" formControlName="contactName" autocomplete="off" >
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-two-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Email"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Email'|translate" formControlName="email" autocomplete="off" [errorStateMatcher]="matcher">
+                                        <mat-error *ngIf="contact.controls.email.invalid">
+                                            {{"Invalid Email"|translate}} 
+                                        </mat-error>
+                                    </mat-form-field>    
+                            </div>
+                        </div>
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-two-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Phone Number"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone Number'|translate" formControlName="phoneNumber" autocomplete="off" [errorStateMatcher]="matcher">
+                                        <mat-error  *ngIf="contact.controls.phoneNumber.invalid">
+                                            {{"Invalid Phone number"|translate}} 
+                                        </mat-error>
+                                    </mat-form-field>  
+                            </div>
+                            <div  class="ovi-row-two-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Designation"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Designation'|translate" autocomplete="off">
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                        <div   class="ovi-row-gap">
+                            <div  class="ovi-row-two-clmn">
+                                    <mat-label class="ovi-lbl-text-size">{{"Comment"|translate}}</mat-label>
+                                    <mat-form-field class="mat=fld-width"appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comment'|translate" formControlName="comment" autocomplete="off">
+                                    </mat-form-field>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="form-row">
+                    <button mat-stroked-button *ngIf="customerForm.controls.contacts.controls.length > 1" class="cont-styl" (click)="removeContact(i)"> {{"Delete Contact"|translate}}</button>
+                    <button mat-stroked-button class="cont-styl" (click)="addContact()">{{"Add more contact"|translate}}</button>
+                </div>
+              </div>            
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+              <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        
+            <button mat-button class="active-btn" appDebounceClick [disabled]="customerForm.invalid || isDisabled"
+             (debounceClick)="saveCustomer()" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+    </div>
+</div>

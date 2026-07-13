@@ -1,0 +1,44 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+<div class="ovi-pop-hdr">
+        <div style="margin-left: 10px;"*ngIf="isExpense">{{"Expense Details"|translate}}</div>
+        <div style="margin-left: 10px;"*ngIf="!isExpense">{{"Additional Cost  Details"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+</div>
+<div  style="height:calc(100% - 90px);">
+         <app-banner [type]="'new'" [bannerData]="bannerlabel"></app-banner>
+        <div class="ovi-row-gap" *ngIf="isExpense">
+        <div *ngIf="expensesData.length > 0" style="margin-top: 5px; width: 100%;height: 300px;">
+            <angular-table-component 
+                [id]="'InventoryExpenses'" 
+                [type]="'ng-table'" 
+                [tableData]="expensesData"
+                [columns]="['Date','Ticket Id','Item Id','Item Name','Quantity','Cost']"
+                [columnData]="['deliveredDatetime','requestId','itemMasterId','itemMasterName','allocatedQuantity','unitCost']"
+                (triggerAction)="triggerAction($event)">
+            </angular-table-component>
+        </div>
+          <div *ngIf="expensesData.length === 0" class="no-items-text">
+            {{ "No Items Found" | translate }}
+        </div>
+        </div>
+        <div class="ovi-row-gap" *ngIf="!isExpense">
+        <div *ngIf="additionalTableData.length > 0"  style="margin-top: 5px; width: 100%;height: 200px;">
+            <angular-table-component 
+                [id]="'InventoryExpenses'" 
+                [type]="'ng-table'" 
+                [tableData]="additionalTableData"
+                [columns]="['Date','Type','Cost','Remarks']"
+                [columnData]="['eventDate','typeName','cost','description']"
+                (triggerAction)="triggerAction($event)">
+            </angular-table-component>
+        </div>
+        <div *ngIf="additionalTableData.length === 0" class="no-items-text">
+            {{ "No Items Found" | translate }}
+        </div>
+        </div>
+        </div>
+       <div style="text-align: right; margin-top: 10px;"  class="ovi-pop-ftr">
+            <button mat-button class="active-btn"  (click) = close()  >{{"Close"|translate}}</button>
+         </div>
+        
+</div>

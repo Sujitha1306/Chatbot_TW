@@ -1,0 +1,50 @@
+<div class="manage-body container-fluid">
+    <tw-header-new-component [component]="'kyn-live-request'" [permission]="null" [dateFilter]="null"
+        [selectFilter]="selectFilter" [rowFilter]="rowFilter" [manageAction]="showActions" [selectDropdown]="null"
+        [selectedName]="true" [locationId]="locationId" [selectedView]="null" [multiView]="false"
+        (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)">
+    </tw-header-new-component>
+
+    <div fxLayout="column" class="mat-elevation-z4 tw-manage-component" [ngClass.xs]="'components-container-xs'"
+        fxLayoutGap="5px" style="height: calc(100% - 115px);">
+
+        <div class="tw-mat-table-overflow">
+            <table mat-table class="tw-table" [dataSource]="dataSource" matSort>
+                <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header"
+                        style="justify-content: flex-start;"> {{col.title}} </th>
+                    <ng-container>
+                        <td mat-cell *matCellDef="let element" (click)="reportOpen(true, element)" [ngStyle]="{'width': col.colName == 'title'? '30px' : ''}" (keydown.enter)="fixClick()">
+                            <span *ngIf="col.colName == 'preferredAt'">{{element[col.dataName] | date : "MMM d, h:mm
+                                a"}}</span>
+                            <span *ngIf="col.colName == 'createdAt'">{{element[col.dataName] | date : "MMM d"}}</span>
+                            <div *ngIf="col.colName == 'Name'">
+                                <div style="display: flex; align-items: center;">
+                                    <img class="profile-photo" [src]="element.userProfile === '' ? defaultImg : element.userProfile" alt="Profile">
+                                    <div style="padding-left: 7px;">&nbsp;{{element[col.dataName]}}</div>
+                                </div>
+                            </div>
+                            <span *ngIf="col.colName == 'requestStatus'">
+                                <div class="status-rqt" [ngStyle]="{'background': element.requestStatus === 'Rejected' ? '#f7ecec' : 
+                                 element.requestStatus === 'Approved'? '#f1f7ec' : '#ffa50033', 
+                                 'color': element.requestStatus === 'Rejected'? '#b55858'  : element.requestStatus === 'Approved'? '#79ad45' : '#dba819'}">
+                                    {{element[col.dataName] === null ? 'Pending' : element[col.dataName]}}
+                                </div>
+                            </span>
+                            <span class="title-col" *ngIf="col.colName == 'title'">{{element[col.dataName]}}</span>
+                            <span *ngIf="col.colName != 'preferredAt' && col.colName != 'createdAt' && col.colName != 'Name' 
+                                && col.colName != 'requestStatus' && col.colName != 'title'">{{element[col.dataName]}}</span>
+                        </td>
+                    </ng-container>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns;sticky: true;" class="tw-manage-table-header-row">
+                </tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns; let i = index;"></tr>
+            </table>
+        </div>
+        <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons class="tw-paginator-sticky"
+            style="border-radius: 5px;"></mat-paginator>
+    </div>
+    <app-kyn-popup-slider *ngIf="isOpen" style="display: flex; justify-content: flex-end;" (show)="open($event)"
+    [pasingReport]="passingdata"></app-kyn-popup-slider>
+</div>

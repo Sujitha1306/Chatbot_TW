@@ -1,0 +1,187 @@
+<div class="ads-wrapper">
+  <div class="ads-row">
+
+    <!-- Period trigger button -->
+    <div class="ads-period-wrapper">
+      <button #triggerRef class="ads-pill ads-pill--period" type="button"
+              (click)="togglePanel()" [class.ads-pill--open]="isPanelOpen">
+        <i class="material-icons ads-icon">calendar_today</i>
+        <span class="ads-period-label">{{selectedPeriod}}</span>
+        <i class="material-icons ads-chevron" [class.ads-chevron--up]="isPanelOpen">expand_more</i>
+      </button>
+
+      <!-- Dropdown panel -->
+      <div #panelRef class="ads-panel" *ngIf="isPanelOpen" (click)="_skipDocClick = true">
+
+        <!-- Custom Period -->
+        <div class="ads-custom-header">
+          <i class="material-icons ads-section-icon">calendar_today</i>
+          <span class="ads-section-title">Custom Period</span>
+        </div>
+        <div class="ads-tab-group">
+          <button *ngFor="let p of visibleCustomPeriods" type="button"
+                  class="ads-tab"
+                  [class.ads-tab--active]="selectedPeriod === p.value"
+                  (click)="selectCustomPeriod(p.value)">
+            <i class="material-icons ads-tab-icon">{{p.icon}}</i>
+            {{p.label}}
+          </button>
+        </div>
+
+        <div class="ads-panel-divider"></div>
+
+        <!-- Quick Presets -->
+        <div class="ads-quick-header">
+          <i class="material-icons ads-section-icon ads-section-icon--yellow">bolt</i>
+          <span class="ads-section-title">Quick Presets</span>
+        </div>
+
+        <div class="ads-preset-grid">
+          <button *ngFor="let p of visibleQuickPresets" type="button"
+                  class="ads-preset-card"
+                  (click)="selectPreset(p.label)">
+            <i class="material-icons ads-preset-icon">{{p.icon}}</i>
+            <span class="ads-preset-label">{{p.label}}</span>
+          </button>
+        </div>
+
+        <div class="ads-quarter-grid" *ngIf="mode !== 'year'">
+          <button *ngFor="let q of quarters" type="button"
+                  class="ads-quarter-card"
+                  [class.ads-quarter-card--disabled]="q.disabled"
+                  [attr.disabled]="q.disabled ? true : null"
+                  (click)="selectQuarter(q.label)">
+            <div class="ads-quarter-label" [class.ads-quarter-label--disabled]="q.disabled">{{q.label}}</div>
+            <div class="ads-quarter-range">{{q.range}}</div>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── From value pill + custom picker ──────────────────────────────── -->
+    <div class="ads-val-wrapper">
+      <div class="ads-pill ads-pill--value" [class.ads-pill--error]="errorMsg"
+           [class.ads-pill--open]="isFromPickerOpen"
+           (click)="openFromPicker()">
+        <i class="material-icons ads-icon">calendar_today</i>
+        <span class="ads-display-val">{{displayFrom}}</span>
+
+        <!-- Hidden trigger — (dateChange) stores Date in _pendingFromDate; closedStream applies it -->
+        <input #fromDateInput class="ads-mat-input" [matDatepicker]="fromDatePicker"
+               [value]="fromValDate" [max]="today" readonly
+               (dateChange)="captureFromDate($event)">
+        <mat-datepicker #fromDatePicker></mat-datepicker>
+
+        <i class="material-icons ads-chevron">expand_more</i>
+      </div>
+
+      <!-- Custom month picker for FROM -->
+      <div class="ads-cp" *ngIf="isFromPickerOpen && inputType === 'month'"
+           (click)="_skipDocClick = true">
+        <div class="ads-cp-header">
+          <button type="button" class="ads-cp-nav"
+                  (click)="fromPickerYear = fromPickerYear - 1">&#8249;</button>
+          <span class="ads-cp-title">{{fromPickerYear}}</span>
+          <button type="button" class="ads-cp-nav"
+                  [disabled]="fromPickerYear >= thisYear"
+                  (click)="fromPickerYear = fromPickerYear + 1">&#8250;</button>
+        </div>
+        <div class="ads-cp-grid">
+          <button type="button" class="ads-cp-cell"
+                  *ngFor="let m of months; let i = index"
+                  [class.ads-cp-cell--active]="fromVal === fromPickerYear + '-' + pad(i + 1)"
+                  [disabled]="fromPickerYear === thisYear && i > thisMonth"
+                  (click)="selectFromMonth(i)">{{m}}</button>
+        </div>
+      </div>
+
+      <!-- Custom year picker for FROM -->
+      <div class="ads-cp" *ngIf="isFromPickerOpen && inputType === 'year'"
+           (click)="_skipDocClick = true">
+        <div class="ads-cp-header">
+          <button type="button" class="ads-cp-nav"
+                  (click)="fromPickerDecade = fromPickerDecade - 12">&#8249;</button>
+          <span class="ads-cp-title">{{fromPickerDecade}} – {{fromPickerDecade + 11}}</span>
+          <button type="button" class="ads-cp-nav"
+                  [disabled]="fromPickerDecade + 12 > thisYear"
+                  (click)="fromPickerDecade = fromPickerDecade + 12">&#8250;</button>
+        </div>
+        <div class="ads-cp-grid">
+          <button type="button" class="ads-cp-cell"
+                  *ngFor="let y of fromDecadeYears"
+                  [class.ads-cp-cell--active]="fromVal === '' + y"
+                  [disabled]="y > thisYear"
+                  (click)="selectFromYear(y)">{{y}}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <span class="ads-arrow">&#8594;</span>
+
+    <!-- ── To value pill + custom picker ──────────────────────────────────── -->
+    <div class="ads-val-wrapper">
+      <div class="ads-pill ads-pill--value" [class.ads-pill--error]="errorMsg"
+           [class.ads-pill--open]="isToPickerOpen"
+           (click)="openToPicker()">
+        <i class="material-icons ads-icon">calendar_today</i>
+        <span class="ads-display-val">{{displayTo}}</span>
+
+        <!-- Hidden trigger — (dateChange) stores Date in _pendingToDate; closedStream applies it -->
+        <input #toDateInput class="ads-mat-input" [matDatepicker]="toDatePicker"
+               [value]="toValDate" [min]="fromValDate" [max]="today" readonly
+               (dateChange)="captureToDate($event)">
+        <mat-datepicker #toDatePicker></mat-datepicker>
+
+        <i class="material-icons ads-chevron">expand_more</i>
+      </div>
+
+      <!-- Custom month picker for TO -->
+      <div class="ads-cp" *ngIf="isToPickerOpen && inputType === 'month'"
+           (click)="_skipDocClick = true">
+        <div class="ads-cp-header">
+          <button type="button" class="ads-cp-nav"
+                  (click)="toPickerYear = toPickerYear - 1">&#8249;</button>
+          <span class="ads-cp-title">{{toPickerYear}}</span>
+          <button type="button" class="ads-cp-nav"
+                  [disabled]="toPickerYear >= thisYear"
+                  (click)="toPickerYear = toPickerYear + 1">&#8250;</button>
+        </div>
+        <div class="ads-cp-grid">
+          <button type="button" class="ads-cp-cell"
+                  *ngFor="let m of months; let i = index"
+                  [class.ads-cp-cell--active]="toVal === toPickerYear + '-' + pad(i + 1)"
+                  [disabled]="toPickerYear === thisYear && i > thisMonth"
+                  (click)="selectToMonth(i)">{{m}}</button>
+        </div>
+      </div>
+
+      <!-- Custom year picker for TO -->
+      <div class="ads-cp" *ngIf="isToPickerOpen && inputType === 'year'"
+           (click)="_skipDocClick = true">
+        <div class="ads-cp-header">
+          <button type="button" class="ads-cp-nav"
+                  (click)="toPickerDecade = toPickerDecade - 12">&#8249;</button>
+          <span class="ads-cp-title">{{toPickerDecade}} – {{toPickerDecade + 11}}</span>
+          <button type="button" class="ads-cp-nav"
+                  [disabled]="toPickerDecade + 12 > thisYear"
+                  (click)="toPickerDecade = toPickerDecade + 12">&#8250;</button>
+        </div>
+        <div class="ads-cp-grid">
+          <button type="button" class="ads-cp-cell"
+                  *ngFor="let y of toDecadeYears"
+                  [class.ads-cp-cell--active]="toVal === '' + y"
+                  [disabled]="y > thisYear"
+                  (click)="selectToYear(y)">{{y}}</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  <div class="ads-error" *ngIf="errorMsg" role="alert">
+    <i class="material-icons">error_outline</i>{{errorMsg}}
+  </div>
+</div>

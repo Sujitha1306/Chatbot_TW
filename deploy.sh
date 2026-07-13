@@ -237,10 +237,10 @@ ENABLE_PREDICTIONS=true
 ENABLE_MULTI_TURN=true
 ENABLE_TIMEZONE_SUPPORT=true
 
-# Flask API Configuration
+# Backend API Configuration
 FLASK_DEBUG=False
 FLASK_HOST=127.0.0.1
-FLASK_PORT=5000
+APP_PORT=8000
 EOF
             print_success "Created basic .env file"
         fi
@@ -548,7 +548,7 @@ start_enhanced_streamlit() {
 }
 
 start_enhanced_api() {
-    print_step "Starting Enhanced Flask API"
+    print_step "Starting Enhanced Backend API"
     
     if [ -f "api.py" ]; then
         echo ""
@@ -560,8 +560,8 @@ start_enhanced_api() {
         echo "  📊 Advanced chart generation with chart_type parameter"
         echo "  ✅ AI validation in all query responses"
         echo ""
-        print_info "Starting Enhanced Flask API on http://localhost:5000"
-        print_info "Access http://localhost:5000 for interactive API documentation"
+        print_info "Starting Enhanced Backend API on http://localhost:${APP_PORT}"
+        print_info "Access http://localhost:${APP_PORT} for interactive API documentation"
         echo ""
         
         # Ensure we're using the virtual environment
@@ -603,8 +603,8 @@ build_enhanced_docker() {
         echo ""
         print_info "📦 DOCKER DEPLOYMENT OPTIONS:"
         echo "  UI Only:  docker run -p 8501:8501 --env-file .env $APP_NAME:v$VERSION"
-        echo "  API Only: docker run -p 5000:5000 -e SERVICE_TYPE=api --env-file .env $APP_NAME:v$VERSION"
-        echo "  Both:     docker run -p 8501:8501 -p 5000:5000 -e SERVICE_TYPE=both --env-file .env $APP_NAME:v$VERSION"
+        echo "  API Only: docker run -p ${APP_PORT}:${APP_PORT} -e SERVICE_TYPE=api --env-file .env $APP_NAME:v$VERSION"
+        echo "  Both:     docker run -p 8501:8501 -p ${APP_PORT}:${APP_PORT} -e SERVICE_TYPE=both --env-file .env $APP_NAME:v$VERSION"
         
     else
         print_error "Dockerfile not found!"
@@ -629,7 +629,7 @@ run_enhanced_docker() {
     docker run -d \
         --name $APP_NAME \
         -p 8501:8501 \
-        -p 5000:5000 \
+        -p ${APP_PORT}:${APP_PORT} \
         -e SERVICE_TYPE=both \
         --env-file .env \
         --restart unless-stopped \
@@ -644,8 +644,8 @@ run_enhanced_docker() {
         echo ""
         print_info "🌐 ACCESS POINTS:"
         echo "  Streamlit UI: http://localhost:8501"
-        echo "  REST API:     http://localhost:5000"
-        echo "  Health Check: http://localhost:5000/health"
+        echo "  REST API:     http://localhost:${APP_PORT}"
+        echo "  Health Check: http://localhost:${APP_PORT}/health"
         echo ""
         print_info "📊 ENHANCED FEATURES AVAILABLE:"
         echo "  • AI-driven semantic understanding"
@@ -660,7 +660,7 @@ run_enhanced_docker() {
         print_info "Testing endpoints..."
         sleep 5
         
-        if curl -s http://localhost:5000/health > /dev/null; then
+        if curl -s http://localhost:${APP_PORT}/health > /dev/null; then
             print_success "API health check passed"
         else
             print_warning "API health check failed"
@@ -736,11 +736,11 @@ show_enhanced_status() {
             print_warning "Streamlit UI (8501): ⚠️  Not active"
         fi
         
-        if lsof -i :5000 &> /dev/null; then
-            print_success "Flask API (5000): ✅ Active"
-            print_info "  Access: http://localhost:5000"
+        if lsof -i :${APP_PORT} &> /dev/null; then
+            print_success "Backend API (${APP_PORT}): ✅ Active"
+            print_info "  Access: http://localhost:${APP_PORT}"
         else
-            print_warning "Flask API (5000): ⚠️  Not active"
+            print_warning "Backend API (${APP_PORT}): ⚠️  Not active"
         fi
     else
         print_info "Port checking: lsof not available"
@@ -888,10 +888,10 @@ ENABLE_PREDICTIONS=true
 ENABLE_MULTI_TURN=true
 ENABLE_TIMEZONE_SUPPORT=true
 
-# Flask API Configuration
+# Backend API Configuration
 FLASK_DEBUG=False
 FLASK_HOST=127.0.0.1
-FLASK_PORT=5000
+APP_PORT=8000
 EOF
     
     # Replace placeholders with actual values using sed
@@ -990,7 +990,7 @@ clean_enhanced_environment() {
     
     # Stop local services
     if command -v lsof &> /dev/null; then
-        for port in 8501 5000; do
+        for port in 8501 ${APP_PORT}; do
             PID=$(lsof -ti :$port 2>/dev/null)
             if [ ! -z "$PID" ]; then
                 print_info "Stopping service on port $port (PID: $PID)"
@@ -1164,7 +1164,7 @@ case "${1:-help}" in
         
         # Stop local services
         if command -v lsof &> /dev/null; then
-            for port in 8501 5000; do
+            for port in 8501 ${APP_PORT}; do
                 PID=$(lsof -ti :$port 2>/dev/null)
                 if [ ! -z "$PID" ]; then
                     kill $PID 2>/dev/null || true

@@ -1,0 +1,151 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div > {{"Production Plan Management"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height: calc(100% - 92px); overflow: hidden; margin: 0;">
+        <app-banner [type]="'TW-PD'" [bannerData]="bannerlabel"></app-banner>
+        <mat-drawer-container style="height:100% ;width:100%;">
+            <mat-drawer #drawer mode="side" [opened]="isDrawerOpen" class="left-container">
+                <div class="sub-main">
+                    <mat-list role="list">
+                        <div class="sub-order-list-container">
+                            <mat-list-item role="listitem" class="sub-order-list" *ngFor="let sub of subOrderList; let i = index"
+                                [class.active]="selectedSubIndex === i" (click)="selectedSubIndex !== i && onSelectSubOrder(sub, i)">
+                                <div style="width: 100%;">
+                                    <div class="sub-order-text">{{sub.itemMasterName}}</div>
+                                    <div style="padding-bottom: 3px;">{{sub.itemNo}}</div>
+                                    <div *ngIf="sub.routineId" style="display: flex; justify-content: space-between;">
+                                        <span class="status-box" [ngClass]="{
+                                            'assigned': sub?.routineStatusId=== 'RQ-CR',
+                                            'inprogress': sub?.routineStatusId === 'RQ-IP',
+                                            'complete': sub?.routineStatusId === 'RQ-CO',
+                                            'pending': sub?.routineStatusId === 'RQ-PEN'}">{{sub?.routineStatusName}}</span>
+                                        <div *ngIf="sub.routineId" class="progress-container">
+                                            <mat-progress-spinner class="progress-bg" mode="determinate" [value]="100" [strokeWidth]="4" [diameter]="30">
+                                            </mat-progress-spinner>
+                                            <mat-progress-spinner class="progress-fg" mode="determinate" [value]="+(sub.percentage?.replace('%', '') || 0)"
+                                                [strokeWidth]="4" [diameter]="30">
+                                            </mat-progress-spinner>
+                                            <div class="progress-text" [ngStyle]="{'left': sub.percentage !== '100%' ? '8%' : '27%'}">{{sub.percentage}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </mat-list-item>
+                        </div>
+                    </mat-list>
+                </div>
+                <div style="display: flex; justify-content: flex-end;">
+                    <span class="close-btn" (click)="toggleDrawer()">
+                        <mat-icon style="padding: 0; height: fit-content; width: fit-content;">keyboard_arrow_left</mat-icon>
+                    </span>
+                </div>
+            </mat-drawer>
+            <mat-drawer-content class="right-container">
+                <div style="height: calc(100% - 98px); overflow: auto;">
+                    <div *ngIf="selectedSubData" class="ovi-fnt-sze13"  style="padding: 5px 10px 0;">
+                        <div class="selected-title ovi-fnt-sze14" style="border-bottom: solid 1.5px #d0d0d0; padding-bottom: 3px; font-weight: 600;">
+                            <span>{{selectedSubData.itemMasterName}}</span>
+                            <span style="display: flex; gap: 5px; align-items: center; justify-content: center;"> 
+                                <span *ngIf="!isEditable" class="sub-edit-circle" matTooltip="Refresh" (click)="onRefreshClick(selectedSubData.id)">
+                                    <mat-icon class="ovi-fnt-sze16" [class.rotate-once]="isRotating" 
+                                    style="padding: 0;height: fit-content;width: fit-content;color: #372e2e;">refresh</mat-icon>
+                                </span>
+                                <div *ngIf="isEditable && routineId.value;" style="display: flex;">
+                                    <span class="material-icons ovi-prmry-clr ovi-fnt-sze22" style="padding: 0; cursor: pointer;"
+                                        (click)="addActivity('')" (keydown.enter)="fixClick()">control_point</span>
+                                </div>
+                                <span *ngIf="isRoutine" class="sub-edit-circle" (click)="editMode()">
+                                    <mat-icon class="ovi-fnt-sze16"
+                                        style="padding: 0;height: fit-content;width: fit-content;color: #372e2e;">{{!isEditable ? 'edit' : 'close'}}</mat-icon>
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    <div *ngIf="!isRoutine" style="padding: 5px 10px 0;">
+                        <div class="ovi-row-gap">
+                            <div *ngIf="selectedSubData?.itemMasterRoutineTypeId === null" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-drpdwn-top-box" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" (selectionChange)="getRoutineList($event.value)"
+                                       [disabled]="isRoutine" [placeholderText]="'Type'|translate" [formControl]="routineType">
+                                        <mat-option *ngFor="let data of routineTypes" [value]="data.code">
+                                            {{data.value | translate}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{"Plans"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-drpdwn-top-box" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" (selectionChange)="getRoutineActivitys($event.value)"
+                                        [disabled]="isRoutine" [placeholderText]="'Plan'|translate" [formControl]="routineId">
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl"
+                                                (ngModelChange)="applySearch($event)" [placeholderLabel]="'Search....'|translate"
+                                                [noEntriesFoundLabel]="'No matching options'">
+                                            </ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option *ngFor="let data of routineList" [value]="data.id">
+                                            {{data.name | translate}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="isEditable" style="padding:3px 10px; ">
+                        <angular-table-component [id]="'production-plan'" [type]="'ng-table'" [tableData]="activityDatas"
+                            [columns]="!isRoutine ? ['Task Name', 'SEQ', 'Items', 'Department', 'Role', 'Location', 'Expected Date', 'Start Date', 'End Date', 'edit'] : 
+                            ['Task Name', 'SEQ', 'Item', 'Department', 'Role', 'Location', 'Expected Date', 'Start Date', 'End Date', 'edit']"
+                            [columnData]="!isRoutine ? ['activityName', 'sequenceLevel', 'activityCategoryId', 'departmentName', 'inchargeName', 'locationName', 'scheduleEnd', 'fromDate', 'toDate', 'edit'] : 
+                            ['activityName', 'sequenceLevel', 'itemMasterName', 'departmentName', 'inchargeName', 'locationName', 'scheduleEnd', 'fromDate', 'toDate', 'edit']"
+                            [selectionOption]="categoryItemList"
+                            [menuButton]="moreOptions" (triggerAction)="triggerAction($event)">
+                        </angular-table-component>
+                    </div>
+                    <div *ngIf="!isEditable" class="expand-container">
+                        <mat-expansion-panel *ngFor="let obj of accordionActivities;let i = index" hideToggle
+                            [expanded]="expandedIndex === i" (opened)="onPanelOpened(i)"
+                            (closed)="onPanelClosed(i)" class="work-order-expand">
+                            <mat-expansion-panel-header (keydown.enter)="fixClick()">
+                                <mat-panel-title class="work-expand-title">
+                                    <div class="title-container">
+                                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                                            <span class="ovi-fnt-sze14" style="font-weight: 600;">{{obj.completedCount != obj.totalCount ? obj.title : 'All Tasks Completed'}}</span>
+                                            <span class="ovi-fnt-sze12">{{ obj.completedCount != obj.totalCount ? obj.status : ''}}</span>
+                                        </div>
+                                        <div  class="ovi-fnt-sze13" style="display: flex; align-items: center;">
+                                            <span style="padding: 0 15px; border-right: solid 1.5px #c7c7c7;">{{ obj.completedCount }}/{{ obj.totalCount }}</span>
+                                            <span style="padding: 0 15px; border-right: solid 1.5px #c7c7c7; display: flex; gap: 10%; align-items: center;">
+                                                <img src="/assets/Alert/progress-check.svg" height="16px" width="16px" alt="progress"/>
+                                                <span>{{obj.progress}}%</span>
+                                            </span>
+                                            <span style="display: flex; padding-left: 15px; align-items: center;">
+                                                <mat-icon style="padding: 0; height: fit-content; width: fit-content;">{{ expandedIndex === i ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</mat-icon>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </mat-panel-title>
+                            </mat-expansion-panel-header>
+                            <angular-table-component [id]="'production-group'" [type]="'ng-table'" [tableData]="obj.groupedActivity" 
+                             [columns]="['Task Name', 'SEQ', 'Item', 'Department', 'Assigned To', 'Location', 'Expected Date', 'Start Date', 'End Date', 'Status', 'edit']"
+                             [columnData]="['activityName', 'sequenceLevel', 'itemMasterName', 'departmentName', 'performerName', 'destinationLocationName', 'scheduleEnd', 'scheduleStart', 'toDate', 'requestStatusName', 'edit']"
+                             (triggerAction)="triggerActionGroup($event)">
+                            </angular-table-component>
+                        </mat-expansion-panel>
+                    </div>
+                </div>
+                <div *ngIf="!isDrawerOpen" style="display: flex; justify-content: flex-start; position: relative;">
+                    <span class="close-btn" style="border-radius: 0 15px 15px 0; position: absolute; top: 3px;" (click)="toggleDrawer()">
+                        <mat-icon style="padding: 0; height: fit-content; width: fit-content;">keyboard_arrow_right</mat-icon>
+                    </span>
+                </div>
+                <div *ngIf="!isRoutine" class="ovi-pop-ftr">
+                    <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+                    <button mat-button class="active-btn" appDebounceClick [debounceTime]="500" [disabled]="!isDeliveryDetail"
+                        (debounceClick)="saveSalesRoutine()">{{"Create"|translate}}
+                    </button>
+                </div>
+            </mat-drawer-content>
+        </mat-drawer-container>
+    </div>
+</div>

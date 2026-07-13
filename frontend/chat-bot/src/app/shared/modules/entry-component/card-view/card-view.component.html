@@ -1,0 +1,105 @@
+<div class="ovi-font-family" style="overflow: scroll; height: calc(100% - 135px);" infinite-scroll [infiniteScrollDistance]="0.5" [infiniteScrollThrottle]="0" [scrollWindow]="false" (scrolled)="scroll()">
+    <div>
+      <mat-grid-list [cols]="cols" rowHeight="120px" appWindowResize (resized)="onWindowResized($event)" (resizedCol)="onWindowResizedCol($event)" [component]="'resident'">
+        <div *ngFor="let patient of cardPatientInfo">
+          <mat-grid-tile colspan="1" rowspan="1" class="cur-ptr">
+            <div
+              [ngStyle]="{'border':isCheck == true && patient.patientVisitId === checkPatientId ? '8px solid #C6C6C6' : ''}"
+              id="ip" class="widget-class" [ngClass]="this.alertPatientId.indexOf(patient.patientId) > -1 ? 'blink-border' : 'card-grid-cl-r-2-2'"
+              (click)="this.alertPatientId.indexOf(patient.patientId) > -1 ? stopAudio(patient.patientId) : ''" (keydown.enter)="fixClick()">
+                <span class="card-basic-details">
+                </span>
+              <div style="width: 97%;flex-direction: row;box-sizing: border-box;display: flex;">
+                <div class="row-field" style="flex: 1 1 100%;box-sizing: border-box;max-width: 100%;">
+                  <span style="display: inline-block;" *ngIf = "cardType != 'location' && component != 'nursecall-view'">
+                    <span *ngIf="patient.gender == 'Others'"  appTooltip [tooltipText]="patient.gender" placement="bottom"><img class="card-other-gender" matListIcon
+                      iconsmall src="/assets/Alert/IP/c_other.png"  alt="Inprogress" ></span>
+                    <span *ngIf="patient.gender == 'Male'"  appTooltip [tooltipText]="patient.gender" placement="bottom"><img class="card-gender" matListIcon iconsmall
+                        src="/assets/Alert/IP/c_male.png" alt="Male" ></span>
+                    <span *ngIf="patient.gender == 'Female'"  appTooltip [tooltipText]="patient.gender" placement="bottom"><img class="card-woman-gender" matListIcon
+                      iconsmall src="/assets/Alert/IP/c_female.png" alt="Female" ></span>
+                  </span>
+                  <div class="card-patient-header" style="display: inline-block;">
+                    <span (click)="component === 'nursecall-view' && !activate_btn.includes('BT_OTS') ? null : patientInfo(patient)"  (keydown.enter)="fixClick()" [ngClass]="cardType == 'location' ? 'card-location-name' : 'card-patient-name'" 
+                    appTooltip [tooltipText]="patient.patientName" placement="bottom">{{patient.patientName}}</span>
+                    <span *ngIf = "cardType == 'location'"  appTooltip [tooltipText]="patient.bedNo">{{patient.gender ? patient.gender + ' | ' : ''}}</span>
+                    <span *ngIf = "cardType == 'location'"  appTooltip [tooltipText]="patient.bedNo">{{patient.age ? patient.age + 'yrs | '  : ''}}</span>
+                    <span *ngIf = "cardType == 'location'"  appTooltip [tooltipText]="patient.bedNo">{{patient.bedNo}}</span>
+                    <span class="card-tagid" *ngIf = "cardType != 'location'">{{patient.uhid}}</span>
+                    <span class="card-bed-name"  *ngIf = "cardType != 'location'"  appTooltip [tooltipText]="patient.bedNo" placement="bottom">{{patient.bedNo}}</span>
+                  </div>
+                  <div class="card-nurse-alert">
+                    <span *ngFor="let alert of patient.alerts">
+                      <span *ngIf="alert.eventCode">
+                        <span *ngIf = "cardType != 'location'">
+                        <span *ngIf="alert.eventCode === 'CE-CL' || alert.eventCode === 'CE-SO'" class="card-icon-circle">
+                          <img style="width:20px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, patient.patientId)" alt="nurse-call"
+                            src="/assets/Alert/IP/nurse-call.svg"  (keydown.enter)="fixClick()">
+                        </span>
+                        <span *ngIf="alert.eventCode === 'CE-AD'" class="card-icon-circle">
+                          <img style="width:20px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, patient.patientId)" alt="nurse-call"
+                           src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
+                        </span>
+                        <span *ngIf="alert.eventCode === 'CE-FD'" class="card-icon-circle">
+                          <img style="width:20px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, patient.patientId)" alt="nurse-call"
+                          src="/assets/Alert/IP/food.svg" (keydown.enter)="fixClick()"> 
+                        </span>
+                        <span *ngIf="alert.eventCode === 'CE-HK'" class="card-icon-circle">
+                          <img style="width:15px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, patient.patientId)" alt="nurse-call"
+                          src="/assets/Alert/IP/housekeeping.svg"  (keydown.enter)="fixClick()"> 
+                        </span>
+                        <span *ngIf="alert.eventCode === 'CE-SO'" class="card-icon-circle">
+                          <img style="width: 18px;margin: 5px 0px 0px 5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, patient.patientId)" alt="nurse-call"
+                          src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
+                        </span>
+                        <span *ngIf="alert.eventCode === 'CE-MD'" class="card-icon-circle">
+                          <img style="width:22px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, patient.patientId)" alt="nurse-call"
+                          src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                        </span>
+                      </span>
+                      <span >
+                        <span *ngIf = "cardType == 'location'" class="card-icon-circle" 
+                          appTooltip [tooltipText]="alert.message"
+                          (click)="eventTrigger('nurse-call', alert, patient)" [ngStyle]="{background : 
+                          alert.eventCode === 'CE-BI' ? 'green' :
+                          alert.eventCode === 'CE-PR' ? 'white' :
+                          alert.eventCode === 'CE-HK' ? 'orange' :
+                          alert.eventCode === 'CE-FD' ? 'yellow' :
+                          alert.eventCode === 'CE-CL' || alert.eventCode === 'CE-SO' ? 'red' : 'blue'}" (keydown.enter)="fixClick()">
+                            <mat-icon *ngIf="alert.ackDatetime && alert.ackDatetime !== null" class="ovi-fnt-sze20" style="position: absolute;font-weight: bold;">done</mat-icon>
+                        </span>
+                      </span>
+                      </span>
+                      <span *ngIf="!alert.eventCode">
+                      <span *ngIf="alert.alertCode === 'RU-MO'" class="card-icon-circle">
+                        <mat-icon class="icon-style patient-away" 
+                          appTooltip [tooltipText]="alert.message"></mat-icon>
+                      </span>
+                      <span *ngIf="alert.alertCode === 'RU-FA'" class="card-icon-circle">
+                        <mat-icon class="icon-style fall-risk" 
+                          appTooltip [tooltipText]="alert.message" (click)="eventTrigger('fall-risk', alert, null)" (keydown.enter)="fixClick()">
+                        </mat-icon>
+                      </span>
+                      <span *ngIf="alert.alertCode === 'RU-MI'" class="card-icon-circle">
+                        <mat-icon class="icon-style patient-missing" 
+                          appTooltip [tooltipText]="alert.message"></mat-icon>
+                      </span>
+                      <span *ngIf="alert.alertCode === 'RU-GO'" class="card-icon-circle">
+                        <mat-icon class="icon-style geofence" 
+                          appTooltip [tooltipText]="alert.message"></mat-icon>
+                      </span>
+                      <span *ngIf="alert.alertCode === 'RU-SE'" class="card-icon-circle">
+                        <mat-icon class="icon-style sensor" 
+                          appTooltip [tooltipText]="alert.message"></mat-icon>
+                      </span>
+                    </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-grid-tile>
+        </div>
+      </mat-grid-list>
+    </div>
+  </div>

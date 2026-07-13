@@ -1,0 +1,493 @@
+<div class="custom-dialog-box">
+    <div class="loading-spinner" *ngIf="loading" style="position: absolute; top: 0; left: 0;">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <div class="cf-dlg-frm_">
+        <div  class="float-l">
+            {{data.title | translate}}
+            <!-- {data.title, select, Version Update {{{"Version Update"|translate}}} Confirm Test Complete {{{"Confirm Test Complete"|translate}}} 
+            Confirmation {{{"Confirmation"|translate}}} Partial Complete {{{"Partial Complete"|translate}}} Assign Floor {{{"Assign Floor"|translate}}} Enroll {{{"Enroll"|translate}}} Edit status {{{"Edit status"|translate}}}
+            Add Test {{{"Add Test"|translate}}} Disassociate Device {{{"Disassociate Device"|translate}}} Cancel Billing {{{"Cancel Billing"|translate}}} Test Location {{{"Test Location"|translate}}}
+            Patient Diabetic {{{"Patient Diabetic"|translate}}} Patient using Mobile {{{"Patient using Mobile"|translate}}} Cancel Notification {{{"Cancel Notification"|translate}}}
+            Certificate Update {{{"Certificate Update"|translate}}} Remove Activity {{{"Remove Activity"|translate}}} Remove Routine {{{"Remove Routine"|translate}}}
+            Cancel Routine {{{"Cancel Routine"|translate}}}  Discharge {{{"Discharge"|translate}}} Asset Status {{{"Asset Status"|translate}}} Confirm Re-association of Tag to New File {{{"Confirm Re-association of Tag to New File"|translate}}}
+            Porter Request Status {{{"Porter Request Status"|translate}}} Remove Shift {{{"Remove Shift"|translate}}} MR Request Status {{{"MR Request Status"|translate}}} Manage Alarm {{{"Manage Alarm"|translate}}}
+            Manage Task {{{"Manage Task" |translate}}} Cancel Task {{{"Cancel Task"|translate}}} Complete Task {{{"Complete Task"|translate}}} Check-in {{{"Check-in"|translate}}} Review Date {{{"Review Date"|translate}}} Confirm Delete {{{"Confirm Delete"|translate}}} 
+            Send for Approval {{{"Send for Approval"|translate}}} OT Enroll {{{"OT Enroll"|translate}}} Alert Remarks {{{"Alert Remarks"|translate}}} Send Acknowledgement {{{"Send Acknowledgement"|translate}}}
+            Manage Authorized Movement {{{"Manage Authorized Movement"|translate}}} Update Doctor {{{"Update Doctor"|translate}}} Confirm Authorization {{{"Confirm Authorization"|translate}}}
+            Cancel Break {{{"Cancel Break"|translate}}} Cancel Surgery Schedule {{{"Cancel Surgery Schedule" | translate}}} Manage Report {{{"Manage Report" | translate}}}  Confirm Fire Emergency {{{"Confirm Fire Emergency"|translate}}}   Confirm Emergency {{{"Confirm Emergency"|translate}}}
+            Cancel Emergency {{{"Cancel Emergency"|translate}}} Complete Emergency {{{"Complete Emergency"|translate}}} } -->
+        </div>
+        <div class="float-r">
+            <button mat-icon-button mat-dialog-close close-button style="float: right;">
+                <mat-icon class="line-h-5" style="margin-bottom: 7px;">highlight_off</mat-icon>
+            </button>
+        </div>
+    </div>
+    <hr class="mrgn-style_">
+    <div class="cf-dlg content-item" [ngStyle]="{'overflow': (data.porterReqStatusChange === true && this.confirmForm.controls.reasonCode.value === 'RCR-ARCWLS') || 
+    data?.testStatusWithLocation === true ? 'hidden' : 'auto'}">
+        <div class="content-item" *ngIf="customMsg" [ngStyle]="{'margin-top': data?.testStatusWithLocation === true ? '-10%' : ''}">
+            {{data.message}}
+        </div>
+        <div class="content-item" *ngIf = "!customMsg" [ngStyle]="{'margin-top': data?.testStatusWithLocation === true ? '-15%' : ''}">
+            <br>
+            <span *ngIf="data.assetStatus === true">{{data.assetName}}&nbsp;[{{data.assetId}}]&nbsp;</span>
+            <span *ngIf="data.MRTagDisassociate === true">{{data.message}}.&nbsp;Do you want to disassociate?</span>
+            <span >
+            {data.message, select,  Do you want to update the version from {{{"Do you want to update the version from"|translate}}} Do you want to update the version {{{"Do you want to update the version"|translate}} }
+            Selected tests for the patient will be marked as complete, Are you sure? {{{"Selected tests for the patient will be marked as complete, Are you sure?"|translate}}}
+            Are you looking to checkout? {{{"Are you looking to checkout?"|translate}}} Patient will be moved to waiting queue, Do you want to continue? {{{"Patient will be moved to waiting queue, Do you want to continue?"|translate}}}
+            Are you sure you want to delete? {{{"Are you sure you want to delete?"|translate}}} Do you want to assign the selected patient to the floor? {{{"Do you want to assign the selected patient to the floor?"|translate}}}
+            Are you want to save new one? {{{"Are you want to save new one ?"|translate}}}  Do you want to create a copy of this form template? {{{"Do you want to create a copy of this form template?"|translate}}}
+            Do you want to create a copy of this widget? {{{"Do you want to create a copy of this widget?"|translate}}}
+            Please choose the visit type {{{"Please choose the visit type"|translate}}} Are you sure to change the status? {{{"Are you sure to change the status?"|translate}}} Select reason for change {{{"Select reason for change"|translate}}}
+            Do you want to disassociate the device? {{{"Do you want to disassociate the device?"|translate}}} Do you want to cancel the billing ? {{{"Do you want to cancel the billing ?"|translate}}} Do you want to assign to location {{{"Do you want to assign to location"|translate}} }
+            Do you want to change test / location? {{{"Do you want to change test / location?"|translate}}} Are you sure to change the location? {{{"Are you sure to change the location?"|translate}}}
+            Reason for not preferring Mobile {{{"Reason for not preferring Mobile"|translate}}} Is patient willing to use Ask Apollo (Mobile) {{{"Is patient willing to use Ask Apollo (Mobile)"|translate}}}
+            Do you want to mark the patient as diabetic? {{{"Do you want to mark the patient as diabetic?"|translate}}} Do you want to mark the patient as non - diabetic? {{{"Do you want to mark the patient as non - diabetic?"|translate}}}
+            selected certificate shall be uploaded to all selected Readers and Gateways. Are you sure? {se{{"lected certificate shall be uploaded to all selected Readers and Gateways. Are you sure?"|translate}}}
+            Do you want to delete the activity ? {{{"Do you want to delete the activity ?"|translate}}} Do you want to end the routine ? {Do you want to end the routine ?} Do you want to cancel the routine ? {Do you want to cancel the routine ?}
+            Do you want to discharge ? {{{"Do you want to discharge ?"|translate}}} Do you wish to mark this asset as Not Functioning / Needs Service? {{{"Do you wish to mark this asset as Not Functioning / Needs Service?"|translate}}}
+            Do you want to change the status? {{{"Do you want to change the status?"|translate}}} Do you want to delete the shift ? {{{"Do you want to delete the shift ?"|translate}}} Do you want to create a request in waitinglist?, A porter will be assigned as soon as they are available
+            {{{"Do you want to create a request in waitinglist?, A porter will be assigned as soon as they are available"|translate}}} Do you want to Disengage Alarm ? {{{"Do you want to Disengage Alarm ?"|translate}}}
+            Do you want to Engage Alarm ? {{{"Do you want to Engage Alarm ?"|translate}}} Are you sure to change the consultant? {{{"Are you sure to change the consultant?"|translate}}} Do you want to add this patient to Queue? {{{"Do you want to add this patient to Queue?"|translate}}}
+            Do you want to cancel the task ? {{{"Do you want to cancel the task ?"|translate}}} Do you want to complete the task ? {{{"Do you want to complete the task ?"|translate}}} Do you want to undo the task ? {{{"Do you want to undo the task ?"|translate}}} Do you want to create layout ? {{{"Do you want to create layout ?"|translate}}}
+            Do you want to create a request in waitinglist?, A Ambulance will be assigned as soon as they are available {{{"Do you want to create a request in waitinglist?, A Ambulance will be assigned as soon as they are available"|translate}}}
+            Are you sure to change the Review Date ? {{{"Are you sure to change the Review Date ?"|translate}}} Do you confirm report collection ? {Do you confirm report collection ?} Select a review date and time {Select a review date and time} Do you want to check-in patient {Do you want to check-in patient } 
+            Do you want to change the status of existing test {Do you want to change the status of existing test}
+            Do you want to send this document for approval {{{"Do you want to send this document for approval"|translate}}} Are you want to save and submit this document for approval? {{{"Are you want to save and submit this document for approval?"|translate}}}Do you want to save and submit this document for approval?{{{"Do you want to save and submit this document for approval?"| translate}}}
+            Do you want to return the form? {{{"Do you want to return the form?"|translate}}} Do you want to delete this? {{{"Do you want to delete this?"|translate}}}
+            Are you sure you want to send Ack for the Request? {{{"Are you sure you want to send Ack for the Request?"|translate}}} 
+            A previous OT event has been detected for this patient. Press YES to proceed with the existing event or NO to create a new one. {{{"A previous OT event has been detected for this patient. Press YES to proceed with the existing event or NO to create a new one."|translate}}}
+            Tag will be disassociated. Do you want to discharge ? {{{"Tag will be disassociated. Do you want to discharge ?"|translate}}} Do you want to authorize? {{{"Do you want to authorize?"|translate}}} Do you want to remove authorization? {{{"Do you want to remove authorization?"|translate}}}
+            Do you want to acknowledge the Current State of the Asset?{{{"Do you want to acknowledge the Current State of the Asset?"|translate}}}
+            Do you want to inprogress the task ? {{{"Do you want to inprogress the task ?"|translate}}}
+            Are you sure want to cancel the break? {{{"Are you sure want to cancel the break?" | translate}}} Are you sure you want to Cancel the Visit ? {{{"Are you sure you want to Cancel the Visit ?"|translate}}} Are you sure you want to DisassociateTag? {{{"Are you sure you want to DisassociateTag?"|translate}}} 
+            Are you sure you want to cancel the surgery schedule? {{{"Are you sure you want to cancel the surgery schedule?" | translate}}} Select the location to change the status to waiting {{{"Select the location to change the status to waiting" | translate}}}
+            Select the option to change the test location {{{"Select the option to change the test location" | translate}}} Select the location to change the status to Inprogress {{{"Select the location to change the status to Inprogress" | translate}}}  Are you sure you want to initiate a Fire Emergency? {{{"Are you sure you want to initiate a Fire Emergency?"|translate}}} Are you sure you want to proceed with emergency mustering? {{{"Are you sure you want to proceed with emergency mustering?"|translate}}} Are you sure you want to initiate a Emergency Drill? {{{"Are you sure you want to initiate a Emergency Drill?"|translate}}}
+            Are you sure you want to cancel the Emergency Action? {{{"Are you sure you want to cancel the Emergency Action?"|translate}}}  Are you sure you want to Complete the Emergency Action? {{{"Are you sure you want to Complete the Emergency Action?"  | translate}}}  Are you sure you want to end this routine? {{{"Are you sure you want to end this routine?" | translate}}} Do you want to Open the ticket? {{{"Do you want to Open the ticket?"|translate}}} Do you want to Close the ticket?{{{"Do you want to Close the ticket?"|translate}}} Do you want to ReOpen the ticket?{{{'Do you want to ReOpen the ticket?'| translate}}}
+            Do you want to proceed with reassigning this request? The existing porter will be changed and a new porter will be assigned. {{{"Do you want to proceed with reassigning this request? The existing porter will be changed and a new porter will be assigned."|translate}}} Are you sure you want to Approve? {{{"Are you sure you want to Approve?"|translate}}} Are you sure you want to Reject? {{{"Are you sure you want to Reject?"|translate}}}}</span>
+            <span *ngIf="data.asignedLocationName !== null">{{data.asignedLocationName}}</span>
+            <span  *ngIf="data.type === 'swVerUpdate'">{{data.fromVersion}} to {{data.version}} ?</span>
+            <span *ngIf="data.type === 'newswVerUpdate'">{{data.version}} ?</span>
+            <span *ngIf="data.patientPendingLocation === true">{{data.message}}</span>
+            <span *ngIf="data?.routineMessage">
+                <div style="margin-bottom: 14px; font-size: 14px; text-align: center;">
+                    Creating {{ data.routineMessage.routineType }} routine for
+                    {{ data.routineMessage.routineName }}
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <div style="display: grid;grid-template-columns: max-content auto;column-gap: 6px;row-gap: 8px;font-size: 14px;text-align: left;">
+                        <span style="font-weight: 500;">Frequency :</span>
+                        <span>{{ data.routineMessage.frequency }}</span>
+            
+                        <span style="font-weight: 500;">Start Date :</span>
+                        <span>{{ data.routineMessage.startDate }}</span>
+            
+                        <span style="font-weight: 500;">End Date :</span>
+                        <span>{{ data.routineMessage.endDate || 'Not Set' }}</span>
+                    </div>
+                </div>
+            
+            </span>
+
+            <span *ngIf="data?.endroutineMessage">              
+            <div *ngFor="let msg of data.endroutineMessage.routineMessages" style="margin-bottom: 6px;">
+                {{ msg }}
+            </div>
+            <div *ngIf="data?.endroutineMessage?.hasCompleted || data?.endroutineMessage?.hasInProgress"  style="margin: 12px 0 16px 0; font-weight: 500;">
+                Tasks scheduled after this period will be cancelled.
+            </div>
+            <div *ngIf="!data?.endroutineMessage?.hasCompleted && !data?.endroutineMessage?.hasInProgress"style="margin: 12px 0 16px 0; ">
+                All tasks in this routine will be cancelled.
+            </div>
+            </span>
+        </div>
+        <div *ngIf="data.isAuthorize" class="form-row block-3" style="width: 95%;">
+            <div style="width: 100%;text-align:start;">
+                <div class="example-form" style="margin-top: 5%;">
+                    <div  style="padding: 5px;">{{"Infant ID"|translate}}<span style="margin-left: 40px;margin-right: 10px;">:</span>{{this.data?.infantData?.id}}</div>
+                    <div  style="padding: 5px;">{{"Infant Name"|translate}}<span style="margin-left: 18px;margin-right: 10px;">:</span>{{this.data?.infantData?.fullName}}</div>
+                    <div  style="padding: 5px;">{{"Authorized By"|translate}}<span style="margin-left: 10px;margin-right: 10px;">:</span>{{this.data?.infantData?.authorizedBy}}</div>
+                    <div  style="padding: 5px;">{{"Duration"|translate}}<span style="margin-left: 40px;margin-right: 10px;">:</span>{{this.data?.infantData?.duration}}</div>
+                </div>
+            </div>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="enableReason || (data.testStatusChange === true && (data.statusId === 'QS-NR' || data.statusId == 'QS-FL'))">
+            <mat-form-field style="width: 80%"  appearance="outline">
+                <mat-select  formControlName="reasonCode" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Reason *'|translate" required>
+                    <mat-option *ngFor="let reason of reasonList" [value]="reason.code" (click) = "addReasonCode(reason)" (keydown.enter)="fixClick()">
+                        {{reason.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.porterReqStatusChange === true && this.confirmForm.controls.reasonCode.value === 'RCR-ARCWLS'">
+            <mat-form-field class="example-full-width form-field" style="width: 80%"  appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search User'|translate" appTypeHit (typeHit)="getAssociatedUser($event)" formControlName="user" [matAutocomplete]="auto">
+                    <mat-autocomplete #auto="matAutocomplete">
+                        <mat-option *ngFor="let user of searchUserlist" (click)="getUser(user.id)" value="{{user.firstName}} {{user.lastName}}" (keydown.enter)="fixClick()">
+                        {{user.firstName}} {{user.lastName}}
+                        </mat-option>
+                    </mat-autocomplete>
+            </mat-form-field>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.isRemark !== 1 && isPharmacyOtp == false && isdisassociateLocation == false">
+            <div>
+                <mat-form-field appearance="outline" [ngStyle]="{width: data && data.hasOwnProperty('pharmacyAck')?'80%':'60%'}">
+                    <textarea  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Remarks'|translate" formControlName="comments" maxlength="100"></textarea>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.pharmacyAck && isPharmacyOtp == false">
+            <div>
+                <mat-label class="ovi-lbl-text-size" style="display:flex">{{"Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field style="width: 80%;display:flex" appearance="outline">
+                    <input matInput formControlName="userName" placeholder="Enter Name" maxlength="100" autocomplete="off">
+                    <mat-error *ngIf="confirmForm.controls.userName.invalid">
+                        <span [hidden]="!confirmForm.controls['userName'].errors?.required">{{"Name is required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.porterReqStatusChange === true && this.confirmForm.controls.reasonCode.value === 'RCR-OT'">
+            <div>
+                <mat-form-field appearance="outline" [ngStyle]="{width: data.porterReqStatusChange === true && this.confirmForm.controls.reasonCode.value === 'RCR-OT'?'80%':'60%'}">
+                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" formControlName="comments" 
+                    appTypeHit (typeHit)="getRequestCancelReason($event)" [matAutocomplete]="auto" autocomplete="off">
+                    <mat-autocomplete #auto="matAutocomplete">
+                        <mat-option *ngFor="let data of reqCancelReasonList" [value]="data.reason" (click)="reqCancelReasonExist = true">{{data.reason}}</mat-option>
+                    </mat-autocomplete>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="isPharmacyOtp && isOtpSent == false">
+            <div>
+             <mat-label class="ovi-lbl-text-size" style="display:flex">{{"UserName"|translate}}<span class="mandatory-field">*</span></mat-label> 
+            <mat-form-field style="width: 80% ;display:flex"  appearance="outline" > 
+                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'UserName'|translate" formControlName="userName" 
+                    appTypeHit (typeHit)="onUserSearch($event)" [matAutocomplete]="auto" autocomplete="off">
+                <mat-autocomplete #auto="matAutocomplete" [displayWith]="getOwnerDisplay">
+                    <mat-option *ngFor="let user of filteredUsers" [value]="user.id" (click)="getOwnerDetails(user)" (keydown.enter)="fixClick()">
+                        {{ user.name }}
+                    </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="confirmForm.controls.userName.invalid">
+                    <span  [hidden]="!confirmForm.controls['userName'].errors.required">
+                        {{"userName is required"|translate}}.</span>
+                </mat-error>
+            </mat-form-field>
+            </div>
+            <div>   
+            <mat-label class="ovi-lbl-text-size" style="display:flex">{{"Mobile Number"|translate}}<span class="mandatory-field">*</span></mat-label> 
+            <mat-form-field style="width: 80%;display:flex"  appearance="outline">
+                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile Number'|translate" formControlName="mobileNo">
+                <mat-error *ngIf="confirmForm.controls.mobileNo.invalid">
+                    <span  [hidden]="!confirmForm.controls['mobileNo'].errors.required">
+                        {{"Mobile Number  is required"|translate}}.</span>
+                    <span  [hidden]="!confirmForm.controls['mobileNo'].errors.pattern">
+                        {{"Please Enter Mobile Number only 10 digits"|translate}}</span>
+                </mat-error>
+            </mat-form-field>
+        </div>
+    </div>
+    <div [formGroup]="confirmForm" *ngIf="data.scheduleCancelRequest === true && data.status === 'RQ-SC'">
+        <div class="content-item" style="height: 60px;">
+            <mat-form-field  class="example-full-width form-field"  appearance="outline">
+                <mat-select  formControlName="scheduleCommentList" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select comments'|translate">
+                    <mat-option *ngFor="let comment of schdeuleComment" [value]="comment.code">
+                        {{comment.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div class="content-item" style="height: 60px;" *ngIf="confirmForm.controls['scheduleCommentList'].value === 'OTCR-OT'">
+            <mat-form-field  class="example-full-width form-field"  appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'write comments'|translate" formControlName="scheduleCommentText">
+            </mat-form-field>
+        </div>
+    </div>
+    <div class="content-item" [formGroup]="confirmForm" *ngIf="isOtpSent &&isPharmacyOtp">
+        <div>
+         <mat-label class="ovi-lbl-text-size" style="display:flex">{{"Verify OTP"|translate}}<span class="mandatory-field">*</span></mat-label> 
+        <mat-form-field style="width: 80% ;display:flex"  appearance="outline" > 
+            <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'OTP'|translate" formControlName="otp">
+            <mat-error *ngIf="confirmForm.controls.otp.invalid">
+                <span  [hidden]="!confirmForm.controls['otp'].errors.required">
+                    {{"OTP is required"|translate}}.</span>
+            </mat-error>
+        </mat-form-field>
+        </div>
+    </div>
+   
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data && data.hasOwnProperty('pharmacyAck') && isPharmacyOtp == false">
+            <div>
+                <mat-label class="ovi-lbl-text-size" style="display:flex">{{"Employee ID"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="example-full-width form-field" style="width: 80%;display:flex" appearance="outline">
+                    <input matInput placeholder="Enter Employee ID" formControlName="ackUser" maxlength="64" autocomplete="off">
+                    <mat-error *ngIf="confirmForm.controls.ackUser.invalid">
+                        <span [hidden]="!confirmForm.controls['ackUser'].errors?.required">{{"Employee ID is required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+        </div>
+        <div [formGroup]="confirmForm" *ngIf="data && data.hasOwnProperty('pharmacyAck')&& isPharmacyOtp == false" style="width: 60%;">
+            <mat-checkbox  formControlName="isPartiallyCompleted">{{"Partially Completed"|translate}}</mat-checkbox>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.assignFloor === true">
+            <mat-form-field appearance="outline">
+                <mat-select  formControlName="floor" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Floor'|translate">
+                <mat-option *ngFor="let floor of floorList" [value]="floor.floorId">
+                    {{floor.floorName}}
+                </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.isNewTestAdded === true">
+            <mat-form-field appearance="outline">
+                <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Test Name *'|translate" id="testName" appTypeHit (typeHit)="searchToTestName($event)" [matAutocomplete]="autoFrom" formControlName="testId">
+                <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                    <mat-option *ngFor="let option of searchTestlist" (click) = "addTestEvents(option)" [value]="option.name" (keydown.enter)="fixClick()">
+                    <div class="tot-wid-styl">{{option.name}}</div>
+
+                    </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="confirmForm.controls.testId.invalid">
+                    <span  [hidden]="!confirmForm.controls['testId'].errors.required">{{"Test Name is
+                        required"|translate}}.</span>
+                </mat-error>
+            </mat-form-field>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.updateDoctor === true">
+            <mat-form-field appearance="outline">
+                <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search Doctor *'|translate" id="docName" appTypeHit (typeHit)="searchDoctor($event)" [matAutocomplete]="autoFrom" formControlName="doctorId">
+                <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                    <mat-option *ngFor="let option of doctorList" (click) = "updateDoctor(option)" [value]="option.name" (keydown.enter)="fixClick()">
+                    <div class="tot-wid-styl">{{option.name}}</div>
+
+                    </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="confirmForm.controls.doctorId.invalid">
+                    <span  [hidden]="!confirmForm.controls['doctorId'].errors.required">{{"Doctor Name is
+                        required"|translate}}.</span>
+                </mat-error>
+            </mat-form-field>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" autocomplete="off" *ngIf="data.resetPassword === true">
+            <div style="height: 35px;">
+                {{data.message}}
+            </div>
+            <div style="width: 100%;">
+                <mat-form-field style="width: 80%" appearance="outline">
+                    <mat-label class="ovi-lbl-text-size ovi-fnt-sze13">User name</mat-label>
+                    <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Username'|translate" formControlName="userName" [type]="'text'"
+                        autocomplete="new-username">
+                </mat-form-field>
+            </div>
+            <div style="width: 100%;">
+                <mat-form-field style="width: 80%" appearance="outline">
+                    <mat-label class="ovi-lbl-text-size ovi-fnt-sze13" style="display:flex">Password</mat-label>
+                    <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'New Password'|translate" formControlName="confirmPwd" [type]="hide ? 'password' : 'text'"
+                        autocomplete="new-password">
+                    <mat-icon matSuffix (click)="hide = !hide" class="float-r" (keydown.enter)="fixClick()">{{hide ? 'visibility_off' : 'visibility'}}
+                    </mat-icon>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.disengageAlarm === true">
+            <mat-form-field *ngIf="false" style="width: 80%" appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Confirm Password'|translate" formControlName="confirmPwd" [type]="hide ? 'password' : 'text'"
+                    autocomplete="off">
+                <mat-icon matSuffix (click)="hide = !hide" class="float-r" (keydown.enter)="fixClick()">{{hide ? 'visibility_off' : 'visibility'}}
+                </mat-icon>
+            </mat-form-field>
+
+            <div class="form-row block-3" style="width: 95%;">
+                <div style="width: 30%;text-align:start;">
+                    <div class="example-form" style="margin-top: 15%;">
+                        <span >{{"Permitted Duration"|translate}}<span style="color: red;">*</span> : </span>
+                    </div>
+                </div>
+                <div style="width: 55%;">
+                    <div class="example-form">
+                        <mat-form-field appearance="outline" style="display: block;">
+                            <mat-select  formControlName="duration" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Duration'|translate" [disableOptionCentering]="true" required>
+                            <mat-option *ngFor="let data of durationList" [value]="data.code" (click)="getDuration(data);" (keydown.enter)="fixClick()">
+                                {{data.value}}
+                            </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="confirmForm.controls.duration.invalid">
+                                <span  [hidden]="!confirmForm.controls['duration'].errors.required">{{"Duration is
+                                    required"|translate}}.</span>
+                        </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <span style="margin-top: 15px;width: 0px;">{{"(Minutes)"|translate}}</span>
+            </div>
+            <div class="form-row block-3" style="width: 95%;">
+                <div style="width: 30%;text-align:start;">
+                    <div class="example-form" style="margin-top: 15%;">
+                        <span >{{"Purpose"|translate}}: </span>
+                    </div>
+                </div>
+                <div style="width: 55%;">
+                    <div class="example-form">
+                        <mat-form-field appearance="outline" style="display: block;">
+                            <textarea  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="''|translate" formControlName="purpose"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row block-3" style="width: 95%;">
+                <div style="width: 30%;text-align:start;">
+                    <div class="example-form" style="margin-top: 15%;">
+                        <span >{{"Authenticate To Proceed "|translate}}: </span>
+                    </div>
+                </div>
+                <div style="width: 48%;">
+                    <div class="example-form">
+                        <mat-form-field appearance="outline" style="display: block;">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Password'|translate" formControlName="confirmPwd" 
+                                autocomplete="off" [readonly]="this.pwdExist" [ngStyle]="{'opacity': this.pwdExist ? '30%' : ''}"
+                                [type]="'password'">
+                            <mat-hint>
+                                <span  *ngIf="errorExist === true" style="color:red;">{{"Authentication failed"|translate}}.&nbsp;</span>
+                            </mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <mat-label class="go-label ovi-font-family"  [ngClass]="{'pwd-disabled': pwdExist,'pwd-enabled ovi-prmry-bg-clr': !pwdExist}" (click)="checkPassword()" (keydown.enter)="fixClick()">
+                    <img src="/assets/Alert/IP/go-action.png" style="width:16px;height:16px;"  alt="Action" >
+                </mat-label>
+                <span style="margin-top: 15px;margin-left: -15px;width: 0px;">
+                    <mat-icon matSuffix style="padding-top:0px;color: #269f26c7;"
+                    [ngStyle]="{'opacity': !this.pwdExist || confirmForm.controls['confirmPwd'].value === null 
+                    || confirmForm.controls['confirmPwd'].value === '' ? '30%' : ''}">check_circle</mat-icon>
+                </span>
+            </div>
+        </div>
+        <div class="content-item" mat-custom-form-field-box [formGroup]="confirmForm" *ngIf="data.reviewDate">
+            <mat-form-field appearance="outline" style="width: 60%;">        
+                <input matInput type="datetime-local" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Review Date / Time'|translate"
+                formControlName="reviewDate" autocomplete="off">
+            </mat-form-field>
+        </div>
+        <div class="content-item" class="cf-dlg mat-custom-form-field-box" [formGroup]="confirmForm" *ngIf="formTempNameEnable">
+            <mat-form-field appearance="outline" style="width: 60%;">
+                <input matInput style="height: 40px;" formControlName="formTempName" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter the Name *'|translate" autocomplete="off">
+                <mat-error *ngIf="confirmForm.controls.formTempName.invalid">
+                    <span  [hidden]="!confirmForm.controls['formTempName'].errors.required">{{"Name is
+                        required."|translate}}.</span>
+                    <span [hidden]="confirmForm.controls['formTempName'].errors.required">{{"Name must be unique."|translate}}</span>
+                </mat-error>
+            </mat-form-field>
+        </div> 
+        <div class="content-item" class="cf-dlg mat-custom-form-field-box" [formGroup]="confirmForm" *ngIf="data?.testLocation === true || data?.testAvailableLocation?.length > 1"
+            [ngStyle]="{'margin-top': data?.testStatusWithLocation === true ? '-25%' : ''}">
+            <mat-form-field appearance="outline" style="width: 60%;">
+                <mat-select  formControlName="testLocationId"  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Test Location *'|translate" required
+                [disabled]="data?.testStatusWithLocation === true">
+                    <mat-option *ngFor="let location of this.data?.testAvailableLocation" [value]="location.id">
+                        {{location.name}}
+                    </mat-option>
+                </mat-select>
+                <mat-error *ngIf="confirmForm.controls.testLocationId.invalid">
+                    <span  [hidden]="!confirmForm.controls['testLocationId'].errors.required">{{"Location is
+                        required"|translate}}.</span>
+                </mat-error>
+            </mat-form-field>
+            <div class="content-item" *ngIf="data?.testStatusWithLocation === true" style="margin-top: -3%;margin-bottom: 2%;">
+                {{data?.testStatusWithLocationMsg}}
+            </div>
+            <mat-form-field appearance="outline" style="width: 60%;" *ngIf="data?.testStatusWithLocation === true">
+                <mat-select  formControlName="testStatusId" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Status *'|translate" required>
+                    <mat-option *ngFor="let status of this.data?.testStatusList" [value]="status.code">
+                        {{status.value}}
+                    </mat-option>
+                </mat-select>
+                <mat-error *ngIf="confirmForm.controls.testStatusId.invalid">
+                    <span  [hidden]="!confirmForm.controls['testStatusId'].errors.required">{{"Status is
+                        required"|translate}}.</span>
+                </mat-error>
+            </mat-form-field>
+        </div> 
+        <div class="content-item" class="cf-dlg mat-custom-form-field-box" [formGroup]="confirmForm" *ngIf="data?.testStatus === true">
+            <mat-form-field appearance="outline" style="width: 60%;">
+                <mat-select  formControlName="testStatusId" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Status *'|translate" required>
+                    <mat-option *ngFor="let status of this.data?.testStatusList" [value]="status.code">
+                        {{status.value}}
+                    </mat-option>
+                </mat-select>
+                <mat-error *ngIf="confirmForm.controls.testStatusId.invalid">
+                    <span  [hidden]="!confirmForm.controls['testStatusId'].errors.required">{{"Status is
+                        required"|translate}}.</span>
+                </mat-error>
+            </mat-form-field>
+        </div>
+        <div class="content-item" [formGroup]="confirmForm" *ngIf="data.isRemark !== 1 && isdisassociateLocation">
+            <!-- <div>
+               <mat-checkbox formControlName="isdisassociateLocations">
+                {{ 'Can  Disassociate UserLocations ?' | translate }}
+               </mat-checkbox>
+            </div> -->
+        </div>
+        <div class="content-item"  [formGroup]="confirmForm" *ngIf="data.patientPendingLocation === true && data?.statusToken !== true">
+            <mat-checkbox  [checked]="true" formControlName="isPendingTest">{{"Yes Continue"|translate}}</mat-checkbox>
+        </div>
+    </div>
+    <mat-dialog-actions class="content-item" class="input-footer" *ngIf="data.disengageAlarm !== true">
+        
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="data.isNewTestAdded === true" [disabled]="confirmForm.get('testId').invalid" 
+        (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{confirmButtonText, select, Ok {{{"Ok" | translate}}} Yes {{{"Yes" | translate}}} Save {{{"Save" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}} Continue {{{"Continue" | translate}}} Delete {{{"Delete" | translate}}} Confirm {{{"Confirm" | translate}}}    }</button>
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="data.updateDoctor === true" [disabled]="confirmForm.get('doctorId').invalid" 
+        (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{confirmButtonText, select, Ok {{{"Ok" | translate}}} Yes {{{"Yes" | translate}}} Save {{{"Save" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}} Continue {{{"Continue" | translate}}} Delete {{{"Delete" | translate}}} Confirm {{{"Confirm" | translate}}}    }</button>
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="data.assignFloor === true" 
+        (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{confirmButtonText, select, Ok {{{"Ok" | translate}}} Yes {{{"Yes" | translate}}} Save {{{"Save" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}} Continue {{{"Continue" | translate}}} Delete {{{"Delete" | translate}}} Confirm {{{"Confirm" | translate}}}    }</button>
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="data.oTEnroll !== true && data.assignFloor === false && data.isNewTestAdded === false && data.updateDoctor === false && data.statusId !== 'QS-NR' && formTempNameEnable === false && !data.isAuthorize && isPharmacyOtp == false && !data.hasOwnProperty('scheduleCancelRequest')"
+        [disabled]="isDisabled || ((data?.testLocation === true || data?.testAvailableLocation?.length > 1) && confirmForm.controls.testLocationId.invalid) || (data?.testStatus === true && confirmForm.controls.testStatusId.invalid) || (data?.pharmacyAck === true && !isPharmacyOtp && (confirmForm.controls.userName.invalid || confirmForm.controls.ackUser.invalid))"
+        (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{confirmButtonText, select, Ok {{{"Ok" | translate}}} Yes {{{"Yes" | translate}}} Save {{{"Save" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}} Continue {{{"Continue" | translate}}} Delete {{{"Delete" | translate}}} Confirm {{{"Confirm" | translate}}}    }</button>
+        
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="formTempNameEnable" [disabled]="confirmForm.controls['formTempName'].invalid"  
+        (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{confirmButtonText, select, Ok {{{"Ok"|translate}}} Yes {{{"Yes"|translate}}} }</button>
+        
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="data.assignFloor === false && data.isNewTestAdded === false && data.updateDoctor === false && data.statusId === 'QS-NR'" [disabled]="confirmForm.controls.reasonCode.invalid || isDisabled"  
+        (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{confirmButtonText, select,Ok {{{"Ok" | translate}}} Yes {{{"Yes" | translate}}} Save {{{"Save" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}} Continue {{{"Continue" | translate}}} Delete {{{"Delete" | translate}}} Confirm {{{"Confirm" | translate}}}    }</button>
+        <button  mat-raised-button appDebounceClick class="cf-dlg_1" *ngIf="data.isAuthorize" [disabled]="isDisabled"  
+        tabindex="1" [mat-dialog-close]="data.buttonText.ok">{confirmButtonText, select,Ok {{{"Ok" | translate}}} Yes {{{"Yes" | translate}}} Save {{{"Save" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}} Continue {{{"Continue" | translate}}} Delete {{{"Delete" | translate}}} Confirm {{{"Confirm" | translate}}}    }</button>
+
+        <button  mat-raised-button [mat-dialog-close]="data.buttonText.cancel" *ngIf="data.oTEnroll !== true && data.enrollVisitType" class="cf-dlg_1" tabindex="-1">{cancelButtonText, select, Cancel {{{"Cancel" | translate}}} No {{{"No" | translate}}} Continue {{{"Continue" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}}        }</button>
+        <button  mat-raised-button appDebounceClick (debounceClick) = "closeDialog()" *ngIf="data.oTEnroll !== true && !data.enrollVisitType && isPharmacyOtp == false && !data.hasOwnProperty('scheduleCancelRequest')" tabindex="-1">{cancelButtonText, select, Cancel {{{"Cancel" | translate}}} No {{{"No" | translate}}} Continue {{{"Continue" | translate}}} New visit {{{"New visit" | translate}}} Follow up {{{"Follow up" | translate}}}        }</button>
+
+        <button  mat-raised-button [mat-dialog-close]="data.buttonText.cancel" (keyup.enter)="data.buttonText.cancel" *ngIf="data.oTEnroll === true" class="cf-dlg_1" tabindex="-1">{confirmButtonText, select, Yes {{{"Yes"|translate}}}}</button>
+        <button  mat-raised-button appDebounceClick *ngIf="data.oTEnroll === true" [disabled]="isDisabled" (debounceClick) = "saveComments()" tabindex="1" [debounceTime]="300">{cancelButtonText, select, Cancel {{{"Cancel"|translate}}} No {{{"No"|translate}}}}</button>
+        <div *ngIf="isPharmacyOtp && isOtpSent == false" style="display: flex; justify-content: center; position: relative; right: 50px;">
+            <button  mat-button class="active-btn" [disabled]="confirmForm.get('userName').invalid || confirmForm.get('mobileNo').invalid || !userHit"  (click) = "sentOtp()">{{"Send OTP"|translate}}</button>
+        </div>
+        <div *ngIf="isOtpSent && isPharmacyOtp" style="display: flex; justify-content: center; position: relative; right: 50px;">
+            <button  mat-button class="active-btn"  [disabled]=" confirmForm.get('otp').invalid " (click)="verifyOtp()">{{"Verify"|translate}}</button>
+           <button  mat-button class="active-btn" [disabled]="resentOtp" (click) ="sentOtp()">{{"Resend"|translate}}</button>
+        </div>
+        <div *ngIf="data.hasOwnProperty('scheduleCancelRequest') && data.status === 'RQ-SC'">
+            <button  mat-raised-button appDebounceClick class="cf-dlg_1" (debounceClick)="RequestCancel()" tabindex="1"
+                [disabled]="confirmForm.controls['scheduleCommentList'].value == null" [debounceTime]="300">{confirmButtonText,
+                select, Yes {{{"Yes" | translate}}} }</button>
+            <button  mat-raised-button [mat-dialog-close]="data.buttonText.cancel" class="cf-dlg_1"
+                tabindex="-1">{cancelButtonText, select, No {{{"No" | translate}}} }</button>
+        </div>
+    </mat-dialog-actions>
+    <mat-dialog-actions style="padding: 0px 15px;display: block;margin-bottom: 0px;margin-right: 10px;" *ngIf="data.disengageAlarm === true">
+        <button *ngIf="infantEventTypeId === 'IET-AT'" style="float: left;"  mat-raised-button appDebounceClick class="cf-dlg_1" [disabled]="!this.pwdExist || confirmForm.controls['confirmPwd'].value === null 
+        || confirmForm.controls['confirmPwd'].value === ''" 
+        (debounceClick) = "saveComments('Remove Authorized')" tabindex="1" [debounceTime]="300">{{"Remove Authorization"|translate}}</button>
+        <button style="float: right;"  mat-raised-button appDebounceClick class="cf-dlg_1" [disabled]="!this.pwdExist || confirmForm.controls['confirmPwd'].value === null 
+        || confirmForm.controls['confirmPwd'].value === ''|| confirmForm.controls['duration'].value == null" 
+        (debounceClick) = "saveComments('Authorized')" tabindex="1" [debounceTime]="300">{{"Authorize"|translate}}</button>
+    </mat-dialog-actions>
+
+</div>

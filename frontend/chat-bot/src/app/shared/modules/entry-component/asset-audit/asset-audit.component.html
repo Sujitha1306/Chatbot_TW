@@ -1,0 +1,246 @@
+<div class="ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <span class="ovi-pop-hdr-name">{{ (data?.id ? 'Modify Audit Schedule' : 'Create Audit Schedule') | translate }}</span>
+            <span class="ovi-pop-hdr-close">
+                <button mat-icon-button mat-dialog-close close-button>
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </span>
+    </div>
+    <div  class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"[formGroup]="auditForm" [ngStyle]="selectedTabName !== 'Audit' ? {'height': 'calc(100% - 135px)', 'overflow': 'auto'} : {}">
+     <mat-tab-group (selectedTabChange)="tabChanged($event)">
+      <mat-tab label="{{'Schedule'|translate}}">
+        <div class="ovi-row-gap" style="overflow: hidden;">
+        <!-- Entity Type Dropdown -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Entity Type"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Entity Type'|translate" formControlName="entityType" [disableOptionCentering]="true" [disabled]="true">
+                            <mat-option [value]="'Asset'">{{ 'Asset' | translate }}</mat-option>
+                            <mat-option [value]="'Location'">{{'Location'| translate }}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="auditForm.controls.entityType.invalid">
+                            <span [hidden]="!auditForm.controls['entityType'].errors?.required">{{"EntityType is required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <!-- Name Input -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" required>
+                        <mat-error *ngIf="auditForm.controls.name.invalid">
+                            <span [hidden]="!auditForm.controls['name'].errors?.required">{{"Name is required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+
+            <!-- Audit Type Dropdown -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Audit Type"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Audit Type'|translate" formControlName="auditType" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let auditType of auditTypes" [value]="auditType.code">
+                                {{auditType.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="auditForm.controls.auditType.invalid" class="error-txt-1">
+                            {{"Audit Type is required."|translate}}
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+
+            <!-- Schedule Type Dropdown -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Schedule Type"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate"   formControlName="timePeriod" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let timePeriod of timePeriods" [value]="timePeriod.code">
+                                {{timePeriod.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </div>
+
+            <!-- Department Dropdown -->
+            <div *ngIf="auditForm.get('entityType')?.value ==='Asset'" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Owned Department"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Owned Department'|translate"  formControlName="departmentId" [disableOptionCentering]="true">
+                        <mat-option [value]="null">{{ 'None' | translate }}</mat-option>
+                        <mat-option *ngFor="let department of departmentList" [value]="department.id">
+                            {{department.name}}
+                        </mat-option>
+                        </mat-select>
+                        </mat-form-field>
+            </div>
+
+            <!-- Used By Department Dropdown -->
+            <div *ngIf="auditForm.get('entityType')?.value  ==='Asset'"  class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size"> {{"Used By Department"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Used By Department'|translate"  formControlName="usedDepartmentId" [disableOptionCentering]="true">
+                         <mat-option [value]="null">{{ 'None' | translate }}</mat-option>
+                        <mat-option *ngFor="let department of departmentList" [value]="department.id">
+                            {{department.name}}
+                        </mat-option>
+                        </mat-select>
+                        </mat-form-field>
+            </div>
+
+            <!-- Asset Type Dropdown -->
+            <div *ngIf="auditForm.get('entityType')?.value ==='Asset'"  class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Asset Type"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Type'|translate"  formControlName="assetTypeId" [disableOptionCentering]="true">
+                            <mat-option [value]="null"> {{ 'None' | translate }}</mat-option>
+                            <mat-option *ngFor="let assetType of assetTypes" [value]="assetType.code">
+                                {{assetType.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </div>
+
+            <!-- Criticality Dropdown -->
+            <div  *ngIf="auditForm.get('entityType')?.value  ==='Asset'"  class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Criticality"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Critical or Non-critical'|translate" formControlName="criticalityId" [disableOptionCentering]="true">
+                        <mat-option [value]="null"> ------- NULL ------- </mat-option>
+                        <mat-option *ngFor="let type of Criticality" [value]="type.code">
+                            {{type.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+            </div>
+
+            <!-- Location Name for entityType Asset -->
+            <div *ngIf="auditForm.get('entityType')?.value  === 'Asset'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{ "Location Name" | translate }}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                  <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" id="location"
+                    appTypeHit (typeHit)="searchToLocation($event)" formControlName="locationId"
+                     [matAutocomplete]="auto" autocomplete="off">
+                    <mat-autocomplete autoActiveFirstOption [displayWith]="getLocationList.bind(this)" #auto="matAutocomplete">
+                    <mat-option *ngFor="let option of locations" [value]="option.id">
+                        <div class="act-wid-styl">{{option.fullName}}</div>
+                    </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="auditForm.controls.locationId.hasError('locationNameMatch') || auditForm.controls.locationId.dirty">
+                    {{"Please select a valid Location Name from the list." | translate}}
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              
+
+             <!-- Location Category Dropdown -->
+            <div *ngIf="auditForm.get('entityType')?.value  ==='Location'"  class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Location Category"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location Category'|translate"  formControlName="locationCategoryId" [disableOptionCentering]="true">
+                        <mat-option [value]="null"> {{ 'None' | translate }} </mat-option>
+                        <mat-option *ngFor="let location of locationCategory" [value]="location.code">
+                            {{location.value}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+              <!-- Location Type Dropdown -->
+            <div *ngIf="auditForm.get('entityType')?.value  ==='Location'"  class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Location Type"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location Type'|translate" formControlName="locationTypeId" [disableOptionCentering]="true">
+                        <mat-option [value]="null"> {{ 'None' | translate }} </mat-option>
+                        <mat-option *ngFor="let location of locationTypes" [value]="location.id">
+                            {{location.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <!-- Status Field to be displayed only during modify-->
+            <div *ngIf="shiftId" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate" formControlName="statusId" >
+                </mat-form-field>
+            </div>
+
+            <!-- Login UserName Input -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Created By"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'created By'|translate" formControlName="createdByUser" [readonly] = "true">
+                </mat-form-field>
+            </div>
+
+            <!-- Assign To field -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{ "Assign To" | translate }} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                  <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign TO'|translate" id="location"
+                    appTypeHit (typeHit)="searchUser($event)" formControlName="assignToUserId"
+                     [matAutocomplete]="auto" autocomplete="off">
+                    <mat-autocomplete autoActiveFirstOption [displayWith]="getUserList.bind(this)" #auto="matAutocomplete">
+                    <mat-option *ngFor="let option of users" [value]="option.id">
+                        <div class="act-wid-styl">{{option.name}}</div>
+                    </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="auditForm.controls.assignToUserId.hasError('required')">
+                {{"Assign To is required." | translate}}
+                </mat-error>
+                <mat-error *ngIf="(auditForm.controls.assignToUserId.hasError('userMatch') || auditForm.controls.assignToUserId.dirty) && !auditForm.controls.assignToUserId.hasError('required')">
+                    {{"Please select a valid User Name from the list." | translate}}
+                </mat-error>
+                </mat-form-field>
+            </div>
+
+            <!-- Start Date Input -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Start Date"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput [matDatepicker]="startpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate"  [min]="shiftId && auditForm.get('startDate')?.value  ? auditForm.get('startDate')?.value :today" formControlName="startDate" [errorStateMatcher]="matcher" autocomplete="off">
+                        <mat-datepicker-toggle matSuffix [for]="startpicker"></mat-datepicker-toggle>
+                        <mat-datepicker #startpicker></mat-datepicker>
+                    </mat-form-field>
+            </div>
+
+            <!-- End Date Input -->
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput [matDatepicker]="endpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate"  [min]="shiftId && auditForm.get('startDate')?.value ? auditForm.get('startDate')?.value :today" formControlName="endDate" [errorStateMatcher]="matcher" autocomplete="off">
+                        <mat-datepicker-toggle matSuffix [for]="endpicker"></mat-datepicker-toggle>
+                        <mat-datepicker #endpicker></mat-datepicker>
+                    </mat-form-field>
+            </div>
+        </div>
+      </mat-tab>
+      <mat-tab *ngIf ="data?.id != null" label="Audit">
+        <ng-template mat-tab-label>{{ 'Audit' | translate }}
+          <span *ngIf="totalScheduleRecords != null"> ({{ totalScheduleRecords }})</span>
+        </ng-template>
+        <lazy-loader *ngIf=loading></lazy-loader>
+        <tw-header-new-component [component]="'audit-schedule'" [type]="'new'" [permission]="null"
+        [dateFilter]="null" [multiView]="false" [rowFilter]="null" [manageAction]="null"
+        [selectDropdown]="selectDropdown" [selectedName]="null"
+        [selectedView]="null" (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)"
+        [groupFilter]="[]"></tw-header-new-component>
+        <tw-table-component [component]="'audit-schedule'" [columns]="displayedColumns"
+            [tableData]="tableData" [iconHeader]="iconHeader"
+            [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+            (eventAction)="eventAction($event)" [rowId]="null" [rowClick]="false"
+            (rowClickAction)="null" [rowDbClick]="false" (rowDbClickAction)="null"
+            [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+        </tw-table-component>
+      </mat-tab>
+     </mat-tab-group>
+    </div>
+    <div *ngIf="selectedTabName != 'Audit'" class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn " mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" [disabled]="auditForm.invalid" appDebounceClick (debounceClick)="saveData()" [debounceTime]="300">{{"Save"|translate}}</button>
+        <button mat-button class="active-btn" [disabled]="auditForm.invalid" appDebounceClick (debounceClick)="saveData(true)" [debounceTime]="300">{{"Save and Close"|translate}}</button>
+   </div>
+</div>
+

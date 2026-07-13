@@ -1,0 +1,249 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="bottom-sheet-wrapper ovi-font-family">
+  <div class="bottom-sheet-content">
+    <div class="close-slider"><span class="close-slider-act-btn" (click)="dialogRef.close()" (keydown.enter)="fixClick()"></span></div>
+    <div class="sheet-header">
+      <div class="sheet-title">{{"Asset"|translate}}</div>
+      <!-- <div class="sheet-icons" style="display:flex; gap:5px">
+        <img class="icon" src="../../../../../../assets/Alert/common_icons/coaster-g.svg" (click)="onCoasterClick()" alt="Icon" />
+      </div> -->
+    </div>
+      <div  style="margin-top: 10px;" class="section-title">{{"Asset Details"|translate}}
+       <span class="blue-icon-box">
+        <mat-icon class="edit-icon" (click)="updateAsset()" (keydown.enter)="fixClick()">edit</mat-icon>
+      </span>
+      </div>
+
+      <div style="display: flex; align-items: center;padding-bottom: 5px;">
+        <img class="asset-icon" src="../../../../../../assets/Menus/task-asset.svg" alt="task-asset.svg"/>
+        <span class="value">{{ assetData?.assetName }}</span>
+      </div>
+
+      <div style="display: flex; align-items: center;padding-bottom: 5px; ">
+        <img *ngIf="assetData?.tagSerialNumber " class="asset-icon" src="../../../../../../assets/Menus/task-asset.svg" alt="task-asset.svg"/>
+        <span class="value">{{ assetData?.tagSerialNumber }}</span>
+      </div>
+      <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px; ">
+        <div>
+          <div class="label">{{"Asset no"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData?.assetSerialNumber }}</div>
+        </div>
+        <div>
+          <div class="label">{{"Asset type"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData?.assetTypeName }}</div>
+        </div>
+      </div>
+
+    <div class="actions">
+      <button mat-icon-button (click)="onActionClick('info')">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'info' }">
+          <mat-icon class="icon-blue">info</mat-icon>
+        </div>
+        <span>{{"Info"|translate}}</span>
+      </button>
+      <!-- <button mat-icon-button (click)="onActionClick('tracking')" disabled="true">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'tracking' }">
+          <mat-icon class="icon-blue">gps_fixed</mat-icon>
+        </div>
+        <span>Tracking</span>
+      </button> -->
+      <button mat-icon-button (click)="onActionClick('rule')">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'rule' }">
+          <mat-icon class="icon-blue">rule</mat-icon>
+        </div>
+        <span>{{"Audit"|translate}}</span>
+      </button>
+      <button mat-icon-button (click)="onActionClick('list')">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'list' }">
+          <mat-icon class="icon-blue">list</mat-icon>
+        </div>
+        <span>{{"Ticket"|translate}}</span>
+      </button>
+      <button mat-icon-button (click)="onActionClick('Schedule')">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'Schedule' }">
+          <mat-icon class="icon-blue">schedule_Send</mat-icon>
+        </div>
+        <span>{{"Maintenance"|translate}}</span>
+      </button>
+      <button mat-icon-button (click)="onActionClick('Forms')">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'Forms' }">
+          <mat-icon class="icon-blue">dynamic_form</mat-icon>
+        </div>
+        <span>{{"Forms"|translate}}</span>
+      </button>
+      <button mat-icon-button (click)="onActionClick('Documents')">
+        <div class="icon-box" [ngClass]="{ 'selected': selectedAction === 'Documents' }">
+          <mat-icon class="icon-blue">source</mat-icon>
+        </div>
+        <span>{{"Documents"|translate}}</span>
+      </button>
+    </div>
+
+    <div style="margin-top:15px">
+      <div *ngIf="selectedAction == 'info'">
+      <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+        <div *ngIf="assetData?.homeLocationName">
+          <div class="label">{{"Home location"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.homeLocationName }}</div>
+        </div>
+        <div *ngIf="assetData?.assetCategoryName">
+          <div class="label">{{"Category"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.assetCategoryName }}</div>
+        </div>
+      </div>
+      <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+        <div *ngIf="assetData?.criticalityName">
+          <div class="label">{{"Criticality"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.criticalityName }}</div>
+        </div>
+        <div *ngIf="assetData?.usefulLife">
+          <div class="label">{{"Useful life time"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.usefulLife }}</div>
+        </div>
+      </div>
+      <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+        <div *ngIf="assetData?.softwareVersion">
+          <div class="label">{{"Software version"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.softwareVersion }}</div>
+        </div>
+        <div *ngIf="assetData?.manufacturer">
+          <div class="label">{{"Manufacturer"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.manufacturer }}</div>
+        </div>
+      </div>
+      <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+        <div *ngIf="assetData?.commissionedOn">
+          <div class="label">{{"Commissioned Date"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.commissionedOn | date: 'yyyy-MM-dd' }}</div>
+        </div>
+        <div *ngIf="assetData?.serialNumber">
+          <div class="label">{{"Serial number"|translate}}</div>
+          <div class="value"style="width:100px">{{ assetData.serialNumber }}</div>
+        </div>
+      </div>
+
+    <div class="section-title" *ngIf="assetData?.ownerDepartment || assetData?.ownerName || assetData?.assignedDepartment || assetData?.assignedUser||assetData?.costTypeName ||assetData?.depreciationPercent || assetData?.assetCost ">Ownership</div>
+    <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+      <div *ngIf="assetData?.ownerDepartment">
+        <div class="label">{{"Owned by department"|translate}}</div>
+        <div class="value" style="width:100px">{{ assetData.ownerDepartment }}</div>
+      </div>
+      <div *ngIf="assetData?.ownerName">
+        <div class="label">{{"Asset owned by"|translate}}</div>
+        <div class="value" style="width:100px">{{ assetData.ownerName }}</div>
+      </div>
+    </div>
+
+    <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+      <div *ngIf="assetData?.assignedDepartment">
+        <div class="label">{{"Used by department"|translate}}</div>
+        <div class="value"style="width:100px">{{ assetData.assignedDepartment }}</div>
+      </div>
+      <div *ngIf="assetData?.assetUserName">
+        <div class="label">{{"Asset used by"|translate}}</div>
+        <div class="value"style="width:100px">{{ assetData.assetUserName }}</div>
+      </div>
+    </div>
+
+    <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+      <div *ngIf="assetData?.costTypeName">
+        <div class="label">{{"cost type"|translate}}</div>
+        <div class="value"style="width:100px">{{ assetData.costTypeName }}</div>
+      </div>
+      <div *ngIf="assetData?.depreciationPercent">
+        <div class="label">{{"Depreciation percent"|translate}}</div>
+        <div class="value"style="width:100px">{{ assetData.depreciationPercent }}</div>
+      </div>
+    </div>
+    <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+      <div *ngIf="assetData?.assetCost">
+        <div class="label">{{"Asset cost"|translate}}</div>
+        <div class="value"style="width:100px">{{ assetData.assetCost }}</div>
+      </div>
+    </div>
+
+    <div class="section-title" *ngIf="assetData?.vendorName || assetData?.serviceContact || assetData?.servicePersonEmail || assetData?.serviceAddress">Service</div>
+    <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px; ">
+      <div *ngIf="assetData?.vendorName ">
+        <div class="label">{{"Vendor name"|translate}}</div>
+        <div class="value" style="width:100px">{{ assetData.vendorName }}</div>
+      </div>
+      <div *ngIf="assetData?.serviceContact">
+        <div class="label">{{"Mobile number"|translate}}</div>
+        <div class="value" style="width:100px">{{ assetData.serviceContact }}</div>
+      </div>
+    </div>
+
+    <div class="info-block" style="display: flex; justify-content: space-between;padding-bottom: 5px;">
+      <div *ngIf="assetData?.servicePersonEmail">
+        <div class="label">{{"Email address"|translate}}</div>
+        <div class="value" style="width:100px">{{ assetData.servicePersonEmail }}</div>
+      </div>
+      <div *ngIf="assetData?.serviceAddress">
+        <div class="label">{{"Address"|translate}}</div>
+        <div class="value" style="width:100px">{{ assetData.serviceAddress }}</div>
+      </div>
+    </div>
+    </div>
+    <div *ngIf="selectedAction == 'rule'">
+      <div class="section-title">{{"Audit History"|translate}}</div>
+      <div  *ngIf="auditData?.length >0"class="audit-card-grid">
+        <div *ngFor="let audit of auditData" class="audit-card">
+            <div class="audit-field">
+              <div class="value">{{ audit.assetName }}</div>
+            </div>
+          <div class="audit-card-content">
+            <div class="audit-field">
+              <div class="label">{{"Asset No"|translate}}</div>
+              <div class="value">{{ audit?.assetSerialNumber }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Asset Type"|translate}}</div>
+              <div class="value">{{ audit?.assetTypeName }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Asset Category"|translate}}</div>
+              <div class="value">{{ audit?.assetCategory }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Schedule"|translate}}</div>
+              <div class="value">{{ audit?.auditScheduleName }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Schedule Type"|translate}}</div>
+              <div class="value">{{ audit?.scheduleType }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Schedule Period"|translate}}</div>
+              <div class="value">{{ audit?.schedulePeriod }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Audited By"|translate}}</div>
+              <div class="value">{{ audit?.auditedBy }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Audit Type"|translate}}</div>
+              <div class="value">{{ audit?.auditType }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Audit DateTime"|translate}}</div>
+              <div class="value">{{ audit?.auditDateTime | date:'MMM d, y h:mm a' }}</div>
+            </div>
+            <div class="audit-field">
+              <div class="label">{{"Remarks"|translate}}</div>
+              <div class="value">{{ audit?.remarks }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="auditData?.length == 0" style="display:flex;justify-content: center;">{{"No records found"|translate}}</div>
+    </div>
+    </div>
+  </div>
+</div>

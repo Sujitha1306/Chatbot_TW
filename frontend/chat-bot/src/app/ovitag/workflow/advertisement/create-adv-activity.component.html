@@ -1,0 +1,519 @@
+<div class="input-component-holder container-fluid" style="height: 100%;">
+    <mat-toolbar class="input-header block-1" style="height: 35px;padding-right: 0px;background-color: #D61820">
+        <div class="header-name" style="width: calc(100% - 30px)"> {{"Release Activity Details"|translate}} </div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div class="mat-custom-form-field-box" [formGroup]="activityForm"
+        style="height: calc(100vh - 140px);overflow: auto;">
+        <div class="form-row block-3" style="padding-top: 5px;">
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Activity Type"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity Type'|translate" formControlName="activityTypeId">
+                            <mat-option *ngFor="let data of activityTypeList" [value]="data.code"
+                                (click)="activeType(data.value)"  (keydown.enter)="fixClick()" >
+                                {{data.value}}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="activityForm.controls.activityTypeId.invalid">
+                            <span [hidden]="!activityForm.controls['activityTypeId'].errors.required">{{"Activity Type is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Activity Period From"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <input matInput [ngxMatDatetimePicker]="picker4" appPlaceholder [showPlaceholder]="true" [placeholderText]="'start Date'|translate"
+                            formControlName="startDatetime" [min]="data.startDatetime" [max]="data.endDatetime">
+                        <mat-datepicker-toggle matSuffix [for]="picker4"></mat-datepicker-toggle>
+                        <ngx-mat-datetime-picker #picker4></ngx-mat-datetime-picker>
+                        <mat-error *ngIf="activityForm.controls.startDatetime.invalid">
+                            <span [hidden]="!activityForm.controls['startDatetime'].errors.required">{{"From Date is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Activity Period To"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <input matInput [ngxMatDatetimePicker]="picker5" appPlaceholder [showPlaceholder]="true" [placeholderText]="'End Date'|translate"
+                            formControlName="endDatetime" [max]="data.endDatetime"
+                            [min]="this.activityForm.controls.startDatetime.value">
+                        <mat-datepicker-toggle matSuffix [for]="picker5"></mat-datepicker-toggle>
+                        <ngx-mat-datetime-picker #picker5></ngx-mat-datetime-picker>
+                        <mat-error *ngIf="activityForm.controls.endDatetime.invalid">
+                            <span [hidden]="!activityForm.controls['endDatetime'].errors.required"> {{"To Date is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Ad Type"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Ad Type'|translate" formControlName="adTypeId"
+                            (selectionChange)="getSelectedScreen($event.value)">
+                            <mat-option *ngFor="let data of adTypeList" (click)="adtype(data.value)"
+                                [value]="data.code" (keydown.enter)="fixClick()">
+                                {{data.value}}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="activityForm.controls.adTypeId.invalid">
+                            <span [hidden]="!activityForm.controls['adTypeId'].errors.required">{{"Ad Type is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="ovi-popup-title-text-size top-styl">{{"Placement"|translate}}</div>
+        </div>
+        <mat-divider class="divider"></mat-divider>
+        <div class="form-row block-3">
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Select Screen"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Screen'|translate" formControlName="placementScreenId"
+                            (selectionChange)="getSpecificationsList($event.value)">
+                            <mat-option *ngFor="let data of placementScreen" [value]="data.code">
+                                {{data.value}}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="activityForm.controls.placementScreenId.invalid">
+                            <span [hidden]="!activityForm.controls['placementScreenId'].errors.required">{{"Activity Type is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Creative Specifications"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Creative Specifications'|translate"
+                            formControlName="creativeSpecification" (selectionChange)="getAdSlotsList($event.value)" multiple>
+                            <mat-option *ngFor="let data of specifications" [value]="data.code">
+                                {{data.value}}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="activityForm.controls.creativeSpecification.invalid">
+                            <span [hidden]="!activityForm.controls['creativeSpecification'].errors.required">{{"Activity Type is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="row-field-adv">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Select Ad Slots"|translate}}</mat-label>
+                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Ad Slots'|translate" formControlName="adSlots" multiple>
+                            <mat-option *ngFor="let data of adSlotsList" [value]="data.code">
+                                {{data.value}}</mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="activityForm.controls.adSlots.invalid">
+                            <span [hidden]="!activityForm.controls['adSlots'].errors.required">{{"Activity Type is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div *ngIf="false" class="row-field-adv">
+                <div class="example-form" style="display: flex;">
+                    <button class="file-upload-button">
+                        <input type="file" multiple #fileInput accept="image/x-png,image/jpeg"
+                            (change)="uploadImage($event)" class="custom-file-input" id="file3" />
+                       {{"Upload File"|translate}}
+                    </button>
+                    <span class="img-styl" *ngIf="atchData !== null">
+                        <div *ngFor="let img of imageInfo">
+                            <mat-icon (click)="imgDelete(img)" (keydown.enter)="fixClick()" class="img-cls-btn">highlight_off</mat-icon>
+                            <img [src]="img.file" class="img-styl_1" accept="image/png, image/gif, image/jpeg"  alt="img.file" 
+                                (error)="img.file = null;">
+                        </div>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <mat-expansion-panel [expanded]="isTargetingExp ? true : false" style="padding: 0px 5px 0px 5px;">
+            <mat-expansion-panel-header style="background: #f1f1f1;">
+                <mat-panel-title class="headingexp">
+                    {{"Targeting"|translate}}
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="form-row block-3" style="padding-top: 10px;">
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Geo Targeting"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Geo Targeting'|translate" formControlName="geoTargetingId"
+                                multiple>
+                                <mat-option *ngFor="let data of cityList" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.geoTargetingId.invalid">
+                                <span [hidden]="!activityForm.controls['geoTargetingId'].errors.required">{{"Geo Targeting
+                                    is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Area"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Area'|translate" formControlName="areaCode" multiple>
+                                <mat-option *ngFor="let data of AreaCode" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.areaCode.invalid">
+                                <span [hidden]="!activityForm.controls['areaCode'].errors.required">{{"Area is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Time Targeting"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Time Targeting'|translate" formControlName="timeTargeting">
+                            <mat-error *ngIf="activityForm.controls.timeTargeting.invalid">
+                                <span [hidden]="!activityForm.controls['timeTargeting'].errors.required">{{"Time Targeting is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Age"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Age'|translate" formControlName="age" multiple>
+                                <mat-option *ngFor="let data of ageGroup" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.age.invalid">
+                                <span [hidden]="!activityForm.controls['age'].errors.required">{{"age is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Gender"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gender'|translate" formControlName="gender" multiple>
+                                <mat-option *ngFor="let data of genderList" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.gender.invalid">
+                                <span [hidden]="!activityForm.controls['gender'].errors.required">{{"Gender is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Interest"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Interest'|translate" formControlName="interestTypeId"
+                                multiple>
+                                <mat-option *ngFor="let data of interestTypes" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.interestTypeId.invalid">
+                                <span [hidden]="!activityForm.controls['interestTypeId'].errors.required">{{"Interest is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Language"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate" formControlName="language" multiple>
+                                <mat-option *ngFor="let data of languageList" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.language.invalid">
+                                <span [hidden]="!activityForm.controls['language'].errors.required">{{"Language is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+        <br>
+        <mat-expansion-panel [expanded]="isDeliverablesExp ? true : false" style="padding: 0px 5px 0px 5px;">
+            <mat-expansion-panel-header style="background: #f1f1f1;">
+                <mat-panel-title class="headingexp">
+                    {{"Deliverables"|translate}}
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="form-row block-3" style="padding-top: 10px;">
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Delivery Type"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Delivery Type'|translate" formControlName="deliveryTypeId">
+                                <mat-option (click)="getDeliveryTypeName(data)" *ngFor="let data of deliveryType"
+                                    [value]="data.code"  (keydown.enter)="fixClick()">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="activityForm.controls.deliveryTypeId.invalid">
+                                <span [hidden]="!activityForm.controls['deliveryTypeId'].errors.required">{{"Delivery Type is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                        <span *ngIf="err" class="errortext">{{errorMsg}}</span>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Rate"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Rate'|translate" min="0" (keyup)="sumOfCalculate()"
+                                type="number" formControlName="rate">
+                            <span *ngIf="this.activityForm.controls['deliveryTypeId'].value === 'DEL-CPM'"
+                                style="padding: 4px;" matSuffix class='count ovi-fnt-sze15'>/1000</span>
+                                <mat-error *ngIf="activityForm.controls.rate.invalid">
+                                    <span [hidden]="!activityForm.controls['rate'].errors.required">{{"Rate is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Total Impression"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Total Impression'|translate" min="0"
+                                (keyup)="sumOfCalculate()" type="number" formControlName="totalImpression"
+                                [readonly]="!this.activityForm.controls['rate'].value">
+                                <mat-error *ngIf="activityForm.controls.totalImpression.invalid">
+                                    <span [hidden]="!activityForm.controls['totalImpression'].errors.required">{{"Total Impression is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Clicks"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Clicks'|translate" min="0" (keyup)="sumOfCalculate()"
+                                type="number" formControlName="clicks"
+                                [readonly]="!this.activityForm.controls['rate'].value">
+                                <mat-error *ngIf="activityForm.controls.clicks.invalid">
+                                    <span [hidden]="!activityForm.controls['clicks'].errors.required">{{"Clicks is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Installations"|translate}} </mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Installations'|translate" min="0"
+                                (keyup)="sumOfCalculate()" type="number" formControlName="installations"
+                                [readonly]="!this.activityForm.controls['rate'].value">
+                                <mat-error *ngIf="activityForm.controls.installations.invalid">
+                                    <span [hidden]="!activityForm.controls['installations'].errors.required">{{"Installations is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Leads"|translate}} </mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Leads'|translate" min="0" (keyup)="sumOfCalculate()"
+                                type="number" formControlName="leads"
+                                [readonly]="!this.activityForm.controls['rate'].value">
+                                <mat-error *ngIf="activityForm.controls.leads.invalid">
+                                    <span [hidden]="!activityForm.controls['leads'].errors.required">{{"Leads is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Reach"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reach'|translate" formControlName="reach">
+                            <mat-error *ngIf="activityForm.controls.reach.invalid">
+                                <span [hidden]="!activityForm.controls['reach'].errors.required">{{"Language is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"CTR"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'CTR'|translate" formControlName="crt">
+                            <mat-error *ngIf="activityForm.controls.crt.invalid">
+                                <span [hidden]="!activityForm.controls['crt'].errors.required">{{"Language is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Freq. Cap"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Freq. Cap'|translate" formControlName="freqCap">
+                            <mat-error *ngIf="activityForm.controls.freqCap.invalid">
+                                <span [hidden]="!activityForm.controls['freqCap'].errors.required">{{"Language is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-adv">
+                    <div class="example-form">
+                        <div matLine [ngStyle]="{color: !budgetEqual? 'red': '#075800'}" class="cost">
+                            <div style="color: black;">{{"Total Cost"|translate}} :</div>
+                            {{cost}}
+                        </div>
+                        <div [ngStyle]="{color: !budgetEqual? 'red': '#075800'}" class="not-equal">{{notEqualmsg}}</div>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+        <div style="display: block; text-align: center;">
+            <button *ngIf="!isActivityEdit" mat-button class="active-btn margin-r-1" appDebounceClick
+                (debounceClick)="addActivity()" style="background: #D61820;" [debounceTime]="300"
+                [disabled]="activityForm.invalid || !this.budgetEqual">{{"Add"|translate}}</button>
+            <button *ngIf="isActivityEdit" mat-button class="active-btn margin-r-1" style="background: #D61820;"
+             appDebounceClick (debounceClick)="addActivity()" [disabled]="activityForm.invalid" [debounceTime]="300">{{"update"|translate}}</button>
+            <button mat-button class="cancle-btn" (click)="reset()">{{"Clear"|translate}}</button>
+        </div>
+        <div class="tw-popup-content-tbl block-7" style="padding: 15px 10px 5px 10px;">
+            <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'">
+                <div class="tw-mat-table-overflow box-26" style="overflow-x: auto;">
+                    <table mat-table class="tw-table" [dataSource]="ACTdataSource" matSort>
+
+                        <ng-container matColumnDef="activityType">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"Activity Type"|translate}} </th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.activityTypeName}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="adtype">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"Ad Type"|translate}} </th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.adTypeName}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="deliveryType">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"Delivery Type"|translate}} </th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.deliverable.deliveryTypeName}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="impression">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"Total Impression"|translate}} </th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.deliverable.totalImpression}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="selectScreen">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"Select Screen"|translate}} </th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.placementScreenId}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="from Date">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"From Date"|translate}}</th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.startDatetime | date : "hh:mm a, d MMM"}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="to Date">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header"> {{"TO Date"|translate}}</th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                {{element.endDatetime | date : "hh:mm a, d MMM"}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Status">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header">{{"Status"|translate}}</th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                <span *ngIf="element.id"
+                                    [ngStyle]="{'color': element.isActive === false? 'red' : 'blue'}">{{element.isActive
+                                    === false? 'Deleted' : 'exist'}}</span>
+                                <span *ngIf="!element.id"
+                                    [ngStyle]="{'color': element.isActive === false? 'red' : 'green'}">{{element.isActive
+                                    === false? 'Deleted' : 'New'}}</span>
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Select">
+                            <th scope="col" mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+                            </th>
+                            <td mat-cell *matCellDef="let element" style="padding-right: 20px;padding-left: 20px;">
+                                <button mat-icon-button [matMenuTriggerFor]="menu"
+                                    [ngStyle]="{'display': element.isActive === false? 'none' : ''}">
+                                    <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                                </button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item (click)="editActivity(element)">
+                                        <span class="activity-edit">{{"Edit"|translate}}</span>
+                                    </button>
+                                    <button mat-menu-item (click)="deleteActivity(element)">
+                                        <span class="activity-edit">{{"Delete"|translate}}</span>
+                                    </button>
+                                </mat-menu>
+                            </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="activityDisplayColumn; sticky: true;"
+                            class="tw-manage-table-header-row"></tr>
+                        <tr mat-row *matRowDef="let element; columns: activityDisplayColumn; let i = index;">
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="input-footer" style="float: right; width: 200px">
+        <button mat-button *ngIf="!roActivity" class="active-btn margin-r-1" appDebounceClick
+            (debounceClick)="saveActivity()" [debounceTime]="300">{{"Create"|translate}}</button>
+        <button mat-button *ngIf="roActivity" class="active-btn margin-r-1"
+            [disabled]="activityForm.controls.adTypeId.value" appDebounceClick (debounceClick)="UpdateActivity()"
+            [debounceTime]="300">{{"Update"|translate}}</button>
+        <button mat-button class="cancle-btn" style="margin: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+    </div>
+</div>

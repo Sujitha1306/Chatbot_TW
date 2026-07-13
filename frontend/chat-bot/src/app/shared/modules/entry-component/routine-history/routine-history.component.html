@@ -1,0 +1,80 @@
+<div fxFlex class="input-component-holder custom-material-design">
+  <mat-toolbar class="input-header">
+    <div class="header-name">{{"Routine History"|translate}}</div>
+    <div class="header-close ie-close-icon"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+        <mat-icon class="icon-style">highlight_off</mat-icon>
+      </button></div>
+  </mat-toolbar>
+  <div class="input-container mat-custom-form-field-box popup-margin" [formGroup]="routineHistoryForm">
+    <div class="form-row">
+      <div class="row-field-1">
+        <div style="padding-top: 15px;" class="example-form">
+            <mat-form-field class="example-full-width form-field" appearance="outline">
+                <input matInput  [matDatepicker]="picker" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" 
+                    autocomplete="off"  (dateChange)="getRoutineHistory(this.data.id, 'User', $event.target.value)" formControlName="fromDate">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tw-popup-content">
+    <div fxLayout="column" class="mat-elevation-z4 tw-manage-component"
+        [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px" style="max-height: 600px;">
+      <div class="tw-mat-table-overflow">
+        <table mat-table class="tw-table" [dataSource]="RoutinedataSource"
+        style="table-layout: inherit;padding: 5px 25px 5px 25px;">
+
+          <ng-container matColumnDef="Activity Name">
+            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+              {{"Activity Name"|translate}}</th>
+            <td mat-cell *matCellDef="let element">{{element.activityName}}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="Schedule Time">
+            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+              {{"Schedule Time"|translate}}</th>
+            <td mat-cell *matCellDef="let element">
+              {{element.scheduleTime | date: "hh:mm a, d MMM"}}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="Location">
+            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+              {{"Location Name"|translate}}</th>
+            <td mat-cell *matCellDef="let element">{{element.locationName}}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="Start Time">
+            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+              {{"Start Time"|translate}}
+            </th>
+            <td mat-cell *matCellDef="let element">
+              {{element.startTime | date: "hh:mm a, d MMM"}} </td>
+          </ng-container>
+          <ng-container matColumnDef="End Time">
+            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+              {{"End Time"|translate}}
+            </th>
+            <td mat-cell *matCellDef="let element">
+              {{element.endTime | date: "hh:mm a, d MMM"}}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="Status">
+            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+              {{"Status"|translate}}</th>
+            <td mat-cell [matTooltip]="element.comments" *matCellDef="let element">
+              {{element.activityStatusName}}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="RoutineDisplayedColumns; sticky: true;" class="tw-manage-table-header-row">
+          </tr>
+          <tr mat-row *matRowDef="let data; columns: RoutineDisplayedColumns;"></tr>
+        </table>
+      </div>
+      <div class="no-routine ovi-font-family" *ngIf="noRoutineData">{{"No Routine History Available"|translate}} !!</div>
+        <mat-paginator *ngIf="!noRoutineData" #paginator [length]="length" [pageSize]="pageSize" [pageSizeOptions]="[10, 15, 20, 50, 100]"
+          (page)="pageEvent = getRoutineHistory(this.data.id, this.fromDate, $event);" showFirstLastButtons class="tw-paginator-sticky">
+      </mat-paginator>
+    </div>
+  </div>
+</div>

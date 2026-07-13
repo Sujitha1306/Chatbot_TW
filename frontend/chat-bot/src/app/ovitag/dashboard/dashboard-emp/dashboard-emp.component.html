@@ -1,0 +1,272 @@
+<div class="ovi-font-family" style="overflow:auto;width: calc(100% - 0px);"  [ngStyle] ="{height: existPrivateUser ? 'calc(100% - 2px)' : 'calc(100% - 60px)'}">
+    <gridster id="dashTitle" [options]="options" class="ovi-gridster-width" style="background: #edf4f7; float: left;width: Calc(100% - 0px);overflow-x: auto;">
+      <gridster-item *ngFor = "let wid of clayout" [item]="wid" [ngClass]="(['WD_DBAMR', 'WD_DBAS'].indexOf(wid.code) == -1 && dashboardDetails[wid.code]['type'] != 'header') || dashboardDetails[wid.code]['type'] == 'table' || dashboardDetails[wid.code]['type'] == 'chart' ? 'grid-item' : 'grid-item2'">
+        <app-widget-header (childToParentAction)="floorView = false;" *ngIf = "(['WD_DBAMR', 'WD_DBAS'].indexOf(wid.code) == -1 && dashboardDetails[wid.code]['type'] != 'card' && dashboardDetails[wid.code]['type'] != 'header' && dashboardDetails[wid.code]['type'] != 'table') " (click)="goToReport(wid.code)"
+          [title]="dashboardDetails[wid.code].hasOwnProperty('text') ? dashboardDetails[wid.code]['text'] : wid.widgetName" [headerStyle]="dashboardDetails[wid.code]['styles']" [navigate] = "dashboardDetails[wid.code].hasOwnProperty('redirect')?dashboardDetails[wid.code]['redirect']:null"
+           [name]="'WD_DBFP'" [showMinimize]="wid.code == 'WD_DBFP' && floorView" [widDetail] = "dashboardDetails[wid.code].hasOwnProperty('filters') ? dashboardDetails[wid.code]['filters'] :null" (getWidgetFilter)="getWidgetFilterInput($event)" (keydown.enter)="fixClick()">
+        </app-widget-header>
+          
+        <!-- COMPONENT CALL  -->
+        <app-floor-planmap *ngIf="wid.code == 'WD_DBFP'" (childToParentAction)="floorView = true; getFloorId($event)"></app-floor-planmap>   
+        <app-alert class="grid-content" *ngIf="wid.code == 'WD_DBALERT'"></app-alert>
+        
+        <!-- HEALTH PLAN AND TEST TABLE -->
+        <div class="grid-content" style="height: calc(100% - 5px);" *ngIf="dashboardDetails[wid.code]['show'] && dashboardDetails[wid.code]['type'] == 'table'">
+            <angular-table-component [title]="dashboardDetails[wid.code].hasOwnProperty('text') ? dashboardDetails[wid.code]['text'] : wid.widgetName" [headerStyle]="dashboardDetails[wid.code]['styles']" [tableData]="dashboardDetails[wid.code]['data']" [columns]="dashboardDetails[wid.code]['column']" [id]="'dashWid'"  [tableLabel]="dashboardDetails[wid.code]['label']" [tableStyle]="dashboardDetails[wid.code]['tableStyle']" [styles] = "dashboardDetails[wid.code]['styles']" 
+            [page]="dashboardDetails[wid.code]['pagination']" [pageSizeOptions]="dashboardDetails[wid.code]['pageSizeOptions']" [enableExcel]="dashboardDetails[wid.code]['enableExcel']"
+            [filters]="dashboardDetails[wid.code]['filters']" [kpi] = "dashboardDetails[wid.code]['kpiRules']" (getWidgetFilter)="getWidgetFilterInput($event)"
+            ></angular-table-component>           
+        </div>
+        <div  *ngIf="!dashboardDetails[wid.code]['show'] && !dashboardDetails[wid.code]['loading']" style="color: gray;text-align: center;opacity: 0.5;margin-top: 5px;"> {{"No records available"|translate}}</div>
+        <div *ngIf="dashboardDetails[wid.code]['loading'] && !dashboardDetails[wid.code]['show']" class="ovi-font-family" style="color: gray;text-align: center;opacity: 0.5;margin-top: 5px;">
+          Loading....
+        </div>
+        <!-- LOCATION UTIL ASSET STATUS Asset Pending Calibration Monthly,Asset Status,Asset AMC Due Monthly chart -->
+        <div class="grid-content" *ngIf="dashboardDetails[wid.code]['show'] && dashboardDetails[wid.code]['type'] == 'chart'">
+          <canvas baseChart width = "calc(100% - 5px)" height = "calc(100% - 10px)" 
+            [type]="dashboardDetails[wid.code]['chartType']" [datasets]="dashboardDetails[wid.code]['datasets']"
+            [labels]="dashboardDetails[wid.code]['labels']" [colors]="dashboardDetails[wid.code]['colors']"
+            [options]="dashboardDetails[wid.code]['options']" [plugins]="chartPlugins" >
+          </canvas>
+        </div>
+        <!-- DYNAMIC CARD VIEW -->
+        <div class="grid-content-widget" *ngIf="false">
+          <mat-grid-list [cols]="dashboardDetails[wid.code]['maxCol']" rowHeight="100%" [gutterSize]="'15px'">
+            <mat-grid-tile
+              [colspan] = "dashboardDetails[wid.code]['detail'][0].col" [rowspan]= "1" [ngStyle]="{background: dashboardDetails[wid.code]['detail'][0]['bg-color']}" 
+              style="border-radius: 10px;">
+                <mat-grid-tile-header  [ngStyle]="{background: 'transparent', color: dashboardDetails[wid.code]['detail'][0]['color']}" class="ovi-fnt-sze18" style="justify-content: center;font-weight: 600">{{dashboardDetails[wid.code]['detail'][0].title}}</mat-grid-tile-header>
+                <div *ngIf = "dashboardDetails[wid.code]['detail'][0].icon != ''">
+                  <div style="float: left">
+                    <img [src]="dashboardDetails[wid.code]['detail'][0].icon" [width] = "dashboardDetails[wid.code]['detail'][0].iconWidth" [matTooltip]="dashboardDetails[wid.code]['detail'][0].label" style="float: left; margin-right:20px;object-fit: contain;" alt="asset-icon">
+                  </div>
+                  <div style="float: right;font-weight: 800;padding: 10px 10px;" [ngStyle]="{'font-size': dashboardDetails[wid.code]['detail'][0]['fontSize'], color: dashboardDetails[wid.code]['detail'][0]['fontColor']}"> 
+                    {{dashboardDetails[wid.code]['detail'][0].data}}
+                  </div>
+                </div>                
+                <div *ngIf = "dashboardDetails[wid.code]['detail'][0].icon == ''" style="font-weight: 600;" [ngStyle]="{'font-size': dashboardDetails[wid.code]['detail'][0]['fontSize'], color: dashboardDetails[wid.code]['detail'][0]['fontColor']}">
+                  <div *ngFor = "let data of dashboardDetails[wid.code]['detail'][0].data.data; let i = index"> 
+                    <span style="float: left;"> {{dashboardDetails[wid.code]['detail'][0].data.label[i] }}  </span>
+                    <span style="float: right;"> &nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;&nbsp;{{dashboardDetails[wid.code]['detail'][0].data.data[i] }} </span>
+                  </div> 
+                </div>
+            </mat-grid-tile>
+          </mat-grid-list>
+        </div>
+        <!-- DYNAMIC CARD VIEW LAYOUT -->
+        <div style="width: 100%; height: 100%;border-radius: 5px;" *ngIf="dashboardDetails[wid.code]['show'] && dashboardDetails[wid.code]['type'] == 'card'">
+          <div style="width: 100%; height: 100%;" *ngIf="dashboardDetails[wid.code]['content']" [innerHTML]="dashboardDetails[wid.code]['content']"></div>
+          <div *ngIf="dashboardDetails[wid.code]['cardStyle']">
+          <div [ngStyle]="dashboardDetails[wid.code]['cardStyle']['header']">
+            {{dashboardDetails[wid.code]['detail'][0].title}}
+          </div>
+          <div [ngStyle]="dashboardDetails[wid.code]['cardStyle']['content']">
+            <div [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-label']">
+              <div>
+                <div *ngFor = "let data of dashboardDetails[wid.code]['detail'][0].data.data; let i = index" >
+                  <span *ngIf="dashboardDetails[wid.code]['detail'][0].data.label[i] !== ''">{{dashboardDetails[wid.code]['detail'][0].data.label[i]}}</span>
+                  <span *ngIf="dashboardDetails[wid.code]['detail'][0].data.data[i] !== ''">{{dashboardDetails[wid.code]['detail'][0].data.data[i]}}</span>
+              </div>
+              </div>
+            </div>
+            <div *ngIf="dashboardDetails[wid.code]['cardStyle']['con-icon-name']" [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-icon']">
+              <span *ngIf="dashboardDetails[wid.code]['cardStyle']['con-icon-name']['img'] && dashboardDetails[wid.code]['cardStyle']['con-icon-name']['img'] !== ''" [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-circle']">
+                <img [src]="dashboardDetails[wid.code]['cardStyle']['con-icon-name']['img']" alt="icon" [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-inner-icon']">
+              </span>
+              <span *ngIf="dashboardDetails[wid.code]['cardStyle']['con-icon-name']['icon'] && dashboardDetails[wid.code]['cardStyle']['con-icon-name']['icon'] !== ''" [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-circle']">
+                <mat-icon [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-inner-icon']">{{dashboardDetails[wid.code]['cardStyle']['con-icon-name'].icon}}</mat-icon>
+              </span>
+            </div>
+          </div>
+          <div *ngIf="dashboardDetails[wid.code]['cardStyle']['footer']['text']" [ngStyle]="dashboardDetails[wid.code]['cardStyle']['footer']">{{dashboardDetails[wid.code]['cardStyle']['footer']['text']}}</div>
+        </div>
+        </div>
+        <!--Dynamic Header-->
+        <div style="width: 100%; height: 100%; display: flex; justify-content: center;" [ngStyle]="{'align-items' : dashboardDetails[wid.code]['detail'][0]['alignItems']}" *ngIf="dashboardDetails[wid.code]['show'] && dashboardDetails[wid.code]['type'] == 'header'">
+        <div style="width: 100%; height: 100%;">
+          <div style="width: 100%; height: 100%;border-radius: 10px;display: flex; justify-content: flex-start; align-items: center;" [ngStyle]="{background: dashboardDetails[wid.code]['detail'][0]['bg-color']}">
+              <img *ngIf="dashboardDetails[wid.code]['detail'][0].icon != ''" [src]="dashboardDetails[wid.code]['detail'][0].icon" [width] = "dashboardDetails[wid.code]['detail'][0].iconWidth" style="object-fit: contain;margin-left: 25px;" alt="asset-icon">
+              <h1 style="font-weight: 200;margin-left: 25px;" [ngStyle]="{background: 'transparent',color: dashboardDetails[wid.code]['detail'][0]['fontColor'], 'font-size': dashboardDetails[wid.code]['detail'][0]['fontSize']}">{{dashboardDetails[wid.code]['detail'][0].title}}</h1>
+          </div>
+        </div>
+        </div>
+        <!-- PATIENT SUMMARY HC IP OP widget-->
+        <div class="grid-content" *ngIf="wid.code == 'WD_DBPATSUM' && dashboardDetails?.WD_DBPATSUM?.show">
+          <div class="ovi-font-family" style="border-radius: 3px;box-shadow: 0px 1px 8px -1px rgba(40,66,85,0.2);padding:5px;">
+            <mat-grid-list cols="6" style="cursor: pointer;">
+              <mat-grid-tile colspan="2" rowspan="1" *ngFor = "let type of dashboardDetails[wid.code]['key']"
+                [ngClass]="{ 'bg-summary' : dashboardDetails[wid.code]['selected'] == type }"
+                (click)="dashboardDetails[wid.code]['selected'] = type" (keydown.enter)="fixClick()">
+                <div>
+                  <div mat-line class="ovi-fnt-sze14" style="font-weight: 600;">
+                    {{type == 'IP' ? 'INPATIENT' : type == 'OP' ? 'OUTPATIENT' : 'HEALTH CHECK' }}                    
+                  </div>
+                  <div mat-line class="summary-count" class="ovi-fnt-sze18" style="text-align: center;font-weight: 800;">{{dashboardDetails[wid.code]['res'][type]['total']}}</div>
+                </div>
+              </mat-grid-tile>
+            </mat-grid-list>
+            <div class="box-shw">
+              <mat-grid-list cols="6" *ngIf = "dashboardDetails[wid.code]['selected'] == 'HC'">
+                  <mat-grid-tile colspan="3" rowspan="1">
+                      <div>
+                          <div mat-line  class="ovi-fnt-sze14">{{"New"|translate}}</div>
+                          <div mat-line  class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                            {{
+                              dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['new']['total']
+                            }}
+                          </div>
+                      </div>
+                  </mat-grid-tile>
+                  <mat-grid-tile colspan="3" rowspan="1">
+                      <div>
+                          <div  mat-line  class="ovi-fnt-sze14">{{"Follow up"|translate}}</div>
+                          <div mat-line  class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                            {{
+                              dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['followup']['total']
+                            }}
+                          </div>
+                      </div>
+                  </mat-grid-tile>
+                <mat-grid-tile colspan="3" rowspan="1">
+                    <div>
+                        <div  mat-line  class="ovi-fnt-sze14">{{"Inprogress / Completed"|translate}}</div>
+                        <div mat-line  class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['new']['In progress']
+                          + ' / ' + dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['new']['Completed']
+                          }}
+                        </div>
+                    </div>
+                </mat-grid-tile>
+                <mat-grid-tile colspan="3" rowspan="1">
+                    <div>
+                        <div  mat-line  class="ovi-fnt-sze14">{{"Inprogress / Completed"|translate}}</div>
+                        <div mat-line  class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['followup']['In progress']
+                          + ' / ' + dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['followup']['Completed']
+                          }}
+                        </div>
+                    </div>
+                </mat-grid-tile>
+              </mat-grid-list>
+              <mat-grid-list cols="6" *ngIf = "dashboardDetails[wid.code]['selected'] != 'HC'">
+                <mat-grid-tile colspan="3" rowspan="2">
+                    <div>
+                        <div mat-line  class="ovi-fnt-sze14">{{"In Progress"|translate}}</div>
+                        <div mat-line class="ovi-fnt-sze22"  style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['new_inprogress']
+                          }}
+                        </div>
+                    </div>
+                </mat-grid-tile>
+                <mat-grid-tile colspan="3" rowspan="2">
+                    <div>
+                        <div mat-line  class="ovi-fnt-sze14">{{"Completed"|translate}}</div>
+                        <div mat-line class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['new_completed']
+                          }}
+                        </div>
+                    </div>
+                </mat-grid-tile>
+              </mat-grid-list>
+              <mat-divider></mat-divider>
+              <mat-grid-list cols="6">
+                  <mat-grid-tile colspan="2" rowspan="2">
+                    <div>
+                        <div  mat-line  class="ovi-fnt-sze14">{{"Male"|translate}}</div>
+                        <div mat-line class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['Male']
+                          }}
+                        </div>
+                    </div>
+                  </mat-grid-tile>
+                  <mat-grid-tile colspan="2" rowspan="2">
+                    <div>
+                        <div  mat-line  class="ovi-fnt-sze14">{{"Female"|translate}}</div>
+                        <div mat-line class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['Female']
+                          }}
+                        </div>
+                    </div>
+                  </mat-grid-tile>
+                  <mat-grid-tile colspan="2" rowspan="2">
+                    <div>
+                        <div  mat-line  class="ovi-fnt-sze14">{{"Not Known"|translate}}</div>
+                        <div mat-line class="ovi-fnt-sze22" style="text-align: center;font-weight: 600;">
+                          {{
+                            dashboardDetails[wid.code]['res'][dashboardDetails[wid.code]['selected']]['Not Known']
+                          }}
+                        </div>
+                    </div>
+                  </mat-grid-tile>
+              </mat-grid-list>
+            </div>
+          </div>  
+        </div>
+        <!-- Employee Social distance widget -->
+        <div class="grid-content" *ngIf="wid.code == 'WD_DBEMPSDS' && dashboardDetails?.WD_DBEMPSDS?.show">
+          <mat-grid-list [cols]="dashboardDetails['WD_DBEMPSDS']['maxCol']" rowHeight="100%">
+            <mat-grid-tile *ngFor = "let record of dashboardDetails['WD_DBEMPSDS']['detail']; let i = index" [colspan] = "record.col" [rowspan]= "1" 
+              style="border-radius: 3px;box-shadow: 0px 1px 8px -1px rgba(40, 66, 85, 0.2);">
+              <mat-grid-tile-header  id = "rep-style" sclass="ovi-fnt-sze16" tyle="font-weight:bold; color: #284255; background-color: white; height: 25px; justify-content: center;">{{record.title}}</mat-grid-tile-header>
+              <div class="ovi-fnt-sze30" style = "font-weight:bold; margin-top: 10px;" *ngIf = "i == 0">
+                {{record.present}} / {{record.total}}
+                <span class="ovi-fnt-sze15" style="font-weight:bold; padding-left: 5px; color: #03AAE8; display: block;"> ({{record.percentage}})</span>
+              </div>
+              <div *ngIf = "i == 4">
+                <mat-list style="width: 100%;">
+                  <mat-list-item style="margin-top: 10px; text-align: center;">
+                      <div class="ovi-fnt-sze15" style="right: 10px;left: 10px;font-weight: bold; margin-top: 20px; padding-left: 5px;color: #f0190a; "> Close Contacts ( {{record.close_contact }} )</div>
+                  </mat-list-item>
+                  <mat-list-item style="text-align: center;">
+                      <div class="ovi-fnt-sze15" style="right: 10px;left: 10px;font-weight: bold; margin-top: 20px; padding-left: 5px;color: #FFB347; "> Contacts ( {{record.contact}} )</div>
+                  </mat-list-item>
+                  <mat-list-item style="text-align: center;">
+                      <div class="ovi-fnt-sze15" style="right: 10px;left: 10px;font-weight: bold; margin-top: 20px; padding-left: 5px;color: #08be48; "> No Exposure ( {{record.no_expose}} )</div>
+                  </mat-list-item>
+                </mat-list>
+              </div>
+              <div *ngIf = "record['type'] != 'text'">
+                <mat-list>
+                  <mat-list-item >
+                      <div class="ovi-fnt-sze25" style="right: 10px;top: 5px;position: absolute;font-weight:bold; margin-top: -15px;">{{record.present}} / {{record.total}} </div>
+                      <div class="ovi-fnt-sze15" *ngIf = "record['id'] != 'quarantined'" style="right: 10px;top: 5px;position: absolute;font-weight:bold;  margin-top: 15px; padding-left: 5px; color: #08be48;"> ({{record.percentage}})</div>
+                  </mat-list-item>
+                  <br>
+                  <mat-list-item>
+                    <div style="width: 254px;height:125px;">
+                      <canvas baseChart [type]="record['type']" [labels]="record['chart']['labels']" [datasets]="record['chart']['datasets']"
+                      [options]="record['options']" [colors]="record['color']" 
+                      [legend]="false" [plugins]="chartPlugins"></canvas>
+                    </div>
+                    
+                  </mat-list-item>
+                </mat-list>
+              </div>
+            </mat-grid-tile>
+          </mat-grid-list>
+        </div>
+      </gridster-item>
+    </gridster>  
+    <div class="dash-wid-option" *ngIf="enableEditDashboard" (click)="isOpen = !isOpen" (keydown.enter)="fixClick()">
+      <mat-icon class="dash-wid-arrow"[class.open]="isOpen">keyboard_arrow_left</mat-icon>
+    </div>
+    <div *ngIf="isOpen" id="menu" style="height: 240px; width: 35px;position: absolute;top: 30%; right: 30px; z-index: 1000;cursor:pointer; background: orange; border-radius: 16px;float: right;">
+      <mat-icon class="icon ovi-fnt-sze23"  matTooltip="{{'Refresh'|translate}}" style="margin-top: 7px;margin-left: 7px;" (click)="refreshLayout()" (keydown.enter)="fixClick()">refresh</mat-icon>
+      <img  [matTooltip]="isAutoRefresh ? ('Auto refresh Off'|translate) : ('Auto refresh On'|translate)" style = "width: 28px;padding-left: 4px;padding-top: 5px;"
+      [ngStyle]="{ opacity : isAutoRefresh ? 0.4 : 2}" (click) = "autoRefresh(!isAutoRefresh)" src="/assets/Alert/common_icons/autorefresh.svg" alt="refresh" (keydown.enter)="fixClick()" />
+      <mat-icon class="icon ovi-fnt-sze23"  matTooltip="{{'Widgets'|translate}}" #toggleButton style="margin-top: 7px;margin-left: 7px;" [ngStyle]="{ color : (isOption == 'widgets' && isOptionOpen === true) ? 'white' : 'black'}" (click)="isOptionOpen = !isOptionOpen; editWidget()" (keydown.enter)="fixClick()">widgets</mat-icon>
+      <mat-icon class="icon ovi-fnt-sze23" matTooltip="{{'Align Widgets'|translate}}" style="margin-top: 7px;margin-left: 7px;" (click)="alignGrid()" (keydown.enter)="fixClick()">horizontal_distribute</mat-icon>
+      <mat-icon class="icon ovi-fnt-sze23"  [matTooltip]="screenLock ? ('Unlock screen'|translate) : ('Lock screen'|translate)" (click) = "screenLock = !screenLock; gridsterConfiguration(screenLock)" style="margin-top: 7px;margin-left: 7px;" (keydown.enter)="fixClick()">{{!screenLock ? 'lock_open' : 'lock'}}</mat-icon>
+      <mat-icon class="icon ovi-fnt-sze23"  matTooltip="{{'Save Layout'|translate}}" style="margin-top: 7px;margin-left: 7px;" [ngClass]="isLayoutChanged ? 'dash-wid-save-enable' : 'dash-wid-save-disable'" (click)="isLayoutChanged ? saveWidgets(this.layout, true) : ''" (keydown.enter)="fixClick()">save</mat-icon>
+      <!-- <img src="/assets/Alert/common_icons/pdf-file.png" (click) = "serverPdfDownload()" style="cursor: pointer;height: 22px;width: 25px;margin-top: 7px;margin-left: 7px;"> -->
+    </div>
+    <!-- <span class="footer" *ngIf="!existPrivateUser">© {{currentYear}} Trackerwave</span> -->
+</div>
+
+

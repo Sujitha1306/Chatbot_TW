@@ -1,0 +1,123 @@
+<div class="input-component-holder" style="height:100% ;width:100%;">
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg"  [formGroup]="licenseForm">
+            <div class="ovi-row-gap" >
+                <span class="ovi-popup-title-text-size">{{"LICENSE"|translate}}</span>
+                <mat-divider style="width: 100%;"></mat-divider>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ovi-mat-hint">
+                        <mat-label class="ovi-lbl-text-size">{{"From Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput  [matDatepicker]="fromDate" appPlaceholder [showPlaceholder]="false" [placeholderText]="'From Date'|translate"
+                                formControlName="fromDate" autocomplete="off" 
+                                (dateChange)="dateValidate()" [readonly]="this.licenseId !== null">
+                            <mat-datepicker-toggle matSuffix [for]="fromDate"></mat-datepicker-toggle>
+                            <mat-datepicker #fromDate [disabled]="this.licenseId !== null"></mat-datepicker>
+                            <mat-error *ngIf="licenseForm.controls.fromDate.invalid">
+                                <span [hidden]="!licenseForm.controls['fromDate'].errors.required">{{"From Date is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                            <mat-hint *ngIf="invalidDate === true">
+                                <span style="color:red;">*{{"From Date should be lesser than End Date"|translate}}.</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ovi-mat-hint">
+                        <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput  [matDatepicker]="toDate" appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate"
+                                formControlName="toDate" autocomplete="off" (dateChange)="dateValidate()" 
+                                [min]="this.licenseId !== null ? licenseForm.controls['fromDate'].value : ''">
+                            <mat-datepicker-toggle matSuffix [for]="toDate"></mat-datepicker-toggle>
+                            <mat-datepicker #toDate></mat-datepicker>
+                            <mat-error *ngIf="licenseForm.controls.toDate.invalid">
+                                <span [hidden]="!licenseForm.controls['toDate'].errors.required">{{"End Date is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                            <mat-hint *ngIf="invalidDate === true">
+                                <span style="color:red;">*{{"End Date should be greater than From Date"|translate}}.</span>
+                            </mat-hint>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn" style="display: flex;padding-top: 25px;">
+                    <div style="padding-right: 8%;">
+                        <mat-checkbox class="ovi-lbl-text-size" formControlName="isEnable">{{"Is Enable"|translate}}</mat-checkbox>
+                    </div>
+                    <div style="margin-top: -6px;">
+                        <button *ngIf="this.licenseId === null" mat-button class="active-btn margin-r-1" appDebounceClick
+                        (debounceClick)="generate()" [debounceTime]="300"cdkFocusInitial
+                        [disabled]="this.licenseForm.invalid">{{"Generate"|translate}}</button>
+                        <button *ngIf="this.licenseId !== null" mat-button class="active-btn margin-r-1" appDebounceClick
+                        (debounceClick)="regenerate()" [debounceTime]="300"cdkFocusInitial
+                        [disabled]="this.licenseForm.invalid">{{"Regenerate"|translate}}</button>
+                    </div>
+                    <div *ngIf="this.licenseId !== null">
+                        <button mat-mini-fab color="primary" (click)="cancelEdit()" matTooltip="Cancel"
+                            style="background-color: #FC8C91;margin-left: 20px;margin-top: -20px;"> x
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'" style="margin: 2px;position: relative;top: 10px;">
+                <div class="tw-mat-table-overflow box-26" style="overflow: hidden;">
+                    <table mat-table class="tw-table" [dataSource]="dataSource" matSort>
+                        <caption style="display:none">{{"License List"|translate}}</caption>
+
+                        <ng-container matColumnDef="S.No">
+                            <th scope="col" mat-header-cell *matHeaderCellDef
+                                class="tw-manage-table-header" style="width: 10%;">
+                                {{"S.No"|translate}} </th>
+                            <td mat-cell *matCellDef="let data; let i = index;" style="padding-right: 20px;width: 5%;">
+                                {{i+1}}
+                            </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="From Date">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header">{{"From Date"|translate}}</th>
+                            <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.fromDate | date: "hh:mm a, d MMM"}}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="End Date">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header">{{"End Date"|translate}}</th>
+                            <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.toDate | date: "hh:mm a, d MMM"}}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Generate Date">
+                            <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                class="tw-manage-table-header">{{"Generate Date"|translate}}</th>
+                            <td mat-cell *matCellDef="let data" style="padding-right: 20px;">{{data.generatedDate | date: "hh:mm a, d MMM"}}</td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Action">
+                            <th scope="col" mat-header-cell *matHeaderCellDef
+                                class="tw-manage-table-header">{{"Action"|translate}}</th>
+                            <td mat-cell *matCellDef="let data" style="padding-right: 20px;opacity: 50%;">
+                                <button mat-icon-button [matMenuTriggerFor]="menu">
+                                    <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                                </button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item (click)="editLicenseDetail(data)"
+                                        [disabled]="this.licenseId == data.id">
+                                        <span class="activity-edit">{{"Edit"|translate}}</span>
+                                    </button>
+                                    <mat-divider></mat-divider>
+                                    <button mat-menu-item (click)="licenseDownload(data)"
+                                    [disabled]="data.license === null">
+                                        <span class="activity-edit">{{"Download"|translate}}</span>
+                                    </button>
+                                </mat-menu>
+                            </td>
+                        </ng-container>
+
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"
+                            class="tw-manage-table-header-row"></tr>
+                        <tr mat-row *matRowDef="let data; columns: displayedColumns; let i = index;"
+                        [ngStyle]="{'background-color': this.licenseId == data.id ? '#D3D3D3' : ''}">
+                        </tr>
+                    </table>
+                </div>
+                <mat-paginator #paginator [pageSize]="5" [pageSizeOptions]="[ 5, 10, 15, 20, 25]" showFirstLastButtons class="tw-paginator-sticky"></mat-paginator>
+            </div>
+        </div>
+</div>

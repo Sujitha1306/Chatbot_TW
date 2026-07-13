@@ -1,0 +1,109 @@
+ <div class="loading-spinner" *ngIf="isloading">
+     <div class="spinnerload">
+         <div class="spin1"></div>
+         <div class="spin2"></div>
+         <div class="spin3"></div>
+     </div>
+ </div>
+<div class="manage-body" style="overflow: hidden;">
+
+    <tw-header-new-component [component]="'User-Schedule'" [type]="'new'" [permission]="null" [rowFilter]="null"  [dateFilter]="selectedView === 'listView' || selectedView === 'table'  ? selectedDate : null" 
+        [toDateFilter]="selectedView === 'listView' ? selectedToDate : null" [multiDateEnable]="selectedView === 'listView' ? true : false" [dateType]="isDateType"
+        [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="selectedName !== null ? selectedName : true"
+        [locationId]="null" [selectedView]="selectedView" [multiView]="false" (selectedViewAction)="null"
+        (headerEventAction)="headerEventAction($event)" [groupFilter]="groupFilter"></tw-header-new-component>
+
+        <div class="ovi-font-family" *ngIf="selectedView === 'listView'"
+            style="display: flex; justify-content: center; height: 0px; position: relative; z-index: 1000; top: 16px; left: 70px;">
+            <div class="roster-nav">
+                <button class="nav-btn" (click)="changeWeek(false)">
+                    &#10094;
+                </button>
+            
+                <div class="week-label">
+                    {{ dateList[0]?.fullDate | date:'dd-MMM-yyyy' }} -
+                    {{ dateList[6]?.fullDate | date:'dd-MMM-yyyy' }}
+                </div>
+            
+                <button class="nav-btn" (click)="changeWeek(true)">
+                    &#10095;
+                </button>
+            </div>
+        </div>
+
+    <mat-tab-group (selectedTabChange)="tabClick($event)" >
+
+        <mat-tab label="{{'Schedule'|translate}}">
+            <ng-template mat-tab-label>{{"Schedule"|translate}}</ng-template>
+            <div *ngIf="tableVersion === 1">
+                <tw-table-component [component]="'User-Schedule'" [columns]="displayedColumns" [tableData]="tableData"
+                    [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                    [rowId]="'entityId'" [rowClick]="true" (rowClickAction)="rowClick($event)" [rowDbClick]="true"
+                    (rowDbClickAction)="createUserschedule($event)" (eventAction)="eventAction($event)"
+                    [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [tableSize]="'143px'"
+                    [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [dateColumns]="dateColumns">
+                </tw-table-component>
+            </div>
+            <div *ngIf="tableVersion === 2">
+                <tw-data-table [columns]="scheduleTwColumns" [data]="tableData" [loading]="isloading" [pagination]="schedulePaginationConfig"
+                    [rowClickable]="false" [rowId]="'entityId'" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
+                    [rowColor]="null" tableClass="tdt-borderless" tableSize="138px" (cellAction)="onCellAction($event)"
+                    (rowClick)="null" (pageChange)="onPageChange($event)">
+                </tw-data-table>
+            </div>
+        </mat-tab>
+
+        <mat-tab label="{{'Roaster'|translate}}">
+            <ng-template mat-tab-label>{{"Roaster"|translate}}</ng-template>
+            <div class="roster-wrapper">
+                <div class="table-roast-container">
+                    <table class="roster-table roster-table-del">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col header-sticky"></th>
+                                <th *ngFor="let date of dateList">
+                                    <div class="date-roast-header">
+                                        <div class="day">{{ date.day }}</div>
+                                        <div class="week">{{ date.weekDay }}</div>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let user of userList" >
+                                <td class="sticky-col-name">
+                                    {{ user?.userName | titlecase }} 
+                                </td>
+                                <td *ngFor="let date of dateList" (click)="onCellClick(user, date)">
+                                    <div class="shift-box"  *ngIf="user?.shifts?.[date.fullDate]">
+                                        <div class="shift-title">🗓️
+                                            {{ user.shifts[date.fullDate].shiftMasterName | titlecase }}
+                                        </div>
+                                         <div class="sticky-rol-name" *ngIf="user?.roleName">👷
+                                            {{ user.roleName | titlecase }}
+                                        </div>                                    
+                                        <div *ngIf="user.shifts[date.fullDate].poolNames" class="shift-location" [appTooltip] [tooltipText]="('Pool Name' | translate) + ' : ' + user?.shifts?.[date.fullDate]?.poolNames">
+                                           <span style="position: relative; top: 2px; left: 2px;">📍 {{ user.shifts[date.fullDate].poolNames }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <mat-paginator (page)="eventTrigger('pagination', $event)" [length]="length" [pageSize]="pageSize" #Paginator
+                    [pageSizeOptions]="[20, 30, 40, 50]" [showFirstLastButtons]="true" class="tw-paginator-sticky"
+                    style="border-radius: 5px;"></mat-paginator>
+            </div>
+        </mat-tab>
+
+        <mat-tab *ngIf="false" label="{{'Calendar'|translate}}">
+            <ng-template mat-tab-label>{{"Calendar"|translate}}</ng-template>
+            <div *ngIf="selectedIndex === 'Calendar'">
+                <app-calendar [calendarInput]="calendarData" (calendarUpdatedData)="calendarUpdatedData($event)"></app-calendar>
+            </div>
+        </mat-tab>
+        
+    </mat-tab-group>
+
+</div>

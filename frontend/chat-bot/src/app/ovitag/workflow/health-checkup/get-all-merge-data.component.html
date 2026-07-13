@@ -1,0 +1,164 @@
+<div fxFlex class="popup-container" (window:resize)="onResize($event)">
+    <mat-toolbar class="input-header">
+        <div class="header-name">{{"Merge Patient"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+
+    <div class="popup-input-container popup-form-container popup-margin" style="overflow-x: hidden; overflow-y: auto;height:350px;">
+
+            <div class="block-merge">
+                <div style="display: flex;margin-top: 1%;" class="block-merge-1">
+
+                    <span class="tw-filter-new2" style="height:30px;width:12vw;">
+                        <input matInput #filter style="padding: 5px;" (keyup)="applyFilterBilled($event.target.value)"
+                          appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" [matAutocomplete]="auto" autocomplete="off" >
+                        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete"> </mat-autocomplete>
+                        <button mat-icon-button matSuffix aria-label="clear" *ngIf="filter.value"
+                          (click)="filter.value=''; applyFilterBilled('');">
+                          <span class="tw-filter-close">x</span>
+                        </button>
+                    </span>
+
+                    <span [formGroup]="mergeForm">
+                        <mat-form-field class="tw-date-picker"style="margin-left:10px;padding-left:10px" appearance="outline">
+                            <input matInput [matDatepicker]="picker"
+                                appPlaceholder [showPlaceholder]="true" [placeholderText]="'From Date'|translate" [max]="today"
+                                (dateChange)="getAllMergeData($event.target.value)" formControlName="fromDate" />
+                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                            <mat-datepicker #picker></mat-datepicker>
+                        </mat-form-field>
+                    </span>
+                </div>
+                <div>
+                    <div class="row-field merge-token">
+                        <mat-label class="ovi-lbl-text-size">{{"Enter Token No"|translate}}.</mat-label>
+                        <mat-form-field class="tw-filter" style="margin-top: 6px; padding-left:10px" appearance="outline">
+                            <input matInput #filter1 (keyup)="applyFilterEnrolled($event.target.value)"
+                               appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter Token No.'|translate" autocomplete="off" >
+                            <button mat-icon-button matSuffix *ngIf="filter1.value"
+                                (click)="filter1.value=''; applyFilterEnrolled('');">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+
+
+
+        <div style="width: 100%;padding: 0px 10px 0px 10px;" class="block-merge">
+            <div class="row-field-merge table-align">
+                <p class="ovi-popup-title-text-size">{{"Billed"|translate}} :</p>
+                <div fxLayout="column" class="mat-elevation-z4 tw-manage-component"
+                    [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px" [style.max-height.px]="maxHeight">
+                    <div class="tw-mat-table-overflow">
+                        <table mat-table class="tw-table" [dataSource]="leftDataSource" matSort>
+                            <caption style="display:none">Left Datasource</caption>
+                            <ng-container matColumnDef="select">
+                                <th scope="col" mat-header-cell *matHeaderCellDef
+                                    class="custom-mat-column-width-check-box">
+                                </th>
+                                <td mat-cell *matCellDef="let element" class="custom-mat-column-width-check-box"
+                                    style="padding-right: 20px;">
+                                    <mat-checkbox (click)="$event.stopPropagation();selectedCheckBoxValue();"
+                                        (change)="$event ? selection.toggle(element) : null"
+                                        [checked]="selection.isSelected(element)" [aria-label]="checkboxLabel(element)"  (keydown.enter)="fixClick()">
+                                    </mat-checkbox>
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="firstName">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    {{"Name"|translate}}
+                                </th>
+                                <td mat-cell *matCellDef="let element" appTooltip [tooltipText]="element.fullName" placement="bottom"
+                                    style="padding-right: 20px;">
+                                    {{element.fullName}}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="mainidentifier">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    {{"UHID"|translate}}
+                                </th>
+                                <td mat-cell *matCellDef="let element" appTooltip [tooltipText]="element.mainidentifier" placement="bottom"
+                                    style="padding-right: 20px;">
+                                    {{element.mainidentifier}}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="mobileNo">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    {{"Mobile"|translate}}
+                                </th>
+                                <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                    {{element.mobileNo}}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="packageId">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    {{"Package"|translate}} </th>
+                                <td mat-cell *matCellDef="let element" style="padding-right: 20px;"
+                                appTooltip [tooltipText]="element.packageName" placement="bottom">{{"master health Checkup in heart centre env"|translate}}</td>
+                            </ng-container>
+                            <tr mat-header-row *matHeaderRowDef="leftDisplayedColumns; sticky: true;"
+                                class="tw-manage-table-header-row"></tr>
+                            <tr mat-row *matRowDef="let data; columns: leftDisplayedColumns;"></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row-field-merge table-align">
+                <p class="ovi-popup-title-text-size">{{"Enrolled"|translate}} :</p>
+
+                <div fxLayout="column" class="mat-elevation-z4 tw-manage-component"
+                    [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px" [style.max-height.px]="maxHeight">
+                    <div class="tw-mat-table-overflow">
+                        <table mat-table class="tw-table" [dataSource]="rightDataSource" matSort>
+                            <caption style="display:none">Right Datasource</caption>
+                            <ng-container matColumnDef="select">
+                                <th scope="col" mat-header-cell *matHeaderCellDef
+                                    class="custom-mat-column-width-check-box">
+                                </th>
+                                <td mat-cell *matCellDef="let element" class="custom-mat-column-width-check-box"
+                                    style="padding-right: 20px;">
+                                    <mat-checkbox (click)="$event.stopPropagation();selectedCheckBoxValue();"
+                                        (change)="$event ? selection.toggle(element) : null"
+                                        [checked]="selection.isSelected(element)" [aria-label]="checkboxLabel(element)"  (keydown.enter)="fixClick()">
+                                    </mat-checkbox>
+                                </td>
+                            </ng-container>
+                            <ng-container matColumnDef="tokenNo">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    <img width="25" height="25" appTooltip tooltipText="{{'Token'|translate}}" placement="bottom"
+                                        src="/assets/Alert/common_icons/token.svg" alt="token">
+                                </th>
+                                <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                    {{element.tokenNo}}</td>
+                            </ng-container>
+                            <ng-container matColumnDef="firstName">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    {{"Name"|translate}}
+                                </th>
+                                <td mat-cell *matCellDef="let element" appTooltip [tooltipText]="element.fullName" placement="bottom"
+                                    style="padding-right: 20px;">
+                                    {{element.fullName}}</td>
+                            </ng-container>
+
+                            <ng-container matColumnDef="mobileNo">
+                                <th scope="col" mat-header-cell *matHeaderCellDef class="ovi-popup-title-text-size-table-header">
+                                    {{"Mobile"|translate}}
+                                </th>
+                                <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                    {{element.mobileNo}}</td>
+                            </ng-container>
+                            <tr mat-header-row *matHeaderRowDef="rightDisplayedColumns; sticky: true;"
+                                class="tw-manage-table-header-row"></tr>
+                            <tr mat-row *matRowDef="let data; columns: rightDisplayedColumns;"></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

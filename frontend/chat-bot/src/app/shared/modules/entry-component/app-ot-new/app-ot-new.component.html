@@ -1,0 +1,414 @@
+<div style="height: calc(100% - 60px);width: 100%;" class="ovi-font-family ot-new-container">
+    <mat-toolbar  class="input-header">
+        <div [ngStyle]="{'background-color':enableSidebar?'#54a2c9':''}"><mat-icon class="ovi-fnt-sze22" style="padding-left: 4px;" (click)="enableSidebar=!enableSidebar;reloadTab();" (keydown.enter)="fixClick()">menu</mat-icon></div>
+        <div  class="header-name" *ngIf = "headerName">{{headerName | translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+            <mat-icon class="icon-style">highlight_off</mat-icon>
+        </button></div>
+    </mat-toolbar>
+    <div style="height: calc(100% - 35px);width: 100%;">
+        <div style="display: flex;height: 100%;">
+            <div *ngIf="enableSidebar" style="height: 100%;border-right: 1px solid #C8C7C7;width: 20%;">
+                <div style="padding: 5px;display: flex;align-items: center;justify-content: space-between;height: 28px;background-color: #EFEFEF;border-bottom: 1px solid rgb(200, 199, 199);">
+                    <span class="ovi-fnt-sze15" style="font-weight: 600;">{{"Patients"|translate}}</span>
+                    <span>
+                        <mat-icon class="ovi-prmry-wht-clr ovi-fnt-sze20" (click)="enableSidebar=!enableSidebar" (keydown.enter)="fixClick()">close</mat-icon>
+                    </span>
+                </div>
+                <mat-list style="height: 92%;overflow: auto;width: 100%;">
+                    <mat-list-item style="border-bottom: 1px solid #C8C7C7;height: fit-content;cursor: pointer;" *ngFor="let patient of data['patients']" (click)="patientSummary(patient)" (keydown.enter)="fixClick()" [ngStyle]="{'background':patient['id'] == data['selectedPatient']['id']?'#f5f1f1':''}" [ngClass]="patient['id'] == data['selectedPatient']['id']?'selected-list':'not-selected-list'">
+                        <span class="ovi-fnt-sze12" style="display: flex;flex-direction: column;width: 100%;">
+                            <span style="display: flex;column-gap: 5px;justify-content: space-between;align-items: center;">
+                                <span style="display: flex;align-items: center;max-width: 79%;column-gap: 2px;">
+                                    <span class="ovi-fnt-sze15" style="font-weight: 600;text-wrap: nowrap; text-overflow: ellipsis; overflow: hidden; display: inline-block;
+                                                                text-transform: capitalize;" appTooltip [tooltipText]="(patient.vipTypeId === null || patient.vipTypeId === 'General')?patient.name:''" placement="bottom">{{patient['name'] | maskData: (patient['vipTypeId'] === null || patient['vipTypeId'] === 'General')}}</span>
+                                    <span mat-line *ngIf="patient.vipTypeId !== null && patient.vipTypeId != 'General'" style="padding-top: 5px;">
+                                        <img src="/assets/Alert/common_icons/vip.svg" height="17px" width="13px" alt='VIP' appTooltip [tooltipText]="'VIP'" placement="bottom">
+                                    </span>
+                                </span>
+                                <span style="display: flex;column-gap: 5px;">
+                                    <span style="cursor: pointer;margin-top: 2px;" *ngIf="patient.gender" appTooltip [tooltipText]="patient.gender | translate " placement="bottom">
+                                        <img src="../../../../../assets/icons/gender-male.svg" alt="Male" *ngIf="patient.gender == 'Male'" style="width: 10px;">
+                                        <img src="../../../../../assets/icons/gender-female.svg" alt="Female"  *ngIf="patient.gender == 'Female'" style="width: 8px;">
+                                    </span>
+                                    <span *ngIf="patient['birthDate']" style="margin-top: 2px;">{{calculateAge(patient['birthDate'])}}yrs</span>
+                                </span>
+                            </span>
+                            <span style="color: #837d7d;text-overflow: ellipsis; overflow: hidden;text-wrap: nowrap;width: 100%;display: flex;column-gap: 2px;align-items: center;">
+                                <span>
+                                    <span *ngIf="patient['surgeryTypeId']== 'SGT-EM'" appTooltip [tooltipText]="'Emergency'| translate" placement="bottom" style="padding-left: 2px;"><img alt="Emergency" src="../../../../../assets/icons/emergency.png" height="18px" width="18px"></span>
+                                    <span *ngIf="patient['isVulnerable']"><mat-icon class="ovi-fnt-sze17" style="color: orange;padding-top: 0px;height: 16px;width: 18px;" appTooltip [tooltipText]="'Vulnerable'|translate" placement="bottom">warning</mat-icon></span>
+                                    <span *ngIf="patient['threats']!=null"><mat-icon class="ovi-fnt-sze17" style="color: red;padding-top: 0px;height: 16px;width: 18px;"  appTooltip [tooltipText]="patient['threatsTooltip'] || data['selectedPatient']['threats']" placement="bottom">warning</mat-icon></span>
+                                </span>
+                                <span style="text-overflow: ellipsis;overflow: hidden;white-space: nowrap;" appTooltip [tooltipText]="patient['otProcedureNames'] && patient['otProcedureNames'] !== null && patient['otProcedureNames'] !== '' ? patient['otProcedureNames'] : patient['otProcedureName']" placement="bottom">
+                                    {{patient['otProcedureNames'] && patient['otProcedureNames'] !== null && patient['otProcedureNames'] !== '' ? patient['otProcedureNames'] : patient['otProcedureName']}}</span>
+                            </span>
+                            <span *ngIf="patient['doctorName']" style="color: #837d7d;text-overflow: ellipsis; overflow: hidden;text-wrap: nowrap;width: 100%;">
+                            <span appTooltip [tooltipText]="'Doctor'|translate" placement="bottom" style="padding-left: 2px;"><img alt="doctor" src="../../../../../assets/icons/doctor.png" height="18px" width="18px">
+                               <span>{{patient['doctorName']}}</span>
+                            </span>
+                           </span>
+                        </span>
+                    </mat-list-item>
+                </mat-list>
+            </div>
+            <div style="width: -webkit-fill-available;height: 100%;overflow: auto;">
+                <app-banner [type]="'TW-PD'" [bannerData]="bannerlabel"></app-banner>
+                <div style="padding: 5px;display: flex;flex-direction: column;row-gap: 10px;width: 99%;height: calc(100% - 61px);">
+                    <div [ngStyle]="{'height':selectedTab === 'Patient' || selectedTab === 'Visit Details' || selectedTab === 'Form'?'':'calc(100% - 225px)'}">
+                        <div style="display: flex;position: relative;" [ngStyle]="{'height': selectedTab === 'Visit Details' || selectedTab === 'Form'? '100%' : ''}">
+                            <mat-tab-group (selectedTabChange)="onTabChange($event)" style="flex-grow: 1;">
+                                <mat-tab label="Patient">
+                                    <ng-template  mat-tab-label >{{"Patient"|translate}}</ng-template>
+                                    <div style="display: flex;flex-direction: column;row-gap: 5px;height: 180px;">
+                                        <div class="ovi-fnt-sze17" style="font-weight: 600;padding: 5px;">{{"Patient Progress"|translate}}</div>
+                                        <div style="padding-left: 15px;width: 50px;"  *ngIf="false" appTooltip [tooltipText]="('Schedule Start: ' | translate) + (patientDetails['fromTime'] | date: 'HH:mm')" placement="bottom">
+                                            <img style="vertical-align: middle;" alt="Time" src="../../../../../assets/icons/clock-time-eight-outline.svg">
+                                            <span class="ovi-fnt-sze12" style="color: #888888;font-weight: 600;">{{patientDetails['fromTime'] | date: 'HH:mm'}}</span>
+                                        </div>
+                                        <div class="ovi-fnt-sze12" style="display: flex;flex-direction: row;padding: 15px;column-gap: 5px;padding-top: 30px;padding-bottom: 8px;">
+                                            <div style="height: 100px;display: flex;flex-direction: column;" *ngFor="let event of events" [ngStyle]="{'width':event['testCategoryId'] != 'TC-DOC'?'220px':'155px'}">
+                                                <div style="border:1px solid #888888;height: 30%;border-style: dashed;border-top-left-radius: 10px;border-top-right-radius: 10px;border-bottom: none;position: relative;display: flex;flex-direction: column;justify-content: flex-end;" [ngStyle]="{'width':event['testCategoryId'] != 'TC-DOC'?'91%':'80%','left':event['testCategoryId'] != 'TC-DOC'?'0%':'9%'}">
+                                                    <div style="position: absolute;top: -28px;" *ngIf="event['healthTestName'] == 'Preparation'" appTooltip [tooltipText]="('Schedule Start: ' | translate) + (patientDetails['fromTime'] | date: 'HH:mm')" placement="bottom">
+                                                        <img style="vertical-align: middle;" alt="Time" src="../../../../../assets/icons/clock-time-eight-outline.svg">
+                                                        <span class="ovi-fnt-sze12" style="color: #888888;font-weight: 600;">{{patientDetails['fromTime'] | date: 'HH:mm'}}</span>
+                                                    </div>
+                                                    <div class="status-circle" [ngStyle]="{'width':event['testCategoryId'] != 'TC-DOC'?'18%':'29%','left':event['testCategoryId'] != 'TC-DOC'?'40%':'35%'}">
+                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Yet to Start" src="../../../../../assets/icons/timer-sand-grey.svg" *ngIf="event['patientStatusId'] == 'QS-PE'"></span>
+                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Completed" src="../../../../../assets/icons/timer-sand-green.svg" *ngIf="event['patientStatusId'] == 'QS-CO'"></span>
+                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Inprogress" src="../../../../../assets/icons/timer-sand-orange.svg" *ngIf="event['patientStatusId'] == 'QS-IP' && !isTimeExceed"></span>
+                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Delay to Complete" src="../../../../../assets/icons/timer-sand-red.svg" *ngIf="event['patientStatusId'] == 'QS-IP' && isTimeExceed"></span>
+                                                    </div>
+                                                    <div style="display: flex;justify-content: space-between;padding: 3px;">
+                                                        <div class="ovi-fnt-sze12"  [ngStyle]="{'color': event['healthTestName'] == 'Preparation' && event['Start'] > (patientDetails['fromTime'] | date: 'HH:mm') ? 'red' : ''}">{{event['Start']}}</div>
+                                                        <div class="ovi-fnt-sze12" >{{event['End']}}</div>
+                                                    </div>
+                                                </div>
+                                                <div style="display: flex;height: 45%;width: 99%;" (click)="fieldEnable=!fieldEnable" (keydown.enter)="fixClick()" *ngIf="event['testCategoryId'] != 'TC-DOC'">
+                                                    <div style="width: 95%;height: 100%;">
+                                                        <div class="content-center" style="height: 100%;display: flex;align-items: center;" [ngStyle]="{'background':event['patientStatusId']== 'QS-CO'?'#1e8fc8': event['patientStatusId']== 'QS-IP'? 'linear-gradient(to right, #1e8fc8 60%, rgb(239 239 239) 40%)':'rgb(239 239 239)','justify-content':event['patientStatusId'] != 'QS-PE'?'space-evenly':'space-between'}">
+                                                            <div><mat-icon class="ovi-fnt-sze20" style="font-weight: lighter;" *ngIf="event['patientStatusId'] == 'QS-CO'">check</mat-icon></div>
+                                                            <div *ngIf="event['patientStatusId'] != 'QS-PE'">{{event['locationName']}}</div>
+                                                            <div appTooltip tooltipText="Form" *ngIf="event['formTemplateId'] != null" (click)="formBuilder(null,event['formTemplateId'],event['entityFormList'])" (keydown.enter)="fixClick()">
+                                                            <mat-icon class="ovi-fnt-sze31" style=" padding-bottom: 10px;width: 31px;" 
+                                                             [ngClass]="{'text-qscp': event.patientStatusId === 'QS-CO','ovi-prmry-bg-clr': event.patientStatusId !== 'QS-CO' }"> description</mat-icon></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="triangle-right" [ngClass]="{'border-qscp': event.patientStatusId === 'QS-CO','border-default': event.patientStatusId !== 'QS-CO'}">
+                                                        </div>
+                                                </div>
+                                                <div style="display: flex;height: 45%;width: 100%;" *ngIf="event['testCategoryId'] == 'TC-DOC'">
+                                                    <div style="width: 100%;height: 100%;">
+                                                        <div class="hexagon-border">
+                                                            <div class="content-center" style="height: 100%;display: flex;justify-content: space-around;align-items: center;" [ngStyle]="{'background':event['patientStatusId']== 'QS-CO'?'#1e8fc8': event['patientStatusId']== 'QS-IP'? 'linear-gradient(to right, #1e8fc8 60%, rgb(239 239 239) 40%)':'rgb(239 239 239)'}">
+                                                                <div><mat-icon class="ovi-fnt-sze20" style="font-weight: lighter;" *ngIf="event['patientStatusId'] == 'QS-CO'">check</mat-icon></div>
+                                                                <div appTooltip tooltipText="Form" (click)="event['formTemplateId'] != null?formBuilder(null,event['formTemplateId'],event['entityFormList']):''" (keydown.enter)="fixClick()">
+                                                                <mat-icon class="ovi-fnt-sze31" style="padding-bottom: 10px;width: 31px;"
+                                                                [ngClass]="{'text-qscp': event.patientStatusId === 'QS-CO','ovi-prmry-bg-clr': event.patientStatusId !== 'QS-CO'}"> description</mat-icon></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style="text-align: center;height: 10%;padding-top: 5px;">{{event['healthTestName']}}</div>
+                                            </div>
+                                        </div>
+                                        <div class="mat-custom-form-field-box" *ngIf="fieldEnable && false" style="padding-left: 10px;">
+                                            <div class="form-row block-3">
+                                                <div class="row-field-1">
+                                                    <mat-form-field appearance="outline">
+                                                        <input matInput type="text" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Remarks'|translate" autocomplete="off">
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div *ngIf="dataSource.data.length == 0" style="text-align: center;">
+                                        {{"No Data Found"|translate}}
+                                    </div>
+                                </mat-tab>
+                                <mat-tab label="Asset">
+                                    <ng-template mat-tab-label >{{"Asset"|translate}}</ng-template>
+                                       <div class="loading-spinner" *ngIf="isAssetChartLoading">
+                                            <div class="spinnerload">
+                                                <div class="spin1"></div>
+                                                <div class="spin2"></div>
+                                                <div class="spin3"></div>
+                                            </div>
+                                        </div>
+                                    <div style="height: calc(-246px + 100vh);">
+                                        <div class="ovi-fnt-sze17"  style="font-weight: 600; padding: 5px;position: relative; top: 5px;">
+                                            Asset utilize summary
+                                        </div>
+                                        <div *ngIf="tableData.length" style="border: 1px solid #ddd;position: relative; top: 10px;">
+                                            <tw-table-component [component]="'ot-asset'" [columns]="assetDisplayedColumns" [tableData]="tableData"
+                                                [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [rowDbClick]="true"
+                                                [eventColumn]="eventColumn" [rowClick]="true" [rowId]="null" (rowClickAction)="rowClick($event)"
+                                                [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
+                                                [pagination]="null"></tw-table-component>
+                                        </div>
+                                        <div *ngIf="tableData.length === 0" style="height: 55px; display: flex ; align-items: center; justify-content: center;">
+                                            {{"No Data Found"|translate}}
+                                        </div>
+                                    </div>
+                                    <div [ngClass]="!isAssetChartLoading && chartData.length == 0 ? 'chart-container-timeline-duplicate' : 'chart-container-timeline'">
+                                        <div  class="loading-spinner" *ngIf="isAssetChartLoading">
+                                            <div class="spinnerload">
+                                                <div class="spin1"></div>
+                                                <div class="spin2"></div>
+                                                <div class="spin3"></div>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!isAssetChartLoading && chartData.length">
+                                            <google-chart #chart style="width: 100%;" [type]="chartType" [data]="chartData" [columns]="columns" [options]="options"></google-chart>
+                                        </div>
+                                        <div *ngIf="!isAssetChartLoading && chartData.length == 0" style="text-align: center;">
+                                            {{"No Data Found"|translate}}
+                                        </div>
+                                    </div>
+                                </mat-tab>
+                                <mat-tab label="Staff">
+                                    <ng-template mat-tab-label>{{"Staff"|translate}}</ng-template>
+                                    <div class="loading-spinner" *ngIf="isStaffChartLoading">
+                                        <div class="spinnerload">
+                                            <div class="spin1"></div>
+                                            <div class="spin2"></div>
+                                            <div class="spin3"></div>
+                                        </div>
+                                    </div>
+                                    <div style="height: calc(-246px + 100vh);">
+                                        <div class="ovi-fnt-sze17"  style="font-weight: 600;padding: 5px;position: relative; top: 5px;">
+                                            Staff utilize summary
+                                        </div>
+                                        <div *ngIf="tableData.length" style="position: relative; top: 10px;border: 1px solid #ddd;">
+                                            <tw-table-component [component]="'ot-asset'" [columns]="StaffDisplayedColumns" [tableData]="tableData"
+                                                [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [rowDbClick]="true"
+                                                [eventColumn]="eventColumn" [rowClick]="true" [rowId]="null" (rowClickAction)="rowClick($event)"
+                                                [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
+                                                [pagination]="null"></tw-table-component>
+                                        </div>
+                                        <div *ngIf="tableData.length === 0" style="height: 55px; display: flex ; align-items: center; justify-content: center;">
+                                            {{"No Data Found"|translate}}
+                                        </div>
+                                    </div>
+                                    <div [ngClass]="!isStaffChartLoading && staffChartData.length == 0 ? 'chart-container-timeline-duplicate' : 'chart-container-timeline'">
+                                        <div class="loading-spinner" *ngIf="isStaffChartLoading">
+                                            <div class="spinnerload">
+                                                <div class="spin1"></div>
+                                                <div class="spin2"></div>
+                                                <div class="spin3"></div>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!isStaffChartLoading && staffChartData.length">
+                                            <google-chart #chart style="width: 100%;" [type]="chartType" [data]="staffChartData" [columns]="columns" [options]="staffOptions"></google-chart>
+                                        </div>
+                                        <div *ngIf="!isStaffChartLoading && staffChartData.length == 0" style="text-align: center;">
+                                            {{"No Data Found"|translate}}
+                                        </div>
+                                    </div>
+                                </mat-tab>
+                                <mat-tab label="{{ 'Resources' | translate }}">
+                                    <ng-template mat-tab-label>{{"Resources"|translate}}</ng-template>
+                                    <div>
+                                        <app-manage-patient [scheduleInputData]="scheduleInputData"></app-manage-patient>
+                                    </div>
+                                </mat-tab>
+                                <mat-tab label="Visit Details" [formGroup]="planDetailForm">
+                                    <ng-template mat-tab-label >{{"Visit Details"|translate}}</ng-template>
+                                    <div class="top-style mat-custom-form-field-box">
+                                        <div class="block-3">
+                                            <div class="row-field-5">
+                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
+                                                    <span class="ovi-lbl-text-size ">{{"Admit Date & Time"|translate}}: </span> <span class="ovi-fnt-sze12" 
+                                                        *ngIf="patientDetails?.admitDate != null" style="font-weight: 600;">
+                                                        {{patientDetails.admitDate | date : 'dd/MM/yyyy h:mm a'}}</span>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-5">
+                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
+                                                    <span class="ovi-lbl-text-size ">{{"Admitting Doctor"|translate}}: </span> <span class="ovi-fnt-sze12" 
+                                                        *ngIf="patientDetails?.doctorName != null" style="font-weight: 600;">
+                                                        {{patientDetails.doctorName}}</span>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-5">
+                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
+                                                    <span class="ovi-lbl-text-size ">{{"Length of Stay"|translate}}: </span>
+                                                    <span *ngIf="patientDetails?.lengthOfStay != null" class="ovi-fnt-sze12" 
+                                                        style="font-weight: 600;">{{patientDetails.lengthOfStay}}</span>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-5">
+                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
+                                                    <span class="ovi-lbl-text-size ">{{"DOB"|translate}}: </span> <span *ngIf="patientDetails?.dob != null" class="ovi-fnt-sze12" 
+                                                        style="font-weight: 600;">{{patientDetails.dob | date : 'dd/MM/yyyy'}}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="top-style ovi-fnt-sze12" style="display: flex;column-gap: 20px;font-weight: 600;margin: 15px 0px 8px 0px;">
+                                            <span class="info-space-around">
+                                                <mat-checkbox [checked]="patientDetails?.isDiabetic" formControlName="isDiabetic"> {{"Diabetic"|translate}}</mat-checkbox>
+                                            </span>
+                    
+                                            <span class="info-space-around">
+                                                <mat-checkbox [checked]="patientDetails?.isFasting" formControlName="isFasting">
+                                                    Fasting</mat-checkbox>
+                                            </span>
+                    
+                                            <span class="info-space-around">
+                                                <mat-checkbox [checked]="patientDetails?.isVulnerable" formControlName="isVulnerable"> {{"Vulnerable"|translate}}
+                                                </mat-checkbox>
+                                            </span>
+                    
+                                            <span class="info-space-around">
+                                                <mat-checkbox [checked]="patientDetails?.isPregnant" [disabled]="patientDetails?.gender === 'Male'"
+                                                formControlName="isPregnant"> {{"Pregnant"|translate}}</mat-checkbox>
+                                            </span>
+                                        </div>
+                                        <div style="padding: 18px 5px 10px 0px;">
+                                            <div style="padding: 10px 5px 10px 5px;display: flex;column-gap: 8px;align-items: center;">
+                                                <span style="padding: 2px;" class="ovi-lbl-text-size" *ngIf="data['selectedPatient']['threats']!=null || threatsIncluded">{{"Threats"|translate}}:</span>
+                                                <span style="padding: 2px;" class="ovi-lbl-text-size" *ngIf="data['selectedPatient']['threats']==null && !threatsIncluded">{{"Add Threats"|translate}}</span>
+                                                <span *ngFor="let threat of threatList" style="display: flex">
+                                                    <span class="subfilter selected-subfilter ovi-fnt-sze12" *ngIf="setThreatsIncluded(threat)">{{threat.value}}</span>
+                                                </span>
+                                                <span><mat-icon class="ovi-prmry-clr ovi-fnt-sze26" appTooltip tooltipText="Add Threats" [matMenuTriggerFor]="menu">add_circle</mat-icon></span>
+                                            </div>
+                                            <mat-menu #menu="matMenu" class="filter-menu ovi-font-family">
+                                                <div (click)="$event.stopPropagation()"  (keydown.enter)="fixClick()">
+                                                    <div class="header-container">
+                                                        <div class="filter-header">{{"Threats"|translate}}</div>
+                                                    </div>
+                                                    <div class="subfilters-inline">
+                                                        <span *ngFor="let threat of threatList" style="cursor: pointer;display: flex" class="subfilter" [ngClass] = "threat.isSelected? 'selected-subfilter':''" (click)="threat.isSelected = !threat.isSelected"  (keydown.enter)="fixClick()">
+                                                            <span class="filter-check" [ngClass] = "threat.isSelected? 'selected-filter-check':''">{{threat.isSelected? '✔' : ''}}</span><span class="ovi-fnt-sze12">{{threat.value}}</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </mat-menu>
+                                        </div>
+                                        <div class="patients-form-row block-3" style="padding-top: 10px;">
+                                            <div class="row-field-5">
+                                                <div class="example-form">
+                                                    <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"VIP"|translate}}</mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <mat-select formControlName="vipTypeId">
+                                                            <mat-option>{{"None"|translate}}</mat-option>
+                                                            <mat-option *ngFor="let data of vipList" [value]="data.code">{{data.value}}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                            <div class="row-field-5">
+                                                <div class="example-form">
+                                                    <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"Preferred Language"|translate}}</mat-label>
+                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
+                                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate"
+                                                            formControlName="preferedLanguage">
+                                                            <mat-option *ngFor="let data of languageList" [value]="data.code">
+                                                                {{data.value }}
+                                                            </mat-option>
+                                                        </mat-select>
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="input-footer" style="padding: 10px;">
+                                        <div style="float:left;">
+                                            <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="discharge()"
+                                                [debounceTime]="300" cdkFocusInitial>{{"Discharge"|translate}}</button>
+                                        </div>
+                                        <div style="float: right;display: flex;">
+                                            <button mat-button class="cancle-btn margin-r-1" mat-dialog-close>{{"Cancel"|translate}}</button>
+                                            <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="updateClinicalDetails()"
+                                                [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+                                        </div>
+                                    </div>
+                                </mat-tab>
+                                <mat-tab label="Form">
+                                    <ng-template mat-tab-label>{{"Form"|translate}}</ng-template>
+                                    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                                        <div class="ovi-row-gap " style="margin-right: 0px;padding: 10px;align-items: center;">
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                                <mat-label class="ovi-lbl-text-size">{{"Select"|translate}}</mat-label>
+                                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select'|translate" [formControl]="formTemplateId">
+                                                        <mat-option *ngFor="let form of formTemplateList" [value]="form.id">
+                                                            {{form.name}}
+                                                        </mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                            </div>
+                                            <div>
+                                                <button mat-button [disabled]="formTemplateId.value == null"
+                                                    class="active-btn margin-r-1" appDebounceClick (debounceClick)="getFormTemplateInfo();"
+                                                    [debounceTime]="300" cdkFocusInitial>{{"Add"|translate}}</button>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="formBuilderSource.length > 0" style="padding: 10px;">
+                                            <angular-table-component [id]="'formBuilder'" [type]="'ng-table'" [tableData]="formBuilderSource"
+                                                [columns]="['Name', 'Comments', 'Modified by', 'Date','Form Status','PreviewHistory']"
+                                                [columnData]="['name','comments', 'modifiedUser', 'startDate', 'entityFormStatusName','PreviewHistory']"
+                                                (triggerAction)="triggerAction($event)">
+                                            </angular-table-component>
+                                        </div>
+                                        <div *ngIf="formBuilderSource.length === 0" class="no-shift">{{"No records Found"|translate}}</div>
+                                    </div>
+                                </mat-tab>
+                            </mat-tab-group>
+                            <div style="top: 0px; position: absolute; right: 0%; display: flex; align-items: center;flex-direction: row-reverse;column-gap: 7px; z-index: 1;">
+                                <div class="tw-refresh-icon" (click)="reloadTab()" style="cursor: pointer;"  (keydown.enter)="fixClick()">
+                                    <div><i class="material-icons ovi-fnt-sze17" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
+                                            style="cursor: pointer; float: right;line-height: 16px;">autorenew</i>
+                                    </div>
+                                </div>
+                                <div style="cursor: pointer;" (click)="formBuilder()" *ngIf="selectedTab === 'Patient' && false" (keydown.enter)="fixClick()">
+                                    <mat-icon class="ovi-prmry-clr ovi-fnt-sze30" style="padding-top: 5px;" appTooltip tooltipText="{{'Form'|translate}}" placement="bottom">description</mat-icon>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="height: calc(100% - 280px);" *ngIf="dataSource.data.length && selectedTab != 'Visit Details' && selectedTab != 'Form' && selectedTab != 'Resources' && selectedTab != 'Asset' && selectedTab != 'Staff'">
+                        <div *ngIf="selectedTab === 'Patient'" class="ovi-fnt-sze17" style="font-weight: 600;padding: 5px;">{{"Patient TAT Summary"|translate }}</div>
+                        <div *ngIf="selectedTab === 'Staff'" class="ovi-fnt-sze17" style="font-weight: 600;padding: 16px 5px 5px 5px;">{{"Movement Summary"|translate }}</div>
+                        <div style="padding-left: 15px;width: 98%;">
+                            <div class="mat-elevation-z8" style="height: 100%;display: block;">
+                                <div style="margin: 10px 0px;overflow-x: auto;width: 100%;height: 100%;display: block;">
+                                    <table mat-table [dataSource]="dataSource" style="table-layout: fixed;">
+                                        <ng-container *ngFor="let column of tableColumns" [matColumnDef]="column">
+                                            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header" style="background-color: #EFEFEF;">
+                                                <span *ngIf="column !== 'select'">{{ column |translate }}</span>
+                                                <span *ngIf="column == 'select'">
+                                                    <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="selection.hasValue() && isAllSelected()"
+                                                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+                                                    </mat-checkbox>
+                                                </span>
+                                            </th>
+                                            <td mat-cell *matCellDef="let element;let i = index">
+                                                <span *ngIf="column !== 'select' && column !== 'Start Time' && column !== 'End Time' && column !== 'Remarks'">{{ element[column] }}</span>
+                                                <span *ngIf="column == 'select'">
+                                                    <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(element) : null"
+                                                        [checked]="selection.isSelected(element)"  (keydown.enter)="fixClick()">
+                                                    </mat-checkbox>
+                                                </span>
+                                                <span *ngIf="column === 'Start Time' || column === 'End Time'">{{element[column] | date: "dd-MM-yyyy HH:mm"}}</span>
+                                                <span *ngIf="column === 'Remarks'">
+                                                    <mat-form-field style="width: -webkit-fill-available;">
+                                                        <input matInput [type]="'text'" [value]="element[column]" [(ngModel)]="element[column]" [ngModelOptions]="{ standalone: true }">
+                                                    </mat-form-field>
+                                                </span>
+                                            </td>
+                                        </ng-container>
+                                        <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+                                        <tr mat-row *matRowDef="let row; let i = index; columns: tableColumns;"></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

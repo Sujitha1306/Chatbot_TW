@@ -1,0 +1,122 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div  *ngIf="data">{{"Edit Location Mapping"|translate}}</div>
+        <div  *ngIf="!data">{{"Create Location Mapping"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="locationMapForm" style="overflow: auto;height:calc(100% - 85px);display: flex;">
+        <div  *ngIf="isUnmapped"  class="location-unmapped-body" style="float: left;padding-top: 16px;width: 190px;border-right: 1px solid #e6e6e6;cursor: pointer; margin-right: 10px;">
+            <span class="tw-filter-new" style="margin:5px 0px 5px 0px;width: 185px;">
+                <input matInput style="padding: 5px;" #searchInputClear [formControl]="filterKey"
+                (keyup)="applyFilterUnmap(filterKey.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off">
+                <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value" (click)="searchInputClear.value=''; applyFilterUnmap('');"
+                style="margin-top: -5px;">
+                    <span class="tw-filter-close" style="float: right !important;padding: 0px 5px 0px 0px;">x</span>
+                </button>
+            </span> 
+            <mat-divider></mat-divider>
+            <mat-list class="mat-list-style" #patient>
+                <mat-list-item [ngClass] = "this.testId == data.testId ? 'selected-entity-list' : 'non-selected-entity-list'" *ngFor="let data of unmappedtest"  (click) = "getTest(data)"  (keydown.enter)="fixClick()">
+                    <div mat-line class="patient-name">{{data.testName}}</div>
+                </mat-list-item>
+            </mat-list>
+        </div>
+        <div style="width: 100%">   
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size top-styl">{{"TEST DETAILS"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div class="ovi-row-gap" *ngIf="data">
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Test Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Test Name'|translate" formControlName="testName"
+                                autocomplete="off" readonly>
+                        </mat-form-field>
+                </div>
+            </div>
+            <div class="ovi-row-gap" *ngIf="!data">
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Test Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Test Name'|translate" formControlName="testName" id="testName"
+                                autocomplete="off" appTypeHit (typeHit)="searchTest($event)" [matAutocomplete]="auto">
+                                <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete"
+                                    [displayWith]="this.data === null ? getTestList.bind(searchTestlist) : ''"
+                                    (optionSelected)="getTestLocationId($event.option.value)">
+                                    <mat-option *ngFor="let option of searchTestlist"
+                                    [value]="option.id">
+                                        <div class="alrt-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="locationMapForm.controls.testName.invalid">
+                                    <span [hidden]="!locationMapForm.controls['testName'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
+                                    <span [hidden]="!locationMapForm.controls['testName'].errors.required">
+                                        {{"Test Name is required"|translate}}</span>
+                                </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+
+            <div class="form-row" *ngIf="this.testId" style="padding-top: 5px;">
+                <div class="ovi-popup-title-text-size">{{"MAPPED LOCATIONS"|translate}}</div>
+            </div>
+            <mat-divider class="divider" style="position: relative; top: 10px;"></mat-divider>
+            <div class="ovi-row-gap" *ngIf="this.testId">
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Test Location"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Location'|translate" id="location"
+                            appTypeHit (typeHit)="searchToLocation($event)" [formControl]="newLocationControl"
+                            [matAutocomplete]="auto" autocomplete="off" required>
+                        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                            <mat-option *ngFor="let option of searchlist"
+                                value="{{option.id}}, {{option.fullName}}">
+                                <div class="alrt-wid-styl">{{option.fullName}}</div>
+                            </mat-option>
+                        </mat-autocomplete>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Queue length"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Queue length'|translate"
+                            [formControl]="newQueueLengthControl" autocomplete="off">
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Capacity"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Capacity'|translate"
+                            [formControl]="newCapacityControl" autocomplete="off">
+                    </mat-form-field>
+                </div>
+                <button *ngIf="testId" style="float:right;margin-top: 20px;margin-right: 45px;" mat-mini-fab
+                    (click)="addToTable()" [disabled]="!newLocationControl.value">+</button>
+            </div>
+            <div style="position: relative;">
+                <div class="loading-spinner1 spin-test-table" *ngIf="loading">
+                    <div class="spinnerload" style="margin: 0;">
+                        <div class="spin1"></div>
+                        <div class="spin2"></div>
+                        <div class="spin3"></div>
+                    </div>
+                </div>
+                <div>
+                    <angular-table-component [id]="'test-location-mapping'" [type]="'ng-table'" 
+                    [tableData]="tableData"
+                    [columns]="['Test Location', 'Queue Length', 'Capacity', 'Delete']"
+                    [columnData]="['locationId', 'queueLength', 'capacity', 'Delete']"
+                    (triggerAction)="removeLocation($event)">
+                    </angular-table-component>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="this.testId" class="active-btn" appDebounceClick [disabled]="locationMapForm.invalid || isDisabled || locationMapForm.controls.testLocations.controls.length === 0"
+        (debounceClick)="updateLocationMapping(this.testId)" [debounceTime]="300"cdkFousInitial>{{"Save"|translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,38 @@
+<div class="tw-popup-content-tbl block-7" style="padding: 15px 10px 5px 10px;" *ngIf="auditSource.length > 0">
+    <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'">
+        <div class="tw-mat-table-overflow box-26" style="overflow-x: auto;">
+            <table mat-table class="tw-table" [dataSource]="auditSource" matSort>
+                <ng-container *ngFor="let key of auditdisplayedColumns; let i = index" [matColumnDef]="key">
+                    <th mat-sort-header mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+                        {{ auditHeaders[i] }}
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                        <ng-container [ngSwitch]="key">
+                            <span *ngSwitchCase="'auditDateTime'">
+                                {{ element[key] | date: "hh:mm a, d MMM" }}
+                            </span>
+                            <span *ngSwitchCase="'attachments'">
+                                <ng-container *ngIf="element.fileUrl && element.fileUrl.length > 0">
+                                    <mat-icon (click)="getFileDownload(file)" *ngFor="let file of element.fileUrl"  (keydown.enter)="fixClick()">
+                                        attachment
+                                    </mat-icon>
+                                </ng-container>
+                            </span>
+                            <span *ngSwitchCase="'remarks'" style="white-space: wrap; word-break: break-spaces; min-width:250px;" appTooltip [tooltipText]="element['remarks']" placement="bottom">
+                                {{ element[key]}}
+                            </span>
+                            <span *ngSwitchDefault>
+                                {{ element[key] }}
+                            </span>
+                        </ng-container>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="auditdisplayedColumns; sticky: true;" class="tw-manage-table-header-row"></tr>
+                <tr mat-row *matRowDef="let row; columns: auditdisplayedColumns;"></tr>
+            </table>
+            <mat-paginator #paginator [length]="totalRecords" [pageSize]="10" (page)="onPageChange($event)" showFirstLastButtons class="tw-paginator-sticky"></mat-paginator>
+        </div>
+    </div>
+</div>
+<div *ngIf="auditSource.length === 0" class="no-shift">{{"No records Found"|translate}}</div>

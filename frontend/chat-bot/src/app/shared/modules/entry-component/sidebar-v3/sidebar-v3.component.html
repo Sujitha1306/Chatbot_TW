@@ -1,0 +1,359 @@
+<ng-container *ngIf="menuOpen && !existPrivateUser">
+  <div class="v3-sidebar ovi-font-family" [class.v3-dark]="isDarkTheme" [class.v3-collapsed]="iconOnlyMode">
+
+    <!-- Search -->
+    <div class="v3-search" *ngIf="showSearchBar">
+      <mat-icon class="v3-search-icon">search</mat-icon>
+      <input
+        #searchInput
+        class="v3-search-input"
+        [(ngModel)]="searchQuery"
+        placeholder="Search menu"
+        autocomplete="off" />
+      <span *ngIf="!searchQuery" class="v3-search-hint">/</span>
+      <mat-icon *ngIf="searchQuery" class="v3-search-clear" (click)="clearSearch()">close</mat-icon>
+    </div>
+
+    <div class="v3-scroll-area" (mouseleave)="scheduleCloseFlyout()">
+
+      <!-- FAVORITES section (hidden while searching) -->
+      <ng-container *ngIf="showFavoritesSection && !searchQuery && hasFavorites">
+        <div class="v3-section-header" (click)="favoritesCollapsed = !favoritesCollapsed">
+          <span class="v3-section-label">FAVORITES</span>
+          <mat-icon class="v3-collapse-chevron" [class.chevron-open]="!favoritesCollapsed">
+            expand_more
+          </mat-icon>
+        </div>
+
+        <div *ngIf="!favoritesCollapsed" class="v3-section-items">
+
+          <!-- Favorited top-level (childless) items -->
+          <div *ngFor="let item of favoriteMainItems; trackBy: trackByCode"
+            class="v3-menu-row"
+            [class.v3-row-active]="selectedMenuId == item.id"
+            (mouseenter)="hoveredMenuId = item.id; openFlyout(item, $event)"
+            (mouseleave)="hoveredMenuId = null"
+            (click)="onCollapsedClick(item, $event)"
+            [routerLink]="item.link ? [item.link] : null"
+            role="button" tabindex="0" (keydown.enter)="fixClick()">
+            <span class="v3-row-icon">
+              <img src="/assets/Menus/{{ item.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
+            </span>
+            <span class="v3-row-label">{{ item.name | translate }}</span>
+            <mat-icon class="v3-star-icon v3-star-filled"
+              (click)="toggleFavorite(item.code, $event)" matTooltip="Remove from favorites">
+              star
+            </mat-icon>
+          </div>
+
+          <!-- Parents with favorited submenus (always expanded) -->
+          <ng-container *ngFor="let group of favoriteGroups; trackBy: trackByGroup">
+            <div class="v3-menu-row v3-fav-parent"
+              [class.v3-row-active]="selectedMenuId == group.parent.id"
+              (mouseenter)="hoveredMenuId = group.parent.id; openFavFlyout(group, $event)"
+              (mouseleave)="hoveredMenuId = null"
+              role="button" tabindex="0">
+              <span class="v3-row-icon">
+                <img src="/assets/Menus/{{ group.parent.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
+              </span>
+              <span class="v3-row-label">{{ group.parent.name | translate }}</span>
+              <mat-icon class="v3-row-chevron chevron-open">chevron_right</mat-icon>
+            </div>
+            <!-- Favorited sub items (2nd + 3rd level) -->
+            <div class="v3-fav-submenu">
+              <div *ngFor="let sub of group.subs; trackBy: trackByCode"
+                class="v3-menu-row v3-submenu-fav-row"
+                [class.v3-submenu-l3]="sub._level === 3"
+                [routerLink]="[sub.link]"
+                [routerLinkActive]="['v3-row-active']"
+                role="button" tabindex="0" (keydown.enter)="fixClick()">
+                <span class="v3-row-icon v3-row-icon-sm">
+                  <img [ngClass]="sub.iconName ? 'svg-icon' : 'wthoutsvg-icon'"
+                    src="/assets/Menus/{{ sub.iconName }}.svg" alt="sub"
+                    (error)="handleImgError($event)" />
+                </span>
+                <span class="v3-row-label v3-submenu-label-wrap">
+                  <span *ngIf="sub._level === 3" class="v3-l3-hint">{{ sub._parentName }} › </span>
+                  {{ sub.name | translate }}
+                </span>
+                <mat-icon class="v3-star-icon v3-star-filled"
+                  (click)="toggleSubFavorite({subCode: sub.code, parentCode: group.parent.code}); $event.stopPropagation()"
+                  matTooltip="Remove from favorites">
+                  star
+                </mat-icon>
+              </div>
+            </div>
+          </ng-container>
+
+        </div>
+        <div class="v3-section-divider"></div>
+      </ng-container>
+
+      <!-- MENU section (browse mode — hidden while searching) -->
+      <ng-container *ngIf="!searchQuery">
+        <div class="v3-section-header">
+          <span class="v3-section-label">MENU</span>
+        </div>
+
+        <div class="v3-section-items"
+          cdkDropList (cdkDropListDropped)="dropMenuItem($event)">
+          <ng-container *ngFor="let menulist of filteredMenuItems; trackBy: trackByCode">
+
+            <div *ngIf="menulist.code !== 'MN_ALL'" class="v3-item-wrap" cdkDrag
+              (mouseenter)="hoveredMenuId = menulist.id; openFlyout(menulist, $event)"
+              (mouseleave)="hoveredMenuId = null">
+
+              <div class="v3-drag-placeholder" *cdkDragPlaceholder></div>
+
+              <div class="v3-menu-row" cdkDragHandle
+                [class.v3-row-active]="selectedMenuId == menulist.id"
+                [class.v3-row-hover]="hoveredMenuId === menulist.id"
+                [class.v3-row-parent]="hasChildMenus(menulist)"
+                (click)="onCollapsedClick(menulist, $event)"
+                [routerLink]="!hasChildMenus(menulist) && menulist.link ? [menulist.link] : null"
+                [class.cursor-pointer]="menulist.link || hasChildMenus(menulist)"
+                [matTooltip]="iconOnlyMode ? '' : (menulist.name | translate)" matTooltipPosition="right"
+                role="button" tabindex="0" (keydown.enter)="fixClick()">
+
+                <span class="v3-row-icon">
+                  <img src="/assets/Menus/{{ menulist.iconName }}.svg" alt="menu"
+                    (error)="handleImgError($event)" />
+                </span>
+
+                <span class="v3-row-label">
+                  {{ menulist.name | translate }}
+                  <span *ngIf="menulist.badge" class="v3-badge-new">{{ menulist.badge }}</span>
+                </span>
+
+                <span *ngIf="menulist.count" class="v3-count-badge">{{ menulist.count }}</span>
+
+                <!-- favorite star: only for top-level items WITHOUT children -->
+                <ng-container *ngIf="!hasChildMenus(menulist)">
+                  <mat-icon class="v3-star-icon v3-star-filled"
+                    *ngIf="isFavorite(menulist.code)"
+                    (click)="toggleFavorite(menulist.code, $event)"
+                    matTooltip="Remove from favorites">
+                    star
+                  </mat-icon>
+                  <mat-icon class="v3-star-icon v3-star-outline"
+                    *ngIf="!isFavorite(menulist.code) && hoveredMenuId === menulist.id"
+                    (click)="toggleFavorite(menulist.code, $event)"
+                    matTooltip="Add to favorites">
+                    star_border
+                  </mat-icon>
+                </ng-container>
+
+                <mat-icon *ngIf="hasChildMenus(menulist)" class="v3-row-chevron"
+                  [class.chevron-open]="isSubmenuOpen(menulist)">
+                  chevron_right
+                </mat-icon>
+              </div>
+
+              <!-- Inline submenu — star enabled for sub items (hidden in icon-only mode) -->
+              <div *ngIf="isSubmenuOpen(menulist) && !iconOnlyMode" class="v3-inline-submenu">
+                <cdk-sidebar-menu [code]="menulist.code" [menName]="menulist.name | translate"
+                  [open]="true"
+                  [showFavStar]="true"
+                  [favSubCodes]="favSubCodesArray"
+                  (favToggle)="toggleSubFavorite($event)"
+                  [reorderable]="true"
+                  [orderMap]="subMenuOrder"
+                  (subReorder)="onSubReorder($event)">
+                </cdk-sidebar-menu>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </ng-container>
+
+      <!-- SEARCH RESULTS (flat, across all levels) -->
+      <ng-container *ngIf="searchQuery">
+        <div class="v3-section-header">
+          <span class="v3-section-label">SEARCH RESULTS</span>
+        </div>
+
+        <div class="v3-section-items">
+          <div *ngFor="let res of searchResults; trackBy: trackByCode"
+            class="v3-menu-row v3-search-row"
+            [routerLink]="res.link ? [res.link] : null"
+            [routerLinkActive]="['v3-row-active']"
+            (mouseenter)="hoveredMenuId = res.code"
+            (mouseleave)="hoveredMenuId = null"
+            (click)="onSearchResultClick(res)"
+            role="button" tabindex="0" (keydown.enter)="fixClick()">
+            <span class="v3-row-icon" [class.v3-row-icon-sm]="res._level > 1">
+              <img src="/assets/Menus/{{ res.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
+            </span>
+            <span class="v3-row-label v3-submenu-label-wrap" [class.v3-row-label-stacked]="res._level >= 2">
+              <!-- <span *ngIf="res._level === 3 && res._rootParentName" class="v3-l3-hint">
+                {{ res._parentName }}
+              </span>
+              <span *ngIf="res._level === 2" class="v3-l3-hint">
+                {{ res._parentName }}
+              </span> -->
+              <span class="v3-search-row-name">{{ res.name | translate }}</span>
+            </span>
+            <!-- Level 1 (leaf) — favorite top-level -->
+            <ng-container *ngIf="res._level === 1">
+              <mat-icon class="v3-star-icon v3-star-filled"
+                *ngIf="isFavorite(res.code)"
+                (click)="toggleFavorite(res.code, $event)"
+                matTooltip="Remove from favorites">
+                star
+              </mat-icon>
+              <mat-icon class="v3-star-icon v3-star-outline"
+                *ngIf="!isFavorite(res.code) && hoveredMenuId === res.code"
+                (click)="toggleFavorite(res.code, $event)"
+                matTooltip="Add to favorites">
+                star_border
+              </mat-icon>
+            </ng-container>
+            <!-- Level 2/3 — favorite sub-items -->
+            <ng-container *ngIf="res._level >= 2">
+              <mat-icon class="v3-star-icon"
+                [class.v3-star-filled]="favSubCodesArray.includes(res.code)"
+                [class.v3-star-outline]="!favSubCodesArray.includes(res.code)"
+                (click)="toggleSubFavorite({subCode: res.code, parentCode: res._parentCode}); $event.stopPropagation()"
+                [matTooltip]="favSubCodesArray.includes(res.code) ? 'Remove from favorites' : 'Add to favorites'">
+                {{ favSubCodesArray.includes(res.code) ? 'star' : 'star_border' }}
+              </mat-icon>
+            </ng-container>
+          </div>
+
+          <div *ngIf="searchResults.length === 0" class="v3-empty-search">
+            No results for "<strong>{{ searchQuery }}</strong>"
+          </div>
+        </div>
+      </ng-container>
+
+    </div><!-- /v3-scroll-area -->
+
+    <!-- Hover flyout (icon-only mode) — shows parent name + submenu list -->
+    <div *ngIf="iconOnlyMode && flyoutItem" class="v3-flyout" [class.v3-dark]="isDarkTheme"
+      [style.top.px]="flyoutTop" [style.left.px]="flyoutLeft"
+      (mouseenter)="cancelCloseFlyout()" (mouseleave)="scheduleCloseFlyout()">
+      <div class="v3-flyout-title" [class.v3-flyout-title-link]="flyoutItem.link"
+        (click)="flyoutTitleClick()" role="button" tabindex="0" (keydown.enter)="flyoutTitleClick()">
+        {{ flyoutItem.name | translate }}
+      </div>
+      <div class="v3-flyout-items">
+        <ng-container *ngFor="let sub of flyoutLevel2Subs; trackBy: trackByCode">
+          <div class="v3-menu-row v3-submenu-fav-row"
+            [class.v3-row-parent]="flyoutSubChildrenMap[sub.code]?.length"
+            [routerLink]="!flyoutSubChildrenMap[sub.code]?.length && sub.link ? [sub.link] : null"
+            [routerLinkActive]="['v3-row-active']"
+            (click)="onFlyoutSubClick(sub)"
+            role="button" tabindex="0" (keydown.enter)="fixClick()">
+            <span class="v3-row-icon v3-row-icon-sm">
+              <img [ngClass]="sub.iconName ? 'svg-icon' : 'wthoutsvg-icon'"
+                src="/assets/Menus/{{ sub.iconName }}.svg" alt="sub" (error)="handleImgError($event)" />
+            </span>
+            <span class="v3-row-label">{{ sub.name | translate }}</span>
+            <mat-icon *ngIf="flyoutSubChildrenMap[sub.code]?.length" class="v3-row-chevron"
+              [class.chevron-open]="expandedFlyoutSubCode === sub.code">
+              chevron_right
+            </mat-icon>
+            <mat-icon *ngIf="!flyoutSubChildrenMap[sub.code]?.length" class="v3-star-icon"
+              [class.v3-star-filled]="favSubCodesArray.includes(sub.code)"
+              [class.v3-star-outline]="!favSubCodesArray.includes(sub.code)"
+              (click)="toggleSubFavorite({subCode: sub.code, parentCode: flyoutItem?.code}); $event.stopPropagation()"
+              [matTooltip]="favSubCodesArray.includes(sub.code) ? 'Remove from favorites' : 'Add to favorites'">
+              {{ favSubCodesArray.includes(sub.code) ? 'star' : 'star_border' }}
+            </mat-icon>
+          </div>
+          <div *ngIf="expandedFlyoutSubCode === sub.code" class="v3-flyout-subitems">
+            <div *ngFor="let child of flyoutSubChildrenMap[sub.code]; trackBy: trackByCode"
+              class="v3-menu-row v3-submenu-fav-row v3-submenu-l3"
+              [routerLink]="child.link ? [child.link] : null"
+              [routerLinkActive]="['v3-row-active']"
+              (click)="closeFlyoutNow()"
+              role="button" tabindex="0" (keydown.enter)="fixClick()">
+              <span class="v3-row-icon v3-row-icon-sm">
+                <img [ngClass]="child.iconName ? 'svg-icon' : 'wthoutsvg-icon'"
+                  src="/assets/Menus/{{ child.iconName }}.svg" alt="sub" (error)="handleImgError($event)" />
+              </span>
+              <span class="v3-row-label">{{ child.name | translate }}</span>
+              <mat-icon class="v3-star-icon"
+                [class.v3-star-filled]="favSubCodesArray.includes(child.code)"
+                [class.v3-star-outline]="!favSubCodesArray.includes(child.code)"
+                (click)="toggleSubFavorite({subCode: child.code, parentCode: flyoutItem?.code}); $event.stopPropagation()"
+                [matTooltip]="favSubCodesArray.includes(child.code) ? 'Remove from favorites' : 'Add to favorites'">
+                {{ favSubCodesArray.includes(child.code) ? 'star' : 'star_border' }}
+              </mat-icon>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="v3-footer">
+      <div *ngIf="isProfileMenuOpen()" class="v3-profile-menu">
+        <!-- Menu Preference (v3-only, collapsible) -->
+        <div class="v3-pref-section">
+          <div class="v3-pref-header" (click)="togglePrefCollapsed($event)" role="button" tabindex="0"
+            (keydown.enter)="togglePrefCollapsed($event)">
+            <mat-icon class="v3-pref-header-icon">tune</mat-icon>
+            <span class="v3-pref-title">Menu Preference</span>
+            <mat-icon class="v3-collapse-chevron" [class.chevron-open]="!prefCollapsed">expand_more</mat-icon>
+          </div>
+
+          <div class="v3-pref-body" *ngIf="!prefCollapsed">
+            <div class="v3-pref-row" (click)="toggleTheme()" role="button" tabindex="0" (keydown.enter)="toggleTheme()">
+              <mat-icon class="v3-pref-icon">dark_mode</mat-icon>
+              <span class="v3-pref-label">Dark Mode</span>
+              <mat-icon class="v3-pref-switch" [class.on]="isDarkTheme">
+                {{ isDarkTheme ? 'toggle_on' : 'toggle_off' }}
+              </mat-icon>
+            </div>
+            <div class="v3-pref-row" (click)="toggleShowFavorites()" role="button" tabindex="0" (keydown.enter)="toggleShowFavorites()">
+              <mat-icon class="v3-pref-icon">star</mat-icon>
+              <span class="v3-pref-label">Show Favorites</span>
+              <mat-icon class="v3-pref-switch" [class.on]="showFavoritesSection">
+                {{ showFavoritesSection ? 'toggle_on' : 'toggle_off' }}
+              </mat-icon>
+            </div>
+            <div class="v3-pref-row" (click)="toggleShowSearch()" role="button" tabindex="0" (keydown.enter)="toggleShowSearch()">
+              <mat-icon class="v3-pref-icon">search</mat-icon>
+              <span class="v3-pref-label">Show Search</span>
+              <mat-icon class="v3-pref-switch" [class.on]="showSearchBar">
+                {{ showSearchBar ? 'toggle_on' : 'toggle_off' }}
+              </mat-icon>
+            </div>
+
+            <div *ngIf="false" class="v3-pref-row v3-pref-static">
+              <mat-icon class="v3-pref-icon">palette</mat-icon>
+              <span class="v3-pref-label">Primary Color</span>
+              <span class="v3-pref-swatch" [style.background]="primaryColor" [matTooltip]="primaryColor"></span>
+            </div>
+            <div *ngIf="false" class="v3-pref-row v3-pref-static">
+              <mat-icon class="v3-pref-icon">palette</mat-icon>
+              <span class="v3-pref-label">Secondary Color</span>
+              <span class="v3-pref-swatch" [style.background]="secondaryColor" [matTooltip]="secondaryColor"></span>
+            </div>
+
+            <div class="v3-pref-row v3-pref-reset" (click)="resetMenuStructure()" role="button" tabindex="0" (keydown.enter)="resetMenuStructure()">
+              <mat-icon class="v3-pref-icon">restart_alt</mat-icon>
+              <span class="v3-pref-label">Reset menu order</span>
+            </div>
+          </div>
+        </div>
+
+        <cdk-sidebar-menu [code]="profileMenu.code" [menName]="'Profile' | translate" [teams]="isDarkTheme">
+        </cdk-sidebar-menu>
+      </div>
+      <div class="v3-profile-card" (click)="selectMenu(profileMenu)" role="button" tabindex="0"
+        (keydown.enter)="selectMenu(profileMenu)">
+        <span class="v3-avatar">{{ initials }}</span>
+        <div class="v3-profile-info">
+          <span class="v3-profile-name">{{ userName | titlecase }}</span>
+          <span class="v3-profile-role">{{ user }}</span>
+        </div>
+        <mat-icon class="v3-profile-chevron" [class.chevron-open]="isProfileMenuOpen()">
+          expand_more
+        </mat-icon>
+      </div>
+    </div>
+
+  </div>
+</ng-container>

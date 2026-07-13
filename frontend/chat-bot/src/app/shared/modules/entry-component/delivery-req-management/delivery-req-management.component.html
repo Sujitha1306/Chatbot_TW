@@ -1,0 +1,124 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.intendData">{{"Create Request"|translate}}</div>
+        <div *ngIf="data.intendData" >{{"Modify Request"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 135px);">
+        <div>
+            <div class="ovi-row-gap" [formGroup]="deliveryForm">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Item Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput autofocus appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item Name'|translate" appTypeHit
+                            (typeHit)="getItemSelection($event)" [matAutocomplete]="auto" autocomplete="off"
+                            formControlName="itemMasterId" [readonly]="this.data.type === 'item' || this.data.intendData.id">
+                        <mat-autocomplete
+                            [displayWith]="this.itemEnabled === true ? getItemName.bind(itemInfo) : null"
+                            #auto="matAutocomplete">
+                            <div *ngIf="itemEnabled">
+                                <mat-option class="option-bor" *ngFor="let option of itemInfo"
+                                   (click)="getItemId(option.id)" [value]="option.id" (keydown.enter)="fixClick()">{{option.name}}
+                                </mat-option>
+                            </div>
+                        </mat-autocomplete>
+                        <mat-error *ngIf="deliveryForm.controls.itemMasterId.invalid">
+                            <span *ngIf="deliveryForm.get('itemMasterId').hasError('invalidItemSelection')">
+                                {{"Please select a valid item Name from the list"|translate}}.
+                            </span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department'|translate" formControlName="departmentId">
+                                <mat-option *ngFor="let dep of departmentList" [value]="dep.id">
+                                    {{dep.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Requested Quantity"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                            <input matInput  formControlName="requestedQuantity" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Requested Quantity'|translate"
+                              type="number" class="no-spinner">
+                            <div matSuffix class="ovi-schl-custom-select">
+                                <span (keydown.enter)="fixClick()" (click)="updateindentQuantity(-1,'Requested')" class="ovi-schl-custom-dec">-</span>
+                                <span (keydown.enter)="fixClick()" (click)="updateindentQuantity(1,'Requested')" class="ovi-schl-custom-incre">+</span>
+                            </div>
+                            <mat-error *ngIf="deliveryForm.controls.requestedQuantity.invalid" class="error-schedule-text">
+                                <span *ngIf="deliveryForm.get('requestedQuantity')?.hasError">{{"Zero and minus values are not allowed"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Delivery Status"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Transaction Type'|translate"
+                                formControlName="deliveryStatusId" [disabled]="reqData && reqData.deliveryStatusId && !activate_btn.includes('BT_STMA')">
+                                <mat-option *ngFor="let status of DeliveryType" [value]="status.code">
+                                    {{status.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                </div>
+                <div *ngIf="deliveryForm.controls['deliveryStatusId'].value === 'DLS-DLD'" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Batch Id"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Batch Id'|translate" formControlName="batchId">
+                                <mat-option *ngFor="let batch of batchList" (keydown.enter)="fixClick()" (click)="getBalanceStock(batch.balanceQuantity)" [value]="batch.batchId">
+                                    {{batch.batchId}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-hint *ngIf="deliveryForm.controls['batchId'].value" class="ovi-fnt-sze11" style="font-weight: 600; color: #008000;margin: 6px 0px 0px 0px;">{{"Available Stock"|translate}}: {{availableBal}}</mat-hint>
+                        </mat-form-field>
+                </div>
+                <div *ngIf="deliveryForm.controls['deliveryStatusId'].value === 'DLS-DLD'" class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Allocated Quantity"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err ovi-mat-field-qut" appearance="outline">
+                            <input matInput  formControlName="allocatedQuantity" type="number" class="no-spinner" 
+                               appPlaceholder [showPlaceholder]="false" [placeholderText]="'Allocated Quantity'|translate" min="1" [readonly]="!deliveryForm.controls['batchId'].value">
+                            <div matSuffix class="ovi-schl-custom-select">
+                                <span (keydown.enter)="fixClick()" (click)="!deliveryForm.controls['batchId'].value ? '' : updateindentQuantity(-1,'Allocated')" class="ovi-schl-custom-dec">-</span>
+                                <span (keydown.enter)="fixClick()" (click)="!deliveryForm.controls['batchId'].value ? '' : updateindentQuantity(1,'Allocated')" class="ovi-schl-custom-incre">+</span>
+                            </div>
+                            <mat-error *ngIf="deliveryForm.controls.allocatedQuantity.invalid">
+                                <span *ngIf="deliveryForm.controls['allocatedQuantity'].hasError('allocatedExceedsAvailable')">
+                                    {{"Allocated quantity cannot exceed"|translate}}.</span>
+                                <span *ngIf="deliveryForm.controls['allocatedQuantity'].hasError('allocatedExceedsRequested')">
+                                    {{"Allocated quantity cannot exceed requested quantity"|translate}}.</span>
+                                <span *ngIf="deliveryForm.get('allocatedQuantity')?.hasError('nonPositive')">
+                                    {{"Zero and minus values are not allowed"|translate}}.
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Expected Date"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input  matInput [matDatepicker]="picker2" formControlName="expectedDate" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Expected Date'|translate">
+                            <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                            <mat-datepicker #picker2></mat-datepicker>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate" formControlName="comments"
+                                rows=2>
+                        </textarea>
+                        </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data.intendData" mat-button class="active-btn" appDebounceClick
+            [disabled]="!deliveryForm.controls['requestedQuantity'].value" (debounceClick)="createDeliveryRequest()" [debounceTime]="300">{{"Create"|translate}}</button>
+        <button *ngIf="data.intendData" mat-button class="active-btn" appDebounceClick
+            (debounceClick)="modifyDeliveryRequest()" [disabled]="deliveryForm.invalid" [debounceTime]="300">{{"Update"|translate}}</button>
+    </div>
+</div>

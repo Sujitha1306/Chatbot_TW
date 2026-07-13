@@ -1,0 +1,308 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;overflow: hidden;">
+       <div class="ovi-pop-hdr">
+        <div *ngIf="data?.viewTypeId == 'TW-FDI' && !data.id">{{"Create Data Item"|translate}} </div>
+        <div *ngIf="data?.id">Manage Data Item : ({{labelName}})</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div [formGroup]="formDataItem" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height: calc(100% - 143px);overflow: auto;">
+            <div class="ovi-row-gap">
+                     
+                    <div class="ovi-matfrmfld-drpdwn-top-box" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="type"
+                                [disableOptionCentering]="true" [disabled]="data?.id">
+                                <mat-option *ngFor="let data of dataItemTypes" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="formDataItem.controls.type.invalid" class="error-txt-1">
+                                <span  [hidden]="!formDataItem.controls.type.errors.required">{{"Type is
+                                    required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem?.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                            <mat-label  class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput  type="text" formControlName="name" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate">
+                                  <mat-error *ngIf="formDataItem.controls.name.invalid" class="error-txt-1">
+                                        <span  [hidden]="!formDataItem.controls['name'].errors.required">
+                                            {{"Name is required. (Limit 1 - 50 chars.)"|translate}}</span>
+                                        <span  [hidden]="!formDataItem.controls['name'].errors.pattern">
+                                            {{"spaces and special characters are not allowed"|translate}}.
+                                        </span>
+                                    </mat-error>
+                            </mat-form-field> 
+                    </div>            
+                   
+                    <div class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                            <mat-label  class="ovi-lbl-text-size">{{"Label Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput type="text" formControlName="labelName" appPlaceholder [showPlaceholder]="false" [placeholderText]="'LabelName'|translate">
+                                 <mat-error *ngIf="formDataItem.controls.labelName.invalid" class="error-txt-1">
+                                    <span  [hidden]="!formDataItem.controls.labelName.errors.required">{{"Label Name is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+
+                    <div *ngIf="data?.id && formDataItem.controls.type.value != 'DI-CARD'" class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Default Value"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh"  appearance="outline">
+                            <input *ngIf="fieldType != 'DI-DTE'" matInput  type="text" formControlName="defaultValue" appPlaceholder [showPlaceholder]="false" [placeholderText]="'DefaultValue'|translate">
+                            
+                            <mat-select *ngIf="fieldType == 'DI-DTE'" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Default Value'|translate" formControlName="defaultValue">
+                                <mat-option *ngFor="let value of defaultDate" [value]="value">{{value}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div *ngIf="data?.viewTypeId === 'TW-FDI' && !data.id && formDataItem.controls.type.value != 'DI-CARD'" class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label class="ovi-lbl-text-size">{{"Default Value"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Default Value'|translate"
+                                formControlName="defaultValue" [errorStateMatcher]="matcher" autofocus autocomplete="off">
+                        </mat-form-field>
+                    </div>
+
+                    <div *ngIf="data?.id && data?.viewTypeId != 'TW-FDI' && formDataItem.controls.type.value != 'DI-CARD'" class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                            <mat-label  class="ovi-lbl-text-size">{{"Position"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput  type="text" formControlName="position" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Position'|translate">
+                            </mat-form-field>
+                    </div> 
+
+                
+                    <div class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value !== 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                            <mat-label  class="ovi-lbl-text-size">{{"Tooltip"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput type="text" formControlName="tooltip" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tooltip'|translate">
+                            </mat-form-field>   
+                    </div> 
+
+                    <div *ngIf="data?.id && formDataItem.controls.type.value != 'DI-CARD'" class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                            <mat-label  class="ovi-lbl-text-size">{{"Context Value"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput type="text" formControlName="contextValue" appPlaceholder [showPlaceholder]="false" [placeholderText]="'ContextValue'|translate">
+                                  <mat-hint>{{"Sample : {'IN' : 'value1', 'OUT' : 'value2'}"|translate}}</mat-hint>
+                                <mat-error *ngIf="formDataItem.controls.contextValue.invalid">
+                                    <span>{{"ContextValue JSON data is invalid"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field> 
+                    </div> 
+
+                    <div class="ovi-matfrmfld-drpdwn-top-box" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'" *ngIf="fieldType == 'DI-DRD' && formDataItem.controls.type.value != 'DI-CARD'">
+                            <mat-label  class="ovi-lbl-text-size">{{"MultiSelect"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'MultiSelect'|translate" formControlName="multiSelect">
+                                    <mat-option *ngFor="let value of options" [value]="value">{{value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                    </div>
+                
+                    <div class="ovi-matfrmfld-input-box-pdg" *ngIf="['DI-DRD', 'DI-RB'].indexOf(fieldType) > -1 && formDataItem.controls.type.value != 'DI-CARD'" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                            <mat-label  class="ovi-lbl-text-size">{{"Custom Value"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput type="text" formControlName="customValue" appPlaceholder [showPlaceholder]="false" [placeholderText]="'customValue'|translate">
+                                <mat-error *ngIf="formDataItem.controls.customValue.invalid">
+                                    <span>{{"CustomValue JSON data is invalid"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+
+                    <div class="ovi-matfrmfld-input-box-pdg" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Description"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput type="text" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate"
+                                formControlName="description">
+                        </mat-form-field>
+                    </div>
+
+                    <!-- <div *ngIf="data?.viewTypeId === 'TW-FDI' && !data?.id" class="ovi-row-four-clmn ovi-matfrmfld-textarea-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Validation"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <textarea matInput rows=2  [showPlaceholder]="false" [placeholderText]="'Validation'|translate"
+                                formControlName="validation"></textarea>
+                        </mat-form-field>
+                    </div> -->
+
+                    <div class="ovi-matfrmfld-textarea-top-box" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Custom Css"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <textarea matInput rows=2 formControlName="customCss" appPlaceholder [showPlaceholder]="false"
+                                [placeholderText]="'CustomCss'|translate"></textarea>
+                            <mat-error *ngIf="formDataItem.controls.customCss.invalid">
+                                <span>{{"Custom Css JSON data is Invalid"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+
+                    <div *ngIf="formDataItem.controls.type.value != 'DI-CARD'" class="ovi-matfrmfld-textarea-top-box" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Hint Message"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <textarea matInput rows=2 formControlName="hint" appPlaceholder [showPlaceholder]="false"
+                                [placeholderText]="'Hint Message'|translate"></textarea>
+                        </mat-form-field>
+                    </div>
+
+                    <div *ngIf="formDataItem.controls.type.value != 'DI-CARD'" class="ovi-matfrmfld-textarea-top-box" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'">
+                        <mat-label  class="ovi-lbl-text-size">{{"Custom Error Message"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <textarea matInput rows=2 appPlaceholder [showPlaceholder]="false"
+                                [placeholderText]="'Custom Error Message'|translate" formControlName="customErrorMessage"></textarea>
+                        </mat-form-field>
+                    </div>
+
+                    <div *ngIf="formDataItem.controls.type.value != 'DI-CARD'" [ngClass]="formDataItem.controls.type.value != 'DI-CARD' ? 'ovi-row-four-clmn' : 'ovi-row-three-clmn'" style="display: flex ; gap: 10px; align-items: center;position: relative;">
+                        <div *ngFor="let key of validationData | keyvalue" class="ovi-fnt-sze12">
+                            <mat-checkbox [checked]="key.value" (change)="onCheckboxChange(key, $event)">
+                                {{ key.key | titlecase}}
+                            </mat-checkbox>
+                        </div>
+                    </div>
+
+                    <div *ngIf="formDataItem.controls.type.value == 'DI-CARD'" class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label  class="ovi-lbl-text-size">{{"Default Value"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <textarea matInput rows=3 formControlName="defaultValue" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Default Value'|translate"></textarea>
+                    </mat-form-field>
+                </div>
+
+                <div *ngIf="formDataItem.controls.type.value == 'DI-CARD'" class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label  class="ovi-lbl-text-size">{{"Model Mapping"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <textarea matInput rows=3 formControlName="modelMapping" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Model Mapping'|translate"></textarea>
+                    </mat-form-field>
+                </div>
+
+                <div *ngIf="formDataItem.controls.type.value == 'DI-CARD'" class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label  class="ovi-lbl-text-size">{{"Template"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <textarea matInput rows=3 formControlName="template" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Template'|translate"></textarea>
+                    </mat-form-field>
+                </div>
+
+            </div>
+
+            <div *ngIf="formFieldData?.hasOwnProperty('formStatusData') && formDataItem.controls.type.value != 'DI-CARD'">
+                <div class="tw-mol-del-col ovi-fnt-sze13">{{"Approval Matrix"|translate}} </div>
+                <mat-divider></mat-divider>
+            
+                <div class="ovi-row-gap" style="padding-top: 5px;">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label  class="ovi-lbl-text-size">{{"Approval Level"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Approval Level'|translate"
+                                formControlName="approvalLevel">
+                                <mat-option *ngFor="let data of levelList" [value]="data.code"> {{data.value}} </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+           
+            <div class="tw-mol-del-col ovi-fnt-sze13">{{"Model Details"|translate}}
+                    <span class="material-icons  ovi-prmry-clr ovi-fnt-sze18" style="padding-left: 6px; cursor: pointer;"
+                        (click)="addModel()" appTooltip tooltipText="{{'Create Model'|translate}}" (keydown.enter)="fixClick()">control_point</span>
+            </div>
+            <mat-divider></mat-divider>
+
+            <div class="ovi-row-gap" style="padding-top: 5px;">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label  class="ovi-lbl-text-size">{{"Model"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model'|translate"
+                            formControlName="modelid" (openedChange)="onFilterSearchOpened($event)">
+                            <mat-option>
+                                <ngx-mat-select-search [formControl]="modelSearch" [placeholderLabel]="'Search' | translate"
+                                    [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                            </mat-option>
+                            <mat-option *ngFor="let model of filteredModelSearch" [value]="model.id" (keydown.enter)="fixClick()"
+                                (click)="modelInputData(model)">{{model.name}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Model Type"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Model Type'|translate" formControlName="modelTypeName" readonly>
+                    </mat-form-field>
+                </div>
+            
+                <div *ngIf="selectedModel?.modelTypeId !== 'MT-QRY'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Input"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Input'|translate" formControlName="modelInput" readonly>
+                    </mat-form-field>
+                </div>
+
+                <div *ngIf="selectedModel?.modelTypeId === 'MT-QRY'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Target Database"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Target Database'|translate" formControlName="targetDb" readonly>
+                    </mat-form-field>
+                </div>
+
+                <div *ngIf="selectedModel?.modelTypeId === 'MT-QRY'" class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box" style="width: 95.5% !important;">
+                    <mat-label  class="ovi-lbl-text-size">{{"Model QueryString"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <textarea matInput rows=3 formControlName="queryString" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Model QueryString'|translate" readonly></textarea>
+                    </mat-form-field>
+                </div>
+            
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Entity Name"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Entity Name'|translate" formControlName="entity" readonly>
+                    </mat-form-field>
+                </div>
+            
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Entity Column"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Entity Column'|translate" formControlName="entityColumn" readonly>
+                    </mat-form-field>
+                </div>
+
+                  <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Entity Table"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Entity Table'|translate" formControlName="entityTable" readonly>
+                    </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label  class="ovi-lbl-text-size">{{"Output"|translate}} </mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput type="text" appPlaceholder [showPlaceholder]="false"
+                            [placeholderText]="'Output'|translate" formControlName="modelOutput" readonly>
+                    </mat-form-field>
+                </div>
+            </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" style="margin: 5px;" mat-dialog-close >{{"Cancel"|translate}}</button>
+        <button *ngIf="!data?.id" mat-button class="active-btn" style="margin: 5px;" cdkFocusInitial  appDebounceClick (debounceClick)="saveDataitem()" [debounceTime]="300" [disabled]="formDataItem.invalid">{{"Save"|translate}}</button>
+        <button *ngIf="data?.id" mat-button class="active-btn" style="margin: 5px;" cdkFocusInitial  appDebounceClick (debounceClick)="saveDataItemValidation()" [debounceTime]="300" [disabled]="formDataItem.invalid">{{"Update"|translate}}</button>
+    </div>
+</div>

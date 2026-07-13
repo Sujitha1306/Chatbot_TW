@@ -1,0 +1,379 @@
+<div class="font-style">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="1" class="arrow">
+            <div id="arrowbox"><span> {{"Staff"|translate}}</span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value; userName.setValue(null); selectedUser.setValue(null)" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}" [selected]="i==0 ? true : null">{{i.name}}</option>
+                </select>
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'staff-attendancebyid' || HCselected == 'staff-attendance-all' || HCselected == 'staff-contact' || HCselected == 'staff-ccd-all' || HCselected == 'staff-site-nav' || HCselected == 'visitor-history-byloc' || HCselected == 'cons-visit-hist' || HCselected == 'cons-visit-hist-bywad' || HCselected == 'staff-tracking' || HCselected == 'staff-geofencevio' || HCselected == 'tat-by-shift'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'staff-battery-summary' && HCselected != 'staff-attendancebyid' && HCselected != 'staff-attendance-all' && HCselected != 'staff-contact' && HCselected != 'staff-ccd-all' && HCselected != 'staff-site-nav' && HCselected != 'visitor-history-byloc' && HCselected != 'cons-visit-hist' && HCselected != 'cons-visit-hist-bywad' && HCselected != 'staff-tracking' && HCselected != 'staff-geofencevio' && HCselected != 'tat-by-shift'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'staff-attendancebyid' || HCselected == 'staff-attendance-all' || HCselected == 'staff-site-nav' || HCselected == 'staff-contact' || HCselected == 'staff-ccd-all' || HCselected == 'visitor-history-byloc' || HCselected == 'cons-visit-hist' || HCselected == 'cons-visit-hist-bywad' || HCselected == 'staff-tracking' || HCselected == 'staff-geofencevio' || HCselected == 'tat-by-shift'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <div class="custom-button" [ngClass] = "HCselected == 'staff-site-nav' ?  selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && tempLayout == lay && tempUser == selectedUser.value && tempRole == selectedRole.value ? 'disabled-content' : 'none':HCselected == 'contact-tree'|| HCselected == 'staff-contact' || HCselected == 'staff-geofencevio' ? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none' : HCselected == 'staff-roll-call' ? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['facility'] == facilityId ? 'disabled-content' : 'none' : HCselected == 'staff-attendancebyid' ? selectedUser.value == null || selectedUser.value == '' ? 'disabled-content' : 'none' : HCselected == 'staff-attendance-all' ?selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none' : HCselected =='visitor-history-byloc'?selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && locFlag ?'disabled-content' : 'none' :HCselected=='cons-visit-hist'?selected['selectedId']== HCselected && selected['fromDate']==fromDate && selected['todate'] == toDate && selectedUserTemp == selectedUser.value ?'disabled-content' : 'none' :HCselected == 'cons-visit-hist-bywad' || HCselected == 'tat-by-shift'?selected['selectedId'] == HCselected && selected['fromDate']==fromDate && selected['todate'] == toDate && selectedLocTemp == selectedLocation.value? 'disabled-content' : 'none':    selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none'"(click)="getAllStaffReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100" (keydown.enter)="fixClick()">
+                            {{"Get Insights"|translate}}
+                    </div>     
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getAllStaffReports(HCselected)"  (keydown.enter)="fixClick()">autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()" (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()" (keydown.enter)="fixClick()"  matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list> 
+</div> 
+<mat-grid-list [cols]="8" rowHeight="50px" *ngIf="HCselected == 'staff-attendancebyid' || HCselected == 'staff-contact'" style="padding-bottom: 15px;">
+    <!-- <mat-grid-tile [colspan]="2" class="oflw-style" *ngIf="HCselected == 'staff-contact'">
+        <div style="display:flex; flex-direction: row; height: 80%; margin-top: -2px;">
+               <label style="font-weight: 600;font-size:14px;padding-top: 10px;padding-right: 5px;font-family: Open Sans;">Identifier</label>    
+                <input [class.disabled-content]="reportData['loading']" type="text" class="custom-input" id="input" [formControl]="identifier" (change)="Uhid = $event.target.value">
+        </div>
+    </mat-grid-tile> -->
+    <!-- <mat-grid-tile [colspan]="1" class="oflw-style" *ngIf="HCselected != 'staff-contact'">
+        <div style="height: 100%;width: 80%;float: left;">
+            <span class="floating-label" style="padding-left:5px;top:2px;font-size: 13px;font-family: 'Open Sans';position: relative;">Select User</span>
+            <select class="custom-select" [formControl]="selectedUserType" [value]="selectedUserType.value" style="padding-top: 5px;font-size: 13px;margin-left: 5px;">
+                <option *ngFor="let i of userTypes; let i = index" value="{{i.code}}">{{i.value}}</option>
+            </select>
+        </div>
+    </mat-grid-tile> -->
+    <!-- <mat-grid-tile class="oflw-style" [colspan]="1">  
+        <div style="margin-top: 14px;">
+            <mat-button-toggle-group name="fontStyle" aria-label="Font Style">
+                <mat-button-toggle [checked]="reportType == 'User'" value="User" (change)="resetValue($event.value)">User</mat-button-toggle>
+                <mat-button-toggle [checked]="reportType == 'Role'" value="Role" (change)="resetValue($event.value)">Role</mat-button-toggle>
+              </mat-button-toggle-group> 
+        </div>
+        </mat-grid-tile>   *ngIf = "selectedvalue == 'User'" -->
+    <mat-grid-tile class="oflw-style" [colspan]="2">    
+        <div style="height: 100%;width: 100%;float: left;" >
+            <input  class="ovi-font-family  ovi-fnt-sze15" type="text" style="height: 28px;margin-top: 14px;width: 80%;" placeholder="{{'Search User'|translate}}" (keyup)="getUserByTypeCheck($event)"
+             [formControl]="userName" [matAutocomplete]="auto">
+            <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let user of userList" (click)="setUserName(user.id)" value="{{user.name}}" (keydown.enter)="fixClick()">
+            {{user.name}}
+            </mat-option>
+            </mat-autocomplete>
+        </div>        
+    </mat-grid-tile>
+    <!-- <mat-grid-tile class="oflw-style" [colspan]="2" *ngIf = "selectedvalue == 'Role'">    
+        <div style="height: 100%;width: 100%;float: left; margin-right: 59vw;">
+           <mat-label class="tw-wrapper" style="font-weight: 600; color: #111414;font-size: 18px;font-family: 'Open Sans';">Role :</mat-label>
+            <mat-form-field appearance="outline"  style="margin-top: 10px;font-size: 15px;font-family: 'Open Sans';padding-left: 8px;width: 60%;">
+                <mat-select [formControl]="RoleId" (selectionChange)="setrlidID(RoleId.value)" >
+                 <mat-option *ngFor="let Role of RoleList" [value]="Role.id"  >
+                    {{Role.name}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </mat-grid-tile>  -->
+    <mat-grid-tile id="icon" [colspan]="6" *ngIf="(selected['selectedId'] == 'contact-tree' || selected['selectedId'] == 'staff-contact') && !reportData['noRecords']">
+            <img *ngIf="!reportData['tableView']" src="/assets/Alert/common_icons/table.svg"  alt="table" (click)="getAllStaffReports(selected['selectedId'])" (keydown.enter)="fixClick()" matTooltip="{{'Switch to Table View'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['tableView']" src="/assets/Alert/common_icons/chart.svg"  alt="chart" (click)="treeDiagram()"  (keydown.enter)="fixClick()" matTooltip="{{'Switch to Tree View'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+    </mat-grid-tile>
+</mat-grid-list>
+<!--site visit & navigation--> 
+<div style="margin-top: 14px;height: 50px;" *ngIf="HCselected == 'staff-site-nav'">
+    <span style="margin-right: 20px;">
+        <mat-button-toggle-group #toggleVal name="fontStyle" aria-label="Font Style">
+            <mat-button-toggle value="user" (change)="toggleChange($event.value)">{{"User"|translate}}</mat-button-toggle>
+            <mat-button-toggle value="role" (change)="toggleChange($event.value)">{{"Role"|translate}}</mat-button-toggle>
+        </mat-button-toggle-group>
+    </span>
+    <span *ngIf="selectedToggle == 'user'">
+        <input class="ovi-font-family  ovi-fnt-sze15" type="text" style="height: 32px;width: 19%;" placeholder="{{'Search User'|translate}}" (keyup)="getUserByTypeCheck($event)" [formControl]="userName" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let user of userList" (click)="setUserName(user.id)" value="{{user.name}}"  (keydown.enter)="fixClick()">
+        {{user.name}}
+        </mat-option>
+        </mat-autocomplete>
+    </span>
+    <div *ngIf="selectedToggle == 'role'" class="mat-custom-form-field-box" style="display: inline;">
+        <mat-form-field appearance="outline"> 
+            <mat-select [formControl]="selectedRole">
+                <mat-option *ngFor="let i of role_list" value="{{i.code}}">{{i.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+    <span class="view-menu">
+        <button mat-icon-button (click)="viewClick('v')" class="ovi-prmry-wht-clr" style="object-fit: contain; width: 30px;" matTooltip="{{'Vertical View'|translate}}">
+            <em class="material-icons ovi-fnt-sze26" style="padding-top : 0px;transform: rotate(90deg);">menu </em>
+        </button>
+    </span>
+    <span class="view-menu">
+        <button mat-icon-button (click)="viewClick('h')" class="ovi-prmry-wht-clr" style="object-fit: contain; width: 30px;" matTooltip="{{'Horizondal View'|translate}}">
+            <em class="material-icons ovi-fnt-sze26" style="padding-top : 0px;">menu </em>
+        </button>
+    </span>
+</div>
+<mat-grid-list [cols]="8" rowHeight="50px" *ngIf="HCselected == 'staff-roll-call'" style="padding-bottom: 15px;">
+    <mat-grid-tile [colspan]="2" class="oflw-style">
+        <div style="display:flex; flex-direction: row;">
+               <span class="ovi-fnt-sze14" style="font-weight: 600;padding-top: 10px;padding-right: 5px;">{{"Facility"|translate}}</span>   
+               <select class="custom-select ovi-font-family" [formControl]="facilityId">
+                <option *ngFor="let i of facilityList" value="{{i.id}}">{{i.name}}</option>
+               </select>       
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!-- cards -->
+<mat-grid-list cols ="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" *ngIf="reportData['showCard'] && HCselected == reportData['prevselected']" style="padding-bottom: 30px;">
+    <mat-grid-tile  class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader && selected['selectedId'] == 'staff-summary-rep'">
+            {tile.header, select, Total Staff {Total Staff} Number Of Staffs Absent {Number Of Staffs Absent} SD Alert Count {SD Alert Count} Geofence Alert Count {Geofence Alert Count} Number Of Visitors {Number Of Visitors}}</mat-grid-tile-header>
+            <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader && selected['selectedId'] == 'staff-roll-call'">
+                {tile.header, select, Number Of Staff Present/Assembled {Number Of Staff Present/Assembled} Number Of Staff Missing {Number Of Staff Missing} Number Of Visitors {Number Of Visitors} Number Of Visitors Missing {Number Of Visitors Missing} Event Start Time {Event Start Time}}</mat-grid-tile-header>
+                    <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader && selected['selectedId'] == 'staff-attendancebyid'">
+                        {tile.header, select, Total Leave Taken {Total Leave Taken} Average Strength {Average Strength} Average working Hours {Average working Hours}}</mat-grid-tile-header>
+        <div style="font-weight:bold; margin-top: 10px;padding-top: 30px;justify-content: center;" [ngStyle]="{'font-size' : tile.header == 'Event Start Time' && HCselected == 'staff-roll-call' ? '15px' : '30px'}">{{tile.content}}</div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--charts-->
+<!-- <mat-grid-list class="list" cols ="{{reportData.chartInfo.col}}" rowHeight="{{reportData.chartInfo.height}}" *ngIf="reportData['showChart']"]>
+    <mat-grid-tile *ngFor="let tile of reportData['canvasInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan" >
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader">{{tile.header}}</mat-grid-tile-header>
+        <canvas id="{{tile.canvasId}}"></canvas>
+    </mat-grid-tile>
+</mat-grid-list> -->
+
+<!-- EMPLOYEE SUMMARY-->
+<mat-grid-list class="employee-summary" cols = 4 rowHeight="200px"  [ngStyle] = "{display :selected['selectedId'] == 'staff-summary-rep' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 5px;">
+    <mat-grid-tile class="genderChart">
+        <canvas id="GenderChart"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="deviceChart"> 
+        <canvas id="DeviceChart" ></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="ageChart"> 
+        <canvas id="AgeChart"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="departmentChart"> 
+        <canvas id="DepartmentChart"></canvas>
+    </mat-grid-tile>
+</mat-grid-list> 
+<mat-grid-list class="employee-summary" cols="2" rowHeight="160px" [ngStyle]= "{display :selected['selectedId'] == 'staff-summary-rep' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none', 'background':pagebgcolor}" style="margin-right: 25px;">
+    <mat-grid-tile class="DeptWise" [colspan]="1" [rowspan]="2" style="margin-right: 20px;" *ngIf="false">
+        <!-- <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 30px;" [ngStyle]="headercolor && {'background':headercolor}">Staff Present (By Department)</mat-grid-tile-header> -->
+        <canvas id="StaffByDept" style="padding-bottom: 10px;padding-top:15px;overflow-x: auto;max-height: 250px;"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="SDAlert"[colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 30px;" [ngStyle]="headercolor && {'background':headercolor}">{{"SD Alert"|translate}}</mat-grid-tile-header>
+            <div style="position: relative;height: 500px;width: 100%;" *ngIf="reportData['showSecondTable']">
+                <angular-table-component [tableData]="reportData['alert']" [columns]="reportData['alertColumns']"></angular-table-component>
+            </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="timeWiseChart" [colspan]="1" [rowspan]="2" style="margin-right: 5px;">
+        <!-- <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;height: 30px;" [ngStyle]="headercolor && {'background':headercolor}">Alert Generated (By Hour)</mat-grid-tile-header> -->
+        <canvas id="inOutCountEmployee" style="max-height: 245px;"></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--ALL EMPLOYEE ATTENDANCE-->
+<mat-grid-list class="all-employee-attendance" cols = 6 rowHeight="200px" [gutterSize] = "'10px'"  [ngStyle] = "{display :selected['selectedId'] == 'staff-attendance-all' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 10px;">
+    <mat-grid-tile class="list" [colspan] = 2>
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 48px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Staff Attendance Details For Today"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze14" style=" text-align: left; margin-top: 10px; text-transform: uppercase;">{{"Total Staff"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['leaveTotal']}}</span></mat-list-item>
+            <!-- <mat-list-item style="font-size: 14px; text-align: left; text-transform: uppercase;">Staff Present : <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['workingHours']}}</span></mat-list-item> -->
+        </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" [colspan] = 4> 
+        <canvas id="deptAttAll" ></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--STAFF ATTENDANCE BY ID-->
+<div id = "rep-style" class="ovi-font-family" style="padding-bottom: 5px; background-color: #019F96;height: 30px" *ngIf="reportData['showTable'] && HCselected == reportData['prevselected'] && selected['selectedId'] == 'staff-attendancebyid'"><p class="ovi-prmry-wht-clr" style="font-weight:bold;text-align:justify;text-indent: 15px;padding-top: 6px;">{{"Staff Attendance Report"|translate}}</p></div>
+<!--EMPLOYEE GEOFENCE VIOLATION -->
+<div [ngStyle]="{display:HCselected == 'staff-geofencevio' && HCselected == reportData['prevselected'] && !reportData['noRecords']? 'block' : 'none'}" style="width: 500px;height: 250px;padding-bottom: 20px;">
+    <canvas id="empGeofenceViolation"></canvas> 
+</div>
+<!--SITE VISIT NAVIGATION-->
+<div id="siteNavigationTable" *ngIf="selected['selectedId'] == 'staff-site-nav' && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+    <app-table-component [data]="this.reportData['Table']" [id]="selected['selectedId']" ></app-table-component>
+</div>
+<!--STAFF CONTACT TRACING REPORT-->
+<div id="treeDiagram" [ngStyle] ="{display: (selected['selectedId'] == 'staff-contact') && !reportData['tableView'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="overflow: auto;max-height: 550px;">
+</div>
+<!--HAZARD STAFF TRACKING-->
+<div *ngIf="selected['selectedId'] == 'staff-tracking' && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+    <app-table-component [data]="this.reportData['Table']" [id]="selected['selectedId']" ></app-table-component>
+</div>
+<!-- <div *ngIf="selected['selectedId'] == 'contact-tree' && reportData['tableView'] && !reportData['loading'] && !reportData['noRecords']&& HCselected == reportData['prevselected']">
+    <app-table-component [data]="reportData['firstDegreeData']"  [id]="selected['selectedId']" [displayedTableData]="reportData['displayedData']" [subDisplayedData]="reportData['subTableDisplayedData']" (shareRecords) = shareRecords($event) (selectedUhid)= selectedUhid($event)></app-table-component>
+</div> -->
+<div *ngIf="selected['selectedId'] == 'staff-contact' && reportData['tableView'] && !reportData['loading'] && !reportData['noRecords']&& HCselected == reportData['prevselected']">
+    <app-table-component [data]="reportData['firstDegreeData']" [index] ="reportData['index']" [id]="selected['selectedId']" (shareRecords) = shareRecords($event) (Uhid)= selectedUhid($event) (selectedUhid)=fetchRecords($event) (selectedTagValue)=tagValues($event) [tableData]="reportData['data']"></app-table-component>
+</div>
+<div id="ContactTracingTable" [ngStyle]="{display: (selected['selectedId'] == 'contact-tree' || selected['selectedId']=='staff-contact') && reportData['initialised'] && reportData['tableView'] && !reportData['loading'] && reportData['noRecords']&& HCselected == reportData['prevselected']&& !reportData['nullIdentifier'] ? 'block' : 'none'}">
+    <div style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"No Records"|translate}}</div>
+</div>
+<!--BATTERY SUMMARY-->
+
+<mat-grid-list class="batterySummary" cols = 4 rowHeight = "350px" [gutterSize] = "'10px'"  [ngStyle]="{display:HCselected == 'staff-battery-summary' && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 10px;">
+    <mat-grid-tile class="list" [colspan] = 2>
+        <div [ngStyle]="{display:HCselected == 'staff-battery-summary' ? 'block' : 'none'}" style="width: 500px;height: 300px;padding-bottom: 20px;">
+            <canvas id="percentagesplit"></canvas>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" [colspan] = 2>
+        <div [ngStyle]="{display:HCselected == 'staff-battery-summary' ? 'block' : 'none'}" style="width: 99%;height: 90%;padding-bottom: 20px;">
+            <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 30px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Tag Status"|translate}}</mat-grid-tile-header>
+            <div style="position: relative;height: 80%;width: 100%;padding-top: 30px;" *ngIf="reportData['showSecondTable']">
+                <angular-table-component [tableData]="reportData['totalCount']" [columns]="reportData['secondTabColumns']"></angular-table-component>
+            </div>
+            <!-- <canvas id="activecount"></canvas> -->
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" [colspan] = 1 *ngIf="false">
+        <mat-grid-list class="batterySummary" cols = 1 rowHeight = "50px" style="width: 100%;" [ngStyle]="{display:HCselected == 'staff-battery-summary' ? 'block' : 'none'}">
+            <mat-grid-tile></mat-grid-tile>
+            <mat-grid-tile></mat-grid-tile>
+            <mat-grid-tile class="list"><mat-card> {{"Total Number of Tags"|translate}}:{{reportData['TableLength']}} </mat-card></mat-grid-tile>
+            <mat-grid-tile></mat-grid-tile>
+            <mat-grid-tile class="list"><mat-card> {{"Tags with zero battery"|translate}}:{{reportData['zeroData']}} </mat-card></mat-grid-tile> 
+            <mat-grid-tile></mat-grid-tile>
+            <mat-grid-tile></mat-grid-tile>
+        </mat-grid-list> 
+    </mat-grid-tile>
+</mat-grid-list>
+
+<mat-grid-list rowHeight="10px" cols = "1" [gutterSize] = "'10px'"  [ngStyle]="{display:HCselected == 'staff-battery-summary'&& HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 10px;">
+    <mat-grid-tile></mat-grid-tile>
+</mat-grid-list>
+<mat-grid-list class="list" cols = "4" rowHeight="75px" [gutterSize] = "'10px'"  [ngStyle]="{display:HCselected == 'staff-battery-summary'&& HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 10px;">
+    <mat-grid-tile class="dq-filter" [colspan]=1>
+        <div id="box-left" >
+            {{"Type"|translate}}
+        </div>
+        <div id = "box-right">
+            <mat-select [formControl]="selectedType" (selectionChange)="filterby()" >
+                <mat-option *ngFor="let i of typelist" value="{{i.id}}">{{i.name}}</mat-option>
+            </mat-select>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="dq-filter" [colspan]=1> 
+        <div id="box-left" >
+            {{"Status"|translate}}
+        </div>
+        <div id = "box-right" [class.disabled-content]="reportData['loading']">
+            <mat-select [formControl]="selectedStatus" (selectionChange)="filterby()" >
+                <mat-option *ngFor="let i of statuslist" value="{{i.id}}">{{i.name}}</mat-option>
+            </mat-select>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="dq-filter" [colspan]=1>
+        <div id="box-left" >
+            {{"Battery"|translate}}
+        </div>
+        <div id = "box-right" [class.disabled-content]="reportData['loading']" >
+            <mat-select [formControl]="selectedBattery" (selectionChange)="filterby()" >
+                <mat-option *ngFor="let i of batterylist" value="{{i.id}}">{{i.name}}</mat-option>
+            </mat-select>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]=1 *ngIf="Customselected == 'yes'" [ngStyle]="{display:HCselected == 'staff-battery-summary' ? 'block' : 'none'}">
+        <mat-form-field class="custom">
+            <mat-grid-list cols="2" rowHeight="20px" [gutterSize] = "'10px'">
+                <mat-grid-tile [colspan]=1 >
+                    <input align="center" matInput type="number" #customInput placeholder="   ">
+                </mat-grid-tile>
+                <mat-grid-tile [colspan]=1>
+                    <div class="button-icon" >
+                        <div class="custom-button" (click)='assignvalue(customInput.value)' fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100"  (keydown.enter)="fixClick()">
+                                {{"Ok"|translate}}
+                        </div>     
+                    </div>
+                </mat-grid-tile>
+            </mat-grid-list>
+            <mat-hint align="end"><strong>0-100</strong> </mat-hint>
+        </mat-form-field>
+    </mat-grid-tile>
+</mat-grid-list>
+<!-- ROLL CALL REPORT -->
+<mat-grid-list class="rollcall" cols = 2 rowHeight="250px" [gutterSize]="'10px'" [ngStyle] = "{display :selected['selectedId'] == 'staff-roll-call' && !reportData['noRecords'] && !reportData['loading']&& HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 5px;padding-top: 10px;">
+    <mat-grid-tile class="chart1">
+        <canvas id="durationRollCall"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="chart1"> 
+        <canvas id="departmentRollCall" ></canvas>
+    </mat-grid-tile>
+</mat-grid-list> 
+<!-- VISIT HISTORY BY LOCATION-->
+<mat-grid-list class="rollcall" cols = 2 rowHeight="50px" *ngIf="HCselected == 'visitor-history-byloc' || HCselected == 'cons-visit-hist-bywad' || HCselected == 'tat-by-shift'" [gutterSize]="'10px'" style="padding-bottom: 5px;padding-top: 10px;">
+    <div style="height: 100%;width: 25%;float: left;">
+        <input class="ovi-font-family  ovi-fnt-sze15" type="text" style="height: 28px;margin-top: 14px;width: 80%;" placeholder="{{'Search for a location'|translate}}" #selectLoc (keyup)="getLocationlist($event)" [matAutocomplete]="auto"><span style="font-weight: 800;color: #133f8f;padding: 5px;cursor: pointer;margin-left: -1px;border: 0.3px solid #787373;" *ngIf="selectLoc.value != ''" (click)="selectLoc.value = ''"  (keydown.enter)="fixClick()">x</span>
+        <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let location of locationlist" (click)="setLocationID(location.id,location.name,location.fullName)" value="{{location.fullName}}"  (keydown.enter)="fixClick()">
+        {{location.fullName}}
+        </mat-option>
+        </mat-autocomplete>
+    </div>
+</mat-grid-list>
+<!-- APOLLO VISITOR REPORT-->
+<div *ngIf="selected['selectedId'] == 'tat-by-shift' && reportData['showTatTable'] && !reportData['loading'] && !reportData['noRecords']&& HCselected == reportData['prevselected']">
+    <app-table-component [data]="reportData['tatTableData']" [id]="selected['selectedId']"></app-table-component>
+</div>
+ <!-- TABLE-->
+<div [ngStyle]="{display: reportData['showTable'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-top: 10px;"  *ngIf="this.reportData['showTable']">
+    <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']" [chartData]="this.reportData['charts']"></angular-table-component>
+</div> 
+<div *ngIf="reportData['noRecords'] && !reportData['invalidDate'] && reportData['noError'] && !reportData['nullIdentifier'] && HCselected == reportData['prevselected']&& selected['selectedId'] != 'staff-contact'" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"No Records"|translate}}</div>
+<div *ngIf="reportData['invalidDate']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{reportData['invalidDateMessage']}}</div>
+<div *ngIf="reportData['nullIdentifier'] && HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Identifier Required"|translate}}</div>

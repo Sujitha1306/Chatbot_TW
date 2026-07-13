@@ -1,0 +1,178 @@
+<div fxFlex class="input-component-holder form-body-frame">
+
+    <mat-toolbar class="input-header">
+        <div class="header-name" *ngIf="!data">{{"Create Ticket"|translate}}/div>
+        <div class="header-name" *ngIf="data">{{"Modify Ticket"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button>
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div class="input-container inner-frm-glb" [formGroup]="ticketForm">
+        <div class="form_body form-body-frame">
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" class="form-row mrgn-tp_3">
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Customer *'|translate"  formControlName="customerId">
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Name *'|translate" formControlName="name">
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" class="form-row">
+                <div fxFlex.xs="100" fxFlex.lg="100" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form">
+                        <!-- <mat-form-field hintLabel= "required*" class="example-full-width form-field">
+                            <mat-select placeholder="Select location" formControlName="locationId" required>
+                                <mat-option *ngFor="let block_list of blockList" [value]="block_list.id">
+                                    {{block_list.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field> -->
+
+                        <mat-form-field class="example-full-width form-field">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Customer'|translate" formControlName="locationId" required>
+                        </mat-form-field>
+
+                    </div>
+                </div>
+                <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field">
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Priority *'|translate" formControlName="ticketPriorityId">
+                                <mat-option *ngFor="let priorList of ticketPriorityList" [value]="priorList.code">
+                                    {{priorList.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" class="form-row">
+                <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Phone *'|translate" formControlName="phone" [errorStateMatcher]="matcher"
+                                autocomplete="off">
+                            <mat-error *ngIf="ticketForm.controls.phone.invalid">
+                                <span [hidden]="!ticketForm.controls['phone'].errors.required">
+                                    {{"Phone number is required."|translate}}
+                                </span>
+                                <span [hidden]="!ticketForm.controls['phone'].errors.pattern">
+                                    {{"Invalid Phone number"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Email *'|translate" formControlName="email" [errorStateMatcher]="matcher"
+                                autocomplete="off">
+                            <mat-error *ngIf="ticketForm.controls.email.invalid">
+                                <span [hidden]="!ticketForm.controls['email'].errors.required">
+                                    {{"E-mail is required."|translate}}
+                                </span>
+                                <span [hidden]="!ticketForm.controls['email'].errors.email">
+                                    {{"Invalid E-mail"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" class="form-row">
+                <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Title'|translate" formControlName="title">
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50">
+                    <div class="example-form">
+                        <mat-form-field class="example-full-width form-field mrgn-top">
+                            <textarea matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Description *'|translate"  formControlName="description"
+                                maxlength="1000"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+
+
+           <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" class="form-row">
+                <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+
+                        <div class="example-form">
+                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="''|translate" formControlName="ticketAttachmentId"
+                                    [errorStateMatcher]="matcher" maxlength="26" readonly>
+                                <mat-label class="tkt-atchmnt">Attachments<mat-icon class="icon-colr">
+                                        attach_file</mat-icon>
+                                </mat-label>
+        
+       
+                                <mat-icon matSuffix class="cur-ptr"
+                                    accept="image/png, image/jpeg">
+                                </mat-icon> 
+                                <br><input class="vsbly-shw" type="file" id="file3"
+                                    (change)="handleFileSelect($event);" />
+                            </div>      
+              </div>
+            <div fxFlex.xs="100" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50" class="row-field">
+                    <div class="example-form header-close">
+                        <div *ngFor="let imgObj of imageData;let index = index" class="mgn-cmn-styl">                            
+                               <img [src]="imgObj.file" class="lgtbox-style" alt="imgObj"
+                                *ngIf="imgObj.mimeType.includes('image')" (click)="lightboxView(imgObj);"
+                                 matTooltip="{{'click to enlarge'|translate}}" (keydown.enter)="fixClick()">
+                                <mat-icon (click)="cancelFile(index);"  matTooltip="{{'Delete'|translate}}?" class="del_btn"  (keydown.enter)="fixClick()"
+                                >highlight_off</mat-icon>
+
+                            <object *ngIf="imgObj.mimeType=='application/pdf'" [data]="imgObj.file"  (keydown.enter)="fixClick()"
+                                type="application/pdf" (click)="lightboxView(imgObj);" matTooltip="{{'click to enlarge'|translate}}">
+                                <iframe src="https://docs.google.com/viewer?&embedded=true"
+                                class="frame-styl"  title="Document Viewer"></iframe>
+                            </object>
+                        </div>
+
+
+                   <!-- ------- While EDITING the FORM the below will display ------ -->
+
+                <div class="img-hover-zoom--slowmo" *ngFor="let imgObj of data.attachFiles;let index = index"
+                class="mgn-cmn-styl">                       
+
+                <div class="img-hover-zoom--slowmo:hover">
+                    <img src="http://ovitagapi-sp-env-1.2cnseumjbr.ap-south-1.elasticbeanstalk.com/{{imgObj.fileUrl}}"
+                        class="prew-style-sm"   alt="imgObj"                             
+                        *ngIf="imgObj.fileType.includes('image')" matTooltip="{{'Zoom on Hover'|translate}}"  >
+                        <mat-icon (click)="deleteAttachmentInTicket(imgObj, index);" matTooltip="{{'Delete'|translate}}?" class="del_btn"  (keydown.enter)="fixClick()"
+                        >highlight_off</mat-icon>
+
+                    <object *ngIf="imgObj.mimeType=='application/pdf'" [data]="imgObj.file"  type="application/pdf">
+                        <iframe src="https://docs.google.com/viewer?&embedded=true" class="frame-styl" title="Document Viewer">
+                    </iframe>
+                    </object>
+                    </div>
+                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-footer">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!data" class="active-btn margin-r-1" [disabled]="ticketForm.invalid || isDisabled" 
+         appDebounceClick (debounceClick)="saveTicket()" [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
+        <button mat-button *ngIf="data" class="active-btn margin-r-1" [disabled]="ticketForm.invalid || isDisabled" 
+         appDebounceClick (debounceClick)="updateTicket(data)" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+    </div>
+</div>

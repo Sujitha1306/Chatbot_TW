@@ -1,0 +1,48 @@
+<div class="ovi-font-family" style="height:100%;width: 100%;">
+    <div class="tw-edit-header ovi-fnt-sze13">
+        <div>{{ editTemplateData?.headerData ? editTemplateData?.headerData[0].tableheader : ("Edit" | translate) }}</div>
+    </div>
+    <div *ngIf="editTemplateData.fieldData" [formGroup]="DynamicForm" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg"
+     style="display: flex;gap: 5px;padding: 15px 10px; align-items: center;">
+        <ng-container *ngFor="let field of editTemplateData.fieldData">
+            <div *ngIf="field.fieldType === 'select'" class="ovi-edit-clmn-width ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size ovi-fnt-sze10">
+                    {{ field.label | translate }}
+                </mat-label>
+                <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh ovi-matfrmfld-err">
+                    <mat-select [panelClass]="'tw-ngx-search-icon'" [formControlName]="field.formControlName" [disabled]="field.disable">
+                        <mat-option *ngIf="field.enableSearch">
+                            <ngx-mat-select-search [formControl]="field.searchControl"
+                                [placeholderLabel]="'Search' | translate" [noEntriesFoundLabel]="'No matching options' | translate">
+                            </ngx-mat-select-search>
+                        </mat-option>
+                        <mat-option *ngFor="let opt of field.filteredOptions" [value]="opt.code" (click)="field.label == 'Assign Type' ? onChangeFieldData(opt) : null">
+                            {{ opt.value }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="field.fieldType === 'input'" class="ovi-edit-clmn-width ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{ field.label | translate }}</mat-label>
+                <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh">
+                    <input matInput [formControlName]="field.formControlName" [readonly]="field.disable">
+                </mat-form-field>
+            </div>
+
+            <div *ngIf="field.fieldType === 'checkbox'" class="row-field-1">
+                <mat-checkbox [formControlName]="field.formControlName" [disabled]="field.disable">
+                    {{ field.label | translate }}
+                </mat-checkbox>
+            </div>
+        </ng-container>
+        <div class="tw-edit-footer">
+            <div class="tw-edit-save-btn done-btn" (click)="saveAction()">
+                <mat-icon class="ovi-fnt-sze18 make-icon-center">done</mat-icon>
+            </div>
+            <div class="tw-edit-save-btn close-btn" (click)="closeMenu()">
+                <mat-icon class="ovi-fnt-sze18 make-icon-center">close</mat-icon>
+            </div>
+        </div>
+    </div>
+</div>

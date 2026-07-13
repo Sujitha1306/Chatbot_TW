@@ -1,0 +1,35 @@
+<div class="mat-tab-content" [formGroup]="kpiTemplate">
+    <div class="ovi-row-gap " style="margin-right: 0px;">
+        <div class="ovi-row-four-clmn  ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Select"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select'|translate"
+                        formControlName="kpiMasterId">
+                        <mat-option>
+                            <ngx-mat-select-search 
+                                [formControl]="kpiSearch"
+                                [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate">
+                            </ngx-mat-select-search>
+                        </mat-option>
+                        <mat-option *ngFor="let form of filteredTemplateList" [value]="form.id">
+                            {{form.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+        </div>
+        <div class="ovi-row-four-clmn " style="margin-top: 16.5px;">
+                <button mat-button [disabled]="kpiTemplate.controls['kpiMasterId'].value == null"
+                class="active-btn margin-r-1" appDebounceClick (debounceClick)="getTemplateInfo();"
+                [debounceTime]="800" cdkFocusInitial >{{"Add"|translate}}</button>
+        </div>
+    </div>
+    <div *ngIf="kpiSource.length > 0"  style="padding: 10px 10px 10px 0px;" >
+    <angular-table-component [id]="'formBuilder'" [type]="'ng-table'" [tableData]="kpiSource"
+    [columns]="['KPI Name', 'Category','Frequency','Target','Achieved','Latest Value','Last Updated','Formula']"
+    [columnData]="['kpiMasterName','categoryName','frequencyName',' ','','','lastUpdated','formula']"
+    (triggerAction)="triggerAction($event)">
+    </angular-table-component>
+    </div>
+    <div *ngIf="kpiSource.length === 0" class ="no-shift">{{"No records Found"|translate}}</div>
+</div>

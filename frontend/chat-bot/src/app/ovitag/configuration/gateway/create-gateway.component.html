@@ -1,0 +1,461 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.id">{{"Create Gateway"|translate}}</div>
+        <div *ngIf="data.id">{{"Modify Gateway"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 81px);overflow: auto;overflow-x: hidden;">
+        <div [formGroup]="gatewayForm">
+            <div style="height: 100px">
+            <div>
+                <div class="ovi-popup-title-text-size ovi-font-family">{{"FACILITY"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Choose Facility"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Facility Name'|translate" formControlName="facilityIds"[disableOptionCentering]="true" multiple>
+                                <mat-option *ngFor="let data of facilityListbyCustomer" [value]="data.id">
+                                    {{data.name}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="gatewayForm.controls.facilityIds.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['facilityIds'].errors.required">{{"Facility name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+            </div>
+            <div style="height: 250px;">
+            <div>
+                <div class="ovi-popup-title-text-size">{{"GATEWAY INFORMATION"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Gateway Id"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gateway ID'|translate" formControlName="gatewayId"
+                                [(value)]="data.gatewayId">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Gateway Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gateway Name'|translate"
+                                formControlName="gatewayName" [errorStateMatcher]="matcher" maxlength="26"
+                                autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.gatewayName.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['gatewayName'].errors.required">{{"Gateway name
+                                    is required."|translate}}</span>
+                                <span [hidden]="!gatewayForm.controls['gatewayName'].errors.minlength">{{"Minimum
+                                    allowed characters are 3"|translate}} </span>
+                                <span [hidden]="!gatewayForm.controls['gatewayName'].errors.maxlength">{{"Maximmum
+                                    allowed characters are 25"|translate}} </span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Gateway Type"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gateway Type'|translate" formControlName="gatewaySubtype" [disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of gatewaySubTypes" [value]="data.code">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="gatewayForm.controls.gatewaySubtype.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['gatewaySubtype'].errors.required">{{"Gateway
+                                    type is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Kernel Version"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Kernel version'|translate"
+                                formControlName="kernelVersion" autocomplete="off">
+                        </mat-form-field>
+                        <mat-error *ngIf="gatewayForm.controls.kernelVersion.invalid" class="error-txt-1">
+                            <span [hidden]="!gatewayForm.controls['kernelVersion'].errors.required">{{"Kernel Version
+                                is required."|translate}}</span>
+                        </mat-error>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"IP Address"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'IP Address'|translate" formControlName="ipAddress"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.ipAddress.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['ipAddress'].errors.pattern">{{"Enter valid IP
+                                    address (e.g. xxx.xxx.x.x)"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Port"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Port number'|translate" formControlName="portNumber"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.portNumber.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['portNumber'].errors.pattern">{{"Enter valid
+                                    port number (e.g. 1883)"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"SSID Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'SSID Name'|translate" formControlName="ssidName"
+                                autocomplete="off">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"SSID Password"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                            <input matInput  type="password" appPlaceholder [showPlaceholder]="false" [placeholderText]="'SSID Password'|translate"
+                                formControlName="ssidPassword" [errorStateMatcher]="matcher" autocomplete="off">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Software Version"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Software version'|translate"
+                                formControlName="softwareVersion" autocomplete="off">
+                        </mat-form-field>
+                        <mat-error *ngIf="gatewayForm.controls.softwareVersion.invalid" class="error-txt-1">
+                            <span [hidden]="!gatewayForm.controls['softwareVersion'].errors.pattern">{{"Software
+                                version is required"|translate}}</span>
+                        </mat-error>
+                </div>
+            </div>
+            </div>
+             <div style="height: 250px;">
+            <div>
+                <div class="ovi-popup-title-text-size">{{"BROKER INFORMATION (LOCAL / CLOUD)"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div>
+                <div class="ovi-popup-title-text-size">{{"LOCAL"|translate}}</div>
+            </div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Mosquito Host"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Host'|translate" formControlName="localHost"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.localHost.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localHost'].errors.required">{{"Host name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT Port"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'MQTT Port'|translate" formControlName="localPort"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.localPort.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localPort'].errors.pattern">{{"Enter valid
+                                    port number (e.g. 1883)"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT protocol"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'MQTT Protocol'|translate" formControlName="localmprotocol" [disableOptionCentering]="true"
+                                (change)="onChange($event.target.value)"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of mqttPorts" [value]="data.name">
+                                    {{data.name | uppercase}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="gatewayForm.controls.localmprotocol.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localmprotocol'].errors.required">{{"MQTT
+                                    protocol type is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Websocket Port"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Websocket Port'|translate"
+                                formControlName="localwport" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.localwport.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localwport'].errors.required">{{"Websocket port
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Websocket Protocol"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Websocket Protocol Type'|translate" formControlName="localwprotocol"
+                                (change)="onChange($event.target.value)" [disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of webSocketProtocols" [value]="data.text">
+                                    {{data.text | uppercase }}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="gatewayForm.controls.localwprotocol.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localwprotocol'].errors.required">{{"Websocket
+                                    Protocol type is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="row-field-en">
+                        <mat-label class="ovi-lbl-text-size">{{"Enable SSL"|translate}} <span class="mandatory-field">*</span>&nbsp;</mat-label>
+                        <mat-checkbox value="checkedLocalssl" (keydown.enter)="fixClick()" (click)="changelocalValue(checkedLocalssl)"
+                            formControlName="localIsSslEnabled"></mat-checkbox>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"User Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'local user name'|translate"
+                                formControlName="localUserName" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.localUserName.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localUserName'].errors.required">{{"user name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Password"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput  type="password" appPlaceholder [showPlaceholder]="true" [placeholderText]="'local Password'|translate"
+                                formControlName="localPassword" [errorStateMatcher]="matcher"
+                                autocomplete="new-password">
+                            <mat-error *ngIf="gatewayForm.controls.localPassword.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['localPassword'].errors.required">{{"password
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <div *ngIf="checkedLocalssl">
+                        <mat-icon matSuffix accept="image/png, image/jpeg" style="cursor: pointer;">
+                        </mat-icon>
+                        <input type="file" accept=".pem, .cer, .crt, .key, .pkc8, .txt" class="custom-file-input hidden" id="file3" title=" " value = "Choose a video please" (change)="handleFileSelect($event);">
+                        <label for="files" class="file-label">*.pem, .cer, .crt, .key, .pkc8, .txt</label>
+                        <div *ngIf="gatewayForm.controls['localbase64Data'].value">
+                            <img src="assets/Alert/common_icons/txt-file.png" alt="txt-file" width="35" height="40" appTooltip tooltipText="{{'caCertificate'|translate}}" placement="bottom">
+                            <span class="close-icon" (keydown.enter)="fixClick()" (click)="removeLocalFile()" appTooltip tooltipText="{{'delete'|translate}}" placement="bottom" style="cursor: pointer;"> x </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            <div style="height: 260px;">
+            <div style="height: 30px;">
+                <div class="ovi-popup-title-text-size" style="position: relative;top: 13px;">{{"CLOUD"|translate}}
+                    ( <span>
+                        <mat-checkbox [checked]="checked" formControlName="brokerTypeId"
+                            (change)="isSameAsLocal($event.checked)"></mat-checkbox>
+                    </span>
+                    <span class="sub-ovi-popup-title-text-size"> {{"If same detail as local"|translate}}</span> )
+
+
+                </div>
+            </div>
+
+            <div class="ovi-row-gap" style="position:relative;top: 10px;">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Mosquito Host"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Host'|translate" formControlName="cloudHost"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.cloudHost.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudHost'].errors.required">{{"Host name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT Port"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Port'|translate" formControlName="cloudPort"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.cloudPort.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudPort'].errors.pattern">{{"Enter valid
+                                    port number (e.g. 1883)"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT Protocol"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'MQTT Port'|translate" formControlName="cloudmprotocol" [disableOptionCentering]="true"
+                                (change)="onChange($event.target.value)">
+                                <mat-option *ngFor="let data of mqttPorts" [value]="data.name">
+                                    {{data.name | uppercase }}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="gatewayForm.controls.cloudmprotocol.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudmprotocol'].errors.required">{{"MQTT
+                                    protocol type is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Websocket Port"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Websocket Port'|translate"
+                                formControlName="cloudwport" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.cloudwport.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudwport'].errors.required">{{"Websocket port
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"MQTT Protocol"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Websocket Protocol Type'|translate" formControlName="cloudwprotocol" [disableOptionCentering]="true"
+                                (change)="onChange($event.target.value)">
+                                <mat-option *ngFor="let data of webSocketProtocols" [value]="data.text">
+                                    {{data.text | uppercase }}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="gatewayForm.controls.cloudwprotocol.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudwprotocol'].errors.required">{{"Websocket
+                                    Protocol type is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="row-field-en">
+                        <mat-label class="ovi-lbl-text-size">{{"Enable SSL"|translate}} <span class="mandatory-field">*</span> &nbsp;</mat-label>
+                        <mat-checkbox value="checkedCloudssl" (keydown.enter)="fixClick()" (click)="changecloudValue(checkedCloudssl)"
+                            formControlName="cloudIsSslEnabled"></mat-checkbox>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"User Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'User Name'|translate" formControlName="cloudUserName"
+                                [errorStateMatcher]="matcher" autocomplete="off" >
+                            <mat-error *ngIf="gatewayForm.controls.cloudUserName.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudUserName'].errors.required">{{"user name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Password"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput  type="password" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Password'|translate"
+                                formControlName="cloudPassword" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.cloudPassword.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['cloudPassword'].errors.required">{{"password
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <div  *ngIf="checkedCloudssl">
+                        <mat-icon matSuffix accept="image/png, image/jpeg" style="cursor: pointer;">
+                        </mat-icon>
+                        <input class="custom-file-input hidden" type='file' accept=".pem, .cer, .crt, .key, .pkc8, .txt" title=" " id="file2" (change)="handleFileSelect($event);"/>
+                        <label for="files" class="file-label">*.pem, .cer, .crt, .key, .pkc8, .txt</label>
+
+                        <div *ngIf="gatewayForm.controls['cloudbase64Data'].value">
+                            <img src="assets/Alert/common_icons/txt-file.png" alt="txt-file" width="35" height="40"  appTooltip tooltipText="{{'caCertificate'|translate}}" placement="bottom">
+                        <span class="close-icon" (keydown.enter)="fixClick()" (click)="removeCloudFile()"  appTooltip tooltipText="{{'delete'|translate}}" placement="bottom" style="cursor: pointer;"> x </span>
+                        </div>
+                        </div>
+                </div>
+            </div>
+</div>
+            <div>
+                <div class="ovi-popup-title-text-size">{{"CLICK HOUSE INFORMATION"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div class="ovi-row-gap">
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Host"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Host'|translate" formControlName="host"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.host.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['host'].errors.required">{{"Host name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Port"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Port'|translate" formControlName="port"
+                                [errorStateMatcher]="matcher" autocomplete="off" >
+                            <mat-error *ngIf="gatewayForm.controls.port.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['port'].errors.pattern">{{"Enter valid
+                                    port number (e.g. 1883)"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Database"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Port'|translate" formControlName="database"
+                                [errorStateMatcher]="matcher" autocomplete="off" >
+                            <mat-error *ngIf="gatewayForm.controls.database.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['database'].errors.required">{{"Database name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"User Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'User Name'|translate" formControlName="username"
+                                [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.username.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['username'].errors.required">{{"user name
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Password"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput  type="password" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Password'|translate"
+                                formControlName="password" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="gatewayForm.controls.password.invalid" class="error-txt-1">
+                                <span [hidden]="!gatewayForm.controls['password'].errors.required">{{"password
+                                    is required."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+          
+     </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!data.id" class="active-btn" appDebounceClick
+            [disabled]="gatewayForm.invalid || !isfileSelected || isDisabled" (debounceClick)="saveGateway()" [debounceTime]="300"
+            cdkFocusInitial>{{"Create"|translate}}</button>
+
+        <button mat-button *ngIf="data.id" class="active-btn" appDebounceClick
+            [disabled]="gatewayForm.invalid || !isfileSelected || isDisabled" (debounceClick)="updateGateway(data.id)"
+            [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+    </div>
+
+</div>

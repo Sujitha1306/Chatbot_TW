@@ -1,0 +1,44 @@
+<mat-drawer-container style="height: 100% !important;">
+    <div class="ovi-font-family ovi-fnt-sze14" style="overflow: hidden;height:100%" *ngIf="enableNavbar">
+        <mat-toolbar class="toolbar ovi-prmry-bg-clr ovi-prmry-wht-clr" style="flex-direction: column; height: fit-content;">
+            <div *ngIf="enableHeader" class="toolbar" style="width: calc(100vw - 10px); ">
+                <span class="profile" style="padding: 0 5px;">
+                    <span class="first-letter" (click)="patientId == null ? openPwaProfile($event) : ''"  (keydown.enter)="fixClick()">{{ firstLetter}}</span>
+                    <span class="profile-details">
+                        <span class="name">{{userName}}</span>
+                        <span class="company">{{facilityName}}</span>
+                    </span>
+                </span>
+                <span class="spacer"></span>
+                <div *ngIf="!guestUser" style="display: flex; align-items: center; opacity: 1;cursor: pointer;height: 51px;padding-right: 3px;" (click)="getOpenNotification()">
+                    <img src="../../../assets/Alert/common_icons/dasboard-notification.svg" class="ovi-img-size" alt="dasboard-notification"
+                    style="filter: brightness(0) invert(1); width: 17px;">
+                    <span class="pwa-badge"  matBadgeSize="small" [matBadgeHidden]="overAllcount === 0" [matBadge]="overAllcount"></span>
+                </div>
+                <button class="ovi-prmry-wht-clr" *ngIf="!guestUser" (click)="patientId == null ? goToMainPage() : logout()"
+                    mat-icon-button style="background: transparent; border: 1px;">
+                    <mat-icon class="ovi-fnt-sze22" style="padding-top: 3px !important;">{{patientId == null ? 'home' : 'power_settings_new'}}</mat-icon>
+                </button>
+            </div>
+            <div *ngIf="headerName !== null" style="display: flex; width: 100%; align-items: center; justify-content: space-between">
+                <div class="header-text">
+                    <span mat-dialog-close class="back-to-menu-btn" (click)="goToMainPage()"  (keydown.enter)="fixClick()">
+                        <mat-icon style="height: fit-content; width: fit-content; padding: 0;">keyboard_arrow_left</mat-icon>
+                    </span>
+                    <span>{{headerName}}</span>
+                </div>
+                <span *ngIf="isOption" class="icon-group">
+                    <mat-icon class="pwa-custome-icon-style" (click)="qrScan()">qr_code</mat-icon>
+                    <mat-icon class="pwa-custome-icon-style">search</mat-icon>
+                    <mat-icon class="pwa-custome-icon-style" matBadge="10" matBadgeColor="warn">notifications</mat-icon>
+                </span>
+            </div>
+        </mat-toolbar>
+        <div style="height: calc(100% - 10px);width: calc(100% - 0px);overflow: auto;">
+            <router-outlet></router-outlet>
+        </div>
+    </div>
+    <div *ngIf="!enableNavbar" style="height: 100%;">
+        <router-outlet></router-outlet>
+    </div>
+</mat-drawer-container>

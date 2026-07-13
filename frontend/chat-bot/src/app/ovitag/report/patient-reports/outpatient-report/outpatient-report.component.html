@@ -1,0 +1,148 @@
+<div class="font-style ovi-font-family">
+  <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+  <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+      <mat-grid-tile [colspan]="1" class="arrow">
+          <div id="arrowbox"><span>{{"Outpatient"|translate}}</span></div>
+      </mat-grid-tile>
+      <mat-grid-tile class="oflw-style" [colspan]="2">
+          <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+              <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value" [formControl]="selectedReport" style="padding-top: 10px;">
+                  <option *ngFor="let i of reportList" value="{{i.link}}" [selected]="i==0 ? true : null">{{i.name}}</option>
+              </select>
+              <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+          </div>
+      </mat-grid-tile>
+      <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'geofencevio'">
+        <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+            <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <span class="floating-label">{{"From Date"|translate}}</span>
+        </div>
+      </mat-grid-tile>
+      <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'geofencevio'">
+          <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+              <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                  (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-datepicker #picker></mat-datepicker>
+                  <span class="floating-label">{{"Report Date"|translate}}</span>
+          </div>
+      </mat-grid-tile>
+      <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'geofencevio'">
+        <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+            <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <span class="floating-label">{{"To Date"|translate}}</span>
+        </div>
+      </mat-grid-tile>
+      <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+          <div style="width:145px;">
+              <div class="button-icon" >
+                <div class="custom-button" [ngClass] = "HCselected == 'geofencevio'? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate?'disabled-content' : 'none' : selected['selectedId']== HCselected && selected['todate'] == toDate ? 'disabled-content' : 'none'" (click)="getOutpatientReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100" (keydown.enter)="fixClick()" >
+                          {{"Get Insights"|translate}}
+                  </div>     
+              </div>
+          </div>
+          <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+              (click)="getOutpatientReports(HCselected)" (keydown.enter)="fixClick()" >autorenew</i>
+          </div>
+          <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+              <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+              <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+              <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+              <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+          </div>
+          <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+              <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+              <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+          </div>
+      </mat-grid-tile>
+      <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+          <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+          <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+          <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+          <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+      </div>
+      <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+          <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+          <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+      </div>
+  </mat-grid-list> 
+</div>   
+<!-- Summary -->
+  <mat-card *ngIf = "selected['selectedId'] == 'patient-status-op'">
+    <mat-grid-list class="outPatient-report1" cols = 3 rowHeight="200px"  [ngStyle]="{display: reportData['showChart'] ? 'block' : 'none'}" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+      <mat-grid-tile class="genderChart" style="width: 200px;">
+        <canvas id="OPGender" width="200px"></canvas>
+        <span id="data-label"></span>
+      </mat-grid-tile>
+      <mat-grid-tile class="deviceChart" style="width: 200px;"> 
+        <canvas id="OPdevice" width="200px"></canvas>
+      </mat-grid-tile>
+      <mat-grid-tile class="languageChart" style="width: 200px;"> 
+        <canvas id="OPlanguage" width="200px"></canvas>
+      </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card>
+  <mat-card *ngIf = "selected['selectedId'] == 'patient-status-op'">
+    <mat-grid-list class="outPatient-report2" cols = 7 rowspan = 1 colspan = 1 rowHeight="400px"  [ngStyle]="{display: reportData['showChart'] ? 'block' : 'none'}" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="bar-chart1" style="width: 500px; height: 400px;" [colspan] = 3>           
+            <canvas id="OPfloorwise" width = 500px  height = 350px ></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="bar-chart2" style="width: 500px; height: 400px;overflow-x: auto;" [colspan] = 4>           
+            <canvas id="OPinOutCount" width = 500px height = 350px ></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card>
+  <mat-card *ngIf = "selected['selectedId'] == 'patient-status-op'">
+    <mat-grid-list class="outPatient-report2" cols = 1 rowspan = 1 colspan = 1 rowHeight="500px"  [ngStyle]="{display: reportData['showChart'] ? 'block' : 'none'}" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile class="bar-chart2" style="width: 500px; height: 500px;overflow-x: auto;">           
+            <canvas id="OPCompCount"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card>
+  <div class="dq-filter" *ngIf = "reportData['showChart'] && selected['selectedId'] == 'patient-status-op'" style="position:relative">
+    <div id="box-left">
+        {{"Speciality"|translate}}
+    </div>
+    <div id="box-right">
+        <mat-form-field appearance="none" style="display: inline-block;">
+            <mat-select [formControl]="selectedSpeciality" (selectionChange)="getSpecialitySelectionDetail()">
+              <mat-option *ngFor="let specialitylist of reportData['specialityList']" [value]="specialitylist">
+                {{specialitylist}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+    </div>
+  </div>
+  <mat-card *ngIf = "selected['selectedId'] == 'patient-status-op' && false">
+    <mat-grid-list class="outPatient-report3" cols = 1 rowspan = 2 colspan = 1 rowHeight="400px" [ngStyle]="{display: reportData['showChart'] ? 'block' : 'none'}" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}" [gutterSize]="'20px'">
+        <mat-grid-tile class="bar-chart1" style="width: 400px; height: 400px;">           
+            <canvas id="OPspecialityWise" width = 400px  height = 400px ></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile class="bar-chart2" style="width: 400px; height: 400px;">           
+            <canvas id="OPspecialityWiseCount" width = 400px height = 400px ></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+  </mat-card>
+
+<!--GEOFENCE VIOLATION-->
+  <div class="list" [ngStyle]="{display: selected['selectedId']=='geofencevio' && !reportData['noRecords'] ? 'block' : 'none'}" style="width: 500px;height: 250px;padding-bottom: 20px;">
+    <canvas id="geofenceViolation" width="450px" height="350px"></canvas> 
+  </div>
+  <!-- Table -->
+  <div [ngStyle]="{display: reportData['showTable'] ? 'block' : 'none'}" style="padding-top: 10px;">
+    <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']" [chartData]="reportData['charts']"></angular-table-component>
+  </div> 
+  <div *ngIf="reportData['noRecords']" style="text-align: center;margin: 2% 0 0 -7%;">{{"No Records"|translate}}</div>
+

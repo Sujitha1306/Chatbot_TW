@@ -1,0 +1,366 @@
+<div class="loading-spinner" *ngIf="onLoading">
+  <div class="spinnerload">
+    <div class="spin1"></div>
+    <div class="spin2"></div>
+    <div class="spin3"></div>
+  </div>
+</div>
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+  <div class="ovi-pop-hdr">
+    <div>{{"Manage"|translate}} (<span>{{data['selectedData']['Group Name']}}</span>)</div>
+    <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+  </div>  
+  <div class="popup-margin appterms-tab ovi-appterms-tab-height" style="height: calc(100vh - 140px);">
+    <div *ngIf="selectedTabIndex === 0" class="tw-toglebox-appterms ovi-font-family">
+      <div class="custom-checkbox-appterms">
+        <input id="status" type="checkbox" [checked]="isChecked" (keydown.enter)="fixClick()" (click)="getChangetab($event)">
+        <label for="status">
+          <div class="status-switch-appterms" [attr.data-checked]="'Facility'|translate"
+            [attr.data-unchecked]="'All'|translate">
+          </div>
+        </label>
+      </div>
+    </div>
+    <mat-tab-group (selectedTabChange)="onTabChanged($event)" [formGroup]="appTermsForm" style="height: 100%;">
+      <mat-tab *ngFor="let tab of tablist" label={{tabName[tab]}}>
+        <ng-template mat-tab-label>{{tabName[tab]|translate}}</ng-template>
+        <div>
+          <div *ngIf="!expanded" style="display: flex; height: 36px; float: right;position: relative;right: 5px;top: 5px">
+            <button mat-button class="active-btn" (click)="onChangeExpanded()"> Create
+            </button>
+          </div>
+          <div *ngIf="apptermsJson[tablist[selectedTabIndex]].length || selectedTabIndex === 1" class="row-field" style="max-width: 170px;display: flex;">
+            <div *ngIf="!expanded" style="display: flex; padding-top: 5px; align-items: center;padding-bottom: 5px;">
+              <form autocomplete="off">
+                <input class="tw-filter-new search-box" style="height: 32px;" [formControl]="filter" (keyup)="applyFilter($event.target.value)" autocomplete="off"
+                  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+              </form>
+            </div>
+            <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="position: relative;top: 6px;left: 10px;" *ngIf="(tab === 'appTermsLinks'|| tab === 'appTermsMls') && !expanded">
+              <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select LinkTerm'|translate" [formControl]="tab === 'appTermsLinks'? selectedTermCode1 : selectedTermCode2"
+                            [disableOptionCentering]="true" (selectionChange)="linkChangeappterm($event);" matSelectSearch>
+                 <mat-option [value]="null">--- Select AppTerm ---</mat-option>
+                 <mat-option *ngFor="let data of linkedFilteredAppTerms" [value]="data['code']">
+                    {{data['value']}}
+                 </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="position: relative;top: 6px;left: 20px;" *ngIf="tab === 'appTermsLinks' && !expanded">
+              <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select GroupName'|translate" [formControl]="selectedGroupName"
+                            [disableOptionCentering]="true" (selectionChange)="onChangeSelecedGroup($event);" matSelectSearch>
+                 <mat-option [value]="null">--- Select AppTerm ---</mat-option>
+                 <mat-option *ngFor="let data of filterlinkGroup" [value]="data['code']">
+                    {{data['value']}}
+                 </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="expanded">
+          <div>
+             <div *ngIf="false" style="display: flex; height: 25px; justify-content: flex-end;"
+              [ngStyle]="">
+              <button  mat-button class="active-btn" (click)="onChangeExpanded()">Back
+                 <mat-icon style="padding: 0;height: 26px; color: white;margin-left: 3px;">keyboard_arrow_left</mat-icon> 
+              </button>
+            </div> 
+            <div formArrayName={{tab}} style="height: 130px; padding-top: 10px;">
+              <div *ngFor="let data of appTermsForm['controls'][tab]['controls']; let i=index">
+                <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" [formGroupName]="i">
+                  <div *ngIf="tab == 'appTerms'" class="ovi-row-gap-four-fld">
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                      <mat-label class="ovi-lbl-text-size">{{"App Term Code"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'App Term Code'|translate" formControlName="code" required
+                          [readonly]="updateBtn">
+                        <mat-error class="error-txt-1"
+                          *ngIf="appTermsForm['controls'][tab]['controls'][0].get('code').value != null && appTermsForm['controls'][tab]['controls'][0].get('code').value != ''">
+                          <span
+                            [hidden]="appTermsForm['controls'][tab]['controls'][0]['code']?.errors?.isAppCodeExists">
+                            {{"App Term Code is Already Exist.."|translate}}</span>
+                        </mat-error>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                      <mat-label class="ovi-lbl-text-size">{{"App Term Name"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'App Term Name'|translate" formControlName="value" required>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                      <mat-label class="ovi-lbl-text-size">{{"Sequence"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh"  appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'Sequence'|translate" formControlName="sequence" type="number"
+                          class="no-spinner" >
+                        <div matSuffix class="ovi-schl-custom-select">
+                          <span (keydown.enter)="fixClick()" (click)="updateSequenceValue(-1, 'appTerms')" class="ovi-schl-custom-dec">-</span>
+                          <span (keydown.enter)="fixClick()" (click)="updateSequenceValue(1, 'appTerms')" class="ovi-schl-custom-incre">+</span>
+                        </div>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn" style="align-content: center;position: relative;top: 5px;">
+                        <mat-checkbox class="ovi-lbl-text-size"
+                          formControlName="isGlobal">{{"Global"|translate}}</mat-checkbox>
+                        <mat-checkbox class="ovi-lbl-text-size" style="padding-left: 10%;"
+                          formControlName="isDefault">{{"Default"|translate}}</mat-checkbox>
+                        <mat-checkbox class="ovi-lbl-text-size" style="padding-left: 10%;"
+                          formControlName="isActive">{{"Status"|translate}}</mat-checkbox>
+                    </div>
+                  </div>
+                  <div class="ovi-row-gap" *ngIf="tab == 'appTermsFacilities'" style="padding-bottom: 10px;position: relative; top: 10px;">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                      <mat-label class="ovi-lbl-text-size">{{"Appterms Code"|translate}} </mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'Appterms Code'|translate" formControlName="appTermsCode"
+                          [disableOptionCentering]="true" (selectionChange)="onSelectionChange('appTerms',i,$event)"
+                          [disabled]="updateBtn" required>
+                          <mat-option>
+                            <ngx-mat-select-search [formControl]="apptermnameSearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                          </mat-option>
+                          <mat-option *ngFor="let data of filterapptermName" [value]="data['code']">
+                            {{data['value']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn" style="align-content: center;position: relative;top: 5px;">
+                        <mat-checkbox class="ovi-lbl-text-size"
+                          formControlName="isInclude">{{"Include"|translate}}</mat-checkbox>
+                        <mat-checkbox class="ovi-lbl-text-size" style="padding-left: 10%;"
+                          formControlName="isDefault">{{"Default"|translate}}</mat-checkbox>
+                        <mat-checkbox class="ovi-lbl-text-size" style="padding-left: 10%;"
+                          formControlName="isActive">{{"Status"|translate}}</mat-checkbox>
+                    </div>
+                  </div>
+                  <div class="ovi-row-gap-four-fld" *ngIf="tab == 'appTermsLinks'">
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                      <mat-label class="ovi-lbl-text-size">{{"App Term Name"|translate}}</mat-label>
+                      <mat-form-field *ngIf="selectedType == 'manageApptermsGroups'" class="ovi-row-frmfld-wdh"
+                        appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'App Term Name'|translate" formControlName="code"
+                          (selectionChange)="apptermCodeSelectionChange($event,tab,'appTermName')"
+                          [disableOptionCentering]="true" [disabled]="updateBtn" required>
+                          <mat-option>
+                            <ngx-mat-select-search [formControl]="apptermnameSearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                          </mat-option>
+                          <mat-option *ngFor="let data of filterapptermName" [value]="data['code']">
+                            {{data['value']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      <mat-form-field *ngIf="selectedType == 'manageFacility'" class="ovi-row-frmfld-wdh"
+                        appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'App Term Name'|translate" formControlName="code"
+                          (selectionChange)="apptermCodeSelectionChange($event,tab,'appTermName')"
+                          [disableOptionCentering]="true" required>
+                            <mat-option>
+                            <ngx-mat-select-search [formControl]="apptermfacilitySearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                          </mat-option>
+                          <mat-option *ngFor="let data of filterapptermFacility"
+                            [value]="data['appTermsCode']">
+                            {{data['appTermName']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                      <mat-label class="ovi-lbl-text-size">{{"Link Group"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Link Group'|translate"
+                          formControlName="childGroupName"
+                          (selectionChange)="getApptermsFilterData($event.value,'linkAppterm','filter');"
+                          [disableOptionCentering]="true" [disabled]="updateBtn" required>
+                           <mat-option>
+                            <ngx-mat-select-search [formControl]="linkgroupSearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                          </mat-option>
+                          <mat-option *ngFor="let group of filterlinkGroup" [value]="group['code']">
+                            {{group['value']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                      <mat-label class="ovi-lbl-text-size">{{"Link App Term"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false"
+                          [placeholderText]="'Link App Term'|translate" formControlName="childCode"
+                          (selectionChange)="apptermCodeSelectionChange($event,tab,'childAppTermName')"
+                          [disableOptionCentering]="true" required multiple>
+                           <mat-option>    
+                               <ngx-mat-select-search [formControl]="linkapptermSearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                          </mat-option> 
+                           <mat-option *ngFor="let app of filterlinkappTerm" [value]="app['code']">
+                            {{app['value']}}
+                          </mat-option> 
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                      <mat-label class="ovi-lbl-text-size">{{"Sequence"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate"
+                          formControlName="sequence" type="number" class="no-spinner">
+                        <div matSuffix class="ovi-schl-custom-select">
+                          <span (keydown.enter)="fixClick()" (click)="updateSequenceValue(-1, 'appTermsLinks')" class="ovi-schl-custom-dec">-</span>
+                          <span (keydown.enter)="fixClick()" (click)="updateSequenceValue(1, 'appTermsLinks')" class="ovi-schl-custom-incre">+</span>
+                        </div>
+                      </mat-form-field>
+                    </div>
+                    <div  class="ovi-row-four-clmn " style="align-content: center;position: relative;top: 5px;">
+                        <mat-checkbox class="ovi-lbl-text-size"
+                          formControlName="isActive">{{"Status"|translate}}</mat-checkbox>
+                    </div>
+                  </div>
+                  <div class="ovi-row-gap-four-fld" *ngIf="tab == 'appTermsMls'">
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                      <mat-label class="ovi-lbl-text-size">{{"Link App Term"|translate}}</mat-label>
+                      <mat-form-field *ngIf="selectedType == 'manageApptermsGroups'" class="ovi-row-frmfld-wdh"
+                        appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'App term'|translate"
+                          formControlName="appTermsCode" (selectionChange)="onSelectedLinkApp($event,tab)"
+                          [disableOptionCentering]="true" [disabled]="updateBtn" required>
+                          <mat-option>
+                            <ngx-mat-select-search [formControl]="apptermnameSearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                          </mat-option>
+                          <mat-option *ngFor="let data of filterapptermName" [value]="data['code']">
+                            {{data['value']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                      <mat-form-field *ngIf="selectedType == 'manageFacility'" class="ovi-row-frmfld-wdh"
+                        appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'App term'|translate"
+                          formControlName="appTermsCode" [disableOptionCentering]="true" [disabled]="updateBtn"
+                          required>
+                          <mat-option *ngFor="let data of apptermsJson['appTermsFacilities']"
+                            [value]="data['appTermsCode']">
+                            {{data['appTermName']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                      <mat-label class="ovi-lbl-text-size">{{"Language"|translate}} </mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate"
+                          formControlName="languageCode"
+                          (selectionChange)="apptermCodeSelectionChange($event,tab,'languageName')"
+                          [disableOptionCentering]="true" [disabled]="updateBtn" required>
+                          <mat-option *ngFor="let lang of language" [value]="lang['code']">
+                            {{lang['value']}}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                      <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate"
+                          formControlName="name" required>
+                      </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn" style="align-content: center;position: relative;top: 5px;">
+                        <mat-checkbox class="ovi-lbl-text-size" formControlName="isActive">{{"Status"|translate}}</mat-checkbox>
+                    </div>
+                  </div>
+                  <div style="display: flex ; justify-content: space-between; position: relative;top: 15px;align-items: center;">
+                    <div style="display: flex ; width: 288px; justify-content: space-between;">
+                      <div>
+                        <form autocomplete="off">
+                          <input class="tw-filter-new search-box" style="height: 32px;" [formControl]="filter" (keyup)="applyFilter($event.target.value)"
+                            autocomplete="off" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+                        </form>
+                      </div>
+                      <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="position: relative;left: 10px;" *ngIf="(tab === 'appTermsLinks'|| tab === 'appTermsMls') && expanded">
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                          <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select LinkTerm'|translate" [formControl] ="tab === 'appTermsLinks'? selectedTermCode1 : selectedTermCode2"
+                                      [disableOptionCentering]="true" (selectionChange)="linkChangeappterm($event);" matSelectSearch>
+                            <mat-option [value]="null">--- Select AppTerm ---</mat-option>
+                            <mat-option *ngFor="let data of linkedFilteredAppTerms" [value]="data['code']"> 
+                              {{data['value']}}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                      </div>
+                      <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="position: relative;left: 20px;" *ngIf="tab === 'appTermsLinks' && expanded">
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                          <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select GroupName'|translate" [formControl]="selectedGroupName" 
+                            [disableOptionCentering]="true" (selectionChange)="onChangeSelecedGroup($event);" matSelectSearch>
+                            <mat-option [value]="null">--- Select AppTerm ---</mat-option>
+                            <mat-option *ngFor="let data of filterlinkGroup" [value]="data['code']">
+                              {{data['value']}}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                      </div>
+                      <div *ngIf="updateBtn && selectedTabIndex === 1" style="position: relative;top: 3px;" class="tw-toglebox-appterms ovi-font-family">
+                        <div class="custom-checkbox-appterms">
+                          <input id="status" type="checkbox" [checked]="isFilter" (keydown.enter)="fixClick()" (click)="getChangeFilter($event)">
+                          <label for="status">
+                            <div class="status-switch-appterms" [attr.data-checked]="'Filter'|translate"
+                              [attr.data-unchecked]="'All'|translate">
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <div style='display: flex;justify-content: flex-end;position: relative;'>
+                      <button mat-button class="active-btn margin-r-1" style="float:right;" appDebounceClick
+                        (click)="onChangeExpanded(tab);" cdkFocusInitial [debounceTime]="800">{{"Cancel"|translate}}</button>
+                      <button mat-button *ngIf="!updateBtn" class="active-btn margin-r-1" style="float:right;" appDebounceClick
+                        (debounceClick)="createFormArr('clear')" cdkFocusInitial [debounceTime]="800"
+                        [disabled]="!appTermsForm['controls'][tab]['controls'][0].valid && !appTermsForm['controls'][tab]['controls'][0].dirty">{{"Clear"|translate}}</button>
+                      <button mat-button *ngIf="!updateBtn" class="active-btn margin-r-1" style="float:right;" appDebounceClick
+                        (debounceClick)="addData(tab)" cdkFocusInitial [debounceTime]="800"
+                        [disabled]="!appTermsForm['controls'][tab]['controls'][0].valid">{{"ADD"|translate}}</button>
+                      <button mat-button *ngIf="updateBtn" class="active-btn margin-r-1" style="float:right;" appDebounceClick
+                        (debounceClick)="addData(tab)" cdkFocusInitial [debounceTime]="800"
+                        [disabled]="!appTermsForm['controls'][tab]['controls'][0].valid">{{"UPDATE"|translate}}</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="tableRefresh">
+          <div *ngIf="apptermsJson[tablist[selectedTabIndex]].length">
+            <tw-table-component [component]="'appterm'" [columns]="tableDetails['displayedColumns'][tab]"
+              [tableData]="tableDetails['tableData'][tab]" [iconHeader]="tableDetails['iconHeader'][tab]"
+              [iconColumn]="tableDetails['iconColumn'][tab]" [sortColumn]="tableDetails['sortColumn'][tab]"
+              [eventColumn]="tableDetails['eventColumn'][tab]" (eventAction)="eventAction($event,tab)"
+              [rowId]="tab === 'appTerms' ?  'code' : tab === 'appTermsFacilities' ?  'appTermsCode' : 'id'" [rowClick]="true"
+              (rowClickAction)="rowClick($event,tab)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
+              [pagination]="[{length: length, pageSize: pageSize , pageStart: pageStart}]" [tableClass]=" !this.expanded ? 'table-pop-with-header' : 'table-ex-pop-with-header'" [enableScroll]="true" [enableSlicing]="true">
+            </tw-table-component>
+          </div>
+          <div *ngIf="!apptermsJson[tablist[selectedTabIndex]].length" class="ovi-fnt-sze12"
+            style="display: flex ; justify-content: center;  position: relative; top: 15px;">
+            {{"No records Found"|translate}}
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+  <div class="ovi-pop-ftr">
+    <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+    <button mat-button class="active-btn" appDebounceClick (debounceClick)="saveAppterms()" cdkFocusInitial
+      [debounceTime]="800">{{"Save"|translate}}</button>
+  </div>
+</div>

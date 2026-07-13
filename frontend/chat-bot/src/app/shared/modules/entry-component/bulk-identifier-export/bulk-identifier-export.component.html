@@ -1,0 +1,61 @@
+<div class="loading-spinner" *ngIf="isPdfLoading || isImageLoading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+
+<div class="input-component-holder ovi-font-family" style="height:100%;width:100%;overflow:hidden">
+    <div class="ovi-pop-hdr">
+        <div>{{ type === 'qr' ? ('Manage QrCode' | translate) : ('Manage Barcode' | translate) }}</div>
+        <div style="display:flex;align-items:center;gap:4px;">
+            <mat-icon class="ovi-ao-header-btn" appTooltip tooltipText="{{'Download PDF'|translate}}"
+                (click)="downloadPdf()" [class.ovi-ao-header-btn-disabled]="isPdfLoading || !items?.length">download</mat-icon>
+            <mat-icon class="ovi-ao-header-btn" appTooltip tooltipText="{{'Close'|translate}}" (click)="closeDialog()">highlight_off</mat-icon>
+        </div>
+    </div>
+
+    <div  class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 90px);overflow:auto" >
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;overflow-y:auto;padding: 10px;" #printContainer>
+            <ng-container *ngFor="let item of items; let i = index">
+                <div [attr.id]="'print' + i">
+                    <ng-container *ngIf="!(safeContentBasedQr && isQrType())">
+                        <div [ngStyle]="{
+                            'display': 'flex',
+                            'align-items': 'center',
+                            'flex-direction': (position === 'top' || position === 'bottom') ? 'column' : 'row',
+                            'border': (isBorder && isQrType()) ? '2px solid' : 'none',
+                            'padding': (isBorder && isQrType()) ? '5px' : '0'
+                        }">
+                            <span *ngIf="position === 'top' && printComments && isQrType()"
+                                style="font-weight: bold;" class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                            <span *ngIf="position === 'left' && printComments && isQrType() && customQrText != null"
+                                style="font-weight: bold;margin-top:25px "
+                                class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                            <span *ngIf="customQrText == null && position === 'left' && isQrType()"
+                                style="font-weight: bold;padding-right:10px"
+                                class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                            <div style="display: flex;flex-direction: column;align-items: center;">
+                                <span *ngIf="isQrType() && customQrText != null" style="font-weight: bold;"
+                                    class="comment ovi-fnt-sze25">{{ customQrText }}</span>
+                                <img [src]="item.generateImage" alt="img">
+                                <span *ngIf="!isQrType()" style="font-weight: bold;"
+                                    class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                            </div>
+                            <span *ngIf="position === 'right' && printComments && isQrType() && customQrText != null"
+                                style="font-weight: bold;margin-top:25px" class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                            <span *ngIf="customQrText == null && position === 'right' && isQrType()"
+                                style="font-weight: bold;padding-left:10px" class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                            <span *ngIf="position === 'bottom' && printComments && isQrType()"
+                                style="font-weight: bold;" class="comment ovi-fnt-sze20">{{ item.comments }}</span>
+                        </div>
+                    </ng-container>
+                    <ng-container *ngIf="safeContentBasedQr != null && isQrType()">
+                        <div [innerHTML]="safeContentBasedQr"></div>
+                    </ng-container>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+</div>

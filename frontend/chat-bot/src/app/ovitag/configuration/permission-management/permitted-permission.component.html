@@ -1,0 +1,119 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Permissions"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: hidden;height:calc(100% - 100px); margin: 0;">
+        <div class="permission-info-content">
+            <div class="heading">{{metaData.name}}</div>
+            <div style="display: flex; gap: 18px;">
+                <span>
+                    <div>{{"Code"|translate}}</div>
+                    <div style="font-weight: 600; padding: 3px 0;">{{metaData.code}}</div>
+                </span>
+                <span>
+                    <div>{{"Type"|translate}}</div>
+                    <div style="font-weight: 600; padding: 3px 0;">{{metaData.resourceTypeName}}</div>
+                </span>
+                <span>
+                    <div>{{"Permit All"|translate}}</div>
+                    <div style="font-weight: 600; padding: 3px 0;">{{metaData.permitAll === true ? 'Yes' : 'No' |translate}}</div>
+                </span>
+                <span>
+                    <div>{{"Target"|translate}}</div>
+                    <div style="font-weight: 600; padding: 3px 0; text-transform: capitalize;">{{metaData.target}}</div>
+                </span>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; height: 0; padding-right: 8px;">
+            <div class="permission-btn" (click)="managePermissions(permissionData, selectedType)" (keydown.enter)="fixClick()">{{"Manage Permissions"|translate}}</div>
+        </div>
+        <mat-tab-group class="cust-tab" [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+            <mat-tab>
+                <ng-template mat-tab-label>
+                    <img class="tab-icon" [class.active]="selectedTabIndex === 0" src="/assets/Menus/terms.svg"
+                        alt="group" />
+                    <span>{{"Group"|translate}}</span>
+                </ng-template>
+                <div>
+                    <tw-table-component *ngIf="groupedResources.length" [component]="'permissions'"
+                        [columns]="displayedColumns" [tableData]="groupedResources" [iconHeader]="iconHeader"
+                        [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn" [rowClick]="true"
+                        [rowId]="'id'" [rowDbClick]="false" [applyFilter]="applyFilterValue" (rowClickAction)="null"
+                        (eventAction)="null" [rowDbClick]="true" (rowDbClickAction)="null" [tableSize]="'220px'"
+                        [permissionControl]="permissionControl" [pagination]="null">
+                    </tw-table-component>
+                </div>
+                <div *ngIf="!groupedResources.length" class="no-data">
+                    <span class="material-icons ovi-fnt-sze45"
+                        style="padding: 0; height: fit-content; width: fit-content; color: #8d99ba;">folder_open</span>
+                    <div style="color: #525a6a;">{{"No permission Found"|translate}}</div>
+                </div>
+            </mat-tab>
+            <mat-tab>
+                <ng-template mat-tab-label>
+                    <img class="tab-icon" [class.active]="selectedTabIndex === 1" src="/assets/Menus/SMC_role.svg"
+                        alt="role" />
+                    <span>{{"Role"|translate}}</span>
+                </ng-template>
+                <div>
+                    <tw-table-component *ngIf="rolePermissions.length" [component]="'permissions'"
+                        [columns]="displayedColumns" [tableData]="rolePermissions" [iconHeader]="iconHeader"
+                        [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn" [rowClick]="true"
+                        [rowId]="'id'" [rowDbClick]="false" [applyFilter]="applyFilterValue" (rowClickAction)="null"
+                        (eventAction)="null" [rowDbClick]="true" (rowDbClickAction)="null" [tableSize]="'220px'"
+                        [permissionControl]="permissionControl" [pagination]="null">
+                    </tw-table-component>
+                </div>
+                <div *ngIf="!rolePermissions.length" class="no-data">
+                    <span class="material-icons ovi-fnt-sze45"
+                        style="padding: 0; height: fit-content; width: fit-content; color: #8d99ba;">folder_open</span>
+                    <div style="color: #525a6a;">{{"No permission Found"|translate}}</div>
+                </div>
+            </mat-tab>
+            <mat-tab>
+                <ng-template mat-tab-label>
+                    <span class="material-icons ovi-fnt-sze16" style="padding: 0 3px; height: fit-content;
+                     width: fit-content;">person_outline</span>
+                    <span>{{"User"|translate}}</span>
+                </ng-template>
+                <div>
+                    <tw-table-component *ngIf="userPermissions.length" [component]="'permissions'"
+                        [columns]="displayedColumns" [tableData]="userPermissions" [iconHeader]="iconHeader"
+                        [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn" [rowClick]="true"
+                        [rowId]="'id'" [rowDbClick]="false" [applyFilter]="applyFilterValue" (rowClickAction)="null"
+                        (eventAction)="null" [rowDbClick]="true" (rowDbClickAction)="null" [tableSize]="'220px'"
+                        [permissionControl]="permissionControl" [pagination]="null">
+                    </tw-table-component>
+                </div>
+                <div *ngIf="!userPermissions.length" class="no-data">
+                    <span class="material-icons ovi-fnt-sze45"
+                        style="padding: 0; height: fit-content; width: fit-content; color: #8d99ba;">folder_open</span>
+                    <div style="color: #525a6a;">{{"No permission Found"|translate}}</div>
+                </div>
+            </mat-tab>
+            <mat-tab>
+                <ng-template mat-tab-label>
+                    <img class="tab-icon" [class.active]="selectedTabIndex === 3" src="/assets/Menus/SMC_department.svg"
+                        alt="department" />
+                    <span>{{"Department"|translate}}</span>
+                </ng-template>
+                <div>
+                    <tw-table-component *ngIf="departmentPermissions.length" [component]="'permissions'"
+                        [columns]="displayedColumns" [tableData]="departmentPermissions" [iconHeader]="iconHeader"
+                        [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn" [rowClick]="true"
+                        [rowId]="'id'" [rowDbClick]="false" [applyFilter]="applyFilterValue" (rowClickAction)="null"
+                        (eventAction)="null" [rowDbClick]="true" (rowDbClickAction)="null" [tableSize]="'220px'"
+                        [permissionControl]="permissionControl" [pagination]="null">
+                    </tw-table-component>
+                </div>
+                <div *ngIf="!departmentPermissions.length" class="no-data">
+                    <span class="material-icons ovi-fnt-sze45"
+                        style="padding: 0; height: fit-content; width: fit-content; color: #8d99ba;">folder_open</span>
+                    <div style="color: #525a6a;">{{"No permission Found"|translate}}</div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+</div>

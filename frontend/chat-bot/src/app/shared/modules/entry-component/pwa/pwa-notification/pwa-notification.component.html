@@ -1,0 +1,183 @@
+<div class="pwa-noti-full-container ovi-font-family">
+    <div class="pwa-noti-dropdown" [class.open]="isOpen">
+        <div class="pwa-noti-container" [class.short]="isPreview || isFilter">
+            <ng-container *ngIf="!isPreview && !isFilter">
+                <div style="display: flex; padding: 11px 10px; justify-content: space-between;">
+                    <span style="display: inline-flex;">
+                        <span *ngFor="let tab of tabs" class="pwa-tab-button" [class.active]="tab.code === selectedTab"
+                            (click)="selectTab(tab)" role="button" tabindex="0" (keydown.enter)="selectTab(tab)"
+                            (keydown.space)="selectTab(tab)">
+                            {{ tab.tabName | translate}} <span class="pwa-count">{{ tab.count > 999 ? '99+' : (tab.count
+                                > 0 ? '(' + tab.count + ')' : '') }}</span>
+                        </span>
+                    </span>
+                    <div style="display: flex; gap: 6px;">
+                        <span class="pwa-noti-filter-container" (click)="applyFilter('filter'); $event.stopPropagation()" role="button"
+                            tabindex="0" (keydown.enter)="applyFilter('filter'); $event.stopPropagation()"
+                            (keydown.space)="applyFilter('filter'); $event.stopPropagation()">
+                            <mat-icon class="ovi-fnt-sze16"
+                                style="padding: 0; height: fit-content; width: fit-content;">filter_list</mat-icon>
+                        </span>
+                         <span *ngIf="notificationInfo?.length" style="padding: 0 2px;">
+                            <mat-checkbox class="pwa-notifi-All-checkbox" [checked]="isAllChecked" [indeterminate]="isIndeterminate"
+                                (change)="toggleAllCheckboxes($event.checked)"></mat-checkbox>
+                        </span>
+                    </div>
+                </div>
+            </ng-container>
+            <ng-container *ngIf="isPreview && !isFilter">
+                <div style="padding: 11px 15px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="pwa-back-btn" (click)="viewNotification(null, null); $event.stopPropagation()"
+                            role="button" tabindex="0"
+                            (keydown.enter)="viewNotification(null, null); $event.stopPropagation()"
+                            (keydown.space)="viewNotification(null, null); $event.stopPropagation()">
+                            <span class="material-icons ovi-prmry-clr ovi-fnt-sze18"
+                                style="font-weight: bolder;padding: 0;">arrow_back</span>
+                        </div>
+                        <span class="pwa-preview-title">{{previewNotifiData.configName}}</span>
+                    </div>
+                    <div class="ovi-prmry-wht-clr pwa-ntf-prv-sdt-txt">{{previewNotifiData.sentDatetime | timeAgo}}
+                    </div>
+                </div>
+            </ng-container>
+            <ng-container *ngIf="isFilter">
+                <div style="padding: 11px 15px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="pwa-back-btn" (click)="selectedFilter(null, null); $event.stopPropagation()"
+                            role="button" tabindex="0"
+                            (keydown.enter)="selectedFilter(null, null); $event.stopPropagation()"
+                            (keydown.space)="selectedFilter(null, null); $event.stopPropagation()">
+                            <span class="material-icons ovi-prmry-clr ovi-fnt-sze18"
+                                style="font-weight: bolder; padding: 0;">arrow_back</span>
+                        </div>
+                        <span class="preview-title">{{"Filter"|translate}}</span>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
+        <div style="overflow-y: auto; overflow-x: hidden;" (click)="$event.stopPropagation()" role="button" tabindex="0"
+            (keydown.enter)="$event.stopPropagation()" (keydown.space)="$event.stopPropagation()"
+            [ngStyle]="{'height': checkedNotifications.size ? 'calc(100vh - 190px)' : isPreview || isFilter ? 'calc(100vh - 190px)' : 'calc(100vh - 76px)'}">
+            <ng-container *ngIf="!isPreview && !isFilter">
+                <div *ngFor="let data of notificationInfo; let i = index" class="pwa-message-body">
+                    <span class="pwa-ntf-prv-chckd-txt"
+                        (click)="checkedNotifications.size ? null : viewNotification('open', data.id);" role="button"
+                        tabindex="0"
+                        (keydown.enter)="checkedNotifications.size ? null : viewNotification('open', data.id);"
+                        (keydown.space)="checkedNotifications.size ? null : viewNotification('open', data.id);">
+                        <div>
+                            <div *ngIf="data.notiIdentifyingType === 'notification'" class="pwa-noti-icon">
+                                <img height="18px" width="18px" src="../.././../assets/Alert/message.svg"
+                                    alt="message" />
+                            </div>
+                            <div *ngIf="data.notiIdentifyingType === 'iot-alert' && data.alertTypeId === 'AT-AL'"
+                                class="pwa-noti-icon">
+                                <img height="18px" width="18px" src="../../../assets/Alert/alert.svg" alt="alert" />
+                            </div>
+                            <div *ngIf="data.notiIdentifyingType === 'iot-alert' && data.alertTypeId === 'AT-RE'"
+                                class="pwa-noti-icon">
+                                <img height="18px" width="18px" src="../../../assets/Alert/remainder.svg"
+                                    alt="remainder" />
+                            </div>
+                        </div>
+                        <div class="pwa-message-container" [ngStyle]="{'font-weight': !data.isSeen ? '600' : '400'}">
+                            <div>{{data.configName}}</div>
+                            <div class="pwa-message-text">{{data.message ? stripHtmlUsingDOMParser(data.message) : ''}}
+                            </div>
+                            <div class="pwa-ntf-prv-schd">
+                                <span class="material-icons ovi-fnt-sze14" style="padding: 0 2px;">schedule</span>
+                                {{data.sentDatetime | timeAgo}}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; justify-content: space-between; align-items: center;"
+                            (click)="$event.stopPropagation();" role="button" tabindex="0"
+                            (keydown.enter)="$event.stopPropagation();" (keydown.space)="$event.stopPropagation();">
+                            <mat-checkbox class="pwa-notifi-checkbox" [checked]="checkedNotifications.has(i)"
+                                (change)="toggleCheckbox(i)"></mat-checkbox>
+                            <div *ngIf="data.requestType !== null"
+                                (click)="checkedNotifications.size ? '' : navigateNotification(data)" role="button"
+                                tabindex="0"
+                                (keydown.enter)="checkedNotifications.size ? '' : navigateNotification(data)"
+                                (keydown.space)="checkedNotifications.size ? '' : navigateNotification(data)">
+                                <mat-icon class="ovi-prmry-clr ovi-fnt-sze18"
+                                    style="padding: 0; height: fit-content; width: fit-content;">open_in_browser</mat-icon>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <div  *ngIf="notificationInfo?.length === 0 && selectedTab !== 'all'" class="pwa-noti-not-found">
+                    {{selectedTabName |translate}} {{"Not Found"|translate}}</div>
+                <div  *ngIf="notificationInfo?.length === 0 && selectedTab === 'all'" class="pwa-noti-not-found">
+                    {{"Notification Data Not Found"|translate}}</div>
+                <div  *ngIf="!isMore" class="pwa-ntf-prv-mre" (click)="moreNotifications()" role="button"
+                    tabindex="0" (keydown.enter)="moreNotifications()" (keydown.space)="moreNotifications()">
+                    {{"More"|translate}}</div>
+            </ng-container>
+            <ng-conainer *ngIf="isPreview && !isFilter">
+                <div style="padding: 5px 10px; color: darkgray;">
+                    <span class="pwa-ntf-prv-msg-txt"
+                        [innerHTML]="previewMessage.length ? formatTemplate(previewMessage) : ''"></span>
+                </div>
+            </ng-conainer>
+            <ng-container *ngIf="isFilter">
+                <div>
+                    <div class="pwa-notifi-Filter-title"> {{"Seen"|translate}} </div>
+                    <div style="padding: 10px 15px; display: flex; gap: 10px; align-items: center;">
+                        <div class="pwa-notifi-filter-opt" [class.active]="isUnreadMsg === null"
+                            (click)="selectedFilter('readFilter', null)" role="button" tabindex="0"
+                            (keydown.enter)="selectedFilter('readFilter', null)"
+                            (keydown.space)="selectedFilter('readFilter', null)">{{"All"|translate}}</div>
+                        <div *ngFor="let option of filterOptions">
+                            <span class="pwa-notifi-filter-opt" [class.active]="isUnreadMsg === option.code"
+                                (click)="selectedFilter('readFilter', option.code)" role="button" tabindex="0"
+                                (keydown.enter)="selectedFilter('readFilter', option.code)"
+                                (keydown.space)="selectedFilter('readFilter', option.code)">{{option.value |
+                                translate}}</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="pwa-notifi-Filter-title"> {{"Rule"|translate}} </div>
+                    <div style="padding: 10px 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div class="pwa-notifi-filter-opt" [class.active]="isSelectedRule === 'all'"
+                            (click)="selectedFilter('ruleFilter', 'all')" role="button" tabindex="0"
+                            (keydown.enter)="selectedFilter('ruleFilter', 'all')"
+                            (keydown.space)="selectedFilter('ruleFilter', 'all')">{{"All"|translate}}
+                        </div>
+                        <div *ngFor="let option of ruleFilterList">
+                            <span class="pwa-notifi-filter-opt" [class.active]="isSelectedRule === option.ruleTypeId"
+                                (click)="selectedFilter('ruleFilter', option.ruleTypeId)" role="button" tabindex="0"
+                                (keydown.enter)="selectedFilter('ruleFilter', option.ruleTypeId)"
+                                (keydown.space)="selectedFilter('ruleFilter', option.ruleTypeId)">{{option.ruleName}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
+        <div *ngIf="isPreview"
+            [ngStyle]="{'justify-content': (previewNotifiData.requestType !== null) ? 'space-between' : 'flex-end'}"
+            style="text-align: end; padding: 3px 10px; display: flex; align-items: center;">
+            <div *ngIf="previewNotifiData.requestType !== null" (click)="navigateNotification(previewNotifiData)"
+                role="button" tabindex="0" (keydown.enter)="navigateNotification(previewNotifiData)"
+                (keydown.space)="navigateNotification(previewNotifiData)">
+                <span class="ovi-prmry-clr ovi-fnt-sze20"
+                    style="padding: 5px 0px 0px 0px;cursor: pointer;position: relative;float : left; height: fit-content; width: fit-content;"
+                    class="material-icons">launch</span>
+            </div>
+            <button mat-button  class="ovi-prmry-wht-clr ovi-prmry-bg-clr" (click)="acceptAck(previewNotifiData)">
+                 {{"Ok"|translate}} </button>
+        </div>
+        <div *ngIf="!isPreview && isFilter" style="text-align: end; padding: 3px 10px;">
+            <button mat-button  class="ovi-prmry-wht-clr ovi-prmry-bg-clr"
+                (click)="applyFilter('apply'); $event.stopPropagation()"> {{"Apply"|translate}} </button>
+        </div>
+        <div *ngIf="checkedNotifications.size" class="pwa-notifi-footer">
+            <button mat-button  class="ovi-prmry-wht-clr ovi-prmry-bg-clr"
+                (click)="updateNotification('multiple', 'read'); $event.stopPropagation()"> {{isAllChecked ? 'Read All' : 'Read'}} </button>
+            <button mat-button  class="ovi-prmry-wht-clr ovi-prmry-bg-clr"
+                (click)="updateNotification('multiple', 'clear'); $event.stopPropagation()"> {{isAllChecked ? 'Clear All' : 'Clear'}} </button>
+        </div>
+    </div>
+</div>

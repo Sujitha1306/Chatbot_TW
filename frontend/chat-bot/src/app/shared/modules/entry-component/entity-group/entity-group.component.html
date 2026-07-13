@@ -1,0 +1,155 @@
+<div style="height: calc(100% - 60px);" >
+    <mat-toolbar  class="input-header">
+        <div  class="header-name" *ngIf = "headerName"><span>{{headerName | translate}}</span> {{'Group Management' | translate}}</div>
+        <div  class="header-name" *ngIf = "!headerName">{{'Create Group Management' | translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+            <mat-icon class="icon-style">highlight_off</mat-icon>
+        </button></div>
+    </mat-toolbar>
+
+    <div class="loading-spinner" *ngIf="isLoading">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+      </div> 
+    <div *ngIf="showSideBar"#container class="popup-margin" style="height: calc(100% - 35px);">
+        <div  style="width: 250px;float: left;height : calc(100% - 2px);border-right: 2px solid gray;overflow: auto;">
+            <mat-list  *ngIf = "showEntityGroup">
+                <mat-list-item [ngClass] = "selectedEntity && selectedEntity.id == group.id ? 'selected-entity-list' : 'non-selected-entity-list'" *ngFor="let group of entityGroupList" (click) = "entityGroupChange(group)"
+                style="color: black; border-bottom: 1.5px solid #e8e8e8;" (keydown.enter)="fixClick()">{{group.name | translate}}</mat-list-item>
+            </mat-list>
+        </div>
+        <div style="width: calc(100% - 270px);float: left;height : calc(100% - 2px);padding-left: 10px;">
+            <div #inputContainer style="padding: 5px 10px;height: 60px;display: flex">
+                <span class="tw-filter-new" style="margin-top: 10px;margin-right: 10px;">
+                    <input matInput  style="padding: 5px;" #searchInputClear [formControl]="filterKey"
+                    (keyup)="applyFilter(filterKey.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off">
+                    <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value" (click)="searchInputClear.value=''; applyFilter('');"
+                    style="margin-top: -5px;">
+                        <span class="tw-filter-close">x</span>
+                    </button>
+                </span>
+                <span style="margin: 6px 10px;" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size">{{'Group Name' | translate}}: </mat-label>
+                    <mat-form-field appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Group Name'|translate" [formControl]="groupName" autocomplete="off">
+                    </mat-form-field>
+                </span>
+                <span style="margin: 0px 10px;">
+                    <button class="entity-group-save-btn" (click) = "saveEntityGroup()">{{readerGrpButton | translate}}</button>
+                </span>
+            </div>
+            <div #tableContainer style="height: calc(100% - 70px);" class="mat-elevation-z4">
+                <div style="height: calc(100% - 70px);overflow: auto;">
+                <table mat-table [dataSource]="tableDataSource" matSort>
+                    <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                        <th mat-header-cell *matHeaderCellDef style="display: table-cell;" class="tw-manage-table-header tw-table-content">
+                            <mat-checkbox *ngIf = "col.colName == 'select'" (change)="$event ? masterToggle() : null"
+                                        [checked]="selection.hasValue() && isAllSelected()"
+                                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+                            </mat-checkbox>
+                            <span  mat-sort-header *ngIf = "col.colName != 'select'">{{col.title | translate}}</span>
+                            <!-- <span  mat-sort-header *ngIf = "col.colName != 'select'">{col.title, select, Reader Name {{{'Reader Name' | translate}}} Type {{{'Type' | translate}}} Connectivity Type {{{'Connectivity Type' | translate}}}
+                                Algorithm Type {{{'Algorithm Type' | translate}}} Serial Number {{{'Serial Number' | translate}}} Coordinate {{{'Coordinate' | translate}}} Version {{{'Version' | translate}}} Status {{{'Status' | translate}}} Association Type {{{'Association Type' | translate}}}
+                                Association ID {{{'Association ID' | translate}}} Association Name {{{'Association Name' | translate}}} Batter Percentage {{{'Batter Percentage' | translate}}} status {{{'status' | translate}}}
+                                Asset Name {{{'Asset Name' | translate}}} Asset Type {{{'Asset Type' | translate}}} Tag ID {{{'Tag ID' | translate}}} Email {{{'Email' | translate}}} Contact {{{'Contact' | translate}}} isTagAssociated {{{'isTagAssociated' | translate}}} Id {{{'Id' | translate}}} 
+                                Page {{{'Page' | translate}}} Name {{{'Name' | translate}}}}</span> -->
+                        </th>
+                        <td mat-cell *matCellDef="let element" style="display: table-cell;">
+                            <mat-checkbox *ngIf = "col.colName == 'select'" (click)="$event.stopPropagation()"
+                                        (change)="$event ? selection.toggle(element) : null"
+                                        [checked]="selection.isSelected(element)" (keydown.enter)="fixClick()">
+                            </mat-checkbox>
+                            <span *ngIf = "col.colName != 'select'">{{element[col.dataName] | translate}} </span>
+                        </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;" class="tw-manage-table-header-row"
+                    style="background:#eeeff1"></tr>
+                    <tr mat-row *matRowDef="let element; columns: displayedColumns; let i = index;"></tr>
+                </table>
+                </div>
+                <mat-paginator [pageSizeOptions]="[30, 50, 100]" showFirstLastButtons class="tw-paginator-sticky"> </mat-paginator>
+            </div>
+        </div>
+
+    </div>
+    <div *ngIf="showSideBar == false" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"  style="height:calc(100% - 50px);">
+       <div class="ovi-row-gap">
+         <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+            <mat-label class="ovi-lbl-text-size">{{"Entity Group Type"|translate}}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                 <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Entity Group Type'|translate" [formControl]="entityGroupType" (selectionChange)="getentityType($event)"  [disabled]="data.type != 'create'">
+                    <mat-option *ngFor="let data of entityGroupTypeList" [value]="data.code"  >
+                        {{data.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+         </div>
+         <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+            <mat-label class="ovi-lbl-text-size">{{"Entity Group Name"|translate}}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Entity Group Name'|translate" matInput [formControl]="groupName">
+            </mat-form-field>
+         </div>
+         <div class="ovi-row-three-clmn" style="display: flex;align-items: center;position: relative; top: 6px;" >
+            <button  mat-button  class="active-btn" [disabled]="!this.selection.selected.length" (click) = "saveEntityGroup()" cdkFocusInitial>{{data.type == 'create' ?  'Save'  : 'Update'}}</button>
+         </div>
+        </div>
+        <div *ngIf="entityTable" class="table-option">
+            <div>
+              <span class="map-table-filter">
+                <input matInput  #searchInputClear [formControl]="filterKey" (keyup)="applyFilter(filterKey.value)"
+                 autocomplete="off" style="padding: 5px !important; height: 20px; color: black;"  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+                 <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value" (click)="searchInputClear.value=''; applyFilter('');"
+                    style="position: relative;bottom: 8px;left: 10px;">
+                        <span class="tw-filter-close">x</span>
+                    </button> 
+              </span>
+            
+            <div class="filter-option" *ngIf="showfilter">
+              <span class="options" [ngClass]="{'selected': selectedOption === 'all'}"  (click)="selectOption('all')" (keydown.enter)="fixClick()">
+               <mat-icon class="option-icon"  [ngClass]="{'selected': selectedOption === 'all'}">menu</mat-icon> {{"All"|translate}} </span>
+              <span class="options"  [ngClass]="{'selected': selectedOption === 'selected'}" (click)="selectOption('selected')" (keydown.enter)="fixClick()">
+                <mat-icon class="option-icon"  [ngClass]="{'selected': selectedOption === 'selected'}">filter_none</mat-icon> {{"Selected"|translate}}
+              </span>
+            </div>
+          </div>
+        </div>
+          <div #tableContainer *ngIf="this.entityTable" style="height: calc(100% - 90px);" class="mat-elevation-z4">
+            <div style="height: calc(100% - 70px);overflow: auto;">
+            <table mat-table [dataSource]="tableDataSource" matSort>
+                <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                    <th mat-header-cell *matHeaderCellDef style="display: table-cell;" class="tw-manage-table-header tw-table-content">
+                        <mat-checkbox *ngIf = "col.colName == 'select'" (change)="$event ? masterToggle() : null"  
+                                    [checked]="selection.hasValue() && isAllSelected()"
+                                    [indeterminate]="selection.hasValue() && !isAllSelected()">
+                        </mat-checkbox>
+                        <span  mat-sort-header *ngIf = "col.colName != 'select'">{col.title, select, Reader Name {{{'Reader Name' | translate}}} Type {{{'Type' | translate}}} Connectivity Type {{{'Connectivity Type' | translate}}}
+                            Algorithm Type {{{'Algorithm Type' | translate}}} Serial Number {{{'Serial Number' | translate}}} Coordinate {{{'Coordinate' | translate}}} Version {{{'Version' | translate}}} Status {{{'Status' | translate}}} Association Type {{{'Association Type' | translate}}}
+                            Association ID {{{'Association ID' | translate}}} Association Name {{{'Association Name' | translate}}} Batter Percentage {{{'Batter Percentage' | translate}}} status {{{'status' | translate}}}
+                            Asset Name {{{'Asset Name' | translate}}} Asset Type {{{'Asset Type' | translate}}} Tag ID {{{'Tag ID' | translate}}} Email {{{'Email' | translate}}} Contact {{{'Contact' | translate}}} isTagAssociated {{{'isTagAssociated' | translate}}} Id {{{'Id' | translate}}} 
+                            Page {{{'Page' | translate}}} Name {{{'Name' | translate}}}  Location Type Name {{{"Location Type Name" | translate}}}  Category Name {{{"Category Name" | translate}}} Care Setting Name {{{"Care Setting Name" | translate}}}
+                            User Name {{{'User Name' | translate}}}  Role {{{'Role' | translate}}}  Phone Number {{{'Phone Number' | translate}}}  Requester {{{'Requester' | translate}}} Description {{{'Description' | translate}}} Needed {{{'Needed' | translate}}}
+                            Group {{{'Groupr' | translate}}} Porter {{{'Porter' | translate}}} Department Type {{{"Department Type" | translate}}} SourceId {{{"SourceId" | translate}}} SourceType {{{"SourceType" | translate}}}  Code {{{"Code" | translate}}} Value {{{"Value" | translate}}} 
+                            Group Name {{{"Group Name" | translate}}} Sequence {{{"Sequence" | translate}}} }</span>
+                    </th>
+                    <td mat-cell *matCellDef="let element" style="display: table-cell;">
+                        <mat-checkbox *ngIf = "col.colName == 'select'" (click)="$event.stopPropagation();element.isSelected=!element.isSelected;updateTableData()" (keydown.enter)="fixClick()"
+                                    (change)="$event ? selection.toggle(element) : null"
+                                    [checked]="selection.isSelected(element)">
+                        </mat-checkbox>
+                        <span *ngIf = "col.colName != 'select'">{{element[col.dataName] | translate}} </span>
+                    </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;" class="tw-manage-table-header-row"
+                style="background:#eeeff1"></tr>
+                <tr mat-row *matRowDef="let element; columns: displayedColumns; let i = index;"></tr>
+            </table>
+            </div>
+            <mat-paginator  *ngIf="pageHit" [pageSizeOptions]="[10, 30, 50, 100]" (page)="eventTriggers($event)" [length]="length"  showFirstLastButtons class="tw-paginator-sticky"> </mat-paginator>
+        </div>
+    </div>
+
+

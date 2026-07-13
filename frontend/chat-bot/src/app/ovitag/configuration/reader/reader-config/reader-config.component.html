@@ -1,0 +1,425 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div >{{"Manage Reader"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div  style="overflow: auto;height:calc(100% - 140px);" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="readerForm">
+        <mat-tab-group *ngIf = "data !== 'multiReader'" class="widget-tab"  style="width: calc(100%);height: calc(100% - 5px);" (selectedTabChange)="tabClick($event)">
+            <mat-tab  label="{{'Basic Information'|translate}}">
+                <ng-template mat-tab-label >{{"Basic Information"|translate}}</ng-template>
+                <div class="ovi-row-gap">     
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Reader ID"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader ID'|translate"
+                                    formControlName="readerName" [errorStateMatcher]="matcher" maxlength="20"
+                                    autofocus autocomplete="off" required>
+                                <mat-error *ngIf="readerForm.controls.readerName.invalid" class="error-txt">
+                                    <span [hidden]="!readerForm.controls['readerName'].errors.required">
+                                        {{"Reader ID is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Hardware Type"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hardware Type'|translate" (selectionChange)="getHardwareType($event.value)" formControlName="hardwareTypeId" [disableOptionCentering]="true" required>
+                                    <mat-option *ngFor="let hardware of info.hardwarelist" [value]="hardware.code">
+                                        {{hardware.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="readerForm.controls.hardwareTypeId.invalid" class="error-txt">
+                                    <span [hidden]="!readerForm.controls['hardwareTypeId'].errors.required">
+                                        {{"Hardware type is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Reader Type"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader Type'|translate" formControlName="readerTypeId"[disableOptionCentering]="true" required>
+                                    <mat-option *ngFor="let reader of info.readerType" [value]="reader.code">
+                                        {{reader.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="readerForm.controls.readerTypeId.invalid" class="error-txt">
+                                    <span
+                                        [hidden]="!readerForm.controls['readerTypeId'].errors.required">{{"Reader
+                                        type is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div> 
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"MAC ID"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'MAC ID'|translate" formControlName="macId" maxlength="20"
+                                    autocomplete="off" required>
+                                <mat-error *ngIf="readerForm.controls.macId.invalid" class="error-txt">
+                                    <span [hidden]="!readerForm.controls['macId'].errors.required">
+                                        {{"Mac Id is required"|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Model No"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"  appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model No'|translate" maxlength="20"
+                                        formControlName="modelNumber" autocomplete="off" required>
+                                <mat-error *ngIf="readerForm.controls.modelNumber.invalid" class="error-txt">
+                                    <span [hidden]="!readerForm.controls['modelNumber'].errors.required">
+                                        {{"Model no is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box ovi-mat-hint">
+                            <mat-label class="ovi-lbl-text-size">{{"Reader Version"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader Version'|translate" (selectionChange)="reader_version_change($event.value)"
+                                    formControlName="softwarVerstion"[disableOptionCentering]="true" required>
+                                    <mat-option *ngFor="let version of info.readerVersion" [value]="version.id">
+                                        {{version.swVersion}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-hint style="margin-top: 2px;"> {{ info.verstionHint }} </mat-hint>
+                                <mat-error *ngIf="readerForm.controls.softwarVerstion.invalid">
+                                    <span [hidden]="!readerForm.controls['softwarVerstion'].errors.required">
+                                        {{"Reader Version is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>                        
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Reader Connectivity Type"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field  class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader Connectivity Type'|translate"
+                                    formControlName="readerConnectTypeId" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let connectivity of info.readerConnectivityType" [value]="connectivity.code">
+                                        {{connectivity.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Enable Reader"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Enable Reader'|translate"
+                                    formControlName="isEnable" [disableOptionCentering]="true">
+                                    <mat-option [value]="true">{{"Enabled"|translate}}</mat-option>
+                                    <mat-option [value]="false">{{"Disabled"|translate}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                <div *ngIf = "data.id" style="width: 100%;">
+                    <div style="padding: 5px 15px;font-weight: bold;">{{"Software Information"|translate}}</div>
+                    <mat-divider style="margin: 5px 15px;"></mat-divider>
+                    <div style="padding: 10px;">
+                        <div style="display: flex; gap: 250px">
+                            <div>
+                                <mat-label class="ovi-prmry-clr ovi-fnt-sze12" style="font-weight: bold;">{{"Current Version"|translate}} :</mat-label> {{current_swVer[0]?.swVersion}}
+                            </div>
+                            <div>
+                                <mat-label class="ovi-prmry-clr ovi-fnt-sze12" style="font-weight: bold;">{{"Core 1(ESP) Version"|translate}} :</mat-label> {{current_swVer[0]?.espVersion}}
+                            </div>
+                            <div>
+                                <mat-label class="ovi-prmry-clr ovi-fnt-sze12" style="font-weight: bold;">{{"Core 2(NRF) Version"|translate}} :</mat-label> {{current_swVer[0]?.nrfVersion}}
+                            </div>                        
+                        </div> 
+                            <div class="ovi-row-gap">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                               <mat-label class="ovi-lbl-text-size">{{"Available Version"|translate}}</mat-label> 
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Available Version'|translate" (selectionChange)="versionSelect($event.value)">
+                                        <mat-option *ngFor="let version of info.readerVersion" [value]="version.id">
+                                            <span matSuffix>{{"version"|translate}}</span>&nbsp;{{version.swVersion}}&nbsp;(core 1(esp): {{version.espVersion}}, core 2(nrf): {{version.nrfVersion}}) ({{version.releaseDate | date:'dd/MM/yyyy HH:mm:ss'}})
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>                        
+                            <div fxFlex.xs="50"  fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="50" fxFlex.sm="50">
+                                <button mat-button class="active-btn" style = "margin-top: 19px;" appDebounceClick
+                                [disabled]="swVersion === false" (debounceClick)="update_software_version(data.id)"
+                                [debounceTime]="300" cdkFocusInitial>{{"Upgrade Software"|translate}}</button>    
+                            </div>
+                    </div>
+                </div>
+                    <div style="margin: 0px 15px;">
+                        <tw-table-component [component]="'reader-config'" 
+                            [columns]="VerdisplayedColumns" [tableData]="verHistory"
+                            [iconHeader]="iconHeader" [iconColumn]="iconColumn"
+                            [sortColumn]="sortColumn" [eventColumn]="[null]"
+                            [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="false">
+                        </tw-table-component>
+                    </div>
+                </div>
+                <br>
+            </div>
+            </mat-tab>
+            <mat-tab  label="{{'Configuration'|translate}}">
+                <ng-template mat-tab-label >{{"Configuration"|translate}}</ng-template>
+                <div style="width: 100%;height:100%;">
+                    <mat-drawer-container class="drawer-container" autosize>
+                        <mat-drawer #menu mode="side" opened="true" style = "max-width: 500px; height: 100%; background-color: white">
+                            
+                            <div style="height: calc(100% - 20px);width: calc(100% - 12px);">
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Reader Type Algorithm"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err"  appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader Type Algorithm'|translate" formControlName="readerAlgoTypeId"[disableOptionCentering]="true"
+                                                    (selectionChange)="getfilterReader($event.value)" required>
+                                                    <mat-option *ngFor="let reader of info.readerAlgoType" [value]="reader.code">
+                                                        {{reader.value}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-error *ngIf="readerForm.controls.readerAlgoTypeId.invalid" class="error-txt">
+                                                    <span [hidden]="!readerForm.controls['readerAlgoTypeId'].errors.required">
+                                                        {{"Algorithm type is required"|translate}}.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Select Floor"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err"  appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Floor'|translate" formControlName="floorId"[disableOptionCentering]="true"
+                                                    [errorStateMatcher]="matcher" required>
+                                                    <mat-option *ngFor="let floor of info.floors" (keydown.enter)="fixClick()" (click)="getFloorDetail(floor.id)" [value]="floor.id">
+                                                        {{floor.name+', '+floor.blockName}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-error *ngIf="readerForm.controls.floorId.invalid" class="error-txt">
+                                                    <span [hidden]="!readerForm.controls['floorId'].errors.required">{{"Floor is
+                                                        required"|translate}}.</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                        </div>
+                                            <div class="ovi-matfrmfld-input-box-pdg">
+                                            <mat-label class="ovi-lbl-text-size">{{"Reader Position(x,y)"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err"  appearance="outline">
+                                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reader Position(x,y)'|translate"
+                                                    formControlName="coordinates" id ="readerPosition"
+                                                    appTypeHit (typeHit)="valueChange('['+$event.text+']')" value="{{info.coordinates}}"
+                                                    autocomplete="off"  [readonly]="true" required>
+                                                <mat-icon matSuffix (keydown.enter)="fixClick()" (click)="change_mode('coordinates')" class="ovi-prmry-clr" style = "cursor: pointer;">
+                                                    {{mode.coordinates ? 'more_horiz' : 'mode_edit' }}
+                                                </mat-icon>
+                                                <mat-error *ngIf="readerForm.controls.coordinates.invalid" class="error-txt">
+                                                    <span [hidden]="!readerForm.controls['coordinates'].errors.required">{{"(Enter
+                                                        coordinates as: e.g. -140, 410)"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Navigation Locations"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Navigation Locations'|translate" formControlName="readerLocation" multiple
+                                                    (selectionChange)="getSelectionDetail($event.value)" [disableOptionCentering]="true" required matSelectSearch>
+                                                    <mat-option *ngFor="let location of info.locationDetail" [value]="location.id">
+                                                        {{location.name}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-error *ngIf="readerForm.controls.readerLocation.invalid" class="error-txt">
+                                                    <span [hidden]="!readerForm.controls['readerLocation'].errors.required">
+                                                        {{"Navigation location is required"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Support Locations"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Support Locations'|translate" formControlName="linkedLocations" multiple
+                                                    [disableOptionCentering]="true" matSelectSearch>
+                                                    <mat-option *ngFor="let location of supportLocations" [value]="location.id">
+                                                        {{location.name}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-error *ngIf="readerForm.controls.linkedLocations.invalid" class="error-txt">
+                                                    <span [hidden]="!readerForm.controls['linkedLocations'].errors.required">
+                                                        {{"Support Location is required"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Readers Link"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Readers Link'|translate" formControlName="algLink" multiple [disabled]="!config.alg_link">
+                                                    <mat-option *ngFor="let reader of config.alg_link_filter" value="{{reader}}" (keydown.enter)="fixClick()" (click)="link_reader(reader, 'algLink')">
+                                                        {{reader}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-icon matSuffix (keydown.enter)="fixClick()" (click)="change_mode('alg_link')" class="ovi-prmry-clr" style = "cursor: pointer;">
+                                                    {{mode.alg_link ? 'more_horiz' : 'mode_edit' }}
+                                                </mat-icon>
+                                            </mat-form-field>
+                                        </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"In/Out Link"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'In/Out Link'|translate" formControlName="ioLink" multiple [disabled]="!config.io_link">
+                                                    <mat-option *ngFor="let reader of config.io_link_filter" [value]="reader" (keydown.enter)="fixClick()" (click)="link_reader(reader, 'ioLink')">
+                                                       {{reader}}
+                                                   </mat-option> 
+                                               </mat-select>
+                                               <mat-icon matSuffix (keydown.enter)="fixClick()" (click)="change_mode('io_link')" class="ovi-prmry-clr"style = "cursor: pointer;">
+                                                    {{mode.io_link ? 'more_horiz' : 'mode_edit' }}
+                                                </mat-icon>
+                                            </mat-form-field>
+                                        </div>
+                                            <mat-radio-group formControlName="ioType" (change)="ioTypeChange($event.value)" [disabled]="!config.io_link">
+                                                <div class="active" style="float: left; margin-top:5px;margin-bottom:14px;width: calc(100% - 10px);">
+                                                    <span class="ovi-lbl-text-size">{{"IO Type"|translate}} : </span>
+                                                    <mat-radio-button *ngFor="let io of info.readerIOType; let i = index" [value]="io.code" style="margin-right: 5px;">{{io.value |translate}}</mat-radio-button>
+                                                </div>
+                                            </mat-radio-group>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Relay Link"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Relay Link'|translate" formControlName="relayLink" multiple [disabled]="!config.relay_link">
+                                                    <mat-option *ngFor="let reader of config.relay_link_filter" [value]="reader" (keydown.enter)="fixClick()" (click)="link_reader(reader, 'relayLink')">
+                                                        {{reader}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                <mat-icon matSuffix (keydown.enter)="fixClick()" (click)="change_mode('relay_link')" class="ovi-prmry-clr" style = "cursor: pointer;">
+                                                    {{mode.relay_link ? 'more_horiz' : 'mode_edit' }}
+                                                </mat-icon>
+                                            </mat-form-field>
+                                            </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Mesh Type"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mesh Type'|translate" formControlName="meshType" (selectionChange)="rollback('meshType', $event.value)">
+                                                    <mat-option [value]="null">{{"None"|translate}}</mat-option>
+                                                    <mat-option *ngFor="let mesh of info.meshType" [value]="mesh.code">
+                                                        {{mesh.value}}
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                            </div>
+                                            <div class="ovi-matfrmfld-drpdwn-top-box">
+                                            <mat-label class="ovi-lbl-text-size">{{"Mesh Link"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mesh Link'|translate" formControlName="meshLink" multiple [disabled]="!config.mesh_link">
+                                                    <mat-option *ngFor="let reader of config.mesh_link_filter" [value]="reader" (keydown.enter)="fixClick()" (click)="link_reader(reader, 'meshLink')">
+                                                       {{reader}}
+                                                   </mat-option> 
+                                               </mat-select>
+                                               <mat-icon matSuffix (keydown.enter)="fixClick()" (click)="change_mode('mesh_link')" class="ovi-prmry-clr" style = "cursor: pointer;">
+                                                    {{mode.mesh_link ? 'more_horiz' : 'mode_edit' }}
+                                                </mat-icon>
+                                            </mat-form-field>
+                                            </div>
+                            </div>
+                        </mat-drawer>
+                        <mat-drawer-content class="drawer-content">
+                            <div style="width: calc(100% - 2px);height: calc(100% - 2px);">
+                                <div class="ovi-prmry-bg-clr" style="height: 30px; width: 40px; border-radius: 0px 20px 20px 0px; padding-bottom: 10px;">
+                                    <button mat-icon-button (click)="menu.toggle()">
+                                        <mat-icon *ngIf="menu._opened" class=" ovi-fnt-sze26" style="color: white;font-weight: 600; margin-right: 8px;margin-top: -7px;">keyboard_double_arrow_left</mat-icon>
+                                        <mat-icon *ngIf="!menu._opened" class=" ovi-fnt-sze26" style="color: white;font-weight: 600;margin-right: 8px;margin-top: -7px;">keyboard_double_arrow_right</mat-icon>
+                                    </button>
+                                </div>
+                                <div style="height: calc(100% - 50px); padding: 15px 5px 5px 5px;position: relative;">
+                                    <div id="locationId" class="floorMap-img"></div>
+                                </div>
+                            </div>
+                        </mat-drawer-content>
+                    </mat-drawer-container>
+                </div>
+                
+            </mat-tab>
+        </mat-tab-group>
+        <div style="width: 100%;height:100%;" *ngIf = "data == 'multiReader'">
+            <mat-drawer-container class="drawer-container" autosize>
+                <mat-drawer #menu mode="side" opened="true" style = "width: 355px; height: 100%; background-color: white;">
+                    <div style="height: calc(100% - 20px);overflow: hidden;">
+                        <div style="max-width: 380px;height: 100%;" class="popup-margin">
+                           
+                                <div class="ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Select Activity"|translate}} </mat-label>
+                                    <mat-form-field  class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Activity'|translate"  formControlName="activityId" [disableOptionCentering]="true"
+                                            (selectionChange)="getActivityReader($event.value)">
+                                            <mat-option *ngFor="let activity of activityList" [value]="activity.id">
+                                                {{activity.name}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                                    <div class="ovi-font-family" style="font-weight: 400;padding-bottom: 10px;" *ngIf = "multiReaderInfo.activityId">
+                                        <mat-label> {{"Source Floor :"|translate}} {{ multiReaderInfo.activityFloorName }}</mat-label>
+                                    </div>
+                                    <div class="ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Select Floor"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field  class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Floor'|translate"  formControlName="floorId"[disableOptionCentering]="true"
+                                            [errorStateMatcher]="matcher" required>
+                                            <mat-option *ngFor="let floor of info.floors" (keydown.enter)="fixClick()" (click)="getFloorDetail(floor.id)" [value]="floor.id">
+                                                {{floor.name+', '+floor.blockName}}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-error *ngIf="readerForm.controls.floorId.invalid" class="error-txt">
+                                            <span [hidden]="!readerForm.controls['floorId'].errors.required">{{"Floor is
+                                                required"|translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                                    </div>
+                                </div>
+                            <mat-list class="ovi-prmry-bg-clr" style="margin-right: 10px;" *ngIf="multiReaderInfo['showReaders']">
+                                <mat-list-item>
+                                    <div style="width: 100%;text-align: center;color: white;font-weight: 800;">{{"ACTIVITY READERS LIST"|translate}}</div>
+                                    <mat-divider></mat-divider>
+                                </mat-list-item>
+                            </mat-list>
+                            <mat-list formArrayName="activityReaders" style="height: calc(100% - 201px);width: calc(100% - 12px);overflow: auto;border:1px solid gray" *ngIf="multiReaderInfo['showReaders']">
+                                <mat-list-item *ngFor="let obj of readerForm.get('activityReaders')['controls']; let i=index" (keydown.enter)="fixClick()"
+                                    (click)="reader_link(obj.controls.readerName.value, null)" [ngStyle]="obj.controls.readerName.value == multiReaderInfo.readerName && {'background':'#d2dcd6'}">
+                                    <div [formGroupName]="i"  style="width: 100%;">
+                                        <span style="float: left;width: calc(100% - 30px);">
+                                            <span style="font-weight: 600;">{{obj.controls.readerName.value}} </span>
+                                            <span>
+                                            {{obj.controls.coordinate.value}}
+                                            <!-- {{multiReaderInfo.activityId && !obj.controls.enableUpdate.value && multiReaderInfo.floorValidate ? ", " + multiReaderInfo['HazardDistance'][ obj.controls.readerName.value] : ""}} -->
+                                            {{multiReaderInfo.activityId ? ", " + multiReaderInfo['HazardDistance'][ obj.controls.readerName.value] : ""}}
+                                            </span>
+                                        </span>
+                                        <span style="float: right;">
+                                            <mat-icon matSuffix *ngIf = "obj.controls.enableUpdate.value" style = "padding-top:0px;color: #269f26c7;">check_circle</mat-icon>
+                                        </span>
+                                    </div>
+                                    <mat-divider></mat-divider>
+                                </mat-list-item>
+                            </mat-list>
+                        </div>
+                    </div>
+                </mat-drawer>
+                <mat-drawer-content class="drawer-content">
+                    <div style="width: calc(100% - 2px);height: calc(100% - 2px);">
+                        <div style="height: 30px;">
+                            <div class="ovi-prmry-bg-clr" style="float: left;height: 30px; width: 40px; border-radius: 0px 20px 20px 0px; padding-bottom: 12px;">
+                                <button mat-icon-button (click)="menu.toggle()">
+                                    <mat-icon *ngIf="menu._opened" class=" ovi-fnt-sze26" style="color: white;font-weight: 600; margin-right: 8px;margin-top: -7px;">keyboard_double_arrow_left</mat-icon>
+                                    <mat-icon *ngIf="!menu._opened" class=" ovi-fnt-sze26" style="color: white;font-weight: 600; margin-right: 8px;margin-top: -7px;">keyboard_double_arrow_right</mat-icon>
+                                </button>
+                            </div>
+                            <div style="float: left;padding-top: 10px; padding-left: 10px;color: gray;" *ngIf="multiReaderInfo.floorId">
+                                <mat-checkbox (change)="ShowLabel()" [checked]="multiReaderInfo.showLabel">{{"Show Label"|translate}}</mat-checkbox>
+                            </div>
+                        </div>
+                        <div style="height: calc(100% - 50px); padding: 15px 5px 5px 5px;position: relative;">
+                            <div id="locationId" class="floorMap-img"></div>
+                        </div>
+                    </div>
+                </mat-drawer-content>
+            </mat-drawer-container>
+        </div>            
+    </div>
+    <div #footer style="height: 45px;">
+        <span class="ovi-font-family" style="padding: 10px; float: left;font-weight: 600;" *ngIf = "multiReaderInfo.enabled">
+            {{"Note : Ensure you update all the reader position, After changing to the new floor"|translate}}
+        </span>
+        <span  class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn"  cdkFocusInitial *ngIf = "!multiReaderInfo.enabled" appDebounceClick  [debounceTime]="300"
+           (debounceClick)="!data.id ? save_reader() : update_reader()"  [disabled]="!readerForm.valid">{{data.id ? ('Update'|translate) : ('Create'|translate)}}</button>
+        <button mat-button class="active-btn"  cdkFocusInitial *ngIf = "multiReaderInfo.enabled"appDebounceClick  [debounceTime]="300"
+           (debounceClick)="bulkUpdate()" [disabled]="!multiReaderInfo.updateAction">{{"Update"|translate}}</button>
+        </span>
+    </div>
+</div>

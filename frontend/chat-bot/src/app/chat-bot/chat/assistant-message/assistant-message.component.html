@@ -1,0 +1,69 @@
+<div class="message-row">
+  <!-- TW Avatar -->
+  <div class="avatar-tw">TW</div>
+
+  <div class="message-content">
+
+    <!-- Typing indicator -->
+    <div *ngIf="message.status === 'pending'" class="typing-indicator">
+      <span></span><span></span><span></span>
+    </div>
+
+    <!-- Status badge and Dropdown menu -->
+    <div *ngIf="message.domain && message.domain !== 'conversational'" class="badge-row">
+      <div class="domain-badge">
+        <mat-icon>timeline</mat-icon>
+        <span>{{ message.domain | titlecase }} Analytics</span>
+      </div>
+
+    </div>
+    <!-- Data and SQL Panels removed per user request -->
+
+    <!-- Streaming summary text -->
+    <p *ngIf="message.content && message.status !== 'error'" class="message-text">
+      {{ message.content }}
+    </p>
+
+    <!-- Cross conversation references -->
+    <div *ngIf="message.crossConversationRefs?.length" class="refs-row">
+      <span class="refs-label">📂 Found in:</span>
+      <a *ngFor="let ref of message.crossConversationRefs"
+         (click)="chat.selectConversation(ref.conversation_id)" class="ref-link">
+        {{ ref.title }}
+      </a>
+    </div>
+
+    <!-- Panel toggle buttons -->
+    <div *ngIf="message.status === 'complete' && message.chartSpec && !message.chartSpec.single_value && hasChart" class="chart-toggle-row">
+      <button (click)="showChart = !showChart" class="chart-toggle-btn">
+        <mat-icon>bar_chart</mat-icon> Chart {{ showChart ? '▴' : '▾' }}
+      </button>
+    </div>
+
+    <!-- Visualization panels -->
+    <ng-container *ngIf="message.chartSpec as spec">
+      <div *ngIf="spec.single_value" class="single-value-card">
+        <div class="value">{{ message.data?.[0]?.[spec.columns.numeric[0] || ''] }}</div>
+        <div class="label">{{ spec.columns.numeric[0] || '' | titlecase }}</div>
+      </div>
+    </ng-container>
+
+    <app-chart-selector *ngIf="showChart && message.chartSpec && !message.chartSpec.single_value && hasChart && message.data"
+      [spec]="message.chartSpec" [data]="message.data"></app-chart-selector>
+
+    <!-- Follow-up chips -->
+    <div *ngIf="message.followups?.length" class="followups-container">
+      <div class="followups-label"><mat-icon>lightbulb</mat-icon> Try:</div>
+      <div class="followups-list">
+        <button *ngFor="let f of message.followups" (click)="followupClick.emit(f)" class="followup-chip">
+          {{ f }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <p *ngIf="message.status === 'error'" class="error-msg">
+      {{ message.content }}
+    </p>
+  </div>
+</div>

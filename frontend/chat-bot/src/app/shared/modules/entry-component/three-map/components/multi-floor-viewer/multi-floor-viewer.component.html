@@ -1,0 +1,156 @@
+<div #canvasContainer class="three-container">
+
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Loading Multiple Floor Plans...</p>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <button class="control-btn" (click)="resetCamera()" title="Reset Camera View">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+            </svg>
+            Reset View
+        </button>
+
+        <button class="control-btn" (click)="toggleWireframe()" title="Toggle Wireframe">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M3 15h18" />
+                <path d="M9 3v18" />
+                <path d="M15 3v18" />
+            </svg>
+            Wireframe
+        </button>
+
+
+
+
+    </div>
+
+    <!-- Room Info Panel -->
+    <div #canvasContainer class="three-container">
+
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" *ngIf="isLoading">
+            <div class="spinner"></div>
+            <p>Loading Multiple Floor Plans...</p>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <button class="control-btn" (click)="resetCamera()" title="Reset Camera View">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                </svg>
+                Reset View
+            </button>
+
+            <button class="control-btn" (click)="toggleWireframe()" title="Toggle Wireframe">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18" />
+                    <path d="M3 15h18" />
+                    <path d="M9 3v18" />
+                    <path d="M15 3v18" />
+                </svg>
+                Wireframe
+            </button>
+
+
+
+
+        </div>
+
+        <!-- Room Info Panel -->
+        <div class="room-info-panel" *ngIf="selectedRoom">
+            <div class="panel-header">
+                <div class="room-title">
+                    <h3>{{ selectedRoom.name }}</h3>
+                    <span class="room-type">{{ selectedRoom.locationTypeName }}</span>
+                </div>
+                <button class="close-btn" (click)="deselectRoom()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="panel-content">
+                <div class="info-row">
+                    <span class="label">ID:</span>
+                    <span class="value">{{ selectedRoom.id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Type:</span>
+                    <span class="value">{{ selectedRoom.locationTypeName }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Level:</span>
+                    <span class="value">{{ selectedRoom.locationTypeLevel }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Status:</span>
+                    <span class="value status-active">Active</span>
+                </div>
+                <div class="info-row" *ngIf="selectedRoom.children && selectedRoom.children.length > 0">
+                    <span class="label">Sub-locations:</span>
+                    <span class="value">{{ selectedRoom.children.length }}</span>
+                </div>
+
+
+
+
+                <p class="deselect-hint">Click the room again or press × to deselect</p>
+            </div>
+        </div>
+
+        <!-- Navigation Controls (Bottom Right) -->
+        <div class="navigation-controls">
+            <div class="rotation-control">
+                <button class="nav-btn compass-btn" (mousedown)="onCompassMouseDown($event)" title="Drag to Rotate">
+                    <div class="compass-icon">
+                        <svg viewBox="0 0 100 100" class="axis-svg">
+                            <!-- Solid Axis Lines -->
+                            <line x1="50" y1="50" x2="50" y2="10" class="axis-line solid" />
+                            <line x1="50" y1="50" x2="85" y2="70" class="axis-line solid" />
+                            <line x1="50" y1="50" x2="15" y2="70" class="axis-line solid" />
+
+                            <!-- Dashed Axis Lines -->
+                            <line x1="50" y1="50" x2="50" y2="90" class="axis-line dashed" />
+                            <line x1="50" y1="50" x2="15" y2="30" class="axis-line dashed" />
+                            <line x1="50" y1="50" x2="85" y2="30" class="axis-line dashed" />
+                        </svg>
+                        <div class="center-dot" [style.transform]="'translate(' + pivotX + 'px, ' + pivotY + 'px)'">
+                        </div>
+                    </div>
+                </button>
+            </div>
+            <div class="zoom-controls">
+                <button class="nav-btn zoom-btn" (click)="zoomIn()" title="Zoom In">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                </button>
+                <button class="nav-btn zoom-btn" (click)="zoomOut()" title="Zoom Out">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <p><strong>Hospital Floor Plan:</strong> Drag Building to Rotate | Drag Background (or Shift+Drag) to Pan |
+                Scroll to Zoom | Click Rooms for Details</p>
+        </div>
+
+    </div>

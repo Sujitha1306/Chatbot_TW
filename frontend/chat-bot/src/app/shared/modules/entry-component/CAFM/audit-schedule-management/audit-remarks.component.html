@@ -1,0 +1,69 @@
+<div class="input-component-holder ovi-font-family" style="height:100%; width:100%;">
+  <div class="ovi-pop-hdr">
+    <div>{{ "Audit" | translate }}</div>
+    <div mat-dialog-close (keydown.enter)="fixClick()" (click)="onDialogClose()">
+      <mat-icon>highlight_off</mat-icon>
+    </div>
+  </div>
+
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow:auto; height:calc(100% - 80px); width : calc(100% - 25px)">
+    <div class="ovi-row-gap">
+      <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{ "Remarks" | translate }}</mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <textarea matInput rows="5" [formControl]="remarks" appPlaceholder [showPlaceholder]="false"
+          [placeholderText]="'Remarks' | translate" [readonly]="data?.auditRemarks"></textarea>
+        </mat-form-field>
+      </div>
+
+      <div  *ngIf="data?.length ===1 && data?.auditRemarks == null"class="ovi-row-one-clmn" style="display:flex;align-items: center;justify-content:center">
+        <div style="display:flex; justify-content:center; flex-direction:column; align-items:center;">
+          <div style="display:flex; width:90%; gap:20px;">
+            <span style="width:100%; display:flex; flex-direction:column;">
+              <button class="file-upload-button">
+                <input type="file" multiple #fileInput
+                       accept="image/x-png,image/jpeg,.pdf,.txt"
+                       class="custom-file-input"
+                       (change)="handleFileSelect($event)" />
+                {{ "Choose File" | translate }}
+              </button>
+              <span class="file-info">
+                {{ "Please select .jpeg / .png / .pdf / .txt file format only" | translate }}
+              </span>
+            </span>
+          </div>
+
+          <!-- Preview List -->
+        <div class="file-preview-list">
+          <div *ngFor="let file of attachFiles; let i = index"
+              class="file-preview-item">
+            
+            <!-- File Preview -->
+            <ng-container [ngSwitch]="file.fileType">
+              <img *ngSwitchCase="'image/png'" [src]="file.image" (keydown.enter)="fixClick()" (click)="openPreview(file)" alt="" />
+              <img *ngSwitchCase="'image/jpeg'" [src]="file.image" (keydown.enter)="fixClick()" (click)="openPreview(file)" alt="" />
+              <mat-icon *ngSwitchCase="'application/pdf'" (keydown.enter)="fixClick()" (click)="openPreview(file)">picture_as_pdf</mat-icon>
+              <mat-icon *ngSwitchCase="'text/plain'" (keydown.enter)="fixClick()" (click)="openPreview(file)">description</mat-icon>
+            </ng-container>
+
+            <button mat-icon-button color="warn" (click)="removeFile(i); $event.stopPropagation()">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="ovi-pop-ftr">
+    <button mat-button class="cancle-btn" mat-dialog-close (click)="onDialogClose()">
+      {{ "Cancel" | translate }}
+    </button>
+    <button mat-button class="active-btn" appDebounceClick (debounceClick)="onSaveAudit()" [debounceTime]="300" [disabled]="data?.auditRemarks!=null">
+      {{ "Save" | translate }}
+    </button>
+  </div>
+</div>

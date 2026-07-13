@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChatService } from '../../../core/services/chat.service';
-import { FacilityFilterComponent } from '../facility-filter/facility-filter.component';
 import { Subscription } from 'rxjs';
 
 @Component({

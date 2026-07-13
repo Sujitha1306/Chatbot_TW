@@ -1,0 +1,105 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Server"|translate}}</div>
+        <div *ngIf="data">{{"Modify Server"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"  style="overflow: auto;height:calc(100% - 140px);" [formGroup]="serverForm" #scrolltop>
+        <div class="ovi-row-gap">
+            <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Server Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Server Name'|translate"
+                                formControlName="serverName" [errorStateMatcher]="matcher" maxlength="26"
+                                autocomplete="off">
+                        <mat-error *ngIf="serverForm.controls.serverName.invalid">
+                            <span [hidden]="!serverForm.controls['serverName'].errors.required">{{"Server Name is
+                                required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Host Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Host Name'|translate"
+                                formControlName="hostName" [errorStateMatcher]="matcher" maxlength="26"
+                                autocomplete="off">
+                        <mat-error *ngIf="serverForm.controls.hostName.invalid">
+                            <span [hidden]="!serverForm.controls['hostName'].errors.required">{{"Host Name is
+                                required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Hosted On"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Hosted On'|translate" formControlName="serverId" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of serverList" [value]="data.id"
+                            (click)="getOsType(data)" (keydown.enter)="fixClick()">
+                                {{data.versionId}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="serverForm.controls.serverId.invalid">
+                            <span [hidden]="!serverForm.controls['serverId'].errors.required">{{"Hosted On is
+                                required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"OS Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'OS Type'|translate" formControlName="softwareId" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of softwareList" [value]="data.id"
+                            (click)="getOsProcessType(data)" (keydown.enter)="fixClick()">
+                                {{data.versionId}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="serverForm.controls.softwareId.invalid">
+                            <span [hidden]="!serverForm.controls['softwareId'].errors.required">{{"OS Type is
+                                required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Processor Architecture"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Processor Architecture'|translate" formControlName="softwareProcessId" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of softwareProcessList" [value]="data.id"
+                            (click)="getOsVersion(data)" (keydown.enter)="fixClick()">
+                                {{data.versionId}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="serverForm.controls.softwareProcessId.invalid">
+                            <span [hidden]="!serverForm.controls['softwareProcessId'].errors.required">{{"Processor Architecture is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"OS Version"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'OS Version'|translate" formControlName="softwareVersion" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of softwareVersionList" [value]="data.id">
+                                {{data.versionId}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="serverForm.controls.softwareVersion.invalid">
+                            <span [hidden]="!serverForm.controls['softwareVersion'].errors.required">{{"OS Version is
+                                required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+            </div>
+        </div>
+        <app-license *ngIf="data" [licenseData]="licenseData" (scrollToTopAction)="scrollToTop()"></app-license>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!this.data" mat-button class="active-btn" appDebounceClick
+        (debounceClick)="saveServer()" [debounceTime]="300"cdkFocusInitial
+        [disabled]="this.serverForm.invalid">{{"Create"|translate}}</button>
+        <button *ngIf="this.data" mat-button class="active-btn" appDebounceClick
+        (debounceClick)="updateServer()" [debounceTime]="300" cdkFocusInitial
+        [disabled]="this.serverForm.invalid">{{"Update"|translate}}</button>
+    </div>
+</div>

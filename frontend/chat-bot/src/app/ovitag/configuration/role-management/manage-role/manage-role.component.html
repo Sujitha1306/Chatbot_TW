@@ -1,0 +1,43 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Role Management"| translate}}</div>
+        <div *ngIf="data">{{"Modify  Role Management" | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style=" height: calc(100% - 95px) ;overflow: auto;">
+                <div class="ovi-row-gap"  [formGroup]="roleForm">
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Role Code"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role Code'|translate" formControlName="code" autocomplete="off" [readonly]="data?.id">
+                             <mat-error *ngIf="roleForm.controls.code.invalid">
+                               <span [hidden]="!roleForm.controls['code'].errors.required">{{"Role Code is required."|translate}}</span>
+                               <span [hidden]="!roleForm.controls['code'].errors.isAlreadyExists">{{"Role Code already exists!"|translate}}</span>
+                              </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Role Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role Name'|translate" formControlName="name" autocomplete="off">
+                             <mat-error *ngIf="roleForm.controls.name.invalid">
+                             <span [hidden]="!roleForm.controls['name'].errors.required">{{"Role Name is required."|translate}}</span>
+                             </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="data">
+                        <mat-label class="ovi-lbl-text-size">{{'Status' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status">
+                                <mat-option value="Active" code="Active">Active</mat-option>
+                                <mat-option  value="Inactive" code="Inactive">In Active</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div> 
+                </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" appDebounceClick (debounceClick)="saveRole()" [debounceTime]="300" [disabled]="this.roleForm.invalid">{{data ? ('Update'|translate) : ('Save'|translate)}}</button>
+    </div>
+</div>

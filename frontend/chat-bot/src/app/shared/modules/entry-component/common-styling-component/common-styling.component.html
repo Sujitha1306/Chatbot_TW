@@ -1,0 +1,70 @@
+<div style="width: 100%;height: 100%;">
+    <div style="width: 100%; height: 100%;">
+    <div style="width: 100%;height: 30px;">
+        <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+            <div fxFlex.xs="100" fxFlex.sm="100" fxFlex.md="100" fxFlex.lg="100" fxFlex.xl="100" style="display: flex;justify-content: flex-end;align-items: flex-end;">
+                <mat-icon  matTooltip="{{'Close'|translate}}" matTooltipClass="custom-tooltip" class="ovi-fnt-sze30" style="padding-left:5px;line-height: 25px !important;color: #3a3838f2;cursor: pointer;width: 30px;height: 27px;" (click)="applyStyle()" (keydown.enter)="fixClick()">cancel</mat-icon>
+            </div>        
+        </div>
+    </div>
+    <div style="width: 100%;height: 80px;">
+        <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+            <div fxFlex.xs="100" fxFlex.sm="100" fxFlex.md="40" fxFlex.lg="40" fxFlex.xl="40">
+                <input type="text" class="ovi-font-family ovi-fnt-sze15" style="height: 28px;margin-top: 15px;width: 95%;outline: 0px;border-width: 0px 0px 1px 0px;" 
+                 appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Style'|translate" #selectLoc (keyup)="getStylelist($event.target.value)" [formControl]="selectedStyleName" [matAutocomplete]="auto">
+                <span style="position: relative;font-weight: 800;color: #133f8f;padding: 4px 5px 4px 5px;cursor: pointer;margin-left: -22px;background: white;" *ngIf="selectLoc.value != ''" (click)="selectLoc.value = '';styleList = null;selectedStyle.value = null" (keydown.enter)="fixClick()">x</span>
+                <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor="let style of styleList" (click)="setStyleName(style.code);createStyle(style.code)" [value]="style.name" (keydown.enter)="fixClick()">
+                    {{style.name}}
+                </mat-option>
+                </mat-autocomplete>
+            </div>    
+            <div fxFlex.xs="100" fxFlex.sm="100" fxFlex.md="60" fxFlex.lg="60" fxFlex.xl="60">
+                <mat-form-field style="width: calc(100% - 55px);float: left;">
+                    <input appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter Value'|translate" #inputText [formControl]="styleInput" (keyup)="getInput($event.target.value)" matInput autocomplete="off">
+                    <mat-hint class="error-txt-1" *ngIf="(selectedStyle.value == 'clr' || selectedStyle.value == 'bgclr') && isInValidColor">
+                        <span style="color: red;">{{"Enter a valid color format"|translate}}!</span>
+                    </mat-hint>
+                    <mat-error class="error-txt-1" *ngIf="(selectedStyle.value == 'fsize' || selectedStyle.value == 'mar' || selectedStyle.value == 'pad') && styleInput.errors?.pattern">
+                        <span>{{"Valid size format"|translate}}!</span>
+                    </mat-error>
+                    <mat-error class="error-txt-1" *ngIf="selectedStyle.value == 'ffam' && styleInput.errors?.pattern">
+                        <span>{{"Enter text only"|translate}}!</span>
+                    </mat-error>
+                    <mat-error class="error-txt-1" *ngIf="selectedStyle.value == 'fwei' && styleInput.errors?.pattern">
+                        <span>{{"Enter proper font-weight value"|translate}}!</span>
+                    </mat-error>
+                    <mat-error class="error-txt-1" *ngIf="selectedStyle.value == 'tran' && styleInput.errors?.pattern">
+                        <span>{{"Enter proper transform value"|translate}}!</span>
+                    </mat-error>
+                    <mat-error class="error-txt-1" *ngIf="selectedStyle.value == 'opa'">
+                        <span>{{"Enter integer or float values"|translate}}!</span>
+                    </mat-error>
+                    <mat-error class="error-txt-1" *ngIf="selectedStyle.value == 'wspa'">
+                        <span>{{"Enter valid style property value"|translate}}!</span>
+                    </mat-error>
+                </mat-form-field>
+                <button mat-icon-button style="height: 40px;width: 25px;padding-top: 10px;" *ngIf="selectedStyle.value != 'clr' && selectedStyle.value != 'bgclr'" (click)="styleInput.value != null && styleInput.value != '' && !styleInput.errors?.pattern ? addStyle() : ''">
+                    <mat-icon  [matTooltip]="styleInput.value != null && styleInput.value != '' && !styleInput.errors?.pattern ? 'Add Style' : ''" class="ovi-fnt-sze23" style="line-height: 20px !important;" [ngStyle]="{color: styleInput.value != null && styleInput.value != '' && !styleInput.errors?.pattern ? '#269f26c7' : 'grey'}">check_circle</mat-icon>
+                </button>
+                <button mat-icon-button style="height: 40px;width: 25px;padding-top: 10px" *ngIf="selectedStyle.value == 'clr' || selectedStyle.value == 'bgclr'"  (click)="styleInput.value != null && styleInput.value != '' && !isInValidColor ? addStyle() : ''">
+                    <mat-icon  [matTooltip]="styleInput.value != null && styleInput.value != '' && !isInValidColor ? 'Add Style' : ''" class="ovi-fnt-sze23" style="line-height: 10px !important;" [ngStyle]="{color: styleInput.value != null && styleInput.value != '' && !isInValidColor ? '#269f26c7' : 'grey'}">check_circle</mat-icon>
+                </button>
+                <button mat-icon-button style="height: 40px;width: 25px;padding-top: 10px">
+                    <mat-icon  matTooltip="{{'Help'|translate}}" matTooltipClass="custom-tooltip" class="ovi-fnt-sze24" style="color:#b3adad;line-height: 18px !important;" (click)="openPage()" (keydown.enter)="fixClick()">info</mat-icon>
+                </button>
+            </div>
+        </div>
+    </div>
+    <mat-divider></mat-divider>
+    <div style="height: calc(100% - 120px);overflow: auto; width: calc(100% - 10px); margin: 5px">
+        <mat-nav-list>
+            <mat-list-item *ngFor="let i of styleAttr" (click)="highlightStyle(i)" (keydown.enter)="fixClick()">
+                <h6 matLine  matTooltip="{{'Click to Edit'|translate}}"> {{i}} </h6>
+                <mat-icon  matTooltip="{{'Remove'|translate}}" class="ovi-fnt-sze23"  style="padding-left:5px;line-height: 20px !important;color: #fb2020bd;" (click)="removeStyle(i)" (keydown.enter)="fixClick()">delete_forever</mat-icon>
+                <mat-divider></mat-divider>
+            </mat-list-item>
+        </mat-nav-list>
+    </div>
+    </div>
+</div>

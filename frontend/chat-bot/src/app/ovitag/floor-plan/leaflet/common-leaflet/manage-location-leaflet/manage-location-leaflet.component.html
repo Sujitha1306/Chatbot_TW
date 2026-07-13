@@ -1,0 +1,120 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Manage Location"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>    
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"[formGroup]='locationForm'style="height:calc(100% - 90px);overflow: auto;">
+          <div class="ovi-row-gap">
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="locationTypeId" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let type of locationTypes" [value]="type.id">
+                            {{type.name}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="locationForm.controls.locationTypeId.invalid">
+                        <span [hidden]="!locationForm.controls['locationTypeId'].errors.required">{{"Type is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+        
+            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" matInput formControlName="name" autocomplete="off" [errorStateMatcher]="matcher" required>
+                    <mat-error *ngIf="locationForm.controls.name.invalid">
+                        <span [hidden]="!locationForm.controls['name'].errors.required">{{"Location name is required"|translate}}.</span>
+                        <span [hidden]="!locationForm.controls['name'].errors.maxlength">{{"Maximum allowed characters are 64"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Short Name"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Short Name'|translate" matInput formControlName="shortName" autocomplete="off">
+                    <mat-error *ngIf="locationForm.controls.shortName.invalid">
+                        <span [hidden]="!locationForm.controls['shortName'].errors.maxlength">{{"Maximum allowed digit is 10"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status">
+                        <mat-option *ngFor="let status of statusList" [value]="status.id">
+                            {{status.name}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Category"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" formControlName="locationCategoryId">
+                        <mat-option *ngFor="let category of categoryList" [value]="category.code">
+                            {{category.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="locationForm.controls.locationCategoryId.invalid">
+                        <span [hidden]="!locationForm.controls['locationCategoryId'].errors.required">{{"Location Category is Required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+        
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Care Setting"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Care Setting'|translate" formControlName="careSettingId">
+                        <mat-option *ngFor="let careSetting of careSettingList" [value]="careSetting.code">
+                            {{careSetting.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="locationForm.controls.careSettingId.invalid">
+                        <span [hidden]="!locationForm.controls['careSettingId'].errors.required">{{"Care Setting is Required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Mobile Label Style"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                  <textarea appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile Label Style'|translate" matInput formControlName="labelStyleMobile"></textarea>
+                </mat-form-field>
+                <mat-error *ngIf="locationForm.get('labelStyleMobile').hasError('invalidJson')" class="ovi-fnt-sze14" style="color: red;">{{"Invalid JSON Format"|translate}}</mat-error>
+            </div>
+
+             <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Location Identifier"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location Identifier'|translate" matInput formControlName="locationIdentifier" autocomplete="off" [errorStateMatcher]="matcher">
+                </mat-form-field>
+            </div>
+
+            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Location Description"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location Description'|translate" matInput formControlName="locationDescription" autocomplete="off" [errorStateMatcher]="matcher">
+                </mat-form-field>
+            </div>
+            
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Workflow"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Workflow'|translate" formControlName="workFlowId" multiple>
+                        <mat-option *ngFor="let category of workFlowList" [value]="category.code">
+                            {{category.value}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button  mat-button class="active-btn" appDebounceClick (debounceClick)="saveData()" [debounceTime]="300"   [disabled]="locationForm.invalid">{{"Save"|translate}}</button>
+    </div>
+</div>

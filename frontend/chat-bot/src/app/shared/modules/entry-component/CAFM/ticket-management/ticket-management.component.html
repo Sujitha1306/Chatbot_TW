@@ -1,0 +1,181 @@
+<div style="padding: 10px;">
+    <div style="float: right;">
+        <button *ngIf="requestType === 'workOrder'&& !nestedView" mat-button class="active-btn margin-r-1" [debounceTime]="500"
+         appDebounceClick (debounceClick)="createTicket(null)">{{"Add"|translate}}</button>
+        <div *ngIf="nestedView || requestType !== 'workOrder'" style="display: flex; align-items: center;">
+          <mat-label class="label01" style="padding:7px;height:auto">
+            <img src="/assets/Alert/IP/notepad.png" alt="notepad" style="width:14px; height:14px">
+          </mat-label>
+          <mat-select style="padding: 7px !important; width: 90px;"  class="select01" [(value)]="selectedAction"
+            appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action' | translate"
+            (selectionChange)="onCreateAction($event.value)">
+            <mat-option *ngFor="let action of showActions" [value]="action.code">
+              {{ action.value | translate }}
+            </mat-option>
+          </mat-select>
+        </div>
+    </div>
+    <div  class="box-1 box-none-2">
+        <mat-label style="padding: 7px;" class="label01">{{"STATUS"|translate}}</mat-label>
+        <mat-select style="padding: 7px !important; width: 90px;"  class="select01" multiple [(value)]="currentStatus" (selectionChange)="onEventStatusChange($event.value)">
+            <mat-option *ngFor="let status of ticketStatusOptions" [value]="status.code">
+                {{status.value}}
+            </mat-option>
+        </mat-select>
+    </div>
+</div>
+<div *ngIf="ticketDataSource.length > 0 && !nestedView" style="padding:10px">
+    <angular-table-component [id]="'Ticket'" [type]="'ng-table'" [tableData]="ticketDataSource"
+    [columns]="displayedColumns"
+    [columnData]="displayedData"
+    (rowDbClickAction)="createTicket($event)" 
+    (triggerAction)="triggerAction($event)">
+    </angular-table-component>
+</div>
+<div *ngIf="ticketDataSource.length == 0" class ="no-shift">{{"No records Found"|translate}}</div>
+<div *ngIf="nestedView && ticketDataSource.length > 0" style="padding-top: 10px;" class="dynamic-table-container mat-elevation-z2">
+  <table mat-table [dataSource]="ticketDataSource" multiTemplateDataRows class="main-table">
+  
+    <ng-container matColumnDef="expand">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let row" class="expand-column">
+        <button mat-icon-button *ngIf="row.workOrders?.length" (click)="toggleExpand(row)">
+          <mat-icon style="font-size:14px;line-height:18px">{{ isExpanded(row) ? 'remove' : 'add' }}</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="type">
+      <th mat-header-cell *matHeaderCellDef> Type </th>
+      <td mat-cell *matCellDef="let row">
+        {{ row.routineTypeId !== 'TAC-TKT' ? 'Task' : 'Ticket' }}
+      </td>
+    </ng-container>
+
+    <ng-container *ngFor="let col of displayedColumns; let i = index" [matColumnDef]="col">
+      <th mat-header-cell *matHeaderCellDef>{{ col }}</th>
+      <td mat-cell *matCellDef="let element">
+
+        <ng-container *ngIf="iconColumns.includes(col); else normalBinding">
+          <ng-container *ngIf="col.toLowerCase() === 'edit'|| col.toLowerCase() === 'view'">
+            <!-- <mat-icon *ngIf="element.editPermission" class="ovi-prmry-clr ovi-fnt-sze20"
+              appTooltip tooltipText="{{'Edit'|translate}}"
+              placement="bottom"
+              (click)="triggerAction({key:'edit', data: element, type:'ticket'})"
+              (keydown.enter)="fixClick()">edit</mat-icon> -->
+
+            <mat-icon class="ovi-prmry-clr ovi-fnt-sze20"
+              appTooltip tooltipText="{{'View'|translate}}"
+              placement="bottom" [debounceTime]="500"
+              appDebounceClick (debounceClick)="triggerAction({key:'view', data: element, type:'ticket'})"
+              (keydown.enter)="fixClick()">visibility</mat-icon>
+
+            <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" *ngIf="activate_btn.includes('BT_TKTRQRPT')"
+              appTooltip tooltipText="{{'Report'|translate}}"
+              placement="bottom"[debounceTime]="500"
+              appDebounceClick (debounceClick)="triggerAction({key:'report', data: element, type:'ticket'})"
+              (keydown.enter)="fixClick()">description</mat-icon>
+          </ng-container>
+
+          <ng-container *ngIf="displayedData[i] === 'scheduleStartTime'">
+            {{ dateFormat.transform(element.scheduleStartTime, 'hh:mm a, dd MMM') }}
+          </ng-container>
+        </ng-container>
+
+        <ng-template [ngIf]="col === 'Identifier'">
+          <ng-container *ngIf="element.editPermission; else plainIdentifier">
+            <a href="javascript:void(0)" style="color: blue; text-decoration: none;" [debounceTime]="500"
+             appDebounceClick (debounceClick)="triggerAction({key:'edit', data: element, type:'ticket'})">
+              {{ element[displayedData[i]] }}
+            </a>
+          </ng-container>
+          <ng-template #plainIdentifier>
+            {{ element[displayedData[i]] }}
+          </ng-template>
+        </ng-template>
+
+        <ng-template #normalBinding>
+          <ng-container *ngIf="col !== 'Identifier'">
+            {{ element[displayedData[i]] }}
+          </ng-container>
+        </ng-template>
+
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="detail">
+      <td mat-cell *matCellDef="let row" [attr.colspan]="allColumns.length" class="child-cell">
+        <table mat-table [dataSource]="row.workOrders" class="child-table">
+
+          <ng-container matColumnDef="expand">
+            <td mat-cell *matCellDef class="expand-column">
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="type">
+            <td mat-cell *matCellDef="let child">
+              WorkOrder
+            </td>
+          </ng-container>
+
+          <ng-container *ngFor="let col of displayedColumns; let i = index" [matColumnDef]="col">
+            <td mat-cell *matCellDef="let child">
+
+              <ng-container *ngIf="iconColumns.includes(col); else normalChildBinding">
+                <ng-container *ngIf="col.toLowerCase() === 'edit'||col.toLowerCase() === 'view'">
+                  <!-- <mat-icon  *ngIf="child.editPermission" class="ovi-prmry-clr ovi-fnt-sze20"
+                    appTooltip tooltipText="{{'Edit'|translate}}"
+                    placement="bottom"
+                    (click)="triggerAction({key:'edit', data: child, type:'workOrder'})"
+                    (keydown.enter)="fixClick()">edit</mat-icon> -->
+
+                  <mat-icon class="ovi-prmry-clr ovi-fnt-sze20"
+                    appTooltip tooltipText="{{'View'|translate}}"
+                    placement="bottom"[debounceTime]="500"
+                    appDebounceClick (debounceClick)="triggerAction({key:'view', data: child, type:'workOrder'})"
+                    (keydown.enter)="fixClick()">visibility</mat-icon>
+
+                  <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" *ngIf="activate_btn.includes('BT_WRKRQRPT')"
+                    appTooltip tooltipText="{{'Report'|translate}}"
+                    placement="bottom"[debounceTime]="500"
+                    appDebounceClick (debounceClick)="triggerAction({key:'report', data: child, type:'workOrder'})"
+                    (keydown.enter)="fixClick()">description</mat-icon>
+
+                </ng-container>
+
+                <ng-container *ngIf="displayedData[i] === 'scheduleStartTime'">
+                  {{ dateFormat.transform(child.scheduleStartTime, 'hh:mm a, dd MMM') }}
+                </ng-container>
+              </ng-container>
+
+              <ng-template [ngIf]="col === 'Identifier'">
+                <ng-container *ngIf="child.editPermission; else plainChildIdentifier">
+                  <a href="javascript:void(0)" style="color: blue; text-decoration: none;"[debounceTime]="500"
+                   appDebounceClick (debounceClick)="triggerAction({key:'edit', data: child, type:'workOrder'})">
+                    {{ child[displayedData[i]] }}
+                  </a>
+                </ng-container>
+                <ng-template #plainChildIdentifier>
+                  {{ child[displayedData[i]] }}
+                </ng-template>
+              </ng-template>
+
+              <ng-template #normalChildBinding>
+                <ng-container *ngIf="col !== 'Identifier'">
+                  {{ child[displayedData[i]] }}
+                </ng-container>
+              </ng-template>
+            </td>
+          </ng-container>
+
+          <tr mat-row *matRowDef="let child; columns: allColumns" class="child-row"></tr>
+        </table>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="allColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: allColumns; when: isParentRow" class="parent-row"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['detail']; when: isDetailRow" class="detail-row"></tr>
+  </table>
+  <mat-paginator [length]="totalParentRecords" [pageSize]="pageSize" [pageSizeOptions]="[10, 20, 50,100,200]" showFirstLastButtons (page)="onPageChange($event)"></mat-paginator>
+</div>

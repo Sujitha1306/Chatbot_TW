@@ -1,0 +1,889 @@
+<div class="loading-spinner" *ngIf="spinLoader">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="manage-body tw-new-digital-queue ovi-font-family" (window:resize)="onResizeWindow($event)">
+    <mat-tab-group [selectedIndex]="selectedTabIndex" #tabGroup (selectedIndexChange)="tabChanged($event)" class="space"
+        style="position: relative;">
+        <mat-tab  label="{{'Overall'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFDQOVRL')">      
+            <ng-template mat-tab-label >{{"Overall"|translate}}</ng-template>
+            <div class="mat-tab-content" *ngIf="!visible">
+                 <!--DQ header old-code start -->
+                <!-- <div id="block_container" class="header_">
+                    <div class="right_ dq-status-styl" id="colr">
+                        <div class="tw-refresh-icon" style="margin-top: 0px;">        
+                            <span><i class="material-icons" appTooltip tooltipText ="Refresh" appDebounceClick [debounceTime] = "300" (debounceClick)="refreshoverall()"
+                                style="cursor: pointer; float: right;">autorenew</i>
+                            </span>
+                            <button mat-button class="select-view" appTooltip tooltipText ="Card View" style="margin-top: 3px;" (click)="changeView('table')"><em class="material-icons"  placement="bottom"
+                                style="padding: 0px; font-size: 18px;">{{"crop_din"}}</em></button>
+                        </div>                        
+                       <div class="tw-btn">
+                            <div class="tw-event-action-btn" *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showEnrollPatient)">
+                                  <button mat-button class="action-btn" (click)="registerPatient('')">Enroll Patient</button>
+                            </div>
+                        </div>
+                        <span class="tw-btn">
+                             <div class="sm-circle-bl"> </div>&nbsp;&nbsp;<span>In Progress</span>&nbsp;
+                            <div class="sm-circle-bl sm-circle-red"> </div>&nbsp;<span> Waiting</span>&nbsp;
+                            <div class="sm-circle-bl sm-circle-green"></div>&nbsp;<span> Completed </span>&nbsp;
+                             <span > 
+                                <span appTooltip tooltipText ="Unmapped Test" class="material-icons unmap"  *ngIf="unmappedhide.length" (click)="edittestinfo()">low_priority</span></span>
+                        </span>                       
+                    </div>                   
+                </div> -->
+                <!--DQ header old-code end -->
+                <!--DQ header realign new-code start -->
+                <div style="display: flex;align-items: center;justify-content: flex-end;padding:5px 5px 0px 13px;gap: 0 5px;" class="ovi-font-family">
+                    <div style="display: flex;gap: 0 5px;align-items: center;">
+                        <div class="sm-circle-bl"> </div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;">{{"In Progress"|translate}}</span>
+                        <div class="sm-circle-bl sm-circle-orange"> </div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;">{{"Waiting"|translate}}</span>
+                        <div class="sm-circle-bl sm-circle-green"></div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;">{{"Completed"|translate}} </span>
+                        <div class="sm-circle-bl sm-circle-red"> </div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;">{{"Pending"|translate}}</span>
+                    </div>
+                    <div class="material-icons icon-box-blue"> 
+                        <span appTooltip tooltipText ="{{'Unmapped Test'|translate}}" class="material-icons" *ngIf="enableUnmappedTest && unmappedhide.length" (click)="edittestinfo()" (keydown.enter)="fixClick()">{{"low_priority"|translate}}</span>
+                    </div>
+                    <div *ngIf="showEnrollPatient" class="icon-box-blue">
+                        <img  style="height: 20px;filter: invert(1);" (click)="registerPatient('')" src="/assets/Alert/common_icons/enrollment-icon.svg"  alt="enroll" 
+                        appTooltip tooltipText ="{{'Enroll Patient'|translate}}"(keydown.enter)="fixClick()" />
+                    </div>
+                    <div *ngIf="enableMultiView">
+                        <button mat-button class="select-view" appTooltip tooltipText ="{{'Card View'|translate}}"  (click)="changeView('table')"><em class=" ovi-fnt-sze18 material-icons"  placement="bottom"
+                            style="padding: 0px;">{{"crop_din"}}</em></button>
+                    </div>
+                    <div class="tw-refresh-icon">        
+                        <span><i class="material-icons" appTooltip tooltipText ="{{'Refresh'|translate}}" appDebounceClick [debounceTime] = "300" (debounceClick)="refreshoverall()"
+                               style="cursor: pointer; float: right;padding: 3px;margin: 0px;">autorenew</i>
+                        </span>
+                    </div>   
+                </div>
+              <!--DQ header realign new-code end -->
+                <div class="dig-q-styl" style="margin-top: -6px;">
+
+                    <mat-grid-list [cols]="gridCols === 4 ? gridCols - 1 : gridCols" rowHeight="50px" (window:resize)="onResize($event)">
+                        <mat-grid-tile class="custom-mat-grid-tile" [colspan]="digitalQueueModelCols.DQ_LA"
+                            [rowspan]="digitalQueueModelRows.DQ_LA" *ngFor="let group of digitalQueueList_new">
+                            <div class="category-header" [id]="digitalQueueModelId.DQ_LA" class="border-styl_">
+                                <div class="groupHeaderClass hdr-styl header_">
+                                    <div class="header left_">{{group.name}}</div>
+                                    <div class="header right_"><img  style="height: 15px;" src="/assets/Alert/common_icons/warning_.svg"  alt="Warning" /></div>
+                                </div>
+                                <mat-divider></mat-divider>
+                                <div class="queue-locations">
+                                    <mat-list class="locations-list" [style.height.px]="list_height">
+                                        <div *ngFor="let location of group.locations">
+                                            <mat-list-item *ngIf="!location.test_locations" class="single-location">
+
+                                                <div class="location-info">
+                                                    <div mat-line class="location-name"
+                                                        [matTooltip]="location.testName">
+                                                        {{location.testName}}</div>
+                                                    <div mat-line class="location-desc">{{location.floorName}},
+                                                        {{location.name}}</div>
+                                                </div>
+                                                <div class="location-queue-count" *ngIf="group.code != 'Waiting'">
+                                                    <span class="circle" id="colr1"
+                                                        (click)="locationInfo(location.id, location.testName, 'QS-IP', location.testId, location.inprogressCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.inprogressCount}}
+                                                    </span>
+                                                    <span class="circle" id="colr2" [ngClass] = "location.waitingAlert ? 'blink-orange' : ''"
+                                                        (click)="locationInfo(location.id, location.testName, 'QS-WT', location.testId, location.waitingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.waitingCount}}
+                                                    </span>
+                                                    <span class="circle" id="colr3"
+                                                        (click)="locationInfo(location.id, location.testName, 'QS-CO', location.testId, location.completedCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.completedCount}}
+                                                    </span>
+                                                    <span class="circle" id="colr0"
+                                                        (click)="locationInfo(null, location.testName, 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.pendingCount}}
+                                                    </span>
+                                                </div>
+                                                <div class="location-queue-count" *ngIf="group.code == 'Waiting'">
+                                                    <span class="circle" id="colr2"
+                                                        (click)="locationInfo(location.id, 'Waiting Area', 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.pendingCount}}
+                                                    </span>
+                                                </div>
+                                            </mat-list-item>
+                                            <div *ngIf="location.test_locations" style="border: 1px solid #E2E9ED;">
+                                                <mat-list-item style="height: 35px !important;" class="multi-location">
+                                                    <div class="test-name">{{location.testName}}</div>
+                                                </mat-list-item>
+                                                <mat-list-item *ngFor="let test_location of location.test_locations"
+                                                    style="height: 50px !important;" class="multi-location">
+                                                    <div class="location-info">{{test_location.floorName}},
+                                                        {{test_location.name}}</div>
+                                                    <div class="location-queue-count">
+                                                        <span class="circle" id="colr1"
+                                                            (click)="locationInfo(test_location.id, test_location.testName, 'QS-IP', location.testId, test_location.inprogressCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{test_location.inprogressCount}}
+                                                        </span>
+                                                        <span class="circle" id="colr2"
+                                                            (click)="locationInfo(test_location.id, test_location.testName, 'QS-WT', location.testId, test_location.waitingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{test_location.waitingCount}}
+                                                        </span>
+                                                        <span class="circle" id="colr3"
+                                                            (click)="locationInfo(test_location.id, test_location.testName, 'QS-CO', location.testId, test_location.completedCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{test_location.completedCount}}
+                                                        </span>
+                                                        <span class="circle" id="colr0"
+                                                            (click)="locationInfo(null, test_location.testName, 'QS-PE', location.testId, test_location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{location.pendingCount}}
+                                                        </span>
+                                                    </div>
+                                                </mat-list-item>
+                                            </div>
+
+                                        </div>
+                                    </mat-list>
+                                </div>
+                            </div>
+                        </mat-grid-tile>
+                    </mat-grid-list>
+                </div>
+            </div>
+            <div style="padding: 0px 10px 0px 10px;" *ngIf="visible">
+                <app-health-checkup [matTabindex]="matTabIndex" (multiViewAction)="multiViewAction($event)"></app-health-checkup>
+            </div>
+        </mat-tab>
+
+        <mat-tab  label="{{'Floor'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFDQFLR')">
+            <ng-template mat-tab-label>{{"Floor"|translate}}</ng-template>
+            <div class="mat-tab-content">
+                <!--DQ header old-code start -->
+                <!-- <div id="block_container" class="header_"> 
+                       <div class="left_">
+                        <div class="dq-filter">
+                            <div id="box-left">
+                                Floor
+                            </div>                             
+                            <div id="box-right" [formGroup]="slideForm">
+                             <mat-form-field appearance="none" style="width:45%">
+                                <mat-select formControlName="floorId">
+                                        <mat-option *ngFor="let floor of floorList" (click)="getFloorDetail(floor.id)"
+                                            [value]="floor.id"> {{floor.name+', '+floor.blockName}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="right_ dq-status-styl" id="colr">
+                        <div class="tw-refresh-icon" style="margin-top: 0px;">
+                            <span><i class="material-icons" matTooltip="Refresh" appDebounceClick [debounceTime] = "300" (debounceClick)="refreshfloor()"
+                                style="cursor: pointer; float: right;">autorenew</i>
+                            </span>
+                        </div>
+                        <div class="tw-btn">
+                            <div class="tw-event-action-btn" *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showEnrollPatient)">
+                                  <button mat-button class="action-btn" (click)="registerPatient('')">Enroll Patient</button>
+                            </div>
+                        </div>
+                        <span class="tw-btn" style="margin-top: 10px;">
+                            <div class="sm-circle-bl"> </div>&nbsp;&nbsp;<span>In Progress</span>&nbsp;
+                            <div class="sm-circle-bl sm-circle-red"> </div>&nbsp;<span> Waiting</span>&nbsp;
+                            <div class="sm-circle-bl sm-circle-green"></div>&nbsp;<span> Completed </span>&nbsp;
+                        </span>
+                    </div>
+                </div>-->
+            <!--DQ header  old-code end -->
+            <!--DQ header realign new-code start -->
+            <div style="display: flex;align-items: center;justify-content:  space-between;padding:5px 5px 0px 13px;gap: 0 5px;" class="ovi-font-family">
+                 <!-- <div>
+                     <div class="filter-item-box filter-box1-box2" style="align-items: center;">
+                         <div id="filter-box1" style="min-width: 50px;"> {{"Floor"|translate}} </div>
+                            <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 180px  !important;"
+                                [formGroup]="slideForm">
+                                <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none">
+                                    <mat-select formControlName="floorId" matSelectSearch>
+                                        <mat-option *ngFor="let floor of floorList" (click)="getFloorDetail(floor.id)" [value]="floor.id" (keydown.enter)="fixClick()">
+                                            {{floor.name+', '+floor.blockName}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                      </div>   -->
+
+                        <div class="ovi-select-fild-cntr">
+                            <div class="ovi-select-fld-label">{{"Floor"|translate}}</div>
+                            <div [formGroup]="slideForm">
+                            <mat-select formControlName="floorId" matSelectSearch style="width: 180px;padding: 0 5px 0px 5px;">
+                                <mat-option class="ovi-dq-opt-cls ovi-dq-select-panel" *ngFor="let floor of floorList" (click)="getFloorDetail(floor.id)" [value]="floor.id"
+                                    (keydown.enter)="fixClick()">
+                                    {{floor.name+', '+floor.blockName}}</mat-option>
+                            </mat-select>
+                      </div>  
+                        </div>
+
+                    <div style="display: flex;align-items: center;gap: 0 5px;">
+                        <div style="display: flex;gap: 0 5px;align-items: center;">
+                            <div class="sm-circle-bl"> </div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;">{{"In Progress"|translate}}</span>
+                            <div class="sm-circle-bl sm-circle-orange"> </div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;"> {{"Waiting"|translate}}</span>
+                            <div class="sm-circle-bl sm-circle-green"></div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;"> {{"Completed"|translate}} </span>
+                            <div class="sm-circle-bl sm-circle-red"> </div><span class="ovi-fnt-sze11" style="color: #284255;font-weight: 600;">{{"Pending"|translate}}</span>
+                        </div>
+                        <div *ngIf="enableMultiView"class="icon-box-blue">
+                            <img  style="height: 20px;filter: invert(1);" (click)="registerPatient('')" src="/assets/Alert/common_icons/enrollment-icon.svg"  alt="enroll" 
+                            appTooltip tooltipText ="{{'Enroll Patient'|translate}}" (keydown.enter)="fixClick()"/>
+                        </div>
+                        <div class="tw-refresh-icon">        
+                            <span><i class="material-icons" appTooltip tooltipText ="{{'Refresh'|translate}}" appDebounceClick [debounceTime] = "300" (debounceClick)="refreshfloor()"
+                                style="cursor: pointer; float: right;padding: 3px;margin: 0px;">autorenew</i>
+                            </span>
+                    </div>
+                </div>    
+            </div>
+            <!--DQ header realign new-code end -->
+                <div class="dig-q-styl" style="margin-top: -6px;">
+
+                    <mat-grid-list [cols]="gridCols === 4 ? gridCols - 1 : gridCols" rowHeight="50px" (window:resize)="onResize($event)">
+                        <mat-grid-tile class="custom-mat-grid-tile" [colspan]="digitalQueueModelCols.DQ_LA"
+                            [rowspan]="digitalQueueModelRows.DQ_LA" *ngFor="let group of floorData">
+                            <div class="category-header" [id]="digitalQueueModelId.DQ_LA" class="border-styl_">
+                                <div class="groupHeaderClass hdr-styl header_">
+                                    <div class="header left_">{{group.name}}</div>
+                                    <div class="header right_"><img style="height: 15px;" src="/assets/Alert/common_icons/warning_.svg" alt="Warning" /></div>
+                                </div>
+                                <mat-divider></mat-divider>
+                                <div class="queue-locations">
+                                    <mat-list class="locations-list" [style.height.px]="list_height">
+                                        <div *ngFor="let location of group.locations">
+                                            <mat-list-item *ngIf="!location.test_locations" class="single-location">
+
+                                                <div class="location-info">
+                                                    <div mat-line class="location-name"
+                                                        [matTooltip]="location.testName">
+                                                        {{location.testName}}</div>
+                                                    <div mat-line class="location-desc">{{location.floorName}},
+                                                        {{location.name}}</div>
+                                                </div>
+                                                <div class="location-queue-count" *ngIf="group.code != 'Waiting'">
+                                                    <span class="circle" id="colr1"
+                                                        (click)="locationInfo(location.id, location.testName, 'QS-IP', location.testId, location.inprogressCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.inprogressCount}}
+                                                    </span>
+                                                    <span class="circle" id="colr2" [ngClass] = "location.waitingAlert ? 'blink-orange' : ''"
+                                                        (click)="locationInfo(location.id, location.testName, 'QS-WT', location.testId, location.waitingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.waitingCount}}
+                                                    </span>
+                                                    <span class="circle" id="colr3"
+                                                        (click)="locationInfo(location.id, location.testName, 'QS-CO', location.testId, location.completedCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.completedCount}}
+                                                    </span>
+                                                    <span class="circle" id="colr0"
+                                                        (click)="locationInfo(null, location.testName, 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.pendingCount}}
+                                                    </span>
+                                                </div>
+                                                <div class="location-queue-count" *ngIf="group.code == 'Waiting'">
+                                                    <span class="circle" id="colr2"
+                                                        (click)="locationInfo(location.id, 'Waiting Area', 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                        {{location.pendingCount}}
+                                                    </span>
+                                                </div>
+                                            </mat-list-item>
+                                            <div *ngIf="location.test_locations" style="border: 1px solid #E2E9ED;">
+                                                <mat-list-item style="height: 35px !important;" class="multi-location">
+                                                    <div class="test-name">{{location.testName}}</div>
+                                                </mat-list-item>
+                                                <mat-list-item *ngFor="let test_location of location.test_locations"
+                                                    style="height: 50px !important;" class="multi-location">
+                                                    <div class="location-info">{{test_location.floorName}},
+                                                        {{test_location.name}}</div>
+                                                    <div class="location-queue-count">
+                                                        <span class="circle" id="colr1"
+                                                            (click)="locationInfo(test_location.id, test_location.testName, 'QS-IP', test_location.testId, test_location.inprogressCount, test_location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{test_location.inprogressCount}}
+                                                        </span>
+                                                        <span class="circle" id="colr2"
+                                                            (click)="locationInfo(test_location.id, test_location.testName, 'QS-WT', test_location.testId, test_location.waitingCount, test_location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{test_location.waitingCount}}
+                                                        </span>
+                                                        <span class="circle" id="colr3"
+                                                            (click)="locationInfo(test_location.id, test_location.testName, 'QS-CO', test_location.testId, test_location.completedCount, test_location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{test_location.completedCount}}
+                                                        </span>
+                                                        <span class="circle" id="colr0"
+                                                            (click)="locationInfo(null, test_location.testName, 'QS-PE', test_location.testId, test_location.pendingCount, test_location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                                                            {{location.pendingCount}}
+                                                        </span>
+                                                    </div>
+                                                </mat-list-item>
+                                            </div>
+                                        </div>
+                                    </mat-list>
+                                </div>
+                            </div>
+                        </mat-grid-tile>
+                    </mat-grid-list>
+                </div>
+            </div>
+        </mat-tab>
+
+        <mat-tab  label="{{'Location'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFDQLOC')">
+            <ng-template mat-tab-label>{{"Location"|translate}}</ng-template>
+            <div class="mat-tab-content">
+                <!--DQ header old-code start -->
+                <!-- <div id="block_container" class="header_">
+                    <div class="left_">
+                        <div class="dq-filter">
+                            <div id="box-left">
+                                Location
+                            </div>
+                            <div id="box-right" [formGroup]="slideForm">
+                                <mat-form-field appearance="none" style="width:45%">
+                                    <mat-select formControlName="locId">
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl" (ngModelChange)="applyFilter($event)" [placeholderLabel]="'Search...'" [noEntriesFoundLabel]="'No matching options'"></ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option *ngFor="let loc of locationList" [matTooltip]="loc.locDesc"
+                                            (click)="getLocationDetail(loc.id, true);" [value]="loc.id">
+                                            {{loc.name}}, {{loc.floorName}}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dq-location">
+                        <div class="location-action"> -->
+                            <!-- radio button based activate room start -->
+                            <!-- <span class="dq-l-room" *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showActiveInactive)">
+                                <mat-radio-group class="example-radio-group" style="padding: 8px 0px !important;"
+                                    (change)="statusChange($event.value, locationId)" [(ngModel)] = "isAvailable">
+                                    <div class="active" style="float: left; margin-right:10px;">
+                                        <mat-radio-button class="example-radio-button"
+                                            [value]="true">
+                                            Active (ON)</mat-radio-button>
+                                    </div>
+                                    <div class="inactive" style="float: left; margin-right:10px;">
+                                        <mat-radio-button class="example-radio-button"
+                                            [value]="false">
+                                            Inactive (OFF)</mat-radio-button>
+                                    </div>
+                                </mat-radio-group>
+                            </span> -->
+                            <!-- radio button based activate room end -->
+                            <!-- <span fxHide.xs class="dq-l-language">
+                                <span>Language: </span>
+                                <span class="dq-l-clr" (click)="manageRoom(locationId);">{{locationLanguage}}</span>
+                            </span>
+                            <span fxHide.xs class="dq-l-gender">
+                                <span>Gender: </span>
+                                <span class="dq-l-clr" (click)="manageRoom(locationId);">{{locationGender}}</span>
+                            </span>
+                            <div style="float: left;padding-top: 4px;">
+                                 <div class="tw-event-action-btn"  *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showEnrollPatient)">
+                                       <button mat-button class="action-btn" (click)="registerPatient('')">Enroll Patient</button>
+                                 </div>
+                             </div> -->
+
+                            <!-- slide based activate room start -->
+                        <!-- </div>
+                             <div class="dq-l-refresh" style="padding: 0px">
+                            <div class="tw-refresh-icon" style="margin-top: 5px;">
+                                    <span><i class="material-icons" matTooltip="Refresh" appDebounceClick [debounceTime] = "300" (debounceClick)="refreshlocation()"
+                                        style="cursor: pointer; float: right;">autorenew</i>
+                                    </span>
+                                </div>
+                            </div>
+                    </div> 
+                </div> -->
+                <!--DQ header old-code end -->
+                <!--DQ header realign new-code start -->
+                <div style="display: flex;align-items: center;justify-content:  space-between;padding:5px 5px 0px 13px;gap: 0 5px;" class="ovi-font-family">
+                    <div>
+                        <!-- <div class="filter-item-box filter-box1-box2" style="align-items: center;">
+                            <div id="filter-box1" style="min-width: 50px;"> {{"Location"|translate}}  </div>
+                               <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 180px  !important;" [formGroup]="slideForm">
+                                <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none"> -->
+                                    <!-- <mat-select  formControlName="locId">
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl" (ngModelChange)="applyFilter($event)" [placeholderLabel]="'Search...'" [noEntriesFoundLabel]="'No matching options'"></ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option *ngFor="let loc of locationList" [matTooltip]="loc.locDesc"(click)="getLocationDetail(loc.id, true);" [value]="loc.id">
+                                            {{loc.name}}, {{loc.floorName}}</mat-option>
+                                    </mat-select> -->
+                                    <!-- <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Locations'|translate" multiple [formControl]="selectedLocation"
+                                        (openedChange)="openedChange($event)" [disabled]="locationList?.length === 1">
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl" (ngModelChange)="applyFilter($event)" [placeholderLabel]="'Search....'|translate" [noEntriesFoundLabel]="'No matching options'">
+                                            </ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option *ngFor="let location of locationList" [value]="location.id">
+                                            {{location.name}}, {{location.floorName}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                                
+                               </div>
+                            </div> -->
+
+                            <div class="ovi-select-fild-cntr">
+                                <div class="ovi-select-fld-label">{{"Location"|translate}}</div>
+                                <div [formGroup]="slideForm">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Locations'|translate" multiple [formControl]="selectedLocation"
+                                        (openedChange)="openedChange($event)" [disabled]="locationList?.length === 1" style="width: 180px;padding: 0 5px 0px 5px;">
+                                        <mat-option>
+                                            <ngx-mat-select-search [formControl]="searchControl" (ngModelChange)="applyFilter($event)" [placeholderLabel]="'Search....'|translate" [noEntriesFoundLabel]="'No matching options'">
+                                            </ngx-mat-select-search>
+                                        </mat-option>
+                                        <mat-option class="ovi-dq-opt-cls ovi-dq-select-panel" *ngFor="let location of locationList" [value]="location.id">
+                                            {{location.name}}, {{location.floorName}}
+                                        </mat-option>
+                                </mat-select>
+                           </div>
+                         </div>  
+
+                         </div>  
+                       <div style="display: flex;align-items: center;gap: 0 10px;">
+                            <!-- <div class="filter-item-box filter-box1-box2" style="align-items: center;"
+                                *ngIf="showActiveInactive && selectedLocation.value.length > 1">
+                                <span style="display: flex;align-items: center;gap: 0 10px;"
+                                    *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showActiveInactive)">
+                                    <div id="filter-box1" style="min-width: 20px;margin-right: -10px;">
+                                        <mat-icon style="font-size:20px;color: #fff;"> location_on</mat-icon>
+                                    </div>
+                                    <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 100px  !important;">
+                                        <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate">
+                                                <mat-option [value]="true" (click)="changeLocationAvailability(true)">{{"Active
+                                                    (ON)"|translate}}</mat-option>
+                                                <mat-option [value]="false" (click)="changeLocationAvailability(false)">{{"Inactive
+                                                    (OFF)"|translate}}</mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                </span>
+                            </div> -->
+
+                            <div class="ovi-select-fild-cntr" *ngIf="showActiveInactive && selectedLocation.value.length > 1">
+                                <span *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showActiveInactive)" style="display: flex">
+                                    <div class="ovi-select-fld-label" style="min-width: 20px !important;">
+                                        <mat-icon style="font-size:20px;color: #fff;"> location_on</mat-icon>
+                            </div>
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate"
+                                        class="ovi-select-fld-drpdwn ovi-fnt-sze12" >
+                                        <mat-option [value]="true" (click)="changeLocationAvailability(true)">{{"Active
+                                            (ON)"|translate}}</mat-option>
+                                        <mat-option [value]="false" (click)="changeLocationAvailability(false)">{{"Inactive
+                                            (OFF)"|translate}}</mat-option>
+                                    </mat-select>
+                                </span>
+                            </div>
+
+                           <div style="display: flex;align-items: center;gap: 0 10px;" *ngIf="showActiveInactive && selectedLocation.value.length == 1">
+                            <span style="display: flex;align-items: center;gap: 0 10px;" *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showActiveInactive)">
+                            <mat-radio-group class="example-radio-group" (change)="statusChange($event.value, locationId)" [(ngModel)] = "isAvailable"  [ngModelOptions]="{ standalone: true }">
+                            <div class="active ovi-fnt-sze12" style="font-weight:600;color: #284255;"> <mat-radio-button [value]="true"> {{"Active (ON)"|translate}}</mat-radio-button> </div>
+                            <div class="inactive ovi-fnt-sze12" style="font-weight:600;color: #284255;"> <mat-radio-button [value]="false"> {{"Inactive (OFF)"|translate}}</mat-radio-button> </div>
+                            </mat-radio-group> </span>
+                            <!-- <div class="dq-location"> 
+                            <div class="location-action">  -->
+                            <div style="font-weight:600;color: #284255;" class="dq-l-language ovi-fnt-sze12"><span>{{"Language"|translate}}:</span>
+                            <span class="dq-l-clr" (click)="manageRoom(locationId);" (keydown.enter)="fixClick()">{{locationLanguage}}</span> 
+                             <!-- </div>  
+                            </div> -->
+                            </div>
+                            <div class="ovi-fnt-sze12" style="font-weight:600;color: #284255;"><span>{{"Gender"|translate}}:</span>
+                            <span class="dq-l-clr" (click)="manageRoom(locationId);" (keydown.enter)="fixClick()">{{locationGender}}</span></div>
+                           </div>
+                            <!-- <div class="filter-item-box filter-box1-box2" style="align-items: center;">
+                                <span style="display: flex;align-items: center;gap: 0 10px;">
+                                    <div id="filter-box1" style="min-width: 20px;margin-right: -10px;">
+                                        <img  matTooltip="filter" src="assets\Alert\common_icons\filter_funnel.svg" alt="filter" style="width:14px;height:14px;filter: invert(1)">
+                                    </div>
+                                    <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 100px  !important;">
+                                        <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none">
+                                            <mat-select multiple #locationVisitType (openedChange)="openedChangeFilter($event)" [formControl]="visitTypeIds">
+                                                <mat-option *ngFor="let data of visitTypes" [value]="data.code">
+                                                    {{data.value|translate}}
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                </span>
+                            </div> -->
+
+                              <div class="ovi-select-fild-cntr">
+                                <span style="display: flex">
+                                    <div class="ovi-select-fld-label" style="min-width: 20px !important;">
+                                        <img  matTooltip="filter" src="assets\Alert\common_icons\filter_funnel.svg" alt="filter" style="width:14px;height:14px;filter: invert(1)">
+                            </div>
+                                    <mat-select multiple #locationVisitType (openedChange)="openedChangeFilter($event)" [formControl]="visitTypeIds" class="ovi-select-fld-drpdwn">
+                                                <mat-option class="ovi-dq-opt-cls ovi-dq-select-panel" *ngFor="let data of visitTypes" [value]="data.code">
+                                                    {{data.value|translate}}
+                                                </mat-option>
+                                    </mat-select>
+                                </span>
+                            </div>
+
+                           <div *ngIf="showEnrollPatient" class="icon-box-blue">
+                                <img  style="height: 20px;filter: invert(1);" (click)="registerPatient('')" src="/assets/Alert/common_icons/enrollment-icon.svg"  alt="enroll" 
+                                appTooltip tooltipText ="{{'Enroll Patient'|translate}}" (keydown.enter)="fixClick()"/>
+                            </div>
+                           <div class="tw-refresh-icon">        
+                               <span><i class="material-icons" matTooltip="{{'Refresh'|translate}}" appDebounceClick [debounceTime] = "300" (debounceClick)="refreshlocation()"
+                                   style="cursor: pointer; float: right;padding: 3px;margin: 0px;">autorenew</i>
+                               </span>
+                       </div>
+                   </div>    
+               </div>
+               <!--DQ header realign new-code end -->
+                <div class="dig-q-styl" style="margin-top: -6px;">
+
+                    <mat-grid-list [cols]="gridCols === 4 ? gridCols - 1 : gridCols" rowHeight="50px" (window:resize)="onResize($event)">
+                        <!-- DQ In-progress start -->
+
+                        <mat-grid-tile class="custom-mat-grid-tile" *ngIf="digitalQueueModel.DQ_IP"
+                            [colspan]="digitalQueueModelCols.DQ_IP" [rowspan]="digitalQueueModelRows.DQ_IP">
+                            <div class="category-header" [id]="digitalQueueModelId.DQ_IP" class="border-styl_">
+                                <div class="groupHeaderClass hdr-styl header_">
+                                    <div class="header left_ hdr-cls_2">{{"In Progress"|translate}}</div>
+                                    <div class="header right_ dq-header-right " 
+                                        *ngIf="inprogressDetail">{{inprogressDetail.length}}</div>
+                                </div>
+                                <mat-divider></mat-divider>
+                                <div class="queue-locations">
+                                    <mat-list class="locations-list" [style.height.px]="list_height">
+                                        <div class="inporgress-details" *ngFor="let patient of inprogressDetail">
+                                            <div class="test-details">
+                                                <div class="test-details-left" (click)="patient.visitTypeId!= 'VT-TK'?getPatientDetails(patient):''" (keydown.enter)="fixClick()">
+                                                    <div mat-line class="patient-name hover-change">{{patient.patientName}}</div>
+                                                    <div mat-line class="patient-test-name" *ngIf="patient.visitTypeId == 'VT-HC'">
+                                                        <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span> <span  style="font-weight: 400;"> |  {{patient.uhid}}</span>
+                                                    </div>
+                                                    <div mat-line class="patient-test-name" *ngIf="patient.visitTypeId == 'VT-TK'">
+                                                        <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span>
+                                                    </div>
+                                                    <div mat-line class="patient-test-name"
+                                                        [matTooltip]="patient.testName">{{patient.testName}}</div>
+                                                    <div mat-line class="location-desc">{{patient.testLocationName}}</div>
+                                                </div>
+                                                <div class="test-details-right">
+                                                    <dq-list-menu (updateStatus)="openedChange(false)" [menu]="true"
+                                                        (isParallel)="getParallel($event)" [locationPending]="false"
+                                                        [queueId]="patient.patientQueueId" [currentStatus]="'QS-IP'"[visitTypeId]="patient.visitTypeId"
+                                                        [locationId]="patient.testLocationId" [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest" [dqtowerconfig] = "dqtowerconfig"
+                                                        [patientTestDetail]="patient" [changeLocation]="this.changeLocation"></dq-list-menu>
+                                                        <span class="test-details-right-btn1">
+                                                            <div class="out-button" style="cursor: pointer"
+                                                            (click)="patient.visitTypeId == 'VT-TK' ? updateTokenStatus(patient, 'QS-CO') :changeStatus(patient.patientQueueId,'QS-CO',selectedQueue,patient.paralelTests?.length >= 1,patient.testLocationId, patient)" (keydown.enter)="fixClick()">{{"OUT"|translate}}</div>
+                                                        </span>
+                                                        <div >
+                                                        <div *ngIf="patient.visitTypeId == 'VT-HC'" >
+                                                            <button class="op-btn" style="margin-top: 9px;margin-right: -25px">{{"HC"|translate}}</button>
+                                                            <mat-icon style="margin-left: 20px; color: #207245; cursor: pointer;" (click)="print(patient)"
+                                                            appTooltip tooltipText ="{{'Print'|translate}}">print</mat-icon>
+                                                         </div>
+                                                         <div *ngIf="patient.visitTypeId == 'VT-IP'">
+                                                            <button class="op-btn" style="margin-top: 9%;margin-right: 13px">{{"IP"|translate}}</button>
+                                                         </div>
+                                                         <div *ngIf="patient.visitTypeId == 'VT-OP'" >
+                                                            <button class="op-btn" style="margin-top: 9px;margin-right: 13px">{{"OP"|translate}}</button>
+                                                         </div>
+                                                         <div *ngIf="patient.visitTypeId == 'VT-TK'" >
+                                                            <button class="op-btn" style="background-color: #00ABA1;color:white;margin-top: 9px;margin-right: 13px">{{"TK"|translate}}</button>
+                                                         </div>
+                                                        </div>
+                                                </div>
+                                            </div>
+                                            <div class="test-controls" *ngIf="patient.visitTypeId !== 'VT-TK'">
+
+                                                <div class="checkin">
+                                                    <div class="checkin-left">
+                                                        <div mat-line class="checkin-name">{{"CheckIn"|translate}}</div>
+                                                        <div mat-line class="checkin-time">
+                                                            {{patient.fromTime | date:'shortTime'}}</div>
+                                                    </div>
+                                                    <div class="checkin-toggle custom-slide-toggle-checkin-inactive">
+                                                        <mat-slide-toggle style="padding-top:10px;"
+                                                            [disabled]="disabled" [checked]="checkin">
+                                                        </mat-slide-toggle>
+                                                    </div>
+                                                </div>
+                                                <div class="checkin">
+                                                    <div class="checkin-left">
+                                                        <div mat-line class="checkin-name">{{"CheckOut"|translate}}</div>                                                   
+                                                     </div>
+                                                    <div class="checkin-toggle" [formGroup]="slideForm">
+                                                        <mat-slide-toggle style="padding-top:10px;"
+                                                            formControlName="checkout"
+                                                            (change)="onChange($event.checked, patient.patientQueueId,'QS-CO', 'checkout')">
+                                                        </mat-slide-toggle>
+                                                    </div>
+                                                </div>
+                                                <div class="checkin" *ngIf="patient.allowPartial === true">
+                                                    <div class="checkin-left">
+                                                        <div mat-line class="checkin-name">{{"Partial Complete"|translate}}</div>                                                    </div>
+                                                    <div class="checkin-toggle" [formGroup]="slideForm">
+                                                        <mat-slide-toggle style="padding-top:10px;"
+                                                            formControlName="partial"
+                                                            (change)="onChange($event.checked, patient.patientQueueId,'QS-PC', 'partial')">
+                                                        </mat-slide-toggle>
+                                                    </div>
+                                                </div>
+                                                <div class="checkin" style=" min-height: 100px !important;" *ngIf="patient.paralelTests?.length >= 1">
+                                                    <div class="parallel-tests" *ngFor="let test of patient.paralelTests">
+                                                        <div class="include-test">
+                                                            <span mat-line matTooltip [matTooltip]="test.testName" class="checkin-name">Include {{test.testName}}</span>
+                                                        </div>
+                                                        <div style="float: right;padding-right: 40px;">
+                                                            <span class="checkin-checkbox" [formGroup]="slideForm">
+                                                                <mat-checkbox formControlName="parallelTest" (change)='isParallelCheck($event, test.queueId)' color='primary' ></mat-checkbox>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="test-group" *ngIf="patient.testGroups?.length > 1">
+                                                    <div class="test-list" *ngFor="let test of patient.testGroups">
+                                                        <div mat-line class="test-name">{{test.healthTestName}}</div>
+                                                    </div>
+                                                </div>
+                                                <mat-divider *ngIf="!patient.paralelTests?.length >= 1" style="margin-top: 2px;"></mat-divider>
+
+                                            </div>
+
+                                        </div>
+
+                                    </mat-list>
+                                </div>
+                            </div>
+                        </mat-grid-tile>
+                        <!-- DQ Waiting start -->
+                        <mat-grid-tile class="custom-mat-grid-tile" *ngIf="digitalQueueModel.DQ_WA"
+                            [colspan]="digitalQueueModelCols.DQ_WA" [rowspan]="digitalQueueModelRows.DQ_WA">
+                            <div class="category-header" [id]="digitalQueueModelId.DQ_WA" class="border-styl_">
+                                <div class="groupHeaderClass hdr-styl header_">
+                                    <div class="header left_ hdr-cls">
+                                        <span class="ovi-fnt-sze11" style="color: #00ABA1;padding-top: 2px;float: left;">{{"Ready to go"|translate}}&nbsp;/</span>
+                                        <span class="ovi-fnt-sze11" style="color: #FF8812;padding-top: 2px;float: left;">&nbsp;&nbsp;{{"Next"|translate}}&nbsp;/</span>
+                                        <span class="ovi-fnt-sze11" style="color: #23374A;padding-top: 2px;float: left;">&nbsp;&nbsp;{{"Waiting"|translate}}&nbsp;/</span>
+                                        <span class="ovi-fnt-sze11" style="color: #f21919;padding-top: 2px;float: left;">&nbsp;&nbsp;{{"Partial Complete"|translate}}</span>
+                                    </div>
+                                    <div class="header right_  ovi-fnt-sze11"  style="padding-top: 13px; color:#f98e22;"
+                                        *ngIf="waitingDetail">{{waitingDetail.length}}
+                                        <!-- <mat-form-field appearance="none" class="drop-down-width">
+                                            <img width="10" height="10" matTooltip="filter" src="assets\Alert\common_icons\filter_funnel.svg"
+                                                alt="Warning">
+                                            <mat-select multiple #locationVisitType>
+                                                <div style="height: 250px;overflow: hidden;">
+                                                    <div style="max-height: 200px;overflow: auto;">
+                                                        <mat-option *ngFor="let data of visitTypes" [value]="data.code">
+                                                            {{data.value|translate}}
+                                                        </mat-option>
+                                                    </div>
+                                                    <div>
+                                                        <mat-divider></mat-divider>
+                                                        <span class="drop-down-footer">
+                                                            <button mat-button (click)="locationVisitType.close()">{{"Cancel"|translate}}</button>
+                                                            <button mat-button class="filter-btn"
+                                                                (click)="[filterVisitType(locationVisitType.value), locationVisitType.close()]">{{"Filter"|translate}}</button>
+                                                            <button mat-button
+                                                                (click)="openedChange(false);locationVisitType.value=null;locationVisitType.close()">{{"Clear
+                                                                All"|translate}}</button>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </mat-select>
+                                        </mat-form-field> -->
+                                    </div>
+                                </div>
+                                <mat-divider></mat-divider>
+                                <div class="queue-locations">
+                                    <mat-list class="locations-list" [style.height.px]="list_height">
+                                        <div class="lst-styl" *ngFor="let patient of waitingDetail"
+                                            [ngClass]="patient.isPartialComplete === true ? 'dq-partial-colour' : ''">
+                                            <div class="mrgn-styl">
+                                                <span class="fnt-styl_ hover-change"
+                                                    (click)="patient.visitTypeId!= 'VT-TK'?getPatientDetails(patient):''" (keydown.enter)="fixClick()">{{patient.patientName}}
+                                                </span>
+                                                <div class="flt-styl">
+                                                    <dq-list-menu (updateStatus)="openedChange(false)" [menu]="true"
+                                                        [queueId]="patient.patientQueueId" [locationId]="patient.testLocationId" [visitTypeId]="patient.visitTypeId" [locationPending]="false"
+                                                        [currentStatus]="patient.isPartialComplete === true ? 'QS-PC' : 'QS-WT'"  [dqtowerconfig] = "dqtowerconfig" 
+                                                        [patientTestDetail]="patient" [changeLocation]="this.changeLocation">
+                                                    </dq-list-menu>
+                                                </div>
+                                                <span class="flt-styl test-details-right-btn">
+                                                    <div class="in-button" style="cursor: pointer" 
+                                                    (click)="patient.visitTypeId == 'VT-TK' ? updateTokenStatus(patient, 'QS-IP') :changeStatus(patient.patientQueueId,'QS-IP',selectedQueue,patient.paralelTests?.length >= 1,patient.testLocationId, patient)" (keydown.enter)="fixClick()">{{"IN"|translate}}</div>
+                                                </span>
+                                            </div>
+                                            <div *ngIf="patient.visitTypeId == 'VT-OP'">
+                                                <button class="op-btn">{{"OP"|translate}}</button>
+                                             </div>
+                                             <div *ngIf="patient.visitTypeId == 'VT-HC'">
+                                                <button class="op-btn">{{"HC"|translate}}</button>
+                                             </div>
+                                             <div *ngIf="patient.visitTypeId == 'VT-IP'">
+                                                <button class="op-btn">{{"IP"|translate}}</button>
+                                             </div>
+                                             <div *ngIf="patient.visitTypeId == 'VT-TK'" [ngStyle]="{'margin-top': patient.patientName === null ? '23px' : ''}">
+                                                <button class="op-btn" style="background-color: #00ABA1;color:white ;">{{"TK"|translate}}</button>
+                                             </div>
+                                            <div mat-line class="mrgn-styl loc-patient-test-name" style="width: 65%;" *ngIf="patient.visitTypeId == 'VT-HC'">
+                                                <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span> <span  style="font-weight: 400;"> |  {{patient.uhid}}</span>
+                                            </div> 
+                                            <div mat-line class="mrgn-styl loc-patient-test-name" *ngIf="patient.visitTypeId == 'VT-TK'">
+                                                <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span>
+                                            </div> 
+                                            <div mat-line class="mrgn-styl loc-patient-test-name" style="width: 65%;"
+                                                [matTooltip]="patient.testName">
+                                                {{patient.testName}}
+                                            </div>
+                                            
+                                            <div class="mrgn-styl patient-loc-name">
+                                                {{patient.testLocationName}}
+                                            </div>
+                                            <div class="mrgn-styl partial-complete-name"
+                                                *ngIf="patient.isPartialComplete === true">
+                                                {{"Partially Completed"|translate}}
+                                            </div>
+                                        </div>
+                                        <div class="dig-q-styl_2" *ngFor="let patient of pendingDetail">
+                                            <div class="mrgn-styl">
+                                                <span class="fnt-styl_ hover-change"
+                                                    (click)="patient.visitTypeId!= 'VT-TK'?getPatientDetails(patient):''" (keydown.enter)="fixClick()">{{patient.patientName}}</span>
+                                                <div class="flt-styl">
+                                                    <dq-list-menu (updateStatus)="openedChange(false)" [menu]="true"
+                                                        [queueId]="patient.patientQueueId" [currentStatus]="'QS-PE'"[visitTypeId]="patient.visitTypeId"
+                                                        [locationId]="patient.testLocationId" [locationPending]="false"  [dqtowerconfig] = "dqtowerconfig"
+                                                        [patientTestDetail]="patient" [changeLocation]="this.changeLocation">
+                                                    </dq-list-menu>
+                                                </div>
+                                            </div>
+                                            <div mat-line class="mrgn-styl loc-patient-test-name" style="width: 65%;" *ngIf="patient.visitTypeId == 'VT-HC'">
+                                                <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span> <span  style="font-weight: 400;"> |  {{patient.uhid}}</span>
+                                            </div> 
+                                            <div mat-line class="mrgn-styl loc-patient-test-name" style="width: 65%;"
+                                                [matTooltip]="patient.testName">
+                                                {{patient.testName}}
+                                            </div>
+                                            <div class="mrgn-styl patient-loc-name">
+                                                {{patient.testLocationName}}
+                                            </div>
+                                        </div>
+                                    </mat-list>
+                                </div>
+                            </div>
+                        </mat-grid-tile>
+                        <!-- DQ Complete start -->
+                        <mat-grid-tile class="custom-mat-grid-tile" *ngIf="digitalQueueModel.DQ_CO"
+                            [colspan]="digitalQueueModelCols.DQ_CO" [rowspan]="digitalQueueModelRows.DQ_CO">
+                            <div class="category-header" [id]="digitalQueueModelId.DQ_CO" class="border-styl_">
+                                <div class="groupHeaderClass hdr-styl header_">
+                                    <div class="header left_ hdr-cls_">
+                                        <button class="pending-btn" style="height: 30px;width: 80px;margin-top: -6px;line-height: unset;" (click)="getPendingTestByLocId('pending', 0);" mat-button
+                                        [ngClass]="!isEnablePendingTest ? 'unselect-status' : ''"
+                                        [ngStyle]="{color: !isEnablePendingTest ? '#636A6D' : ''}">{{"Pending"|translate}}</button>
+                                        <button class="complete-btn"  style="height: 30px;width: 80px;margin-top: -6px;line-height: unset;"(click)="getPendingTestByLocId('complete', null)" mat-button
+                                        [ngClass]="isEnablePendingTest ? 'unselect-status' : ''"
+                                        [ngStyle]="{color: isEnablePendingTest ? '#636A6D' : ''}">{{"Complete"|translate}}&nbsp;</button>
+                                    </div>
+                                    <div class="header right_ ovi-fnt-sze11" style="color: #03b54d;"
+                                        *ngIf="!isEnablePendingTest && completedDetailList">{{completedDetailList.length}}</div>
+                                        <div class="header right_ ovi-fnt-sze11" style="color: orange;"
+                                            *ngIf="isEnablePendingTest && completedDetailList">{{completedDetailList.length}}</div>
+                                </div>
+                                <mat-divider></mat-divider>
+                                <div class="queue-locations dq-filter">
+                                    <div class="dq-filter" *ngIf="isEnablePendingTest" style="margin:10px 0px 10px 0px;display: flex;">
+                                        <input matInput  id="box-left-test" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" #searchInputClear (keyup)="searchPendingList($event.target.value)"/>
+                                        <div id="box-right-test" [formGroup]="slideForm">
+                                            <mat-form-field appearance="none" class="ovi-fnt-sze10">
+                                                <mat-select formControlName="testId" matSelectSearch>
+                                                    <mat-option value='0' (click)="getPendingTestByLocId('pending', 0);" (keydown.enter)="fixClick()">{{"All"|translate}}</mat-option>
+                                                    <mat-option *ngFor="let test of testList" [matTooltip]="test.testName"
+                                                        (click)="getPendingTestByLocId('pending', test.testId);" [value]="test.testId" (keydown.enter)="fixClick()">
+                                                        {{test.testName}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                    </div>
+                                    <mat-list class="locations-list" [style.height.px]="isEnablePendingTest ? list_height - 62 : list_height">
+                                        <div class="lst-styl-complete" *ngFor="let patient of completedDetailList">
+                                            <div class="mrgn-styl">
+                                                <span class="fnt-styl_ hover-change"
+                                                    (click)="patient.visitTypeId!= 'VT-TK'?getPatientDetails(patient):''" (keydown.enter)="fixClick()">{{patient.patientName}} {{patient.visitTypeId == 'VT-TK' && patient.patientName != null ? ' - ' : ''}}</span>
+                                                <span class="ovi-fnt-sze12" *ngIf="patient.visitTypeId == 'VT-TK'" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span>
+                                                    <div class="flt-styl">
+                                                    <dq-list-menu *ngIf="!isEnablePendingTest" (updateStatus)="openedChange(false)" [menu]="true"
+                                                        (isParallel)="getParallel($event)" [locationPending]="false"
+                                                        [queueId]="patient.patientQueueId" [currentStatus]="'QS-CO'"[visitTypeId]="patient.visitTypeId"
+                                                        [locationId]="patient.testLocationId" [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest" [dqtowerconfig] = "dqtowerconfig"
+                                                        [patientTestDetail]="patient" [changeLocation]="this.changeLocation">
+                                                    </dq-list-menu>
+                                                    <dq-list-menu *ngIf="isEnablePendingTest" (updateStatus)="openedChange(false)" [menu]="true"
+                                                        (isParallel)="getParallel($event)" [locationPending]="false"
+                                                        [queueId]="patient.patientQueueId" [currentStatus]="'QS-PE'"[visitTypeId]="patient.visitTypeId"
+                                                        [locationId]="patient.testLocationId" [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest" [dqtowerconfig] = "dqtowerconfig"
+                                                        [patientTestDetail]="patient" [changeLocation]="this.changeLocation">
+                                                    </dq-list-menu>
+                                                </div>
+                                                <span *ngIf="isEnablePendingTest" class="flt-styl test-details-right-btn" style="width: 16%;">
+                                                    <div class="in-button" style="cursor: pointer" (click)="patient.visitTypeId == 'VT-TK' ? updateTokenStatus(patient, 'QS-IP') : updatePatientTest(patient, patient.testId)" (keydown.enter)="fixClick()">{{"IN"|translate}}</div>
+                                                </span>
+                                            </div>
+                                            <div *ngIf="isEnablePendingTest" class="mrgn-styl patient-loc-name">
+                                                <span>{{patient.uhid}}</span>
+                                                <span *ngIf="patient.uhid !== null">, &nbsp;{{patient.visitIdentifier}}</span>
+                                            </div>
+                                            <div mat-line class="mrgn-styl patient-loc-name" *ngIf="patient.visitTypeId == 'VT-TK'"
+                                                [matTooltip]="patient.testName" style="width: 65%;">
+                                                {{patient.testName}}
+                                            </div>
+                                            <div style="margin-top: 2px; text-align: end;width: 85%;"  *ngIf="patient.visitTypeId == 'VT-HC'">
+                                                <button class="op-btn" style="margin-top: 2px;">{{"HC"|translate}}</button>
+                                             </div>
+                                             <div style="margin-top: 2px;text-align: end;width: 85%;"  *ngIf="patient.visitTypeId == 'VT-IP'">
+                                                <button class="op-btn" style="margin-top: 2px;">{{"IP"|translate}}</button>
+                                             </div>
+                                             <div style="margin-top: 2px;text-align: end;width: 85%;" *ngIf="patient.visitTypeId == 'VT-OP'">
+                                                <button class="op-btn" style="margin-top: 2px;">{{"OP"|translate}}</button>
+                                             </div>
+                                             <div style="margin-top: 2px;text-align: end;width: 85%;" *ngIf="(patient.visitTypeId == 'VT-OP' && patient.testId == null) || patient.visitTypeId == 'VT-TK'">
+                                                <button class="op-btn" style="margin-top: 2px;background-color: #00ABA1;color:white ;">{{"TK"|translate}}</button>
+                                             </div>
+                                            <div mat-line class="mrgn-styl loc-patient-test-name" style="width: 65%;" *ngIf="patient.visitTypeId == 'VT-HC'">
+                                                <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.visitTokenNo}}</span> <span  style="font-weight: 400;"> |  {{patient.uhid}}</span>
+                                            </div>
+                                            <div mat-line *ngIf="patient.visitTypeId !== 'VT-TK'" class="mrgn-styl loc-patient-test-name"
+                                                [matTooltip]="patient.testName" style="width: 65%;">
+                                                {{patient.testName}}
+                                            </div>
+                                            <div *ngIf="isEnablePendingTest" mat-line class="mrgn-styl loc-patient-cur-test-name">
+                                                <span [matTooltip]="patient.currentTestName">{{patient.currentTestName}}</span>
+                                                <span style="font-style: italic;" *ngIf="patient.currentTestStatusName !== null">&nbsp;({{patient.currentTestStatusName}})</span>
+                                            </div>
+                                            <div *ngIf="!isEnablePendingTest" class="mrgn-styl patient-loc-name" style="height: 30px;">
+                                                <div style="float: left;">{{patient.testLocationName}}</div>
+                                                <div style="float: right;"><mat-icon *ngIf="!isEnablePendingTest" style="margin-top: -10px; color: #207245; cursor: pointer;margin-right: 5px;" (click)="print(patient)"
+                                                    appTooltip tooltipText ="{{'Print'|translate}}">print</mat-icon></div>
+                                             </div>
+                                                   </div>
+                                    </mat-list>
+                                </div>
+                            </div>
+                        </mat-grid-tile>
+                    </mat-grid-list>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab  label="{{'Worklist'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFDQWRL')">
+            <ng-template  mat-tab-label >{{"Worklist"|translate}}</ng-template>
+            <app-worklist [matTabindex]="matTabIndex" [showEnrollPatient]="this.showEnrollPatient" [changeLocation]="this.changeLocation" 
+            *ngIf="matTabIndex == 3" [enableCountClick] = "enableCountClick"></app-worklist>
+        </mat-tab>
+        <mat-tab  label="{{'Waiting List'|translate}}" [disabled]="activate_btn && !activate_btn.includes('TB_WFDQWTL')">
+            <ng-template  mat-tab-label >{{"Waiting List"|translate}}</ng-template>
+            <div style="padding: 5px 10px 0px 10px;">
+                <app-health-checkup [matTabindex]="matTabIndex" *ngIf="matTabIndex == 4"></app-health-checkup>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+</div>

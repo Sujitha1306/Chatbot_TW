@@ -1,0 +1,91 @@
+<div class="ovi-font-family ovi-fnt-sze20" style="width: 100%; height: 100%; background: #a5e1ff; text-align: center; display: flex ; align-items: center; justify-content: space-around;">
+    <div style="width: 100%; display: flex ;flex-direction: column; height: 100%; align-items: center;justify-content: space-around;" >
+        <div class="ovi-fnt-sze40" style="height: 200px; display: inline-flex; color: white; align-items: center; width: 100%; justify-content: space-around;">
+            <div *ngIf="customerLogo">
+                <img style="width: 350px;" [src]="customerLogo" class="ovi-logo-new" alt="ovi-logo">
+            </div>
+        </div>
+        <div style="width: 100%; max-width: 450px; height: calc(100% - 200px); background: white; border-radius: 40px 40px 0px 0px;">
+            <div class="ovi-font-family" style="height: calc(100% - 73px); width: calc(100% - 40px); padding: 20px 20px 0px 20px;">
+                <form class="login-section" [formGroup]="guestForm" novalidate autocomplete="off">
+                    <div>
+                        <img style="width: 100px;" src="/assets/Alert/common_icons/ovitag-new-c.png" class="ovi-logo-new" alt="ovi-logo">
+                    </div>
+                    <div class="ovi-fnt-sze24" style="color: #0174ae; display: inline-flex ; font-weight: 600; height: 80px; align-items: center;">
+                        {{"We're here to help"|translate}}
+                    </div>                
+                    <div>
+                        <div>
+                            <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family" appearance="outline">
+                                <mat-label  >{{"Name"|translate}}</mat-label>
+                                <input matInput  formControlName="name">
+                            </mat-form-field> 
+                        </div>
+                        <div *ngIf="!otpLogin">
+                            <div>
+                                <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family" appearance="outline">
+                                    <mat-label  >{{"Email"|translate}}</mat-label>
+                                    <input matInput  formControlName="email">
+                                </mat-form-field> 
+                            </div>
+                            <div class="cls-hgt-new ovi-font-family" style="padding-top: 20px;">
+                                <button  mat-button class="active-btn btn-mrgn ovi-prmry-bg-clr" style="border-radius: 10px; width: 130px;height: 40px;"
+                                    (click)="guestLogin()" [disabled]="guestForm.invalid">{{"Enter"|translate}} 
+                                </button>
+                            </div>
+                        </div>
+                        <div *ngIf="otpLogin">
+                            <div *ngIf="!verifyOtp">
+                                <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family ovi-matfrmfld-err" appearance="outline">
+                                    <mat-label  >{{"Mobile Number"|translate}}</mat-label>
+                                    <input matInput type="text" formControlName="mobileNo" />
+                                </mat-form-field> 
+                                <mat-error class="ovi-fnt-sze12" *ngIf="guestForm.controls.mobileNo.hasError('required') && guestForm.controls.mobileNo.touched">
+                                    {{ "Mobile number is required." | translate }}
+                                </mat-error>
+                                <mat-error class="ovi-fnt-sze12" *ngIf="guestForm.controls.mobileNo.hasError('pattern') && guestForm.controls.mobileNo.touched">
+                                    {{ "Enter valid mobile number (10–13 digits)." | translate }}
+                                </mat-error>
+                            </div>
+                            <div *ngIf="verifyOtp">
+                                <mat-form-field class="login-input-new ovi-lbl-text-size ovi-font-family" style="width: 315px;" appearance="outline">
+                                    <mat-label  >{{"Verify OTP"|translate}}</mat-label>
+                                    <input matInput type="text" formControlName="verifyOtp" />
+                                    <span *ngIf="countdown != 0" matSuffix class="otp-timer">{{ countdown }}s</span>
+                                </mat-form-field> 
+                                <mat-error class="ovi-fnt-sze12" *ngIf="guestForm.controls.verifyOtp?.hasError('required') && guestForm.controls.verifyOtp?.touched">
+                                    {{ "OTP verification is required to proceed" | translate }}.
+                                </mat-error>
+                            </div>
+                            <div class="cls-hgt-new ovi-font-family" style="padding-top: 20px; display: flex; gap : 5px;justify-content: space-around;">
+                                <button *ngIf="!verifyOtp"  mat-button class="active-btn btn-mrgn ovi-prmry-bg-clr" style="border-radius: 5px; width: 130px;height: 40px;"
+                                    [disabled]="guestForm.invalid" appDebounceClick  (debounceClick)="sendOtp();startTimer()" cdkFocusInitial [debounceTime]="300" >{{"SEND OTP"|translate}} 
+                                </button>
+                                <span *ngIf="verifyOtp" [ngStyle]="{width : countdown != 0 ? '130px' : '300px'}" style="gap: 5px; display: flex; justify-content: flex-end;">
+                                    <button  mat-button class="active-btn btn-mrgn ovi-prmry-bg-clr" style="border-radius: 5px; width: 130px;height: 40px;"
+                                        [disabled]="guestForm.invalid" appDebounceClick  (debounceClick)="otpVerification()" cdkFocusInitial [debounceTime]="300">{{"VERIFY OTP"|translate}} 
+                                    </button>
+                                    <span *ngIf="countdown == 0" appDebounceClick  (debounceClick)="sendOtp();startTimer()" cdkFocusInitial [debounceTime]="300" style="cursor: pointer; font-size: 14px; color: blue; display: inline-flex; align-items: flex-end;"> Resend otp ?</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>    
+                </form>            
+            </div>
+            <div>
+                <div class="lang-nav">
+                <ng-template ngFor let-lang [ngForOf]="languages">
+                    <span class="line">
+                        <a class="button ovi-fnt-sze11" (click)="changeLanguage(lang.code)"
+                            [ngStyle]="{'color': selectedLang === lang.code ?  '' : 'blue'}"
+                            style="margin-right: 10px;">{{lang.label}}</a>
+                    </span>
+                </ng-template>
+                </div>
+                <div>
+                    <span>&copy; <small> 2026 Trackerwave</small></span>
+                </div>
+            </div>
+        </div>  
+    </div>  
+</div>

@@ -1,0 +1,125 @@
+<div class="manage-body">
+  <div class="align-header-1">
+    
+      <div class="row-field">
+        <div class="tw-view-full-width-flex">
+          <div class="row">
+            <div style="display: flex">
+              <span class="tw-filter-new">
+                <input matInput style="padding: 5px;" (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off">
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-field">
+        <div class="tw-view-full-width-pad">
+          <div class="tw-btn">
+            <div class="tw-event-action-btn" *ngIf="activate_btn && activate_btn.indexOf('BT_CFAC') > -1">
+              <button mat-button class="action-btn" (click)="createHealthcheck('', $event)">{{"Create"|translate}}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+  </div>
+  <div class="tw-content1 table-align">
+      <div fxLayout="column" class="mat-elevation-z4 tw-manage-component" [ngClass.xs]="'components-container-xs'"
+        fxLayoutGap="5px">
+        <div class="tw-mat-table-overflow">
+          <table mat-table class="tw-table" [dataSource]="dataSource" matSort style="table-layout: inherit;">
+            <caption style="display:none">Health Check</caption>
+
+          <ng-container matColumnDef="testName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header"> {{"Test Name"|translate}} </th>
+            <td mat-cell *matCellDef="let data"
+              (dblclick)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && createHealthcheck(data, $event)"
+              (click)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && rowClick(data)" (keydown.enter)="fixClick()"> {{data.testName}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="capacity">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header"> {{"Queue Length"|translate}} </th>
+            <td mat-cell *matCellDef="let data"
+              (dblclick)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && createHealthcheck(data, $event)"
+              (click)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && rowClick(data)" (keydown.enter)="fixClick()">
+              {{data.testLocations[0].capacity}}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="fullName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header"> {{"Test Location"|translate}} </th>
+            <td mat-cell *matCellDef="let data"
+              (dblclick)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && createHealthcheck(data, $event)"
+              (click)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && rowClick(data)" (keydown.enter)="fixClick()">
+              {{data.testLocations[0].fullName}}
+            </td>
+          </ng-container>
+
+
+          <ng-container matColumnDef="statusName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header"> {{"Status Name"|translate}}</th>
+            <td mat-cell *matCellDef="let data"
+              (dblclick)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && createHealthcheck(data, $event)"
+              (click)="activate_btn && activate_btn.indexOf('BT_CFAE') > -1 && rowClick(data)" (keydown.enter)="fixClick()"> {{data.statusName}} </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;" class="tw-manage-table-header-row"></tr>
+          <tr mat-row *matRowDef="let data; columns: displayedColumns;"
+            [ngClass]="{'highlight' : data.id === selectedName}"></tr>
+        </table>
+      </div>
+      <mat-paginator #paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons class="tw-paginator-sticky"></mat-paginator>
+    </div>
+  </div>
+
+  <div>
+    <div class="ovi-font-family" id="block_container">
+      <div id="box1"><img src="/assets/Alert/common_icons/search_icn.svg" alt="search_icon" width="16px"></div>
+      <div id="box2">
+        <select #select>
+          <option value="" selected>Type to Search..</option>
+          <option value="sitea">Sample Data 1</option>
+          <option value="siteb">Sample Data 2</option>
+          <option value="sitec">Sample Data 3</option>
+          <option value="sited">Sample Data 4</option>
+          <option value="sitee">Sample Data 5</option>
+          <option value="sitef">Sample Data 6</option>
+        </select>
+      </div>
+
+      <div id="box1">Status </div>
+      <div id="box2">
+        <select #select>
+          <option value="" selected>All</option>
+          <option value="sitea">Sample Data 1</option>
+          <option value="siteb">Sample Data 2</option>
+          <option value="sitec">Sample Data 3</option>
+          <option value="sited">Sample Data 4</option>
+          <option value="sitee">Sample Data 5</option>
+          <option value="sitef">Sample Data 6</option>
+        </select>
+      </div>
+
+    </div>
+
+    <mat-accordion *ngFor="let data of healthTest">
+      <mat-expansion-panel class="ovi-font-family">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="main-heading ovi-font-family">{{data.floorName}}</mat-panel-title>
+        </mat-expansion-panel-header>
+        <mat-divider class="divider_"></mat-divider>
+       
+        <mat-grid-list [cols]="cols" rowHeight="190px" appWindowResize (resizedCol)="onWindowResized($event)" [component]="'healthCheck'">
+          <mat-grid-tile colspan="1" rowspan="1" class="cur-ptr" *ngFor="let location of data.testLocations" (keydown.enter)="fixClick()"
+            (click)="locationInfo(location.testId, location.statusName, location.healthPlanName, location.capacity)">
+            <div class="widget-class  ovi-font-family" id="grid-cl-r-2-2">
+              <div class="location-name">{{location.healthPlanName}}</div>
+              <div class="location-desc">{{data.floorName}}, {{location.locationName}}</div>
+            </div>
+          </mat-grid-tile>
+        </mat-grid-list>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </div>
+</div>

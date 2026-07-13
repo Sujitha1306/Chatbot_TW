@@ -1,0 +1,203 @@
+<div id="user" class="loading-spinner" *ngIf="isResource">
+  <div class="spinnerload">
+    <div class="spin1"></div>
+    <div class="spin2"></div>
+    <div class="spin3"></div>
+  </div>
+</div>
+<div fxFlex class="input-component-holder ovi-font-family">
+  <mat-toolbar *ngIf="data.type === 'resource' || data.type === 'role' || data.type === 'ResourceGroupName'" class="input-header">
+    <div class="header-name">{{"Resource Map"|translate}}</div>
+    <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+        <mat-icon class="icon-style">highlight_off</mat-icon>
+      </button></div>
+  </mat-toolbar>
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="display: flex; height: 100%; margin: 0;" [formGroup]="resourceForm">
+    <div *ngIf="resourceExpand" class="side-bar">
+      <div style="display: flex; height: 0; justify-content: flex-end;">
+        <button mat-icon-button style="height: 25px;" class="expand" (click)="expandSide()">
+          <mat-icon style="padding: 0;height: 26px; color: white;margin-left: 3px;">keyboard_arrow_left</mat-icon>
+        </button>
+      </div>
+      <div class="ovi-row-gap" [ngStyle]="{'height': resData.type === 'role' || resData.type === 'resource' ?
+         'calc(100% - 80px)' : 'calc(100vh - 186px)' }" style="padding: 5px 1px;">
+        <div *ngIf="resData.type !== 'resource'" class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box"  style="width: 85%; padding-left: 8px;">
+          <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+            <mat-select  formControlName="resourcesType" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Resource Type'|translate"
+              (selectionChange)="typeOfResources($event);">
+              <mat-option *ngFor="let list of resourceType" [value]="list.code">
+                {{list.value}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div *ngIf="resourceForm.controls['resourcesType'].value === 'RE-RES'" class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box"  style="width: 85%; padding-left: 8px;">
+          <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Resource Type'|translate"
+              (openedChange)="applyTypeFilter($event);" multiple formControlName="type">
+              <mat-option *ngFor="let list of resourceList" [value]="list.code">
+                <span>
+                  <img style="padding: 0 5px; height: 19px; width: 19px; margin-bottom: -5px;" alt="Menus"
+                    [src]="list.code === 'RST-BT' ? '../../../../../assets/Menus/press-button.svg' : 
+                    list.code === 'RST-DB' ? '../../../../../assets/Menus/dashboard.svg' : list.code === 'RST-MN' ? '../../../../../assets/Menus/app.svg' : 
+                    list.code === 'RST-DD' ? '../../../../../assets/Menus/menu.svg' : list.code === 'RST-TB' ? '../../../../../assets/Menus/browser.svg' :
+                    list.code === 'RST-VW' ? '../../../../../assets/Menus/eye.svg' : '../../../../../assets/Menus/widget.svg'" />
+                </span>
+                {{list.value}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div *ngIf="resourceForm.controls['resourcesType'].value === 'RE-RES'" class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box"  style="width: 85%; padding-left: 8px;">
+          <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Category'|translate" (openedChange)="applyCategoryFilter($event);"
+              multiple formControlName="category">
+              <mat-option *ngFor="let list of categoryList" [value]="list">
+                {{list}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div *ngIf="resourceForm.controls['resourcesType'].value === 'RE-RES'" class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box"  style="width: 85%; padding-left: 8px;">
+          <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Sub Category'|translate" (openedChange)="applySubCategoryFilter($event);"
+              multiple formControlName="subCategory">
+              <mat-option *ngFor="let list of subCategoryList" [value]="list">
+                {{list}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div style="width: 100%;">
+          <span class="list-heading">
+            <span (click)="isResourceSort = !isResourceSort; sortSelectedOnTop(resData?.type)" (keydown.enter)="fixClick()">{{resourceForm.controls['resourcesType'].value === 'RE-RES' ? ('Resource'|translate) : ('Group Resource'|translate)}}</span>
+            <span class="tw-filter-res-search">
+              <input matInput  #searchInputClear [formControl]="searchControl" class="ovi-fnt-sze12"
+                style="padding: 5px !important; height: 15px; color: black;"
+                 appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+            </span>
+          </span>
+          <mat-list [ngClass]="resData?.type === 'resource' ? 'mat-resources-permission-list' : 
+            (resourceForm.controls['resourcesType']?.value === 'RE-RES' && resData?.type === 'role') ? 'mat-resources-list' :
+            (resourceForm.controls['resourcesType']?.value === 'RE-RES' && (resData?.type === 'department' || resData?.type === 'user')) ? 
+            'mat-resources-dep-user-list' :
+            (resourceForm.controls['resourcesType']?.value === 'RE-GU' && (resData?.type === 'department' || resData?.type === 'user')) ? 
+            'mat-resources-dep-user-group-list' : 'mat-resources-group-list'" (scroll)="onScroll($event)">
+            <mat-list-item class="list-option" *ngFor="let resource of visibleResources">
+              <mat-checkbox [checked]="isResourceSelected(resource, resData.type)" style="font-weight: 600;"
+                (change)="toggleSelection($event, resource, resData.type)" [disabled]="groupResourcesList.includes(resource.id)" [attr.data-resource-id]="resource.id">
+                <div style="display: flex; align-items: center; justify-content: center; padding-left: 5px; ">
+                  <mat-icon class="ovi-prmry-clr ovi-fnt-sze16" style="padding-top: 1px; height: fit-content; width: fit-content;"
+                   *ngIf="resource.target == 'mobile'">smartphone</mat-icon>
+                  <span class="ovi-prmry-clr ovi-fnt-sze16" style="padding-top: 3px; height: fit-content; width: fit-content;"
+                   *ngIf="resource.target == 'web'" class="material-icons">desktop_windows</span>
+                   <img *ngIf="resourceForm.controls['resourcesType'].value === 'RE-RES'"
+                    style="padding: 0 5px; height: 13px; width: 14px; margin-bottom: -2px;"
+                    [src]="resource.resourceTypeId === 'RST-BT' ? '../../../../../assets/Menus/press-button.svg' : 
+                      resource.resourceTypeId === 'RST-DB' ? '../../../../../assets/Menus/dashboard.svg' : resource.resourceTypeId === 'RST-MN' ? '../../../../../assets/Menus/app.svg' : 
+                      resource.resourceTypeId === 'RST-DD' ? '../../../../../assets/Menus/menu.svg' : resource.resourceTypeId === 'RST-TB' ? '../../../../../assets/Menus/browser.svg' :
+                      resource.resourceTypeId === 'RST-VW' ? '../../../../../assets/Menus/eye.svg' : '../../../../../assets/Menus/widget.svg'" alt="resource.svg"/>
+                      <span class="res-name">{{ resource.name }}</span>
+                </div>
+              </mat-checkbox>
+            </mat-list-item>
+          </mat-list>
+        </div>
+      </div>
+      <div class="input-footer" style="padding: 0 10px; display: flex; justify-content: flex-end;">
+        <button mat-button class="active-btn" appDebounceClick [debounceTime]="500" 
+        (debounceClick)="makeGroup(resData.type)">{{"Apply"|translate}}</button>
+      </div>
+    </div>
+    <div style="height: 100%; width: 100%;">
+      <div style="display: flex; height: 0;">
+        <button *ngIf="!resourceExpand && data.type != 'ResourceGroupName'" style="border-radius: 0px 50px 50px 0px; height: 25px;" mat-icon-button class="expand"
+          (click)="expandSide()">
+          <mat-icon style="padding: 0;height: 26px; color: white;margin-right: 3px">keyboard_arrow_right</mat-icon>
+        </button>
+      </div>
+      <div [ngStyle]="{'height' : resData.type === 'role' || resData.type === 'resource' ? 'calc(100vh - 130px)' : 'calc(100vh - 170px)'}">
+        <div *ngIf="resData.type === 'role' || resData.type === 'resource'" class="ovi-row-gap" style="padding: 0 10px; gap: 15px;">
+          <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+            <mat-label *ngIf="resData.type === 'resource'" class="ovi-lbl-text-size" >{{"Group Name"|translate}}<span
+                            class="mandatory-field">*</span></mat-label>
+            <mat-label *ngIf="resData.type === 'role'" class="ovi-lbl-text-size" >{{"Role"|translate}}</mat-label>
+            <mat-form-field appearance="outline" class="ovi-row-frmfld-wdh">
+              <input  matInput formControlName="groupName" appPlaceholder [showPlaceholder]="true" [placeholderText]="'groupName'|translate"
+                [readonly]="resData.type === 'role' || resData.type === 'user'" >
+                <mat-error *ngIf="resourceForm.controls['groupName'].invalid">
+                  <span *ngIf="resourceForm.controls['groupName'].errors.required">
+                    {{"groupName is required" | translate}}
+                  </span>
+                </mat-error>
+            </mat-form-field>
+          </div>
+          <div *ngIf="resData.type === 'resource'" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+            <mat-label class="ovi-lbl-text-size">{{"Facility Name"|translate}}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+              <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Facility Name'|translate" formControlName="facilityId"
+                [disableOptionCentering]="true">
+                <mat-option value=null >None</mat-option>
+                <mat-option *ngFor="let list of facilityList" [value]="list.id">
+                  {{list.name}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div *ngIf="resData.type === 'resource' && resData?.data?.id" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+            <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+              <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="statusId"
+                [disableOptionCentering]="true">
+                <mat-option *ngFor="let obj of statusList" [value]="obj.code">
+                  {{obj.value}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+        <span>
+          <div class="table-option">
+            <div>
+              <span class="map-table-filter" [ngStyle]="{'margin-left': !resourceExpand && data.type != 'ResourceGroupName'? '12px' : ''}">
+                <input matInput  #searchMapInput
+                  style="padding: 5px !important; height: 20px; color: black;"
+                  (keyup)="applyMapTableSearch($event.target.value, resData.type)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
+              </span>
+            </div>
+            <div *ngIf="resData.type !== 'resource'" class="filter-option">
+              <span *ngIf="data.type != 'ResourceGroupName'" class="options" [ngClass]="{'selected': selectedOption === 'all'}"
+                (click)="selectOption('all')" (keydown.enter)="fixClick()"><mat-icon class="option-icon"
+                  [ngClass]="{'selected': selectedOption === 'all'}">menu</mat-icon> {{"All"|translate}}
+              </span>
+              <span  *ngIf="data.type != 'ResourceGroupName'" class="options" [ngClass]="{'selected': selectedOption === 'Resource'}"
+                (click)="selectOption('Resource')" (keydown.enter)="fixClick()"><mat-icon class="option-icon"
+                  [ngClass]="{'selected': selectedOption === 'Resource'}">filter_none</mat-icon> {{"Resource"|translate}}
+              </span>
+              <span  *ngIf="data.type != 'ResourceGroupName'" class="options" [ngClass]="{'selected': selectedOption === 'Resource Group'}"
+                (click)="selectOption('Resource Group')" (keydown.enter)="fixClick()"><mat-icon class="option-icon"
+                  [ngClass]="{'selected': selectedOption === 'Resource Group'}">group_work</mat-icon> {{"Resources
+                Group"|translate}}
+              </span>
+            </div>
+          </div>
+          <angular-table-component *ngIf="resData.type === 'resource'" [ngStyle]="{'height': resData.type !== 'resource' && resData.type !== 'role' ?
+           'calc(100vh - 215px)' : 'calc(100vh - 245px)'}" style="display: block; padding:0px 10px;" [id]="'permissionResources'"
+            [type]="'ng-table'" [component]="'Resource Map'" [tableData]="selectedGroupResources" (triggerAction)="actionTrigger($event)"
+            [columns]="displayGroupColumn" [columnData]="displayGroupDataColumn">
+          </angular-table-component>
+          <angular-table-component *ngIf="resData.type !== 'resource' && isGroupMap" [ngStyle]="{'height': resData.type !== 'resource' && resData.type !== 'role' ?
+            'calc(100vh - 215px)' : 'calc(100vh - 245px)'}" style="display: block; padding:0px 10px;" [id]="'permissionGroup'"
+            [type]="'ng-table'" [component]="'GroupMap'" [tableData]="selectedMapResources" [columns]="displayMapColumn"
+            [columnData]="displayMapDataColumn" (triggerAction)="triggerAction($event)">
+          </angular-table-component>
+          <div *ngIf="selectedMapResources.length === 0 && !isGroupMap" class ="no-shift">{{"No records Found"|translate}}</div>
+        </span>
+      </div>
+      <div class="map-footer">
+        <button *ngIf="data.type != 'ResourceGroupName'" [disabled]="resourceForm.invalid" mat-button class="active-btn" appDebounceClick [debounceTime]="500" 
+        (debounceClick)="createGroup(resData.type)">{{"Save"|translate }}</button>
+      </div>
+    </div>
+  </div>
+</div>

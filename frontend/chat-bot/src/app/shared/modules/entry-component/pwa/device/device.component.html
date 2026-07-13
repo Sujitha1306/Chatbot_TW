@@ -1,0 +1,64 @@
+<div class="device-popup-container ovi-font-family">
+  <div class="device-popup">
+  <div class="popup-header">
+    <span class="popup-title">
+      {{ data?.tagSerialNumber ? 'Dissociate Device' : 'Associate Device' }}
+    </span>
+    <mat-icon class="close-icon" (click)="dialogRef.close()" (keydown.enter)="fixClick()">close</mat-icon>
+  </div>
+
+  <div class="popup-body">
+    <div class="device-info">
+      <div class="icon-box">
+        <mat-icon>medical_services</mat-icon>
+      </div>
+      <div class="device-label">
+        {{ data.name }}
+        <div class="device-type">{{ data.type }}</div>
+      </div>
+    </div>
+
+  <div [formGroup]="deviceForm" style="display: flex; justify-content: center; gap: 20px;">
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+      <div *ngIf="!data?.tagSerialNumber" class="ovi-row-gap">
+        <div class="ovi-row-clmn ovi-matfrmfld-input-box-pdg">
+          <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag ID'|translate" id="costerTagId"
+                appTypeHit (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom"
+                  formControlName="tagSerialNumber" #tagSerialNumber="matInput"
+                  autofocus autocomplete="off" >
+                  <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                  <mat-option *ngFor="let option of searchCosterlist" [value]="option.tagId">
+                      <div class="tot-wid-styl" (click)="getTagList(option.tagId)" (keydown.enter)="fixClick()">{{option.tagId}}</div>
+                  </mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="deviceForm.controls.tagSerialNumber.invalid">
+                  <span  [hidden]="!deviceForm.controls['tagSerialNumber'].errors.required">{{"Device is required"|translate}}.</span>
+                  <span  [hidden]="!deviceForm.controls['tagSerialNumber'].errors.invalidTag">{{"Please select value from the option"|translate}}</span>
+              </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <span *ngIf="!data?.tagSerialNumber" class="icon-box">
+      <mat-icon>qr_code</mat-icon>
+    </span>
+
+    <div *ngIf="data?.tagSerialNumber" class="ovi-matfrmfld-textarea-top-box">
+      <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+        <textarea matInput rows="2" appPlaceholder [showPlaceholder]="false" [placeholderText]="'comments'|translate" formControlName="comments"></textarea>
+      </mat-form-field>
+    </div>
+  </div>
+
+  </div>
+
+  <div class="popup-footer">
+    <button mat-button class="active-btn-device"   [class.enabled]="deviceForm.valid" [disabled]="!deviceForm.valid" (click)="onSubmit()">
+      {{ data?.tagSerialNumber ? 'Dissociate' : 'Associate' }}
+    </button>
+  </div>
+  </div>
+</div>

@@ -1,0 +1,35 @@
+<div class="custom-dialog-box" style="height:100%;width: 100%;">
+    <mat-toolbar class="input-header block-1" style="height: 35px;">
+        <div style="display: flex;width: 100%">
+            <div class="header-name" style="width: 100%;">
+                {{"Porter Idle Summary"|translate}}</div>
+            <div class="header-close">
+                <button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                    <mat-icon class="icon-style">highlight_off</mat-icon>
+                </button>
+            </div>
+        </div>
+    </mat-toolbar>
+    <div *ngIf="enableShow" style="height:150px">
+        <mat-grid-list cols = 3 rowHeight="90%" style="width: 100%;padding-top:10px;padding-bottom: 10px;display:block;">
+            <mat-grid-tile *ngFor="let key of chartKeys" [colspan] = 1> 
+                <canvas baseChart
+                    [type]="'pie'" [datasets]="mychartConfig[key]['data']['datasets']"
+                    [labels]="mychartConfig[key]['data']['labels']"
+                    [options]="mychartConfig[key]['options']" 
+                    [colors]="pieColour">
+                </canvas>
+            </mat-grid-tile>
+        </mat-grid-list>
+        <!-- <angular-table-component [tableData]="data" [columns]="columns"></angular-table-component>  -->
+    </div>  
+    <div *ngIf="enableShow" style="height:430px;">
+        <mat-grid-list cols="1" rowHeight="90%"> 
+            <mat-grid-tile class="list" [colspan]="1" [rowspan]="1">
+                <mat-grid-tile-header style="height: 8%;" [ngStyle]="headercolor && {'background':headercolor}">{{"Free Porters of Hour"|translate}}:{{label}}</mat-grid-tile-header>
+                <google-chart [data]="timelineChartData" style="width:95%;max-height: calc(100% - 97px);"></google-chart>
+            </mat-grid-tile>
+        </mat-grid-list>
+    </div>
+    <div *ngIf="!enableShow" style="text-align: center;margin: 2% 0 0 -7%;">{{"No Records"|translate}}</div>
+</div>   

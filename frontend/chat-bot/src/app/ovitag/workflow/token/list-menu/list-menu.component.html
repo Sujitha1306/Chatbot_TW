@@ -1,0 +1,198 @@
+<div *ngIf="!menu" class="toolbar-user-container">
+    <button mat-icon-button (click)="isOpen = !isOpen" class="toolbar-user-btn" [class.open]="isOpen"
+      [ngStyle.xs]="{'min-width': '70px'}">
+      <i class="material-icons ovi-fnt-sze17" style="margin-top: -11px;"> more_vert </i>
+    </button>
+  
+    <div class="dropdown mat-elevation-z1" [class.open]="isOpen">
+      <div class="content">
+        <mat-nav-list class="mrgn-style" *ngIf="!dynamicConfig">
+          <div class = "label-status" *ngIf = "currentStatus != 'QS-PE' && currentStatus != 'QS-PC'" (click)="changeStatus(queueId,'QS-PE')" (keydown.enter)="fixClick()">
+            <span type="button" class="lbl-style mrgn-style_1" > <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle" width="15px">&nbsp;&nbsp; {{"Pending"|translate}}</span>
+          </div>
+          <div class = "label-status" *ngIf = "currentStatus != 'QS-WT' && currentStatus != 'QS-CO'" (click)="changeStatus(queueId,'QS-WT')" (keydown.enter)="fixClick()">
+            <span type="button" class="lbl-style mrgn-style_1"> 
+              <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle" width="15px">
+              &nbsp;&nbsp;{currentStatus != 'QS-PC' ? 'Waiting' : 'Add to Queue', select, Waiting {Waiting} Add to Queue {Add to Queue}}
+            </span>
+          </div>
+          <div class = "label-status" *ngIf = "!locationPending && currentStatus != 'QS-IP'  && currentStatus != 'QS-PC' && currentStatus != 'QS-CO'" 
+          appDebounceClick [debounceTime] = "300" (debounceClick)="changeStatus(queueId,'QS-IP')">
+            <span type="button" class="lbl-style mrgn-style_1"> <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle" width="15px">&nbsp;&nbsp; {{"Inprogress"|translate}}</span>
+          </div>
+          <div class = "label-status" *ngIf = "currentStatus == 'QS-IP'" (click)="changeStatus(queueId,'QS-CO')" (keydown.enter)="fixClick()">
+            <span type="button" class="lbl-style mrgn-style_1"> <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle" width="15px">&nbsp;&nbsp; {{"Complete"|translate}}</span>
+          </div>
+          <div class = "label-status" *ngIf = "currentStatus == 'QS-IP'" (click)="changeStatus(queueId,'QS-CO', 'remarks')" (keydown.enter)="fixClick()">
+            <span type="button" class="lbl-style mrgn-style_1"> <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle" width="15px">&nbsp;&nbsp; {{"Complete with Remarks"|translate}}</span>
+          </div>
+          <div class = "label-status" *ngIf = "currentStatus == 'QS-IP'" (click)="changeStatus(queueId,'QS-CO', 'review')" (keydown.enter)="fixClick()">
+            <span type="button" class="lbl-style mrgn-style_1"> <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle" width="15px">&nbsp;&nbsp; {{"Complete with Review"|translate}}</span>
+          </div>
+          </mat-nav-list>
+          <div *ngIf="dynamicConfig">
+          <mat-nav-list class="mrgn-style" *ngIf="currentStatus == 'QS-IP'">
+            <div *ngFor="let data of Inprogressmenu">
+              <div class="label-status"
+                *ngIf="data.value !== 'CompleteRemarks' && data.value !== 'CompleteReview'"
+                (click)="changeStatus(queueId,data.code)" (keydown.enter)="fixClick()">
+                <span type="button" class="lbl-style mrgn-style_1" style="margin-bottom: -2px;"> <img
+                    src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                    width="15px">&nbsp;&nbsp;{{data.value}}</span>
+              </div>
+              <div class="label-status" *ngIf="currentStatus == 'QS-IP' && data.value == 'CompleteRemarks'"
+                (click)="changeStatus(queueId,'QS-CO', 'remarks')" (keydown.enter)="fixClick()">
+                <span type="button" class="lbl-style mrgn-style_1" style="margin-bottom: -2px;"> <img
+                    src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                    width="15px">&nbsp;&nbsp;{{data.value}}</span>
+              </div>
+              <div class="label-status" *ngIf="currentStatus == 'QS-IP' && data.value == 'CompleteReview'"
+                (click)="changeStatus(queueId,'QS-CO', 'review')" (keydown.enter)="fixClick()">
+                <span type="button" class="lbl-style mrgn-style_1" style="margin-bottom: -2px;"> <img
+                    src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                    width="15px">&nbsp;&nbsp;{{data.value}}</span>
+              </div>
+            </div>
+            <div class="label-status" *ngIf="changeLocation"
+              (click)="changeStatus(queueId, 'QS-WT', 'Loc')" (keydown.enter)="fixClick()">
+              <span type="button" class="lbl-style mrgn-style_1" style="margin-bottom: -2px;"> <img
+                  src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                  width="15px">&nbsp;&nbsp;{{"Change Location"|translate}}</span>
+            </div>
+          </mat-nav-list>
+          <mat-nav-list class="mrgn-style" *ngIf="currentStatus == 'QS-WT' && currentStatus != 'QS-CO'">
+            <div *ngFor="let data of waitingmenu">
+              <div class="label-status"
+                (click)="changeStatus(queueId,data.code)" (keydown.enter)="fixClick()">
+                <span type="button" class="lbl-style mrgn-style_1"> <img
+                    src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                    width="15px" style="margin-bottom:-4px">&nbsp;&nbsp;{{data.value}}</span>
+              </div>
+            </div>
+            <div class="label-status" *ngIf="changeLocation"
+              (click)="changeStatus(queueId,'QS-WT', 'Loc')" (keydown.enter)="fixClick()">
+              <span type="button" class="lbl-style mrgn-style_1"> <img style="margin-bottom: -4px;"
+                  src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                  width="15px">&nbsp;&nbsp;{{"Change Location"|translate}}</span>
+            </div>
+          </mat-nav-list>
+          <mat-nav-list class="mrgn-style" *ngIf="currentStatus == 'QS-PE'">
+            <div *ngFor="let data of pendingmenu">
+              <div class="label-status" (click)="changeStatus(queueId,data.code)" (keydown.enter)="fixClick()">
+                <span type="button" class="lbl-style mrgn-style_1"> <img
+                    src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+                    width="15px" style="margin-bottom:-4px">&nbsp;&nbsp;{{data.value}}</span>
+              </div>
+            </div>
+        </mat-nav-list>
+        <mat-nav-list class="mrgn-style" *ngIf="currentStatus == 'QS-CO' && currentStatus != 'QS-WT'">
+          <div *ngFor="let data of waitingmenu">
+          <div class="label-status" *ngIf="data.code === 'QS-PE'" (click)="changeStatus(queueId,'QS-PE')" (keydown.enter)="fixClick()">
+          <span  type="button" class="lbl-style mrgn-style_1"> <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+             width="15px" style="margin-bottom:-4px">&nbsp;&nbsp;{{"Pending"|translate}}</span>
+          </div>
+          </div>
+      </mat-nav-list>
+        </div>
+      </div>
+    </div>
+  </div>
+<div *ngIf="menu" class="toolbar-user-container" [ngStyle]="{'width': currentStatus === 'QS-PE' ? '40px' : ''}">
+  <button mat-icon-button [matMenuTriggerFor]="statusMenu" class="toolbar-user-btn" style="height: fit-content;" 
+    (menuOpened)="onMenuToggle(true)" (menuClosed)="onMenuToggle(false)">
+    <i class="material-icons ovi-fnt-sze20" style="margin-top: -11px;
+    height: fit-content; width: fit-content;">more_vert</i>
+  </button>
+</div>
+<mat-menu #statusMenu="matMenu">
+  <ng-template [matMenuContent] *ngIf="menu">
+    <ng-container *ngIf="!dynamicConfig">
+      <button mat-menu-item *ngIf="currentStatus != 'QS-PE' && currentStatus != 'QS-PC'"
+        (click)="changeStatus(queueId,'QS-PE')">
+        <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+        &nbsp; {{"Pending"|translate}}
+      </button>
+
+      <button mat-menu-item *ngIf="currentStatus != 'QS-WT' && currentStatus != 'QS-CO'"
+        (click)="changeStatus(queueId,'QS-WT')">
+        <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+        &nbsp; {{ currentStatus != 'QS-PC' ? 'Waiting' : 'Add to Queue' }}
+      </button>
+
+      <button mat-menu-item
+        *ngIf="!locationPending && currentStatus != 'QS-IP' && currentStatus != 'QS-PC' && currentStatus != 'QS-CO'"
+        (click)="changeStatus(queueId,'QS-IP')">
+        <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+        &nbsp; {{"Inprogress"|translate}}
+      </button>
+
+      <button mat-menu-item *ngIf="currentStatus == 'QS-IP'" (click)="changeStatus(queueId,'QS-CO')">
+        <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+        &nbsp; {{"Complete"|translate}}
+      </button>
+
+      <button mat-menu-item *ngIf="currentStatus == 'QS-IP'" (click)="changeStatus(queueId,'QS-CO', 'remarks')">
+        <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+        &nbsp; {{"Complete with Remarks"|translate}}
+      </button>
+
+      <button mat-menu-item *ngIf="currentStatus == 'QS-IP'" (click)="changeStatus(queueId,'QS-CO', 'review')">
+        <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+        &nbsp; {{"Complete with Review"|translate}}
+      </button>
+    </ng-container>
+
+     <ng-container *ngIf="dynamicConfig">
+      <ng-container *ngIf="currentStatus == 'QS-IP'">
+        <ng-container *ngFor="let data of Inprogressmenu">
+          <button mat-menu-item *ngIf="data.value !== 'CompleteRemarks' && data.value !== 'CompleteReview'"
+                  (click)="changeStatus(queueId,data.code)">
+            <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+            &nbsp; {{data.value}}
+          </button>
+
+          <button mat-menu-item *ngIf="data.value === 'CompleteRemarks'"
+                  (click)="changeStatus(queueId,'QS-CO','remarks')">
+            <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+            &nbsp; {{"Complete with Remarks"|translate}}
+          </button>
+
+          <button mat-menu-item *ngIf="data.value === 'CompleteReview'"
+                  (click)="changeStatus(queueId,'QS-CO','review')">
+            <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px">
+            &nbsp; {{"Complete with Review"|translate}}
+          </button>
+        </ng-container>
+      </ng-container>
+
+      <ng-container *ngIf="['QS-WT','QS-NE','QS-RG'].includes(currentStatus) && currentStatus != 'QS-CO'">
+        <button mat-menu-item *ngFor="let data of waitingmenu" (click)="changeStatus(queueId,data.code)">
+          <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px" style="margin-bottom:-4px">
+          &nbsp; {{data.value}}
+        </button>
+        <button mat-menu-item *ngIf="changeLocation" (click)="changeStatus(queueId, 'QS-WT', 'Loc')"
+          (keydown.enter)="fixClick()">
+          <span type="button" class="mrgn-style_1" style="margin-bottom: -2px;"> <img
+              src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" alt="arrow-alt-circle"
+              width="15px">&nbsp;&nbsp;{{"Change Location"|translate}}</span>
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="currentStatus == 'QS-PE'">
+        <button mat-menu-item *ngFor="let data of pendingmenu" (click)="changeStatus(queueId,data.code)">
+          <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px" style="margin-bottom:-4px">
+          &nbsp; {{data.value}}
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="currentStatus == 'QS-CO'">
+        <ng-container *ngFor="let data of waitingmenu">
+          <button mat-menu-item *ngIf="data.code === 'QS-PE'" (click)="changeStatus(queueId,'QS-PE')">
+            <img src="/assets/Alert/common_icons/arrow-alt-circle-right-regular.svg" width="15px" style="margin-bottom:-4px">
+            &nbsp; {{"Pending"|translate}}
+          </button>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </ng-template>
+</mat-menu>

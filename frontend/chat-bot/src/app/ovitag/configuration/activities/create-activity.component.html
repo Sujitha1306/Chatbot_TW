@@ -1,0 +1,444 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!this.data">{{"Create Activity"|translate}} </div>
+        <div *ngIf="this.data">{{"Modify Activity"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" 
+        style="height: calc(100% - 135px); overflow: auto;" [formGroup]="activitiesForm">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size"> {{"Scope"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-drpdwn-top-box" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Scope'|translate"  
+                        (selectionChange)="getRoutineType($event)" formControlName="activitySubTypeId"
+                        [disabled]="this.data.id" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of activitySubType" [value]="data.code">
+                            {{data.value | translate}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activitiesForm.controls.activitySubTypeId.invalid">
+                        <span [hidden]="!activitiesForm.controls['activitySubTypeId'].errors.required">{{"Scope
+                            is required."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size"> {{"Type"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="routineTypeId"
+                        (selectionChange)="getCategoryType($event)" [disabled]="this.data.id">
+                        <mat-option *ngFor="let data of typeList" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activitiesForm.controls.routineTypeId.invalid">
+                        <span [hidden]="!activitiesForm.controls['routineTypeId'].errors.required">{{"Routine Type
+                            is required."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" [disabled]="this.data.id"
+                        formControlName="activityCategoryId" [disableOptionCentering]="true" matSelectSearch>
+                        <mat-option *ngFor="let data of categoryList" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activitiesForm.controls.activityCategoryId.invalid">
+                        <span [hidden]="!activitiesForm.controls['activityCategoryId'].errors.required">{{"Category
+                            is required."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size"> {{"Activity Name"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity Name'|translate" autocomplete="off" formControlName="name">
+                    <mat-error *ngIf="activitiesForm.controls.name.invalid">
+                        <span [hidden]="!activitiesForm.controls['name'].errors.required">{{"Activity Name
+                            is required."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate" formControlName="roleIds"
+                        (selectionChange)="getRoleIds($event.value)" [disableOptionCentering]="true" multiple matSelectSearch>
+                        <mat-option *ngFor="let data of roleList" [value]="data.id">
+                            {{data.name}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activitiesForm.controls.roleIds.invalid">
+                        <span [hidden]="!activitiesForm.controls['roleIds'].errors.required">{{"Role
+                            is required."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department'|translate"
+                        formControlName="departmentIds" (selectionChange)="getDepatmentIds($event.value)"
+                        [disableOptionCentering]="true" multiple matSelectSearch>
+                        <mat-option *ngFor="let data of departmentList" [value]="data.id">
+                            {{data.name}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Assign Type"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign Type'|translate"
+                        formControlName="inchargeType" [disableOptionCentering]="true"
+                        (selectionChange)="getIncharge($event.value)">
+                        <mat-option *ngFor="let data of inchargeTypeList" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activitiesForm.controls.inchargeType.invalid">
+                        <span [hidden]="!activitiesForm.controls['inchargeType'].errors.required">{{"Assign
+                            Type
+                            is required."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Assign To"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign To'|translate" id="incharge"
+                        formControlName="inchargeId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                        [matAutocomplete]="incharge" autocomplete="off">
+                    <mat-autocomplete autoActiveFirstOption
+                        [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                        #incharge="matAutocomplete">
+                        <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                            <div class="act-wid-styl">{{option.name}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="activitiesForm.controls.inchargeId.invalid">
+                        <span [hidden]="!activitiesForm.controls['inchargeId'].errors.required">{{"Assign
+                            To
+                            is required."|translate}}</span>
+                        <span [hidden]="!activitiesForm.controls['inchargeId'].errors.requireMatch">{{"Please
+                            select
+                            value from the option"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Priority Level"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Priority Level'|translate" formControlName="priorityLevel"
+                         [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of priorityLevel" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Duration"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'" formControlName="duration">
+                    <mat-error *ngIf="activitiesForm.controls.duration.invalid">
+                        <span [hidden]="!activitiesForm.controls['duration'].errors.required">{{"Duration is required."|translate}}</span>
+                        <span [hidden]="!activitiesForm.get('duration')?.errors?.['pattern']">{{"Duration must be in HH:MM format (example: 00:30)."|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                    <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2
+                        formControlName="description"></textarea>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Location"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to Location'|translate"
+                        formControlName="locationId" id="locationSearch" appTypeHit
+                        (typeHit)="getLocationSearch($event)" [matAutocomplete]="Loc" autocomplete="off">
+                    <mat-autocomplete autoActiveFirstOption
+                        [displayWith]="this.locationIdEnabled === true ? getLocationIdList.bind(locationDetails) : ''"
+                        #Loc="matAutocomplete">
+                        <mat-option *ngFor="let option of locationDetails" [value]="option.id">
+                            <div class="alrt-wid-styl">{{option.fullName}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="activitiesForm.controls.locationId.invalid" class="error-txt-1">
+                        <span [hidden]="!activitiesForm.controls['locationId'].errors.required">{{"Location
+                            is required."|translate}}</span>
+                        <span [hidden]="!activitiesForm.controls['locationId'].errors.requireMatch">{{"Please
+                            select
+                            value
+                            from the option"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+        </div>
+        <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+            <mat-tab label="{{'Configuration'|translate}}">
+                <div class="ovi-row-gap" style="overflow: hidden;">
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-drpdwn-top-box" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="isActive"
+                                [disableOptionCentering]="true">
+                                <mat-option *ngFor="let data of statusList" [value]="data.code">
+                                    {{data.value}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="this.activitiesForm.controls['activitySubTypeId'].value === 'AST-ROU'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Sequence"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate"
+                                autocomplete="off" formControlName="sequence">
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="this.activitiesForm.controls['activitySubTypeId'].value === 'AST-ROU'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Sequence Priority"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence Priority'|translate" autocomplete="off" formControlName="priority">
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn">
+                        <mat-label class="ovi-lbl-text-size">{{"Gender"|translate}}</mat-label>
+                        <div class="act-radio-button">
+                            <mat-radio-group formControlName="gender">
+                                <mat-radio-button class="act-radio" *ngFor="let o of genderList" [value]="o.code">
+                                    {{o.value | translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Min Interval
+                            (Seconds)"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Min Interval'|translate"
+                                autocomplete="off"  formControlName="minInterval">
+                            <mat-error *ngIf="activitiesForm.controls.minInterval.invalid">
+                                <span
+                                    [hidden]="!activitiesForm.controls['minInterval'].errors.maxlength">{{"Maximum
+                                    allowed
+                                    digit is 3."|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Notification'|translate}}">
+                <app-reminder-config [dialogType]="'tab'" [activityData]="activityData" [type]="configType" [entityConfigType]="entityConfigType" (validityChange)="checkNotifiValidityChange($event)"></app-reminder-config>
+            </mat-tab>
+            <mat-tab label="{{'Rule'|translate}}">
+                <div>
+                    <div style="text-align: end; padding: 5px 10px;">
+                        <button mat-button class="active-btn" appDebounceClick
+                            (debounceClick)="openActivityRule('')" [disabled]="this.activitiesForm.invalid" [debounceTime]="300"
+                            cdkFocusInitial>{{"Add Rule"|translate}}</button>
+                    </div>
+                    <angular-table-component [id]="'activity-rule'" [type]="'ng-table'" [tableData]="activityRuleData"
+                        [columns]="['Scope', 'Activity Rule', 'Rule Group', 'Step Type', 'Duration', 'Status', 'Edit']"
+                        [columnData]="['value', 'ruleActivityName', 'ruleGroupNo', 'stepType', 'duration', 'isActive', 'Edit']"
+                        (triggerAction)="triggerAction($event)">
+                    </angular-table-component>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Approval Matrix'|translate}}" *ngIf="data" style="overflow: hidden !important;">
+                <div [formGroup]="matrixForm" style="overflow: hidden !important;">
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" class="ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="recipientType" appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Recipient Type'|translate" 
+                                    (selectionChange)="getRecipientName($event.value)">
+                                    <mat-option *ngFor="let data of recipientTypeList" [value]="data.code">{{data.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="matrixForm.controls.recipientType?.errors?.required">
+                                    Recipient Type is Required.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="!['RT-EO','RT-OW'].includes(matrixForm?.get('recipientType')?.value)" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" class="ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="appdepartmentId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department'|translate"
+                                 (selectionChange)="getDepartmentName($event.value)" matSelectSearch>
+                                    <mat-option *ngFor="let data of departmentappList" [value]="data.code">{{data.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="matrixForm.controls.appdepartmentId?.errors?.required">
+                                    Department is Required.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="!['RT-EO','RT-OW'].includes(matrixForm?.get('recipientType')?.value)" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" class="ovi-matfrmfld-err"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Recipient Name'|translate" formControlName="recipientName" appTypeHit
+                                    (typeHit)="searchUserNamelistmatrix($event)" [matAutocomplete]="auto" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.recipientEnabled? getUsername.bind(this) : ''" #auto="matAutocomplete">
+                                    <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                                        <div class="alrt-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="matrixForm.controls.recipientName?.errors?.required">
+                                    Recipient Name is Required.
+                                </mat-error>
+                                <mat-error *ngIf="matrixForm.get('recipientName')?.hasError('invalidOption')">
+                                    Please select a valid option from dropdown.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" class="ovi-matfrmfld-err" appearance="outline">
+                                <mat-select matSelectSearch formControlName="entityStatusId"  appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Status'|translate">
+                                    <mat-option *ngFor="let data of this['requestStatusInfo']" [value]="data.code">{{data.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="matrixForm.controls.entityStatusId?.errors?.required">
+                                    Status is Required.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Approval Level"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);"class="ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="level"  appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Level'|translate">
+                                    <mat-option *ngFor="let data of levelList" [value]="data.code">{{data.value}} </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="matrixForm.controls.level?.errors?.required">
+                                    Level is Required.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Name of Approval"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" class="ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Approval Capacity'|translate" formControlName="description">
+                                <mat-error *ngIf="matrixForm.controls.description?.errors?.required">
+                                    Name of Approval is Required.
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Approval Status"|translate}}</mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                                <mat-select formControlName="approvalStatus"  appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Approval Status'|translate" (selectionChange)="getApprovalStatus($event.value)">
+                                    <mat-option *ngFor="let data of approvalStatusList" [value]="data.code">{{data.value}} </mat-option>
+                                </mat-select>
+                                <!-- <mat-hint style="margin-top: 2px; display: flex;"> {{ options | json  }} <span *ngIf="options?.status && (options.status | json) !== '{}'" class='material-icons approval-icon-del' (click)="clearOptions()">delete_outline</span> </mat-hint> -->
+                            </mat-form-field>
+                        </div>
+                        <div  class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                                    <mat-select formControlName="approvalStatusType" appPlaceholder [showPlaceholder]="false"
+                                        [placeholderText]="'Status'|translate" matSelectSearch>
+                                        <mat-option *ngFor="let data of approvalStatusTypeList" [value]="data.code">{{data.value}} </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Level"|translate}}</mat-label>
+                             <div style="display: flex;">
+                            <mat-form-field style="width: calc(100% - 20px);"class="ovi-matfrmfld-err" appearance="outline">
+                                <mat-select formControlName="approvalStatusLevel"  appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Level'|translate" matSelectSearch>
+                                    <mat-option *ngFor="let data of levelList" [value]="data.code">{{data.value}} </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                            </div>
+                        </div>
+                        <div *ngIf="data?.routineTypeId == 'TAC-WOR'" class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Parent Entity Status"|translate}}</mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" class="ovi-matfrmfld-err" appearance="outline">
+                                <mat-select matSelectSearch formControlName="parentEntityStatusId"  appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Parent Entity Status'|translate">
+                                    <mat-option *ngFor="let data of parentEntityStatus" [value]="data.code">{{data.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display: flex; align-items: center;gap:10px">
+                            <span class="act-space-around">
+                                <mat-checkbox formControlName="radiologyId" class="ovi-fnt-sze12">{{"IsRadiology"|translate}}</mat-checkbox>
+                            </span>
+                            <span (click)="onAddStatus()">
+                                <mat-icon class="approval-icon-style"
+                                    [class.approval-icon-disabled]="!matrixForm.get('approvalStatusType')?.value">
+                                    add_circle_outline
+                                </mat-icon>
+                            </span>
+                        </div>
+                        <div *ngIf ='false' class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel Type"|translate}}</mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);" appearance="outline">
+                                <mat-select formControlName="channelId"  appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Channel'|translate">
+                                    <mat-option *ngFor="let data of channelList" [value]="data.code">{{data.value}} </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div style="padding-top: 8px;">
+                            <button mat-button class="active-btn " [disabled]="matrixForm.invalid" appDebounceClick (debounceClick)="addApprovelData()"
+                                cdkFocusInitial  [debounceTime]="1000">{{ appEditData != null && appEditData
+                                != undefined ? 'Update' : 'Add' | translate}}</button>
+                        </div>
+                    </div>
+                    <div class="ovi-row-gap" style="padding: 10px 20px 0px 0px;">
+                        <div class="ovi-row-one-clmn ovi-matfrmfld-textarea-top-box">
+                            <div style="display: flex;align-items: center;">
+                                <mat-form-field class="ovi-row-frmfld-wdh example-full-width form-field" appearance="outline">
+                                    <textarea style="background: rgb(58, 54, 54);color: rgb(224, 224, 224); margin: 5px 0px; font-style: normal;"
+                                        input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Options'|translate"  rows=3
+                                        [value]="options| json" readonly> </textarea>
+                                </mat-form-field>
+                                <span style="width: 13px; padding-left: 7px;" *ngIf="hasStatusOptions()" (click)="clearOptions()">
+                                    <mat-icon class="material-icons approval-icon-del">
+                                        delete_outline
+                                    </mat-icon>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="pfworkflowData.length"  style="position: relative; top: 15px;width: 99%;">
+                        <angular-table-component [id]="'activitesApprovelMatrix'" [type]="'ng-table'" [tableData]="pfworkflowData"
+                        [columns]="approvelDisplayColumn" [columnData]="approvelDataColumns" (triggerAction)="eventAction($event)">
+                        </angular-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Form'|translate}}">
+                <ng-template mat-tab-label >{{"Form"|translate}}</ng-template>
+                <app-form [formTemplateType]="formTemplateType" [entityId]="data.id ? data.id : null" [entityType]="entityType"></app-form>
+            </mat-tab>
+            <mat-tab label="{{'Documents'|translate}}">
+                <ng-template mat-tab-label>{{"Documents"|translate}} </ng-template>
+                <app-document-management [entityData]="entityData" (documentEventAction)="handleDocumentEvent($event)" ></app-document-management>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!this.data" mat-button class="active-btn" appDebounceClick (debounceClick)="saveActivity()"
+            [disabled]="activitiesForm.invalid || isReminderFormValid" [debounceTime]="300"
+            cdkFocusInitial>{{"Create"|translate}}</button>
+        <button *ngIf="this.data" mat-button class="active-btn" appDebounceClick (debounceClick)="updateActivity()"
+            [disabled]="activitiesForm.invalid || isReminderFormValid" [debounceTime]="300"
+            cdkFocusInitial>{{"Update"|translate}}</button>
+    </div>
+</div>

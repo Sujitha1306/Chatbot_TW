@@ -1,0 +1,186 @@
+<div style="padding-top: 5px;" class="ovi-font-family card-management">
+    <div class="tower-view">
+        <div class="card-outline" [style.height]="cardHeight" *ngFor="let tower of cardData;let index=index;">
+            <div class="card-header">
+                <span>{{tower['testCategoryName']}}</span>
+                <span style="display: flex;column-gap: 10px;">
+                    <div class="crd-mng-sts-cnt" appTooltip [tooltipText]="'Inprogress'|translate" placement="bottom">
+                        <div style="padding-left: 8px;width: 28px;"><img style="width: 9px;" alt="Inprogress" src="../../../../../assets/icons/timer-sand.svg"></div>
+                        <div class="ovi-fnt-sze16" style="padding-right: 2px;padding-left: 2px;background: white;width: -webkit-fill-available;
+                        border-radius: 2px;">{{statusCountInfo.length? statusCountInfo[index]['statusCounts'][1]['count']:''}}</div>
+                    </div>
+                    <div  class="crd-mng-sts-cnt-indx" appTooltip [tooltipText]="'Completed'|translate" placement="bottom" appDebounceClick
+                        (debounceClick)="getOtCompletedCardInfo(tower['testCategoryId'],'QS-CO')" [debounceTime]="300">
+                        <div style="padding-left: 4px;width: 24px;"><mat-icon class="ovi-fnt-sze20" 
+                                style="float: right;padding-top: 2px;color: #09BE03;">check_circle_outline</mat-icon></div>
+                        <div  class="ovi-fnt-sze16" style="padding-right: 2px;background: white;border-radius: 2px;width: 23px;
+                                            padding-left: 3px;">{{statusCountInfo.length?
+                            statusCountInfo[index]['statusCounts'][0]['count']:''}}</div>
+                    </div>
+                </span>
+            </div>
+            <mat-divider></mat-divider>
+            <div style="display: flex;flex-direction: column;padding-left: 7px;padding-right: 7px;padding-bottom: 7px;height: calc(100% - 60px);overflow: auto;padding-top: 15px;" *ngIf="tower['tests'].length" [ngStyle]="{'row-gap':tower['testCategoryId']== 'TC-SGY'?'15px':'10px'}">
+                <div class="ovi-ot-card" *ngFor="let cardDet of tower['tests'][0]['patients'];let indexJ = index">
+                    <span class="card-label" *ngIf="tower['testCategoryId']== 'TC-SGY'">{{cardDet['locationName']}}</span>
+                    <div style="display: block;width: 100%;">
+                        <div style="display: flex;flex-direction: row;column-gap: 5px;justify-content: space-between;width: 100%;" [ngStyle]="{'height':tower['testCategoryId']== 'TC-SGY'?'76px':'70px'}">
+                            <div style="display: flex;flex-direction: column;width: 90%;row-gap: 2px;">
+                                <div style="display: block;width: 100%;" [ngStyle]="{'padding-top':tower['testCategoryId']== 'TC-SGY'?'10px':''}">
+                                    <div style="display: flex;flex-direction: row;column-gap: 0px;align-items: flex-start;width: 100%;justify-content: space-between;">
+                                        <div style="cursor: pointer;max-width: 45%;display: flex;">
+                                            <div class="ovi-fnt-sze14" style="font-weight: 700;color: #585858;padding: 4px 4px 0px 4px; width: 100%; overflow: hidden; text-overflow: ellipsis;text-wrap: nowrap;" appTooltip [tooltipText]="(cardDet.vipTypeId === null || cardDet.vipTypeId === 'General')?cardDet.name:''" placement="bottom" (click)="otPatientInfo(cardDet,tower['tests'][0]['patients'],true)" (keydown.enter)="fixClick()">{{ cardDet['name'] | maskData: (cardDet.vipTypeId === null || cardDet.vipTypeId === 'General') }}</div>
+                                            <div mat-line *ngIf="cardDet.vipTypeId !== null && cardDet.vipTypeId != 'General'" style="padding-top: 5px;">
+                                                <img src="/assets/Alert/common_icons/vip.svg" height="17px" width="13px" alt='VIP' appTooltip [tooltipText]="'VIP'|translate" placement="bottom">
+                                            </div>
+                                        </div>
+                                        <div style="display: flex;flex-direction: row;max-width: 60%;padding: 0px 6px;">
+                                            <div style="cursor: pointer;padding: 0px 5px;" *ngIf="cardDet.gender" appTooltip [tooltipText]="cardDet.gender" placement="bottom">
+                                                <img src="../../../../../assets/icons/gender-male.svg" alt="Male" *ngIf="cardDet.gender == 'Male'" style="width: 10px;">
+                                                <img src="../../../../../assets/icons/gender-female.svg" alt="Female"  *ngIf="cardDet.gender == 'Female'" style="width: 8px;">
+                                            </div>
+                                            <div class="ovi-fnt-sze12" style="color: #585858;padding: 5px 0px 0px 0px;font-weight: 600;" *ngIf="cardDet['birthDate']">
+                                                {{calculateAge(cardDet['birthDate'])}}yrs
+                                            </div>
+                                            <div class="ovi-fnt-sze12" style="color: #3A7AFE;padding: 5px 0px 0px 5px;font-weight: 600;cursor: pointer;overflow: hidden; text-overflow: ellipsis;text-wrap: nowrap;" (click)="otPatientInfo(cardDet,tower['tests'][0]['patients'],true)" (keydown.enter)="fixClick()" appTooltip [tooltipText]="cardDet.mainIdentifier" placement="bottom">ID:&nbsp;{{cardDet['mainIdentifier']}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: block;width: 100%;">
+                                    <div style="display: flex;flex-direction: row;column-gap: 5px;width: 100%;justify-content: space-between;align-items:center">
+                                        <span style="display: flex;column-gap: 2px;padding: 0px 2px 0px 4px;width: 60%;align-items: center;">
+                                            <span style="display: flex;">
+                                                <span *ngIf="cardDet['surgeryTypeId']== 'SGT-EM'" appTooltip [tooltipText]="'Emergency'|translate" placement="bottom" style="padding-left: 2px;"><img alt="Emergency" src="../../../../../assets/icons/emergency.png" height="18px" width="18px"></span>
+                                                <span *ngIf="cardDet['isVulnerable']"><mat-icon class="ovi-fnt-sze17"  style="color: orange;padding-top: 0px;height: 16px;width: 18px;"  appTooltip [tooltipText]="'Vulnerable'|translate" placement="bottom">warning</mat-icon></span>
+                                                <span *ngIf="cardDet['threats']!=null"><mat-icon class="ovi-fnt-sze17" style="color: red;padding-top: 0px;height: 16px;width: 18px;"  appTooltip [tooltipText]="cardDet['threatsTooltip']" placement="bottom">warning</mat-icon></span>
+                                            </span>
+                                            <span class="ovi-fnt-sze12" style="color: #585858;font-weight: 600;text-overflow: ellipsis;overflow: hidden;text-wrap: nowrap;text-transform: capitalize;max-width: 75%;">
+                                                <span appTooltip [tooltipText]="cardDet.otProcedureNames && cardDet.otProcedureNames !== null && cardDet.otProcedureNames !== '' ? cardDet.otProcedureNames : cardDet.otProcedureName" placement="bottom">
+                                                    {{cardDet['otProcedureNames'] && cardDet['otProcedureNames'] !== null && cardDet['otProcedureNames'] !== '' ? cardDet['otProcedureNames'] : cardDet['otProcedureName']}}</span>
+                                            </span>
+                                        </span>
+                                        <span style="display: flex;column-gap: 4px;">
+                                            <img style="vertical-align: middle;" alt="Time" src="../../../../../assets/icons/clock-time-eight-outline.svg">
+                                            <span class="ovi-fnt-sze12" style="color: #888888;font-weight: 600;">Start: {{cardDet['startTime'] | date:"HH:mm"}}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="display: block;" *ngIf="cardDet['doctorName']">
+                                    <div style="display: flex;flex-direction: row;column-gap: 10px;align-items: center;justify-content: space-between;">
+                                        <div class="ovi-fnt-sze11" style="color: #585858;padding: 0px 3px 3px 4px;font-weight: 600;display: flex;column-gap: 2px;align-items: center;"><span><img alt="doctor" src="../../../../../assets/icons/doctor.png" width="16px" height="16px"></span><span>{{cardDet['doctorName']}}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex;flex-direction: column;row-gap: 3px;align-self: flex-start;padding-right: 5px;" [ngStyle]="{'padding-top': tower['testCategoryId'] === 'TC-SGY' ? '14px' : '3px'}">
+                                <span *ngIf="false">
+                                    <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;">
+                                        <img src="../../../../../assets/icons/progress-check.svg" alt="ack" class="cur-ptr"
+                                            style="padding: 2px;width: 13px;">
+                                    </div>
+                                </span>
+                                <span *ngIf="tower['testCategoryId'] !== 'TC-SGY'">
+                                    <span (click)="getCurrentLoc(cardDet['tagId'],index,indexJ);" (keydown.enter)="fixClick()">
+                                        <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;">
+                                            <mat-icon class="ovi-fnt-sze15" style="padding: 1px;" [ngStyle]="{'color': cardDet['tagId']?'#3A7AFE':'#6d6f73','cursor':cardDet['tagId']?'pointer':''}"> place</mat-icon>
+                                        </div>
+                                        <span *ngIf="cardDet['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                            {{ tagDataInfo?.data ? (cardDet?.currentLoc + ' at ' + cardDet?.navFromTime) : 'No record found' }}
+                                        </span>
+                                    </span>
+                                </span>
+                                <span (click) = "cardDet['porterRequestId'] === null ? porterRequestNew(cardDet) : ''"  (keydown.enter)="fixClick()" style="width: 16px;height: 17px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;">
+                                    <img style="width:16px;cursor: pointer; padding-bottom: 2px;"
+                                        src="/assets/Menus/SMW_porter_management.svg" [ngStyle]="{opacity: cardDet['porterRequestId'] === null ? '38%' : ''}" alt="porter icon">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-outline" style="position: relative;" [style.height]="cardHeight">
+            <div class="card-header" style="justify-content: flex-start;column-gap: 100px;">
+                <div>{{"Others"|translate}}</div>
+                <div class="status-custom-checkbox">
+                    <input id="queueStatus" type="checkbox" [formControl]="checkboxSelected">
+                    <label for="queueStatus">
+                        <div class="status-switch" [attr.data-pending]="'Pending'|translate" [attr.data-completed]="'Completed'|translate"></div>
+                    </label>
+                </div>
+            </div>
+            <mat-divider></mat-divider>
+            <div style="display: inline-block;width: 98%;" class="form-field-ht" *ngIf="currentStatus == 'QS-PE'">
+                <div class="form-row block-3" style="width: 58%;display: block;float: right;">
+                    <mat-form-field class="example-full-width" appearance="outline" style="height: 50px;width: 100%;">
+                        <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Status'|translate" (selectionChange)="getOtPatientQueueByStatus('QS-PE',$event.value)" [formControl]="testCat">
+                            <mat-option *ngFor="let test of cardData" [value]="test.testCategoryId">
+                            {{test.testCategoryName | translate}}
+                            </mat-option>
+                            <mat-option [value]="'all'">{{"All"|translate}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div style="display: flex;flex-direction: column;padding-left: 7px;padding-right: 7px;padding-bottom: 7px;overflow: auto;row-gap:10px;padding-top:15px;" *ngIf="othersTowerList.length" [ngStyle]="{'height':currentStatus == 'QS-PE'?'calc(100% - 123px)':'calc(100% - 65px)'}">
+                <div class="ovi-ot-card" *ngFor="let cardDet of othersTowerList;let index = index">
+                    <div style="display: block;width: 100%;">
+                        <div style="display: flex;flex-direction: row;column-gap: 5px;justify-content: space-between;width: 100%;height: 70px;">
+                            <div style="display: flex;flex-direction: column;width: 90%;row-gap: 2px;">
+                                <div style="display: block; width: 100%;">
+                                    <div style="display: flex;flex-direction: row;column-gap: 0px;align-items: flex-start;width: 100%;justify-content: space-between;">
+                                        <div style="cursor: pointer;max-width: 45%;display: flex;">
+                                            <div class="ovi-fnt-sze14" style="font-weight: 700;color: #585858;padding: 4px 4px 0px 4px; width: 100%; overflow: hidden; text-overflow: ellipsis;text-wrap: nowrap;" appTooltip [tooltipText]="(cardDet.vipTypeId === null || cardDet.vipTypeId === 'General' )?cardDet.name:''" placement="bottom" (click)="otPatientInfo(cardDet,othersTowerList,true)" (keydown.enter)="fixClick()">{{ cardDet['name'] | maskData: (cardDet.vipTypeId === null || cardDet.vipTypeId === 'General') }}</div>
+                                            <div mat-line *ngIf="cardDet.vipTypeId !== null && cardDet.vipTypeId != 'General'" style="padding-top: 5px;">
+                                                <img src="/assets/Alert/common_icons/vip.svg" height="17px" width="13px" alt='VIP' appTooltip [tooltipText]="'VIP'|translate" placement="bottom">
+                                            </div>
+                                        </div>
+                                        <div style="display: flex;flex-direction: row;max-width: 60%;padding: 0px 6px;">
+                                            <div style="cursor: pointer;padding: 0px 5px;" *ngIf="cardDet.gender" appTooltip [tooltipText]="cardDet.gender" placement="bottom">
+                                                <img src="../../../../../assets/icons/gender-male.svg" alt="Male" *ngIf="cardDet.gender == 'Male'" style="width: 10px;">
+                                                <img src="../../../../../assets/icons/gender-female.svg" alt="Female"  *ngIf="cardDet.gender == 'Female'" style="width: 8px;">
+                                            </div>
+                                            <div class="ovi-fnt-sze12" style="color: #585858;padding: 5px 0px 0px 0px;font-weight: 600;" *ngIf="cardDet['birthDate']">
+                                                {{calculateAge(cardDet['birthDate'])}}yrs
+                                            </div>
+                                            <div class="ovi-fnt-sze12" style="color: #3A7AFE;padding: 5px 0px 0px 5px;font-weight: 600;cursor: pointer; overflow: hidden; text-overflow: ellipsis;text-wrap: nowrap;" (click)="otPatientInfo(cardDet,othersTowerList,true)" (keydown.enter)="fixClick()" appTooltip [tooltipText]="cardDet.mainIdentifier" placement="bottom">ID:&nbsp;{{cardDet['mainIdentifier']}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: block; width: 100%;">
+                                    <div style="display: flex;flex-direction: row;align-items: center;">
+                                        <span *ngIf="cardDet['surgeryTypeId']== 'SGT-EM'" appTooltip [tooltipText]="'Emergency'|translate" placement="bottom" style="padding-left: 2px;"><img alt="Emergency" src="../../../../../assets/icons/emergency.png" height="18px" width="18px"></span>
+                                        <span *ngIf="cardDet['isVulnerable']"><mat-icon class="ovi-fnt-sze17" style="color: orange;padding-top: 0px;height: 16px;width: 18px;" appTooltip [tooltipText]="'Vulnerable'|translate" placement="bottom">warning</mat-icon></span>
+                                        <span *ngIf="cardDet['threats']!=null"><mat-icon class="ovi-fnt-sze17" style="color: red;padding-top: 0px;height: 16px;width: 18px;"  appTooltip [tooltipText]="cardDet['threatsTooltip']" placement="bottom">warning</mat-icon></span>
+                                        <span class="ovi-fnt-sze12" style="color: #585858;padding-top: 0px;padding-left: 4px;padding-right: 4px;font-weight: 600;text-overflow: ellipsis;overflow: hidden;text-wrap: nowrap;text-transform: capitalize;" appTooltip 
+                                        [tooltipText]="cardDet.otProcedureNames && cardDet.otProcedureNames !== null && cardDet.otProcedureNames !== '' ? cardDet.otProcedureNames : cardDet.otProcedureName" placement="bottom">
+                                                    {{cardDet['otProcedureNames'] && cardDet['otProcedureNames'] !== null && cardDet['otProcedureNames'] !== '' ? cardDet['otProcedureNames'] : cardDet['otProcedureName']}}</span>
+                                    </div>
+                                </div>
+                                <div style="display: block;width: 100%;" *ngIf="cardDet['doctorName']">
+                                    <div style="display: flex;flex-direction: row;column-gap: 10px;align-items: center;justify-content: space-between;">
+                                        <div class="ovi-fnt-sze11" style="color: #585858;padding: 0px 3px 3px 4px;font-weight: 600;text-overflow: ellipsis;text-transform: capitalize;overflow: hidden;text-wrap: nowrap;display: flex;column-gap: 2px;align-items: center;"><span><img src="../../../../../assets/icons/doctor.png" height="16px" width="16px" alt="doctor.png"></span><span>{{cardDet['doctorName']}}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex;flex-direction: column;row-gap: 3px;align-self: flex-start;padding-right: 5px;padding-top: 3px;">
+                                <span (click)="getCurrentLoc(cardDet['tagId'],index);" (keydown.enter)="fixClick()">
+                                    <div style="width: 16px;height: 16px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;">
+                                        <mat-icon class="ovi-fnt-sze15" style="padding: 1px;" [ngStyle]="{'color': cardDet['tagId']?'#3A7AFE':'#6d6f73','cursor':cardDet['tagId']?'pointer':''}"> place</mat-icon>
+                                    </div>
+                                    <span  *ngIf="cardDet['currentLoc']" class="loc-tooltip loc-tooltip-bottom">
+                                        {{ tagDataInfo?.data ? (cardDet?.currentLoc + ' at ' + cardDet?.navFromTime) : 'No record found' }}
+                                    </span>
+                                </span>
+                                <span (click) = "cardDet['porterRequestId'] === null ? porterRequestNew(cardDet) : ''"  (keydown.enter)="fixClick()" style="width: 16px;height: 17px;border: 2px solid #C8C7C7;background: #EEEFF1;border-radius: 4px;">
+                                    <img style="width:16px;cursor: pointer;padding-bottom: 2px;"
+                                        src="/assets/Menus/SMW_porter_management.svg" [ngStyle]="{opacity: cardDet['porterRequestId'] === null ? '38%' : ''}" alt="porter icon">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+  

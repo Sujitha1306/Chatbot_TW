@@ -1,0 +1,82 @@
+/*******************************************************************************
+ * ======================================================================================================
+ *                                     Copyright (C) 2019 Trackerwave Pvt Ltd.
+ *                                             All rights reserved
+ * ======================================================================================================
+ * Notice:  All Rights Reserved.
+ * This material contains the trade secrets and confidential business information of Trackerwave Pvt Ltd,
+ * which embody substantial creative effort, design, ideas and expressions.  No part of this material may
+ * be reproduced or transmitted in any form or by any means, electronic, mechanical, optical or otherwise
+ * ,including photocopying and recording, or in connection with any information storage or retrieval
+ * system, without written permission.
+ *
+ * www.trackerwave.com, Traceability and Change log maintained in Source Code Control System}
+ * ======================================================================================================
+******************************************************************************/
+export class CreateAmbulanceRequest {
+    constructor(
+       public type: string,
+       public patient: {},
+       public remarks: string,
+       public facilityId: string,
+       public sourceGeoCoordinate: {},
+       public destinationGeoCoordinate: {},
+       public startTime: string,
+       public endTime: string,
+       public isautoAssigned: boolean,
+       public performer: any[] = [],
+       public nonPerformer: any[] = [],
+       public status: string,
+       public porterCount: number,
+       public requestCategory: string,
+       public requestConditionId: string,
+       public doctorId: string,
+       public emtId: string,
+       public assetCategory: string,
+       public pilotId: string,
+       public zoneId: string,
+       public dutySlipNo: string,
+       public pcrNo: string,
+       public initiatedTime: string,
+       public cancelReasonId: string,
+       public comments: string,
+       public statusReasonId: string,
+       public acknowledgeTime: string,
+       public requestConditionText: string,
+       public lastModifiedOn : any
+    ) {}
+}
+export class EditAmbulanceRequest {
+    constructor(
+        public type: string,
+        public patient: {},
+        public remarks: string,
+        public facilityId: string,
+        public sourceGeoCoordinate: {},
+        public destinationGeoCoordinate: {},
+        public startTime: string,
+        public endTime: string,
+        public isautoAssigned: boolean,
+        public performer: any[] = [],
+        public nonPerformer: any[] = [],
+        public status: string,
+        public porterCount: number,
+        public requestId: number,
+        public requestCategory: string,
+        public requestConditionId: string,
+        public doctorId: string,
+        public emtId: string,
+        public assetCategory: string,
+        public pilotId: string,
+        public zoneId: string,
+        public dutySlipNo: string,
+        public pcrNo: string,
+        public initiatedTime: string,
+        public cancelReasonId: string,
+        public comments: string,
+        public statusReasonId: string,
+        public acknowledgeTime: string,
+        public requestConditionText: string,
+        public lastModifiedOn : any
+    ) {}
+}

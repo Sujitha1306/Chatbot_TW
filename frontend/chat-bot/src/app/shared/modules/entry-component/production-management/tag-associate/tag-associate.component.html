@@ -1,0 +1,212 @@
+<div class="ta-root" style="height: calc(100% - 60px);">
+  <mat-toolbar class="input-header">
+    <div class="header-name">Associate Tag / Asset</div>
+    <div class="header-close">
+      <button mat-icon-button (click)="close()" class="ie-close-icon">
+        <mat-icon class="icon-style">highlight_off</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <div class="custom-name ta-content">
+    <mat-tab-group class="associate-tab ta-tab-group" [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+      <mat-tab label="Associate / Disassociate">
+        <ng-template matTabContent>
+          <div style="height: calc(100% - 5px);overflow: auto;padding-top: 5px;">
+
+            <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;" *ngIf="deliveryDetail">
+              <div fxFlex="100">
+                <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Item:</mat-label>
+                <span class="ovi-fnt-sze12">{{deliveryDetail.itemMasterName}}</span>
+              </div>
+            </div>
+
+            <!-- Already associated -->
+            <ng-container *ngIf="isAssociated">
+              <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 16px 10px 0;padding:12px;background:#f0f7ff;border:1px solid #cce5ff;border-radius:6px;">
+                <div fxFlex="100" style="display:flex;flex-direction:column;gap:6px;">
+                  <div class="ovi-row-gap" style="gap:8px;">
+                    <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Tag ID:</mat-label>
+                    <span class="ovi-fnt-sze12" style="color:#1565c0;">{{deliveryDetail.tagId || 'None'}}</span>
+                  </div>
+                  <div class="ovi-row-gap" style="gap:8px;" *ngIf="deliveryDetail.assetName">
+                    <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Asset Name:</mat-label>
+                    <span class="ovi-fnt-sze12">{{deliveryDetail.assetName}}</span>
+                  </div>
+                  <div class="ovi-row-gap" style="gap:8px;" *ngIf="deliveryDetail.assetId">
+                    <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Asset ID:</mat-label>
+                    <span class="ovi-fnt-sze12">{{deliveryDetail.assetId}}</span>
+                  </div>
+                  <div class="ovi-row-gap" style="gap:8px;">
+                    <button mat-button class="cancle-btn" (click)="disassociate()">Disassociate</button>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- Not associated -->
+            <ng-container *ngIf="!isAssociated">
+              <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 12px 10px 0;gap:16px;padding:4px 0;">
+                <div fxFlex="100">
+                  <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Select Type:</mat-label>
+                  <mat-radio-group [value]="associationType" (change)="setType($event.value)">
+                    <mat-radio-button value="tag" style="margin-right:16px;">Tag</mat-radio-button>
+                    <mat-radio-button value="asset">Asset</mat-radio-button>
+                  </mat-radio-group>
+                </div>
+              </div>
+
+              <form [formGroup]="form" style="display:flex;flex-direction:column;gap:14px;padding:10px 4px;">
+                <ng-container *ngIf="associationType === 'tag'">
+                  <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;">
+                    <div fxFlex="100">
+                      <mat-label class="ovi-lbl-text-size">Tag <span class="mandatory-field">*</span></mat-label>
+                      <mat-form-field class="tag-input" style="width: calc(100% - 10px);" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" placeholderText="Search non-associated tag..." id="tagSearch"
+                          appTypeHit (typeHit)="searchTag($event)" formControlName="tagId"
+                          [matAutocomplete]="autoTag">
+                        <mat-autocomplete autoActiveFirstOption #autoTag="matAutocomplete">
+                          <mat-option *ngFor="let tag of tagList" [value]="tag.tagId" (onSelectionChange)="onTagSelect(tag)">
+                            {{tag.tagId}} {{tag.batteryPercentage ? '('+tag.batteryPercentage + '%)' : ''}}
+                          </mat-option>
+                        </mat-autocomplete>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="associationType === 'asset'">
+                  <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;">
+                    <div fxFlex="100">
+                      <mat-label class="ovi-lbl-text-size">Asset <span class="mandatory-field">*</span></mat-label>
+                      <mat-form-field class="tag-input" style="width: calc(100% - 10px);" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" placeholderText="Search asset..." id="assetSearch"
+                          appTypeHit (typeHit)="searchAsset($event)" formControlName="assetDisplay"
+                          [matAutocomplete]="autoAsset">
+                        <mat-autocomplete autoActiveFirstOption #autoAsset="matAutocomplete">
+                          <mat-option *ngFor="let asset of assetList" [value]="asset.assetName + ' (' + (asset.tagSerialNumber || 'No tag') + ')'" (onSelectionChange)="onAssetSelect(asset)">
+                            <div class="tot-wid-styl">
+                              <strong>{{asset.assetName}}</strong>
+                              <span style="margin-left:8px;color:#888;">{{asset.assetTypeName}}</span>
+                              <span *ngIf="asset.tagSerialNumber" style="margin-left:8px;color:#1565c0;">Tag: {{asset.tagSerialNumber}}</span>
+                              <span *ngIf="!asset.tagSerialNumber" style="margin-left:8px;color:#999;">No tag</span>
+                            </div>
+                          </mat-option>
+                        </mat-autocomplete>
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  <div *ngIf="selectedAsset" fxLayout="row" fxLayout.lt-sm="column" style="margin: 12px 10px 0;">
+                    <div fxFlex="100" style="background:#f5f7fa;border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;">
+                      <div class="ovi-row-gap" style="gap:8px;margin-bottom:4px;">
+                        <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Asset Name:</mat-label>
+                        <span class="ovi-fnt-sze12">{{selectedAsset.assetName}}</span>
+                      </div>
+                      <div class="ovi-row-gap" style="gap:8px;margin-bottom:4px;">
+                        <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Type:</mat-label>
+                        <span class="ovi-fnt-sze12">{{selectedAsset.assetTypeName}}</span>
+                      </div>
+                      <div class="ovi-row-gap" style="gap:8px;">
+                        <mat-label class="ovi-lbl-text-size" style="font-weight:600;">Associated Tag:</mat-label>
+                        <span class="ovi-fnt-sze12" [style.color]="selectedAsset.tagSerialNumber ? '#1565c0' : '#999'">
+                          {{selectedAsset.tagSerialNumber || 'None'}}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </ng-container>
+              </form>
+            </ng-container>
+
+            <!-- QR Code -->
+            <div *ngIf="salesOrderIdentifier" class="ta-qr-card-wrap">
+              <div class="ta-qr-card">
+                <div class="ta-qr-code-wrap">
+                  <qrcode [elementType]="'svg'" [qrdata]="salesOrderIdentifier" [errorCorrectionLevel]="'M'" [width]="60" [margin]="1"></qrcode>
+                </div>
+                <div class="ta-qr-card-info">
+                  <span class="ta-qr-label">Sales Order</span>
+                  <span class="ta-qr-value">{{salesOrderIdentifier}}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab label="Live Tracking" *ngIf="isAssociated" [disabled]="!deliveryDetail?.tagId">
+        <ng-template matTabContent>
+          <div style="height: calc(100% - 5px);width:100%;padding-top: 5px;display:flex;flex-direction:column;">
+            <div *ngIf="tagLocationInfo" class="ta-loc-info-strip">
+              <span *ngIf="tagLocationInfo.blockName" class="ta-loc-chip">
+                <mat-icon style="width: 25px;">domain</mat-icon><span>{{tagLocationInfo.blockName}}</span>
+              </span>
+              <span *ngIf="tagLocationInfo.floorName" class="ta-loc-chip">
+                <mat-icon style="width: 25px;">layers</mat-icon><span>{{tagLocationInfo.floorName}}</span>
+              </span>
+            </div>
+            <div style="flex:1;min-height:460px;" *ngIf="enableTracking">
+              <tw-common-leaflet [leafRef]="'popup'" [tagId]="deliveryDetail?.tagId"
+                [tagType]="'TAT-AS'" [type]="'popup'" [options]="trackingOptions"
+                [floorSelect]="tagFloorSelect">
+              </tw-common-leaflet>
+            </div>
+          </div>
+        </ng-template>
+      </mat-tab>
+
+      <mat-tab label="Movement History" *ngIf="isAssociated" [disabled]="!deliveryDetail?.tagId">
+        <ng-template matTabContent>
+          <div style="height: calc(100% - 5px);overflow: auto;padding-top: 5px;" [formGroup]="dateHistoryForm">
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="10px" style="margin: 0px 10px;">
+              <div fxFlex="30">
+                <mat-label class="ovi-lbl-text-size">Start Date</mat-label>
+                <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                  <input matInput type="date" max="{{today | date:'yyyy-MM-dd'}}" formControlName="fromDate">
+                </mat-form-field>
+              </div>
+              <div fxFlex="30">
+                <mat-label class="ovi-lbl-text-size">End Date</mat-label>
+                <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                  <input matInput type="date" max="{{today | date:'yyyy-MM-dd'}}"
+                    min="{{dateHistoryForm.controls.fromDate.value | date:'yyyy-MM-dd'}}"
+                    formControlName="toDate">
+                </mat-form-field>
+              </div>
+              <div fxFlex="30">
+                <mat-label class="ovi-lbl-text-size">&nbsp;</mat-label>
+                <div style="padding-top:4px;">
+                  <button mat-button class="active-btn" appDebounceClick (debounceClick)="goMovementHistory()"
+                    [debounceTime]="300" cdkFocusInitial>Go</button>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="movementData.length > 0" style="margin: 12px 10px 0;">
+              <tw-table-component [component]="'MovementHistory'" [columns]="movementDisplayedColumns"
+                [tableData]="movementData" [iconHeader]="[]" [iconColumn]="[]"
+                [sortColumn]="['Location']" [eventColumn]="[]"
+                (eventAction)="movementEventAction($event)"
+                [permissionControl]="['TAT-AS']"
+                [pagination]="[{length: movementLength, pageSize: movementPageSize, pageStart: movementPageStart}]">
+              </tw-table-component>
+            </div>
+            <div *ngIf="movementData.length === 0" class="no-shift">No records found</div>
+          </div>
+        </ng-template>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <div class="ta-footer" *ngIf="!isAssociated">
+    <button mat-button class="cancle-btn" (click)="close()">Cancel</button>
+    <button mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+      (debounceClick)="associate()" cdkFocusInitial
+      [disabled]="associationType === 'tag' ? !form.value.tagId : !form.value.assetId">Submit</button>
+  </div>
+  <div class="ta-footer" *ngIf="isAssociated">
+    <button mat-button class="cancle-btn" (click)="close()">Close</button>
+  </div>
+</div>

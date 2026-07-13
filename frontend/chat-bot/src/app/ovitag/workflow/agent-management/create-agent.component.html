@@ -1,0 +1,223 @@
+<div fxFlex class="input-component-holder container-fluid">
+    <mat-toolbar class="input-header" style="background-color: #D61820">
+        <div *ngIf="!agentId" class="header-name">{{"Create Agent Info"|translate}}</div>
+        <div *ngIf="agentId" class="header-name" >{{"Modify Agent Info"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+
+    <mat-tab-group class="custom-tab-group" style="height: 100%;" [selectedIndex]=selectedIndex (selectedTabChange)="tabClick($event)">
+        <mat-tab  label="{{'Client Summary'|translate}}" [formGroup]="agentForm">
+            <div class="mat-custom-form-field-box" style="height: calc(100vh - 260px);">
+                <div class="form-row block-3">
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Client Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Client Type'|translate" formControlName="clientTypeId">
+                                    <mat-option *ngFor="let option of clientTypeList" [value]="option.code">
+                                        {{option.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="agentForm.controls.clientTypeId.invalid">
+                                    <span [hidden]="!agentForm.controls['clientTypeId'].errors.required">{{"Client Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" autocomplete="off">
+                                <mat-error *ngIf="agentForm.controls.name.invalid">
+                                    <span [hidden]="!agentForm.controls['name'].errors.required">{{"Name is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!agentForm.controls['name'].errors.minlength">{{"Minimum
+                                        allowed
+                                        characters are 3"|translate}} </span>
+                                    <span [hidden]="!agentForm.controls['name'].errors.maxlength">{{"Maximmum
+                                        allowed
+                                        characters are 50"|translate}} </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Vertical"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Vertical'|translate" formControlName="verticalId">
+                                    <mat-option *ngFor="let option of verticalList" [value]="option.code">
+                                        {{option.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="agentForm.controls.verticalId.invalid">
+                                    <span [hidden]="!agentForm.controls['verticalId'].errors.required">{{"Vertical is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Tax Type"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tax Type'|translate" formControlName="taxTypeId">
+                                    <mat-option *ngFor="let option of taxTypeList" [value]="option.code">
+                                        {{option.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Tax Number"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tax Info'|translate" formControlName="taxNumber" autocomplete="off">
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab *ngIf="agentId"  label="{{'Address Info'|translate}}" [formGroup]="agentInfoForm">
+            <div class="mat-custom-form-field-box" style="height: calc(100vh - 260px);">
+                <div class="form-row block-3">
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Address Type"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Address Type'|translate" formControlName="addressTypeId" autocomplete="off">
+                                    <mat-error *ngIf="agentInfoForm.controls.addressTypeId.invalid">
+                                        <span [hidden]="!agentInfoForm.controls['addressTypeId'].errors.required">
+                                            {{"Address Type is required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" autocomplete="off">
+                                    <mat-error *ngIf="agentInfoForm.controls.name.invalid">
+                                        <span [hidden]="!agentInfoForm.controls['name'].errors.required">
+                                            {{"Name is required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Address Line 1"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Line 1'|translate" formControlName="line1" autocomplete="off">
+                                    <mat-error *ngIf="agentInfoForm.controls.line1.invalid">
+                                        <span [hidden]="!agentInfoForm.controls['line1'].errors.required">
+                                            {{"Address is required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Address Line 2 (optional)"|translate}} </mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Line 2'|translate" formControlName="line2" autocomplete="off">
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"City/Town"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'City/Town'|translate" formControlName="city" autocomplete="off">
+                                    <mat-error *ngIf="agentInfoForm.controls.city.invalid">
+                                        <span [hidden]="!agentInfoForm.controls['city'].errors.required">
+                                            {{"City/Town is required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Zip"|translate}} </mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Zip'|translate" formControlName="zip" autocomplete="off">
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-5">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Country"|translate}} </mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Country'|translate" formControlName="country" autocomplete="off">
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="enablePhoneNumber === true" class="row-field-cod">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Code"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" matInput
+                                    formControlName="countryCode" [matAutocomplete]="countryCode">
+                                <mat-autocomplete #countryCode="matAutocomplete" panelWidth="250px">
+                                    <mat-option *ngFor="let country of countryOptions | async" value={{country.code}}
+                                        appTooltip [tooltipText]="country.value" placement="bottom">
+                                        {{country.code}} ({{country.value}})
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="agentInfoForm.controls.countryCode.invalid">
+                                    <span [hidden]="!agentInfoForm.controls['countryCode'].errors.required">
+                                        {{"code required"|translate}}.</span>
+                                    <span [hidden]="!agentInfoForm.controls['countryCode'].errors.pattern">{{"code (eg.
+                                        +91)"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="enablePhoneNumber === true" class="row-field-phn">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Phone No"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone No'|translate" formControlName="phoneNumber" [errorStateMatcher]="matcher" autocomplete="off">
+                                <mat-error *ngIf="agentInfoForm.controls.phoneNumber.invalid">
+                                    <span [hidden]="!agentInfoForm.controls['phoneNumber'].errors.required">
+                                        {{"Phone number is required"|translate}}.
+                                    </span>
+                                    <span [hidden]="!agentInfoForm.controls['phoneNumber'].errors.pattern">
+                                        {{"Invalid Phone number"|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+
+                    <div *ngIf="enablePhoneNumber === false" class="row-field-5">
+                        <div class="example-form" style="padding-top: 21px; margin-left:6px;">
+                            <span class="ovi-fnt-sze14" style="color: rgba(0, 0, 0, 0.38);">{{"Phone Number"|translate}} : </span>
+                            <span>{{this.agentAddress[0].phone}}</span>
+                            <button mat-icon-button matSuffix (click)="phoneNumber('enable')">
+                              <mat-icon class="ovi-fnt-sze16" style="padding-top: 0px;color: red;margin-top: -1px;">close</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+    <div class="input-footer" style="float: right; width: 200px;">
+        <button mat-button class="cancle-btn" style="margin: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!agentId && selectedTab !== 1" mat-button class="active-btn margin-r-1" [disabled]="agentForm.invalid" appDebounceClick
+          style="background-color: #D61820" (debounceClick)="saveAgent()" [debounceTime]="300">{{"Create"|translate}}</button>
+        <button *ngIf="agentId && selectedTab !== 1" mat-button class="active-btn margin-r-1" [disabled]="agentForm.invalid" appDebounceClick
+          style="background-color: #D61820"  (debounceClick)="updateAgent()" [debounceTime]="300">{{"Update"|translate}}</button>
+        <button *ngIf="selectedTab === 1 && !this.agentAddress.length" mat-button class="active-btn margin-r-1" [disabled]="agentInfoForm.invalid" appDebounceClick
+          style="background-color: #D61820"  (debounceClick)="saveAddress()" [debounceTime]="300">{{"Save"|translate}}</button>
+        <button *ngIf="selectedTab === 1 && this.agentAddress.length" mat-button class="active-btn margin-r-1" [disabled]="agentInfoForm.invalid" appDebounceClick
+          style="background-color: #D61820" (debounceClick)="editAddress()" [debounceTime]="300">{{"update"|translate}}</button>
+    </div>
+</div>

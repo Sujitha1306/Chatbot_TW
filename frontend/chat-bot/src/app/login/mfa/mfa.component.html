@@ -1,0 +1,60 @@
+<div class="mfa-container">
+
+  <div class="mfa-header">
+    <div class="mfa-shield-icon">
+      <mat-icon style="font-size:28px; width:28px; height:28px;">lock</mat-icon>
+    </div>
+    <h2 class="mfa-title">Two-Factor Authentication</h2>
+    <p class="mfa-subtitle" *ngIf="!isConfigured">
+      Scan the QR code with <strong>Google Authenticator</strong>, then enter the 6-digit code below.
+    </p>
+    <p class="mfa-subtitle" *ngIf="isConfigured">
+      Enter the 6-digit code from your Google Authenticator app.
+    </p>
+  </div>
+
+  <div class="mfa-qr-section" *ngIf="!isConfigured && otpAuthUrl">
+    <div class="mfa-qr-wrapper">
+      <qrcode
+        [qrdata]="otpAuthUrl"
+        [width]="160"
+        [errorCorrectionLevel]="'M'"
+        [elementType]="'canvas'">
+      </qrcode>
+    </div>
+    <p class="mfa-manual-key" *ngIf="secret">
+      Manual key: <span class="mfa-secret">{{ secret }}</span>
+    </p>
+  </div>
+
+  <mat-form-field appearance="outline" class="mfa-field">
+    <mat-label>6-digit code</mat-label>
+    <input matInput
+           [formControl]="otpControl"
+           maxlength="6"
+           inputmode="numeric"
+           placeholder="000000"
+           autocomplete="one-time-code"
+           (keyup.enter)="verify()">
+    <mat-icon matPrefix>pin</mat-icon>
+    <mat-error *ngIf="otpControl.touched && otpControl.hasError('required')">
+      Code is required
+    </mat-error>
+    <mat-error *ngIf="otpControl.touched && otpControl.hasError('pattern')">
+      Must be exactly 6 digits
+    </mat-error>
+  </mat-form-field>
+
+  <p class="mfa-error" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <button mat-raised-button color="primary" class="mfa-btn"
+          [disabled]="otpControl.invalid || verifying" (click)="verify()">
+    <mat-spinner *ngIf="verifying" diameter="18" class="mfa-btn-spinner"></mat-spinner>
+    <span *ngIf="!verifying">Verify</span>
+  </button>
+
+  <button mat-button class="mfa-back-btn" [disabled]="verifying" (click)="cancel()">
+    Back to Login
+  </button>
+
+</div>

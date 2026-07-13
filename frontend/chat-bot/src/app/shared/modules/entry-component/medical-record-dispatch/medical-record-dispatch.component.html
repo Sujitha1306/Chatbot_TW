@@ -1,0 +1,170 @@
+<div class="input-component-holder ovi-font-family" appWindowResize (resized)="onWindowResized($event)" [component]="'pop-up'"
+[style.height.px]="popHeight">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="data.reqDetailStatusId === 'MR-REQ' || data.reqDetailStatusId === 'MR-CAN'">{{"Medical Record Dispatch"|translate}}</div>
+        <div *ngIf="data.reqDetailStatusId !== 'MR-REQ' && data.reqDetailStatusId !== 'MR-CAN'">{{"Medical Record Receive"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="dispatchForm" style="overflow: auto;height:calc(100% - 140px);">
+        <div class="form-row">
+            <div class="ovi-popup-title-text-size">{{"SUMMARY"|translate}}:</div>
+        </div>
+        <mat-divider class="divider"></mat-divider>
+        <div class="bnr-container">
+            <div class="bnr-box">
+                <div>
+                    <mat-label class="bnr-lbl">{{"UHID"|translate}} :&nbsp;</mat-label>
+                    <span class="bnr-dta">{{data.mainIdentifier}}</span>
+                </div>
+                <div>
+                    <mat-label class="bnr-lbl">{{"Request By"|translate}} :&nbsp;</mat-label>
+                    <span class="bnr-dta">{{data.requestedBy}}</span>
+                </div>
+            </div>
+            <div class="bnr-box">
+                <div>
+                    <mat-label class="bnr-lbl">{{"Name"|translate}} :&nbsp;</mat-label>
+                    <span class="bnr-dta">{{data.patientName}}</span>
+                </div>
+                <div>
+                    <mat-label class="bnr-lbl">{{"Location"|translate}} :&nbsp;</mat-label>
+                    <span class="bnr-dta">{{data.deliveryLocation}}</span>
+                </div>
+            </div>
+            <div class="bnr-box">
+                <div>
+                    <mat-label class="bnr-lbl">{{"Request Date"|translate}} :&nbsp;</mat-label>
+                    <span class="bnr-dta">{{data.requestedDate | date : "hh:mm a, d MMM"}}</span>
+                </div>
+                <div>
+                    <mat-label class="bnr-lbl">{{"Dispatch Date"|translate}} :&nbsp;</mat-label>
+                    <span class="bnr-dta">{{data.startDatetime | date : "hh:mm a, d MMM"}}</span>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="data.reqDetailStatusId === 'MR-REQ' || data.reqDetailStatusId === 'MR-CAN'" class="ovi-row-gap">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}} :</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select formControlName="status" (selectionChange)="statusChange($event.value)">
+                        <mat-option *ngFor="let MRstatus of selectedMRRequestStatusList" [value]="MRstatus.code">{{MRstatus.value}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+        <div>
+            <div style="padding: 5px 0px 10px 0px;">
+                    <mat-label class="ovi-lbl-text-size">{{"File Age"|translate}} :&nbsp;</mat-label>
+                    <span style="font-weight: 700;font-size: 13px;">{{data.fileAge}}</span>
+            </div>
+        </div>
+        <div *ngIf="data.reqDetailStatusId === 'MR-REQ'">
+            <div class="form-row">
+                <div class="ovi-popup-title-text-size">{{"VOLUME INFO"|translate}}:</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap" style="align-items: center;">
+                <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Confirm number of volumes for the patient"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput  autocomplete="off" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Volume Count'|translate" formControlName="volumeCount"
+                            (keyup)="checkVolume($event.target.value)">
+                            <mat-error *ngIf="dispatchForm.controls.volumeCount.invalid">
+                                <span [hidden]="!dispatchForm.controls['volumeCount'].errors.required">
+                                    {{'Volume Count required'|translate}}</span>
+                                <span [hidden]="!dispatchForm.controls['volumeCount'].errors.pattern">
+                                    {{"please enter numbers only"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div style="padding-top: 14px;">
+                    <button mat-button class="active-btn" appDebounceClick
+                    [disabled]="this.dispatchForm.controls['volumeCount'].value === null || this.dispatchForm.controls['volumeCount'].value === '' || !this.volumeCountExist"
+                    (debounceClick)="getVolumeCount()" [debounceTime]="300"
+                    cdkFocusInitial>{{"OK"|translate}}</button>
+                </div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div *ngIf="data.reqDetailStatusId === 'MR-REQ'" class="ovi-popup-title-text-size ">{{"DISPATCH MEDICAL RECORD"|translate}}:</div>
+            <div *ngIf="data.reqDetailStatusId !== 'MR-REQ' && data.reqDetailStatusId !== 'MR-CAN'" class="ovi-popup-title-text-size">{{"RECEIVE MEDICAL RECORD"|translate}}:</div>
+        </div>
+        <mat-divider *ngIf="data.reqDetailStatusId !== 'MR-CAN'" class="divider"></mat-divider>
+        <div formArrayName="volumeList" *ngIf="dispatchForm && data.reqDetailStatusId !== 'MR-CAN'">
+            <div *ngIf="data.reqDetailStatusId === 'MR-REQ' && dispatchForm.controls['volumeCount'].value > dispatchForm.controls.volumeList.controls.length"
+                style="float: right;">
+                <span><button mat-mini-fab style="float:right;margin-top: -20px;margin-right: 45px;"
+                        (click)="addVolume()">+</button></span>
+            </div>
+            <div *ngIf="data.reqDetailStatusId === 'MR-REQ'">
+                <div>
+                    <mat-label class="ovi-lbl-text-size">{{"Requested Volume"|translate}} :&nbsp;</mat-label>
+                    <span style="font-weight: 700;font-size: 13px;">{{data.srcPatientFileId}}</span>
+                </div>
+            </div>
+            <div *ngFor="let obj of dispatchForm.controls.volumeList.controls; let i=index">
+                <mat-divider *ngIf="dispatchForm.controls.volumeList.controls.length > 1 && i > 0">
+                </mat-divider>
+                <br>
+                <div [formGroupName]="i">
+                    <div class="ovi-row-gap" style="align-items: center;position: relative; bottom: 10px;">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                <mat-label *ngIf="i === 0" class="ovi-lbl-text-size">{{"Volume"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <mat-select formControlName="volume" required (selectionChange)="filterVolumeOptions($event.value)"
+                                    [disabled]="this.dispatchForm.controls['volumeList'].value[i].volume !== null">
+                                        <mat-option *ngFor="let data of volumeList" [value]="data.volume" (click)="getpatientFileId(data.patientFileId, i)" (keydown.enter)="fixClick()"
+                                        [ngStyle]="{display: volumeOption.indexOf(data.volume) > -1 ? 'none' : 'block'}">{{data.volume}}</mat-option>
+                                    </mat-select>
+                                    <mat-error>
+                                        <span >{{"Volume required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                                <mat-label *ngIf="i === 0 && !this.isMRReqStatusChange" class="ovi-lbl-text-size">{{"Tag ID"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-label *ngIf="i === 0 && this.isMRReqStatusChange" class="ovi-lbl-text-size">{{"Tag ID"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Device No'|translate" formControlName="tagId" #tagId="matInput"
+                                    [required]="!this.isMRReqStatusChange ? true : false"
+                                    (keyup)="searchTag($event, i)" [matAutocomplete]="auto" autocomplete="off"
+                                    [readonly]="this.dispatchForm.controls['volumeList'].value[i].tag !== null">
+                                <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                                    <mat-option *ngFor="let search of searchList" [value]="search" (click)="getTag(search, i)" (keydown.enter)="fixClick()"
+                                    [ngStyle]="{display: tagOption.indexOf(search) > -1 ? 'none' : 'block'}">{{search}}
+                                    </mat-option>
+                                </mat-autocomplete>
+                                    <mat-error>
+                                        <span >{{"tag Id required"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div>
+                            <div  *ngIf="data.reqDetailStatusId === 'MR-REQ'">
+                                <span><button mat-icon-button close-button class="ie-close-icon"
+                                    (click)="removeVolume(i, 'clear')"[ngStyle]="{'margin-top': i === 0 ? '20px' : ''}">
+                                     <mat-icon class="icon-style ovi-fnt-sze30" style="color: red;height:27px;width: 30px;">highlight_off</mat-icon> </button></span>
+                             </div>
+                            <div *ngIf="data.reqDetailStatusId !== 'MR-REQ' && data.reqDetailStatusId !== 'MR-CAN'" style="padding-top: 14px;">
+                                <button mat-button class="active-btn margin-r-1" appDebounceClick
+                                [disabled]="receiveId === this.dispatchForm.controls['volumeList'].value[i].volume"
+                                (debounceClick)="VolumeDisassociate(i)" [debounceTime]="300" cdkFocusInitial>{{"Disassociate"|translate}}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button mat-dialog-close class="cancle-btn" style=" margin-right: 5px;">{{"Cancel"|translate}}</button>
+        <button *ngIf="data.reqDetailStatusId === 'MR-REQ' || data.reqDetailStatusId === 'MR-CAN'" mat-button class="active-btn" appDebounceClick
+            [disabled]="dispatchForm.invalid || isDispatchDisable" (debounceClick)="saveDispatch()" [debounceTime]="300"
+            cdkFocusInitial style=" margin-right: 5px;">{{"Save"|translate}}</button>
+        <button *ngIf="data.reqDetailStatusId !== 'MR-REQ' && data.reqDetailStatusId !== 'MR-CAN'" mat-button class="active-btn" appDebounceClick
+        [disabled]="dispatchForm.invalid || isReceiveAllDisable" (debounceClick)="disassociateAll()" [debounceTime]="300"
+        cdkFocusInitial style=" margin-right: 5px;">{{"Disassociate All"|translate}}</button>
+    </div>
+</div>

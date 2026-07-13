@@ -1,0 +1,584 @@
+<div class="loading-spinner" *ngIf="spinLoader">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div style="height: calc(100% - 60px);">
+    <mat-toolbar class="input-header">
+        <div class="header-name">{{"Widget Management"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div #container style="height: calc(100% - 80px);overflow: auto;" [formGroup]="widgetForm">
+        <mat-tab-group class="widget-tab" style="width: 100% ;height: calc(100% - 5px);" (selectedTabChange)="tabClick($event)" [selectedIndex]="selectedIndex">
+            <mat-tab  label="{{'Basic Details'|translate}}">
+                <ng-template mat-tab-label >{{"Basic Details"|translate}}</ng-template>
+                <div style="padding-top:5px;">
+                    <div  class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Widget Type"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid " appearance="outline">
+                                <mat-select   appPlaceholder [showPlaceholder]="false" [placeholderText]="'Widget Type'|translate" formControlName="widgetTypeId" (selectionChange)="getWidgetTemplate($event.value)"
+                                [disabled]="widgetDetail">
+                                    <mat-option *ngFor="let type of widgetTypes" [value]="type.code">{{type.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="this.widgetForm.controls['widgetTypeId'].value === 'WT-CHART'" fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100" 
+                            fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Chart Type"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid" appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Sub Type'|translate" formControlName="widgetSubtypeId">
+                                    <mat-option *ngFor="let sub of subTypeList" [value]="sub.code">{{sub.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>       
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Widget Name"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <input  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Widget Name'|translate" matInput formControlName="name">
+                            </mat-form-field>
+                        </div>                        
+                    </div>
+                    <div class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Widget InputParam"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%; display: grid"appearance="outline">
+                                <input  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Widget InputParam'|translate" matInput formControlName="inputParam">
+                            </mat-form-field>
+                        </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100" fxFlex.md="50" fxFlex.sm="50">
+                                <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}</mat-label>
+                                <mat-form-field style="width: 95%;display: grid " appearance="outline">
+                                    <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate"
+                                        formControlName="widgetCategoryId">
+                                        <mat-option *ngFor="let type of CategoryList" [value]="type.code">{{type.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100" fxFlex.md="50" fxFlex.sm="50">
+                                <mat-label class="ovi-lbl-text-size">{{"Factory Type"|translate}}</mat-label>
+                                <mat-form-field style="width: 95%;display: grid " appearance="outline">
+                                    <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Factory Type'|translate"
+                                        formControlName="factoryTypeId">
+                                        <mat-option *ngFor="let type of factoryList" [value]="type.code">{{type.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100" fxFlex.md="50" fxFlex.sm="50">
+                                <mat-label class="ovi-lbl-text-size">{{'Target'|translate}}</mat-label>
+                                <mat-form-field style="width: 95%;display: grid " appearance="outline">
+                                    <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Target'|translate" formControlName="target">
+                                        <mat-option *ngFor="let type of widgetTargetList" [value]="type.code">{{type.value}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    <div class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;" *ngIf = "widgetForm.controls['widgetTypeId'].value === 'WT-FORM'">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Widget Status"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%; display: grid"appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Widget Status'|translate" formControlName="isActive">
+                                    <mat-option *ngFor="let sts of status" [value]="sts.code">
+                                        {{sts.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>               
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Select Form Template"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Form Template'|translate" formControlName="pfWidgetFormId">
+                                    <mat-option *ngFor="let form of formList" [value]="form.id">{{form.name}} ( {{form.typeName}} )
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            
+                        </div>                        
+                    </div>
+                    <div class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;" *ngIf = "widgetForm.controls['widgetTypeId'].value !== 'WT-FORM'">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Widget Model"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Widget Model'|translate" formControlName="modelId" (selectionChange)="getmodelDetail($event.value)">
+                                    <mat-option [value]="-1">{{"Add New Model"|translate}}</mat-option>
+                                    <mat-option *ngFor="let model of modelList" [value]="model.id">{{model.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Model Name"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Name'|translate" formControlName="modelName">
+                            </mat-form-field>
+                        </div>                        
+                    </div>
+                    
+                    <div class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;" *ngIf = "widgetForm.controls['widgetTypeId'].value !== 'WT-FORM'">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Model Type"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Type'|translate" formControlName="modelType">
+                                    <mat-option *ngFor="let type of modelTypes" [value]="type.code">{{type.value}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <div  *ngIf = "widgetForm.controls['modelType'].value === 'MT-QRY'">
+                            <mat-label class="ovi-lbl-text-size">{{"Target Database"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid" appearance="outline" >
+                                <mat-select  formControlName="targetDb" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Target Database'|translate" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of targetDb" [value]="data.code">{{data.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf = "widgetForm.controls['modelType'].value !== 'MT-QRY'">
+                            <mat-label class="ovi-lbl-text-size">{{"API Url"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid" appearance="outline">
+                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'API Url'|translate" formControlName="modelUrl">
+                            </mat-form-field>
+                        </div>
+                        </div>                        
+                    </div>
+                    <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;" *ngIf = "widgetForm.controls['modelType'].value === 'MT-QRY'">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="100" fxFlex.sm="100">
+                            <mat-label class="ovi-lbl-text-size">{{"Model QueryString"|translate}}</mat-label>
+                            <mat-form-field style="width: calc(100% - 20px);display: grid" appearance="outline" >
+                                <textarea matInput  rows="4" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model QueryString'|translate" formControlName="modelQueryString"></textarea>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="custom-name" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;" *ngIf = "widgetForm.controls['widgetTypeId'].value !== 'WT-FORM'">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Model InputParam"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model InputParam'|translate" formControlName="modelInputParams">
+                            </mat-form-field>
+                        </div>
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Model OutputParam"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model OutputParam'|translate" formControlName="modelOutputParams">
+                            </mat-form-field>
+                        </div>                        
+                    </div>
+                    <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;" *ngIf = "widgetForm.controls['widgetTypeId'].value !== 'WT-FORM'">
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Model Mapping"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid" appearance="outline">
+                                <textarea matInput  rows="4" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Widget Mapping'|translate" formControlName="modelMapping"></textarea>
+                            </mat-form-field>
+                        </div>
+                        <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}</mat-label>
+                            <mat-form-field style="width: 95%;display: grid" appearance="outline">
+                                <textarea matInput  rows="4" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Output template'|translate" formControlName="template"></textarea>
+                            </mat-form-field>
+                        </div>                        
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab  label="{{'Preview'|translate}}" *ngIf="data">
+                <ng-template mat-tab-label >{{"Preview"|translate}}</ng-template>
+                <div style="width: calc(100% - 2px); height : calc(100% - 2px);">
+                    <mat-drawer-container style="height: calc(100% - 15px);" autosize>
+                        <mat-drawer style = "background-color: white;width: 40%;overflow: hidden;" mode="side" opened="true" [resizableMinWidth]="400" appResizable>
+                            <div  style="padding-top: 10px;height: calc(100% - 60px);">
+                                <div  class="custom-name" fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;max-width: 400px;">
+                                    <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="50" fxFlex.sm="50">
+                                        <mat-label class="ovi-lbl-text-size">{{"Option Type"|translate}}</mat-label>
+                                        <mat-form-field style="width: 95%;display: grid"appearance="outline">
+                                            <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Option Type'|translate" formControlName="useDefaultOption">
+                                                <mat-option *ngFor="let option of widgetOptions" [value]="option.code">
+                                                    {{option.name}}
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                </div> 
+                                <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;max-width: 700px;"> 
+                                    <div fxFlex.xs="100" fxFlex.gt-xs="100" fxFlex.lg="100"  fxFlex.md="100" fxFlex.sm="100">
+                                        <mat-label class="ovi-lbl-text-size">{{"Widget Options"|translate}}</mat-label>
+                                        <mat-form-field style="width: 100%;"appearance="outline">
+                                            <textarea matInput style="background: hsl(0deg 3% 22%);color: #e0e0e0;" cols=50 rows=25 formControlName="widgetOption" [errorStateMatcher]="matcher"></textarea>
+                                            <mat-error *ngIf="widgetForm.controls.widgetOption.invalid">
+                                                <span class="ovi-fnt-sze14">{{"Widget option JSON data is invalid"|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>                        
+                                </div>
+                            </div>
+                        </mat-drawer>
+                        <mat-drawer-content>
+                            <div style="width: calc(100% - 20px);height: calc(100% - 20px);margin: 10px;box-shadow: 0 1px 8px -1px rgba(40,66,85,.2);border-radius: 10px;border: 1px solid #E0E0E0;" *ngIf = "widgetData['show']">
+                                <angular-table-component *ngIf = "widgetData['type'] == 'table'"
+                                    [title]="widgetData['options'].hasOwnProperty('text') ? widgetData['options']['text'] : widgetData.widgetName" [headerStyle]="widgetData['options']['styles']"
+                                    [tableData]="widgetData['data']" [columns]="widgetData['labels']"
+                                    [id]="'dashWid'" [tableStyle]="widgetData['options']['options']"
+                                    [styles] = "widgetData['options']['styles']" [page]="widgetData['options']['pagination']"
+                                    [pageSizeOptions]="widgetData['options']['pageSizeOptions']" 
+                                    [enableExcel]="widgetData['options']['enableExcel']"
+                                    [filterBy]="widgetData['options']['filterBy']">
+                                </angular-table-component> 
+                                <canvas baseChart *ngIf = "widgetData['type'] != 'table' && widgetData['type'] != 'card' && widgetData['type']!= 'header'"
+                                    [type]="widgetData['type']" [datasets]="widgetData['data']"
+                                    [labels]="widgetData['labels']" [colors]="widgetData['colors']"
+                                    [options]="widgetData['options']['options']" [plugins]="chartPlugins" >
+                                </canvas>
+                                <mat-grid-list *ngIf="false" [cols]="widgetData['maxCol']" rowHeight="100%" [gutterSize]="'15px'">
+                                    <mat-grid-tile 
+                                    [colspan] = "widgetData['detail'][0].col" [rowspan]= "1" [ngStyle]="{background: widgetData['detail'][0]['bg-color']}" 
+                                    style="border-radius: 10px;">
+                                        <mat-grid-tile-header [ngStyle]="{background: 'transparent', color: widgetData['detail'][0]['color']}" class="ovi-fnt-sze18" style="justify-content: center;font-weight: 600">{{widgetData['detail'][0].title}}</mat-grid-tile-header>
+                                        <div *ngIf = "widgetData['detail'][0].icon != ''">
+                                        <div style="float: left">
+                                            <img [src]="widgetData['detail'][0].icon" [width] = "widgetData['detail'][0].iconWidth" style="float: left; margin-right:20px;object-fit: contain;" alt="asset-icon">
+                                        </div>
+                                        <div style="float: right;font-weight: 800;padding: 10px 10px;" [ngStyle]="{'font-size': widgetData['detail'][0]['fontSize'], color: widgetData['detail'][0]['fontColor']}"> 
+                                            {{widgetData['detail'][0].data}}
+                                        </div>
+                                        </div>                
+                                        <div *ngIf = "widgetData['detail'][0].icon == ''" style="font-weight: 600;" [ngStyle]="{'font-size': widgetData['detail'][0]['fontSize'], color: widgetData['detail'][0]['fontColor']}">
+                                        <div *ngFor = "let data of widgetData['detail'][0].data.data; let i = index"> 
+                                            <span style="float: left;"> {{widgetData['detail'][0].data.label[i] }}  </span>
+                                            <span style="float: right;"> &nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;&nbsp;{{widgetData['detail'][0].data.data[i] }} </span>
+                                        </div> 
+                                        </div>
+                                    </mat-grid-tile>
+                                </mat-grid-list>
+                                <div style="width: 100%; height: 100%;box-shadow: 0px 3px 6px #00000029;border-radius: 10px;" *ngIf="widgetData['type'] == 'card'">
+                                    <div style="width: 100%; height: 100%;" *ngIf="widgetData['content']" [innerHTML]="widgetData['content']"></div>
+                                    <div *ngIf="widgetData['cardStyle']">
+                                    <div [ngStyle]="widgetData['cardStyle']['header']">
+                                      {{widgetData['detail'][0].title}}
+                                    </div>
+                                    <div [ngStyle]="widgetData['cardStyle']['content']">
+                                      <div [ngStyle]="widgetData['cardStyle']['con-label']">
+                                        <div>
+                                            <div *ngFor = "let data of widgetData['detail'][0].data.data; let i = index" >
+                                                <span *ngIf="widgetData['detail'][0].data.label[i] !== ''">{{widgetData['detail'][0].data.label[i]}}</span>
+                                                <span *ngIf="widgetData['detail'][0].data.data[i] !== ''">{{widgetData['detail'][0].data.data[i]}}</span>
+                                            </div>
+                                        </div>
+                                      </div>
+                                      <div *ngIf="widgetData['cardStyle']['con-icon-name']" [ngStyle]="widgetData['cardStyle']['con-icon']">
+                                        <span *ngIf="widgetData['cardStyle']['con-icon-name']['img'] && widgetData['cardStyle']['con-icon-name']['img'] !== ''" [ngStyle]="widgetData['cardStyle']['con-circle']">
+                                          <img [src]="widgetData['cardStyle']['con-icon-name']['img']" alt="icon" [ngStyle]="widgetData['cardStyle']['con-inner-icon']">
+                                        </span>
+                                        <span *ngIf="widgetData['cardStyle']['con-icon-name']['icon'] && widgetData['cardStyle']['con-icon-name']['icon'] !== ''" [ngStyle]="widgetData['cardStyle']['con-circle']">
+                                          <mat-icon [ngStyle]="widgetData['cardStyle']['con-inner-icon']">{{widgetData['cardStyle']['con-icon-name'].icon}}</mat-icon>
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div *ngIf="widgetData['cardStyle']['footer']['text']" [ngStyle]="widgetData['cardStyle']['footer']">{{widgetData['cardStyle']['footer']['text']}}</div>
+                                    </div>
+                                </div>
+                                <div style="width: 100%; height: 13%;" *ngIf="widgetData['show'] && widgetData['type'] == 'header'">
+                                    <div style="width: 70%; height: 100%;border-radius: 10px;margin-left: 17%;margin-top: 7%; display: flex; justify-content: flex-start; align-items: center;" [ngStyle]="{background: widgetData['detail'][0]['bg-color']}">
+                                     
+                                        <img *ngIf="widgetData['detail'][0].icon != ''" [src]="widgetData['detail'][0].icon" [width] = "widgetData['detail'][0].iconWidth" style="object-fit: contain; margin-left: 25px;" alt="asset-icon">
+                                     
+                                        <h1 style="font-weight: 200; margin-left: 25px;" [ngStyle]="{background: 'transparent',color: widgetData['detail'][0]['fontColor'], 'font-size': widgetData['detail'][0]['fontSize']}">{{widgetData['detail'][0].title}}</h1>
+                     
+                                    </div>
+                                </div>
+                            </div>
+                        </mat-drawer-content>
+                    </mat-drawer-container>
+                </div>
+            </mat-tab>
+            <mat-tab  label="{{'Department'|translate}}" *ngIf="data">
+                <ng-template mat-tab-label >{{"Department"|translate}}</ng-template>
+                <div style="height: calc(100% - 5px);padding-top: 5px;width: 100%;overflow-y:auto; overflow-x: hidden;
+                            position: relative;" [formGroup]="departmentForm">
+                    <div style="float: right;margin-top: 10px;">
+                        <button mat-mini-fab style="float:right;margin-right: 45px;" (click)="addDepartForm()">+</button>
+                    </div>
+                    <div style="width: 70%">
+                        <div formArrayName="departmentType" style="width: calc(100% - 20px)">
+                            <div *ngFor="let obj of departmentForm.get('departmentType')['controls']; let j=index"
+                                style="padding-bottom: 5px;">
+                                <div *ngIf="obj.value.isActive" [formGroupName]="j">
+                                    <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;width: 100%">
+                                        <div class="custom-name" fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30"
+                                            fxFlex.sm="30">
+                                            <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}</mat-label>
+                                            <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to department'|translate" appTypeHit
+                                                    (typeHit)="searchDepartmentDetails($event)" [matAutocomplete]="autoFrom"
+                                                    formControlName="departmentId">
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.departmentEnabled === true ? getDepartmentList.bind(departmentList) : ''"
+                                                    #auto="matAutocomplete" #autoFrom="matAutocomplete">
+                                                    <mat-option *ngFor="let list of departmentList" [value]="list.id">
+                                                        <div class="tot-wid-styl">{{list.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                            </mat-form-field>
+                                        </div>
+                                        <div *ngIf="flase" class="custom-name" fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50"
+                                            fxFlex.md="30" fxFlex.sm="30">
+                                            <mat-label class="ovi-lbl-text-size">{{"QualifierTypeId"|translate}}</mat-label>
+                                            <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                                                <mat-select  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type Name'|translate"
+                                                    formControlName="qualifierTypeId" [disableOptionCentering]="true">
+                                                    <mat-option *ngFor="let data of formTemplateTypeList" [value]="data.code">
+                                                        {{data.value}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="custom-name" fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30"
+                                            fxFlex.sm="30">
+                                            <mat-label class="ovi-lbl-text-size">{{"Start Date"|translate}}</mat-label>
+                                            <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                                                <input  matInput [matDatepicker]="picker1" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate"
+                                                    formControlName="startDate">
+                                                <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                                <mat-datepicker #picker1></mat-datepicker>
+                                            </mat-form-field>
+                                        </div>
+                                        <div class="custom-name" fxFlex.xs="50" fxFlex.gt-xs="50" fxFlex.lg="50" fxFlex.md="30"
+                                            fxFlex.sm="30">
+                                            <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}}</mat-label>
+                                            <mat-form-field style="width: calc(100% - 10px);" appearance="outline">
+                                                <input  matInput [matDatepicker]="picker2" appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate"
+                                                    formControlName="endDate">
+                                                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                                                <mat-datepicker #picker2></mat-datepicker>
+                                            </mat-form-field>
+                                        </div>
+                                        <div>
+                                            <span><button mat-icon-button close-button class="ie-close-icon"
+                                                    (click)="removeDepartDetails(j, 'clear')"
+                                                    [ngStyle]="{'margin-top': j >= 0 ? '25px' : ''}">
+                                                    <mat-icon class="icon-style ovi-fnt-sze30"
+                                                        style="color: red; width:30px;">highlight_off</mat-icon> </button></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div #footer style="height: 45px;">
+        <button *ngIf="selectedIndex !== 0 && selectedIndex !== 2" mat-button class="active-btn" style="margin: 5px;margin-left: 15%;" cdkFocusInitial (click)="updateWidget()" [disabled]="!widgetForm.valid">{{"Update options"|translate}}</button>
+        <button mat-button class="active-btn" *ngIf="active_btn.includes('BT_SAVEWD')" style="margin: 5px;float: right;" 
+          cdkFocusInitial appDebounceClick (debounceClick)="saveWidget()" [debounceTime]="300" [disabled]="(!departmentForm.dirty || !departmentForm.valid) && (!widgetForm.dirty || !widgetForm.valid)">{{"Save"|translate}}</button>
+        <button mat-button class="active-btn" *ngIf="active_btn.includes('BT_SAVEWD')" style="margin: 5px;float: right;" 
+         cdkFocusInitial appDebounceClick (debounceClick)="saveAsWidget()" [debounceTime]="300" [disabled]="(!departmentForm.dirty || !departmentForm.valid) && (!widgetForm.dirty || !widgetForm.valid)">{{"Save As"|translate}}</button>
+        <button mat-button class="cancle-btn" style="margin: 5px;float: right;" mat-dialog-close>{{"Cancel"|translate}}</button>
+    </div>
+</div>
+
+<div class="custom-dialog-box" *ngIf = "false">
+    <mat-toolbar class="input-header">
+        <div style="float:left;width:calc(100% - 35px);">{{"Modify Widget"|translate}}</div>
+        <div>
+            <button mat-icon-button mat-dialog-close class="close-button ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </div>
+    </mat-toolbar>
+
+    <div class="mat-custom-form-field-box" style="height: calc(100% - 90px);overflow: auto;">
+    <mat-tab-group style="height: 100%;" (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+        <mat-tab  label="{{'Basic Details'|translate}}">
+            <div [formGroup]="widgetForm">
+            <div class="form-row block-3">
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Widget Type"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="widgetTypeId" [disableOptionCentering]="true">
+                                <mat-option *ngFor="let type of widgetTypes" [value]="type.code">{{type.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Code"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput   appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" formControlName="code" autocomplete="off"  readonly>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Select Model"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="modelId" [disableOptionCentering]="true">
+                                <mat-option *ngFor="let model of modelList" [value]="model.id">{{model.name}}
+                                </mat-option>
+                            </mat-select>
+           
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Target DB"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Model Type'|translate" formControlName="targetDb" autocomplete="off"  readonly>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Type"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="modelType"[disableOptionCentering]="true">
+                                <mat-option *ngFor="let model of modelTypes" [value]="model.code">{{model.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Input Param"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Input Param'|translate" formControlName="inputParam" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Output Param"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Output Param'|translate" formControlName="outputParam" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-1">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <mat-select formControlName="isActive">
+                                <mat-option *ngFor="let data of status" [value]="data.code" disabled>{{data.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row block-3">
+                <div class="row-field-5" *ngIf="widgetDetail?.modelTypeId == 'MT-QRY'">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Query String"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <textarea matInput  rows="3" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Query String'|translate" formControlName="modelQueryString"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-5" *ngIf="widgetDetail?.modelTypeId == 'MT-API'">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model URL"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model URL'|translate" formControlName="modelUrl" autocomplete="off" >
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row-field-5">
+                    <div class="example-form">
+                        <mat-label class="ovi-lbl-text-size">{{"Model Map"|translate}}</mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <textarea matInput  rows="3" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Map'|translate" formControlName="modelMap"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </mat-tab>
+        <mat-tab  label="{{'Preview'|translate}}" *ngIf="showPreview" style="height: 100%;">
+            <div style="height: 100%;max-height: 460px">
+            <div style="height: 50%;overflow-x: auto;display: flex;flex-direction: column;align-items: center;">
+                <div style="height: 78%;width:100%;display: flex;flex-direction: row;justify-content: center;align-items: center;">
+                <textarea class="ovi-fnt-sze15" style="background: hsl(0deg 3% 22%);color: #e0e0e0;width: 85%;height:95%;resize: none;" id="myTextArea" cols=50 rows=25></textarea>
+                <mat-icon *ngIf="isHelp" style="color: #b3adad;margin-left: 10px;cursor: pointer;" class="material-icons-outlined" matTooltip="Help" (click)="openPage()" (keydown.enter)="fixClick()">info</mat-icon>
+                </div>
+                <button mat-button class="active-btn margin-r-1" style="margin-top: 2px !important;margin-right: -20px !important;" cdkFocusInitial [disabled]="chartUpdate" (click)="updateChart()">{{"Update Chart"|translate}}</button>
+            </div>
+            <div *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'chart'" style="width: 92%;display: flex;height: 50%;margin-left: 40px;overflow-x: auto;">
+                <canvas baseChart
+                  [type]="widgetDetails['chartType']" [datasets]="widgetDetails['datasets']"
+                  [labels]="widgetDetails['labels']" [colors]="widgetDetails['colors']"
+                  [options]="widgetDetails['options']" [plugins]="chartPlugins">
+                </canvas>
+            </div>
+            <div *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'card'" style="margin-top: 15px;height: 40%;width: 35%;display: block;margin-left: 34%;">
+                <mat-grid-list [cols]="widgetDetails['maxCol']" rowHeight="100%" [gutterSize]="'15px'">
+                  <mat-grid-tile 
+                    [colspan] = "widgetDetails['detail'][0].col" [rowspan]= "1" [ngStyle]="{background: widgetDetails['detail'][0]['bg-color']}" 
+                    style="border-radius: 10px;">
+                      <mat-grid-tile-header [ngStyle]="{background: 'transparent', color: widgetDetails['detail'][0]['color']}" class="ovi-fnt-sze18" style="justify-content: center;font-weight: 600">{{widgetDetails['detail'][0].title}}</mat-grid-tile-header>
+                      <div *ngIf = "widgetDetails['detail'][0].icon != ''">
+                        <div style="float: left">
+                          <img [src]="widgetDetails['detail'][0].icon" [width] = "widgetDetails['detail'][0].iconWidth" style="float: left; margin-right:20px;object-fit: contain;" alt="asset-icon">
+                        </div>
+                        <div style="float: right;font-weight: 800;padding: 10px 10px;" [ngStyle]="{'font-size': widgetDetails['detail'][0]['fontSize'], color: widgetDetails['detail'][0]['fontColor']}"> 
+                          {{widgetDetails['detail'][0].data}}
+                        </div>
+                      </div>                
+                      <div *ngIf = "widgetDetails['detail'][0].icon == ''" style="font-weight: 600;" [ngStyle]="{'font-size': widgetDetails['detail'][0]['fontSize'], color: widgetDetails['detail'][0]['fontColor']}">
+                        <div *ngFor = "let data of widgetDetails['detail'][0].data.data; let i = index"> 
+                          <span style="float: left;"> {{widgetDetails['detail'][0].data.label[i] }}  </span>
+                          <span style="float: right;"> &nbsp;&nbsp;&nbsp;&nbsp; : &nbsp;&nbsp;{{widgetDetails['detail'][0].data.data[i] }} </span>
+                        </div> 
+                      </div>
+                  </mat-grid-tile>
+                </mat-grid-list>
+              </div>
+              <div style="width: 100%; height: 13%;" *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'header'">
+                <div style="width: 70%; height: 100%;border-radius: 10px;margin-left: 17%;margin-top: 7%; display: flex; justify-content: flex-start; align-items: center;" [ngStyle]="{background: widgetDetails['detail'][0]['bg-color']}">
+                 
+                    <img *ngIf="widgetDetails['detail'][0].icon != ''" [src]="widgetDetails['detail'][0].icon" [width] = "widgetDetails['detail'][0].iconWidth" style="object-fit: contain; margin-left: 25px;" alt="asset-icon">
+                 
+                    <h1 style="font-weight: 200; margin-left: 25px;" [ngStyle]="{background: 'transparent',color: widgetDetails['detail'][0]['fontColor'], 'font-size': widgetDetails['detail'][0]['fontSize']}">{{widgetDetails['detail'][0].title}}</h1>
+ 
+                </div>
+              </div>
+              <div *ngIf="widgetDetails['show'] && widgetDetails['type'] == 'table'" style="width: 92%;height: 50%;margin-left: 35px;overflow-x: auto;">
+                <angular-table-component [tableData]="this.widgetDetails['table']" [columns]="this.widgetDetails['tableColumns']" [id]="'dashWid'" [tableStyle]="tableStyling" [styles] = "styles" [enableScroll]="true"></angular-table-component> 
+              </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+    </div>
+    <div class="input-footer-pad" style="padding-bottom: 10px;">
+        <button mat-button class="cancle-btn" mat-dialog-close *ngIf="selectedIndex != 0">{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" cdkFocusInitial *ngIf="selectedIndex == 0" 
+         appDebounceClick (debounceClick)="updateWidget()" [debounceTime]="300"  [disabled]="!widgetForm.dirty">{{"Update"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" cdkFocusInitial *ngIf="selectedIndex != 0" 
+         appDebounceClick (debounceClick)="saveWidget()" [debounceTime]="300"  [disabled] ="!isPreview">{{"Save"|translate}}</button>
+    </div>
+</div>

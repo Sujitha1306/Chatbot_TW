@@ -1,0 +1,327 @@
+<div class="ovi-pop-hdr ovi-font-family">
+        <div   style="text-overflow: ellipsis;">{{"View Profile"|translate}}</div>
+        <div *ngIf="!disableClose" mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+</div>
+<div style="display: flex;height: 100%;" class="ovi-font-family">  
+    <div style="height: 100%;min-width: 200px;background-color: rgb(237, 244, 247);">
+        <div style="display: flex;flex-direction: column;">
+            <div style="height: 120px;display: flex;align-items: center;">
+                <div style="display: flex ; width: 100%; justify-content: center;">
+                    <div class="profile-top-section">
+                        <div class="profile-image-wrapper">
+                            <img *ngIf="profileImage" [src]="profileImage" class="profile-image" alt="">
+                            <span *ngIf="!profileImage" class="material-icons accnt_circle">account_circle </span>
+                            <button mat-mini-fab class="profile-edit-btn" (click)="fileInput.click()">
+                                <mat-icon>photo_camera</mat-icon>
+                            </button>
+                            <input hidden #fileInput type="file" accept="image/png,image/jpeg" (change)="handleFileSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="height: 250px; display: flex; flex-direction: column;">
+                <div *ngFor="let item of headerItems" class="vwprfl-sid-br" [ngClass]="{ 'active-option': selectedOption === item.key }" (click)="selectOption(item.key)" (keydown.enter)="fixClick()">
+                    <img [src]="item.icon" alt="item" style="position: relative; left: 10px; width: 16px; height: 16px;" />
+                    <div class="ovi-fnt-sze14" style="position: relative; left: 20px; font-weight: 600; color: #5d5d5d;">
+                        {{ item.label }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="width: 100%;overflow: auto;">
+        <div *ngIf="sectionTitles[selectedOption]" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="ovi-fnt-sze18" style="font-weight: 600;color: #5d5d5d;position: relative; left: 10px;">
+                {{ sectionTitles[selectedOption] }}
+            </div>
+            <!-- <div mat-dialog-close style="cursor: pointer;color: #5d5d5d;"><mat-icon>highlight_off</mat-icon>
+            </div> -->
+        </div>
+        <div style="height: calc(100% - 100px);overflow: auto;">
+            <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="viewProfileForm" *ngIf="selectedOption == 'profile'">
+                <div class="ovi-row-gap">
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"First Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'First Name'|translate" formControlName="firstName"  [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="viewProfileForm.controls.firstName.invalid">
+                                    <span  [hidden]="!viewProfileForm.controls['firstName'].errors.required">{{"First name is required"|translate}}.</span>
+                                    <span  [hidden]="!viewProfileForm.controls['firstName'].errors.minlength">{{"Minimum allowed characters are 3"|translate}} </span>
+                                    <span  [hidden]="!viewProfileForm.controls['firstName'].errors.maxlength">{{"Maximmum allowed characters are 25"|translate}} </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Last Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" formControlName="lastName" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="viewProfileForm.controls.lastName.invalid">
+                                    <span  [hidden]="!viewProfileForm.controls['lastName'].errors.required">{{"Last name is required"|translate}}.</span>
+                                    <span  [hidden]="!viewProfileForm.controls['lastName'].errors.minlength"> {{"Minimum allowed character is 3"|translate}} </span>
+                                    <span  [hidden]="!viewProfileForm.controls['lastName'].errors.maxlength"> {{"Maximmum allowed characters are 25"|translate}} </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label  class="ovi-lbl-text-size">{{"Gender"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                 <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gender'|translate" formControlName="gender">
+                                <mat-option *ngFor="let gender of genderList" [value]="gender.code">
+                                    {{gender.value}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label  class="ovi-lbl-text-size">{{"Date of Birth"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input  matInput  [matDatepicker]="picker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Date of Birth'|translate" [max]="today"
+                                    formControlName="birthDate" [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                            <mat-datepicker #picker></mat-datepicker>
+                            <mat-error *ngIf="viewProfileForm.controls.birthDate.invalid">
+                                <span  [hidden]="!viewProfileForm.controls['birthDate'].errors.required">
+                                    {{"DOB is required Or Invalid DOB"|translate}}
+                                </span>
+                                <span  [hidden]="!viewProfileForm.controls['birthDate'].errors.pattern">
+                                    {{"Invalid DOB"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"E-mail "|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'E-mail'|translate" appTypeHit formControlName="email" [readonly]="this.userData?.email"
+                                  [errorStateMatcher]="matcher" autocomplete="off">
+                            <mat-error *ngIf="viewProfileForm.controls.email.invalid">
+                                <span [hidden]="!viewProfileForm.controls['email'].errors.required">
+                                    {{"E-mail is required."|translate}}
+                                </span>
+                                <span [hidden]="!viewProfileForm.controls['email'].errors.email">
+                                    {{"Invalid E-mail"|translate}}
+                                </span>
+                                <span [hidden]="!viewProfileForm.controls['email'].errors.emailExists">
+                                    {{"Sorry, E-mail already exists!"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                          <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="display: flex;gap: 10px" *ngIf="enablePhoneNumber === true">
+                          <div  style="width: 60px;">
+                            <mat-label class="ovi-lbl-text-size">{{"Code"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate"
+                                formControlName="countryCode" [matAutocomplete]="countryCode"  >
+                                <mat-autocomplete #countryCode="matAutocomplete"  panelWidth = "250px">
+                                    <mat-option *ngFor="let country of countryOptions | async" value={{country.code}} appTooltip [tooltipText]="country.value" placement="bottom">
+                                        {{country.code}} ({{country.value}})
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="viewProfileForm.controls.countryCode.invalid">
+                                    <span [hidden]="!viewProfileForm.controls['countryCode'].errors.required">
+                                        {{"code required"|translate}}.</span>
+                                    <span [hidden]="!viewProfileForm.controls['countryCode'].errors.pattern">{{"code (eg. +91)"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="width:100%">
+                            <mat-label class="ovi-lbl-text-size">{{"Phone No"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone No'|translate" formControlName="phoneNumber"
+                                    [errorStateMatcher]="matcher" autocomplete="off">
+                                <mat-error *ngIf="viewProfileForm.controls.phoneNumber.invalid">
+                                    <span [hidden]="!viewProfileForm.controls['phoneNumber'].errors.required">
+                                        {{"Phone number is required"|translate}}.
+                                    </span>
+                                    <span [hidden]="!viewProfileForm.controls['phoneNumber'].errors.pattern">
+                                        {{"Invalid Phone number"|translate}}
+                                    </span>
+                                    <span [hidden]="!viewProfileForm.controls['phoneNumber'].errors.isAlreadyExists">
+                                        {{"Sorry, Phone number already exists!"|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+
+                    <div *ngIf="enablePhoneNumber === false" class="ovi-row-two-clmn  ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Phone Number"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone Number'|translate" formControlName="phoneNumber" [errorStateMatcher]="matcher">
+                            <button  mat-icon-button matSuffix (click)="phoneNumber('enable')">
+                            <mat-icon class="ovi-fnt-sze25" style="padding-top: 0px;color: red;margin-top: -1px;padding-right:5px;">highlight_off</mat-icon>
+                            </button>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Address "|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                             <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Address'|translate" appTypeHit formControlName="address"  [errorStateMatcher]="matcher" autocomplete="off">
+                            <!-- <mat-error *ngIf="viewProfileForm.controls.address.invalid">
+                                    <span [hidden]="!viewProfileForm.controls['address'].errors.required">{{"Address is required"|translate}}.</span>
+                                    <span [hidden]="!viewProfileForm.controls['address'].errors.minlength"> {{"Minimum allowed character is 1"|translate}} </span>
+                                    <span [hidden]="!viewProfileForm.controls['address'].errors.maxlength"> {{"Maximmum allowed characters are 25"|translate}} </span>
+                            </mat-error> -->
+                        </mat-form-field>
+                    </div>
+
+                </div>
+            </div>
+            <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="viewProfileForm"
+                *ngIf="selectedOption == 'company'">
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Customer Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Customer'|translate"
+                                    (selectionChange)="getRegionList($event.value)" formControlName="customerName" [disabled]="true">
+                                <mat-option *ngFor="let cust_list of customerList" [value]="cust_list.id">
+                                    {{cust_list.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Region Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Region'|translate"
+                                    (selectionChange)="getFacilityList($event.value)" formControlName="regionName" [disabled]="true">
+                                <mat-option *ngFor="let region of regionList" [value]="region.id">
+                                    {{region.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Facility"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Facility Name'|translate"
+                                    formControlName="facilityName" [disabled]="true">
+                                <mat-option *ngFor="let Facility of facilityList" [value]="Facility.id">
+                                    {{Facility.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Role"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate"
+                                formControlName="roleIds" [disabled]="this.userData?.roles[0]?.roleCode !== 'RO-SU'">
+                                <mat-option *ngFor="let role of roleList" [value]="role.id">
+                                    {{role.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department'|translate" multiple
+                                    formControlName="department" >
+                                    <mat-option *ngFor="let dep of departmentListRes" [value]="dep.id" (click)="departmentinfo(dep.id)" (keydown.enter)="fixClick()">
+                                    {{dep.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="passwordForm"
+                *ngIf="selectedOption == 'password'">
+                <div class="ovi-row-gap">
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{forgetPassword ? 'OTP' : 'Old Password'}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" *ngIf="!forgetPassword">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Old Password'|translate"
+                                    [type]="hide ? 'text' : 'password'" required formControlName="oldPassword"
+                                    [errorStateMatcher]="matcher" autocomplete="new-Password">
+                            <span matSuffix (click)="hide = !hide" class="float-r" class="material-icons ovi-fnt-sze20" (keydown.enter)="fixClick()"
+                                    style="color: darkgray;position: relative; bottom: 5px; right: 8px;">{{hide ? 'vpn_key_off' : 'vpn_key'}}</span>
+                            <mat-error *ngIf="!passwordForm.controls.oldPassword.valid">
+                                <span 
+                                    [hidden]="!passwordForm.controls['oldPassword'].errors.required && !passwordForm.controls['oldPassword'].touched">{{"Password
+                                    is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                         <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline" *ngIf="forgetPassword">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'OTP'|translate"
+                                    [type]="hide ? 'text' : 'password'" required formControlName="otp"
+                                    [errorStateMatcher]="matcher" autocomplete="new-Password">
+                            <span matSuffix (click)="hide = !hide" class="float-r" class="material-icons ovi-fnt-sze20" (keydown.enter)="fixClick()"
+                                    style="color: darkgray;position: relative; bottom: 5px; right: 8px;">{{hide ? 'vpn_key_off' : 'vpn_key'}}</span>
+                            <mat-error *ngIf="!passwordForm.controls.otp.valid">
+                                <span 
+                                    [hidden]="!passwordForm.controls['otp'].errors.required && !passwordForm.controls['otp'].touched">{{"Password
+                                    is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                         <span class="ovi-fnt-sze11" style="color: #08BFE6;cursor: pointer;font-weight: 600;"  (click)="forgotPassword()">{{forgetPassword ? 'Go Back?' : 'Forgot Password?'}}</span>
+                    </div>
+                   
+                    
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"New Password"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'New Password'|translate" [type]="nwpwdhide ? 'text' : 'password'"
+                                    formControlName="newPassword" [errorStateMatcher]="matcher" maxlength="26">
+                                <span matSuffix (click)="nwpwdhide = !nwpwdhide" class="float-r" class="material-icons ovi-fnt-sze20" (keydown.enter)="fixClick()"
+                                    style="color: darkgray;position: relative; bottom: 5px; right: 8px;">{{nwpwdhide ? 'vpn_key_off' : 'vpn_key'}}</span>
+                            <mat-error *ngIf="passwordForm.controls['newPassword'].invalid && passwordForm.controls['newPassword'].touched">
+                                <span *ngIf="passwordForm.controls['newPassword'].errors?.required"> {{"New Password is required"|translate}}. </span>
+                                <span *ngIf="passwordForm.controls['newPassword'].errors?.pattern">
+                                    {{"Password must include letters, digits, and a symbol (8–12 chars)." | translate }}
+                                </span>
+                            </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Confirm New Password"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Confirm New Password'|translate" [type]="crfmnewpwdhide ? 'text' : 'password'"
+                                     type="password" formControlName="cnfrmNewPassword"
+                                    [errorStateMatcher]="matcher" maxlength="26">
+                                    <span matSuffix (click)="crfmnewpwdhide = !crfmnewpwdhide" class="float-r" class="material-icons ovi-fnt-sze20" (keydown.enter)="fixClick()"
+                                    style="color: darkgray;position: relative; bottom: 5px; right: 8px;">{{crfmnewpwdhide ? 'vpn_key_off' : 'vpn_key'}}</span>
+                                <mat-error 
+                                    *ngIf="passwordForm.controls['cnfrmNewPassword'].pristine || passwordForm.controls['cnfrmNewPassword'].errors?.MatchPassword">
+                                    {{"Password does not match"|translate}}</mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ovi-pop-ftr" style="justify-content: space-between !important;">
+            <div>
+                <!-- reset passord button code is commented here -->
+                <button mat-button *ngIf="selectedOption == 'password' && !disableClose" class="active-btn " appDebounceClick
+                (debounceClick)="rstPswrd(data)" [debounceTime]="300" cdkFocusInitial>{{"Reset Password"|translate}}</button>
+            </div>
+            <div>
+                <button *ngIf="!disableClose" mat-button class="cancle-btn" style="margin-right: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+                <button *ngIf="selectedOption != 'password'" mat-button  class="active-btn" appDebounceClick  (debounceClick)="editUsers(data)" [debounceTime]="300" cdkFocusInitial
+                    [disabled]="viewProfileForm.invalid">{{"Update"|translate}}</button>
+                <button *ngIf="selectedOption == 'password'" mat-button class="active-btn" appDebounceClick  (debounceClick)="updatePassword()" [debounceTime]="300"
+                    [disabled]="passwordForm.controls['cnfrmNewPassword'].pristine || passwordForm.controls['cnfrmNewPassword'].errors?.MatchPassword">{{"Update"|translate}}</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+
+
+

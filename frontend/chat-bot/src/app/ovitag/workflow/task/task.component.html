@@ -1,0 +1,63 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div class="manage-body">
+
+  <tw-header-new-component [type]="'new'" [component]="'task'" [permission]="null" [dateFilter]=" displayDate ? selectedDate : null" [toDateFilter]=" displayDate ? selectedToDate : null" [rowFilter]="null"
+     [manageAction]="showActions" [selectDropdown]="null" [selectedName]="true" [selectedView]="null" [multiDateEnable]="true"
+     [multiView]="false" (selectedViewAction)="null" [groupFilter]="groupFilter" [isDateClear]="false" [info]="countInfo" [excel]="isExcel"
+     (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+
+  <div *ngIf="selectedView == 'table'" class="tw-content1">
+    <div class="ovi-font-family" style="display: flex; justify-content: flex-end; height: 0px; position: relative; z-index: 1000; top: 1px; right: 8px;" *ngIf="selectedTabName === 'My Job'">
+      <div class="selection-container">
+          <span *ngFor="let data of chipFilter" class="chip-btn" [class.active]="chipSelectedFilter?.includes(data.code)"
+          (click)="false"  (keydown.enter)="fixClick()">   <!--disabled or readonly property is not available in span so updated click event false. -->
+          {{data.value | translate}}
+          <span *ngIf="data.count !== 0" style="font-weight: 600;">({{data.count}})</span>
+        </span>
+      </div>
+    </div>
+    <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+      <mat-tab *ngIf="activate_btn && activate_btn.includes('BT_TK_TKT')" label="{{'Ticket'|translate}}">
+        <ng-template mat-tab-label>{{ 'Ticket' | translate }}</ng-template>
+        <tw-table-component *ngIf="selectedTabName === 'Ticket'" [component]="'task'" [columns]="displayedColumns" [tableData]="tableData" [dateTimeColumns]="dateTimeColumns"
+          [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+          (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="null"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowDbClick]="false"
+          (rowDbClickAction)="createTask('modify', $event)" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'" ></tw-table-component>
+      </mat-tab>
+      <mat-tab *ngIf="activate_btn && activate_btn.includes('BT_TK_ROU')" label="{{'Routine'|translate}}" >
+          <ng-template mat-tab-label>{{ 'Routine' | translate }}</ng-template>
+         <tw-table-component *ngIf="selectedTabName === 'Routine'" [component]="'task'" [columns]="displayedColumns" [tableData]="tableData" [dateTimeColumns]="dateTimeColumns"
+          [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+          (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="null"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowDbClick]="false"
+          (rowDbClickAction)="createTask('modify', $event)" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'"></tw-table-component>
+      </mat-tab>
+      <mat-tab *ngIf="activate_btn && activate_btn.includes('BT_TA_WK')" label="{{'Work Order'|translate}}">
+          <ng-template mat-tab-label>{{ 'Work Order' | translate }}</ng-template>
+         <tw-table-component *ngIf="selectedTabName === 'Work Order'" [component]="'task'" [columns]="displayedColumns" [tableData]="tableData" [dateTimeColumns]="dateTimeColumns"
+          [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+          (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="null"
+          [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowDbClick]="false"
+          (rowDbClickAction)="createTask('modify', $event)" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'"></tw-table-component>
+      </mat-tab>
+      <mat-tab *ngIf="activate_btn && activate_btn.includes('BT_TA_JOB')"label="{{ 'My Job' | translate }}">
+      <ng-template mat-tab-label>{{ 'My Job' | translate }}<span *ngIf="selectedJobCount != null && selectedJobCount !== 0 ">({{ selectedJobCount }})</span></ng-template>
+        <tw-table-component *ngIf="selectedTabName === 'My Job'" [component]="'task'" [columns]="displayedColumns" [tableData]="tableData" [dateTimeColumns]="dateTimeColumns"
+        [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+        (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'requestId'" (rowClickAction)="null"
+        [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [rowDbClick]="false"
+        (rowDbClickAction)="createTask('modify', $event)" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'tab-table'"></tw-table-component>
+      </mat-tab>
+      <mat-tab *ngIf="activate_btn && activate_btn.includes('BT_TA_APM')" label="{{ 'Approval Matrix' | translate }}">
+        <ng-template mat-tab-label>{{ 'Approval Matrix' | translate }}</ng-template>
+        <tw-table-component [component]="'task-approval-Matrix'" [columns]="displayedColumns" [tableData]="tableData"
+          [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+          [dateTimeColumns]="dateTimeColumns" [rowId]="'requestIdentifier'" [rowClick]="true" (rowClickAction)="null"
+          [rowDbClick]="true" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue"
+          [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]">
+        </tw-table-component>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

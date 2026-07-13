@@ -1,0 +1,392 @@
+<div class="container-fluid ovi-font-family" *ngIf="!isPatient"  style="overflow: hidden;" [ngClass]="customerName != 'aig' ? customerName != 'kch' ? 'login-content-new' : 'login-content-kings' : 'login-content-aig'">
+    <div class="block-1 tw-form-header">
+        <div class="logo-box-1 ovilogo" *ngIf = "customerName == 'max'">
+            <div style="display: flex;margin-left: 30%;">
+                <img src="/assets/Alert/common_icons/new-logo.png" style="width: 85%;margin-top: 50%;" alt="ovi-logo">
+            </div>
+        </div>
+        <div class="logo-box-1 ovilogo" *ngIf = "customerName == 'sishya'">
+          <div style="display: flex;margin-left: 30%;">
+              <img src="/assets/Alert/common_icons/sishya-cc-logo.png" style="width: 85%;margin-top: 50%;" alt="ovi-logo">
+          </div>
+      </div>
+      <div class="logo-box-1 ovilogo" *ngIf = "customerName == 'manipal'">
+        <div style="display: flex;margin-left: 16%;">
+            <img src="/assets/Alert/common_icons/manipal-logo.png"   style="width: 100%;margin-top: 24%;" alt="ovi-logo">     
+        </div>
+       </div>
+        <div class="logo-box-1 ovilogo" *ngIf = "customerName == 'tw' || customerName == 'apollo'">
+            <div class="project-name">
+                <img src="/assets/Alert/common_icons/ovitag-new-c.png" class="ovi-logo-new" alt="ovi-logo">
+            </div>
+            <div class="project-name">
+              <div *ngIf="env_key != 'dev' && env_key != 'demo' && env_key != 'twlive'" class="login-header-new">
+                  <span>{{"Healthcare"|translate}}</span>
+                </div>
+            </div>
+        </div>
+        <div class="logo-box-1 ovilogo" *ngIf = "customerName == 'kyn'">
+            <div class="project-name" style="margin-top: 35%;">
+                <div class="login-header-iot">{{"System Administration Control Panel"|translate}}</div>
+            </div>
+        </div>
+        <div class="logo-box-1 ovilogo" *ngIf = "customerName == 'acehazmat'">
+          <div class="project-name" style="margin-top: 22%; justify-content: center;">
+              <div class="login-header-iot" style="display: flex; flex-direction: column; gap: 10px">
+                <div class="login-header-iot-txt">{{"AceHazmat"|translate}}</div>
+                <div class="login-header-iot-sub-txt">{{"ELECTRONIC"|translate}}</div>
+                <div class="login-header-iot-sub-txt">{{"SIMULATION"|translate}}</div>
+                <div class="login-header-iot-sub-txt">{{"TRAINING"|translate}}</div>
+                <div class="login-header-iot-txt">{{"for HAZMAT/CBRNe"|translate}}</div>
+              </div>
+          </div>
+      </div>
+    </div>
+    <div class="block-2 tw-form-content" style="display:inline-flex;">
+        <div *ngIf="showMfa" class="login-body-new">
+          <app-mfa
+            [username]="mfaUsername"
+            [isConfigured]="mfaIsConfigured"
+            [otpAuthUrl]="mfaOtpAuthUrl"
+            [secret]="mfaSecret"
+            (verified)="onMfaVerified()"
+            (cancelled)="onMfaCancelled()">
+          </app-mfa>
+        </div>
+        <div *ngIf="loginFlag" class="login-body-new">
+            <form class="login-section" [formGroup]="loginForm" (ngSubmit)="onSubmit();" novalidate autocomplete="off">
+                <div class="text-center"  [ngStyle]="{'height': env_key === 'dev' ?  'calc(100% - 70px)' : 'calc(100% - 70px)'}" >
+                  <div *ngIf = "customerName == 'max'">
+                    <img src="/assets/Alert/common_icons/max-logo.png" class="track-logo-new" alt="tw-logo"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'aig'">
+                    <img src="/assets/Alert/common_icons/aig-logo.png" style="width: 50%;" alt="tw-logo"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'kch'" style="padding-top: 20px;">
+                    <img src="/assets/Alert/common_icons/kings-logo.svg" style="width: 75%;" alt="tw-logo"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'kyn'">
+                    <img src="/assets/Alert/common_icons/kyn-logo.png" class="track-logo-new" style="padding: 0px;" alt="tw-logo"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'tw' || customerName == 'apollo'">
+                    <img src="/assets/Alert/common_icons/new-logo.png" class="track-logo-new" alt="tw-logo"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'sishya'">
+                    <img src="/assets/Alert/common_icons/sishya-new-logo.png" class="track-logo-new" alt="tw-logo" style="padding-top: 10%;padding-bottom: 0%;"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'acehazmat'">
+                    <img src="../../assets/Alert/common_icons/FINAL-hazmat.png" class="track-logo-new" alt="tw-logo" style="margin-top: 10%;padding: 0%;"><br>
+                  </div>
+                  <div *ngIf = "customerName == 'manipal'">
+                    <img src="../../assets/Alert/common_icons/manipal-login.png"  class="track-logo-new" alt="tw-logo" style="margin-top: 10%;padding: 0%;"><br>
+                  </div>
+                <div style="padding-top: 5%;">
+                   <p class="login-text-new" style="padding:0 10%;display: flex;">{{'Please login to your account'|translate}}</p>
+                    <mat-form-field class="login-input-new"  appearance="outline">
+                      <mat-label >{{"Username"|translate}}</mat-label>
+                      <input matInput  autofocus="autofocus" #username
+                        formControlName="username" [errorStateMatcher]="matcher" autocomplete="off">
+                         <span  matSuffix class="material-icons" style="color: darkgray;">person</span>
+                      <mat-error *ngIf="!loginForm.controls.username.valid">
+                        <span
+                        [hidden]="!loginForm.controls['username'].errors.required && !loginForm.controls['username'].touched">{{"Username is required."|translate}}</span>
+                      </mat-error>
+                      <mat-error *ngIf="loginForm.controls.username.invalid">
+                        <span [hidden]="!loginForm.controls['username'].errors.pattern">{{"Invalid Email Id!"|translate}}</span>
+                      </mat-error>
+                    </mat-form-field><br>
+
+                    <mat-form-field class="login-input-new"  appearance="outline">
+                      <mat-label >{{"Password"|translate}}</mat-label>
+                        <input matInput  [type]="hide ? 'password' : 'text'"
+                          formControlName="password" [errorStateMatcher]="matcher" maxlength="26">
+                          <span matSuffix (click)="hide = !hide" class="float-r" class="material-icons" style="color: darkgray;"  tabindex="0"
+                           role="button" (keydown.enter)="hide = !hide;"  (keydown.space)="hide = !hide;">{{hide ? 'vpn_key_off' : 'vpn_key'}}</span>
+                        <mat-error *ngIf="loginForm.controls.password.invalid">
+                          <span [hidden]="!loginForm.controls['password'].errors.pattern">{{"Password is required"| translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+
+                    <!-- // Temporarily H I D D E N -->
+                    <div class="forgot-input-new"><a
+                        (click)="(loginForm.controls.username.value != null && loginForm.controls.username.value != '') ? forgotPasswordDialog() : false"
+                        style="cursor: default;" class="hvr"><small
+                        [class]="(loginForm.controls.username.value != null && loginForm.controls.username.value != '') ? 'fpwd-styl' : 'disableDiv' ">{{"Forgot Password?"|translate}}</small></a></div>
+                </div>
+                <div class="cls-hgt-new" style="padding: 0 10%;">
+                    <button mat-button class="active-btn btn-mrgn ovi-prmry-bg-clr" style="display:flex; border-radius: 20px;"
+                    [disabled]="(loading || !this.loginForm.controls.username.value || !this.loginForm.controls.password.value) && this.notAutofilled">{{"LOGIN"|translate}}</button>
+                    <mat-spinner *ngIf=loading diameter="40" strokeWidth="5" class="spnr-styl">loading</mat-spinner>
+                    <app-error-msg></app-error-msg>
+                </div>
+                </div>
+                <div class="login-footer-new">
+                  <!-- NOSONAR -->
+                    <!-- <div *ngIf="env_key === 'dev' || env_key === 'demo'" class="lang-nav">
+                        <ng-template ngFor let-lang [ngForOf]="languages">
+                        <span class="line" *ngIf="lang.code !== localeId">
+                            <a class="button" (click)="switchLanguage(lang.code)" href="/{{lang.code}}/"
+                            [matTooltip]=lang.tooltip>{{lang.label}}</a> </span>
+                        <span class="line" *ngIf="lang.code === localeId">{{lang.label}} </span>
+                        </ng-template>
+                    </div> -->
+                    
+                    <div *ngIf="env_key === 'dev' || env_key === 'demo' || env_key === 'twlive'||env_key === 'stage'" class="lang-nav">
+                      <ng-template ngFor let-lang [ngForOf]="languages">
+                        <span class="line">
+                          <a class="button" (click)="changeLanguage(lang.code)" [ngStyle]="{'color': selectedLang === lang.code ?  '' : 'var(--primary-bg-color)'}">{{lang.label}}</a> 
+                        </span>
+                      </ng-template>
+                  </div>
+                    <div class="text-center footer-class-new" *ngIf="footerBar">
+                        <span class="spn-styl-1">
+                          <span>&copy; <small>{{currentYear}}&nbsp;{{customerName != 'kyn' ? 'Trackerwave' : 'Kynhood Technologies private Limited'}}</small></span>
+                        <span class="bar">|</span>
+                        <!-- <span><a target="_blank" href="/assets/help/common/index.htm"><small style=" color:grey;">{{"Help"|translate}}</small></a></span> -->
+                        <span class="bar">|</span><span><a (click)="privacyDialog();"><small style=" color:grey;">{{"Privacy Policy"|translate}}</small></a></span>
+                        <span class="bar">|</span><span><a (click)="termsDialog();"><small style=" color:grey;">{{"Terms"|translate}}</small></a></span>
+                        <span class="bar">|</span><span><a (click)="supportDialog();"><small style=" color:grey;">{{"Support"|translate}}</small></a></span>
+                        <!-- NOSONAR 
+                         <span class="bar">|</span><span><a ><small style=" color:grey;">{{appVersion}}</small></a></span> -->
+                        </span>
+                    </div>
+                </div>
+            </form>   
+        </div>
+        <div *ngIf="forgetPassword" class="login-body-new">
+            <form class="login-section" [formGroup]="forgetForm" novalidate>
+              <div class="text-center" style="height: calc(100% - 20px)" >
+                <img src="/assets/Alert/common_icons/new-logo.png" class="track-logo-new" alt="tw-logo"><br>
+                <p class="fgt-Pwd" >{{"Forgot Password"|translate}}</p>
+                <div>
+                  <mat-form-field class="login-input-new" appearance="outline" style="padding:0px">
+                    <mat-label class="ovi-lbl-text-size" >{{"OTP"|translate}}</mat-label>
+                    <input matInput formControlName="otp" [errorStateMatcher]="matcher" autocomplete="off">
+                    <mat-error *ngIf="!forgetForm.controls.otp.valid">
+                      <span
+                        [hidden]="!forgetForm.controls['otp'].errors.required && !forgetForm.controls['otp'].touched">{{"OTP
+                        is required."|translate}}</span>
+                    </mat-error>
+                  </mat-form-field><br>
+
+                  <mat-form-field class="login-input-new" appearance="outline" style="padding:0px">
+                    <mat-label class="ovi-lbl-text-size">{{"New Password"|translate}}</mat-label>
+                    <input matInput [type]="hideNew ? 'password' : 'text'"  formControlName="newPassword"
+                      [errorStateMatcher]="matcher" maxlength="26" autocomplete="new-password"/>
+                    <span matSuffix (click)="hideNew = !hideNew" class="float-r" class="material-icons" style="color: darkgray;"
+                      role="button" (keydown.enter)="hideNew = !hideNew;"  (keydown.space)="hideNew = !hideNew;">{{hideNew ? 'vpn_key_off' : 'vpn_key'}}</span>
+                    <mat-error *ngIf="forgetForm.controls['newPassword'].invalid">{{"Password is required"|translate}}</mat-error>
+                  </mat-form-field><br>
+
+                  <mat-form-field class="login-input-new" appearance="outline" style="padding:0px">
+                    <mat-label class="ovi-lbl-text-size" >{{"Confirm New Password"|translate}}</mat-label>
+                    <input matInput [type]="hideConfirm ? 'password' : 'text'"
+                      formControlName="cnfrmNewPassword" [errorStateMatcher]="matcher" maxlength="26" autocomplete="off"/>
+                    <span matSuffix (click)="hideConfirm = !hideConfirm" class="float-r" class="material-icons" style="color: darkgray;"
+                      role="button" (keydown.enter)="hideConfirm = !hideConfirm;"  (keydown.space)="hideConfirm = !hideConfirm;">{{hideConfirm ? 'vpn_key_off' : 'vpn_key'}}</span>
+                    <mat-error
+                      *ngIf="forgetForm.controls['cnfrmNewPassword'].pristine || forgetForm.controls['cnfrmNewPassword'].errors?.MatchPassword">
+                      {{"Password does not match"|translate}}</mat-error>
+                  </mat-form-field>
+                </div>
+                <div style="display: flex;padding: 0 9%; align-items: baseline;justify-content: space-between;">
+                <div class="reset-new">
+                  <button mat-button class="active-btn btn-mrgn" style="border-radius: 20px;"
+                    (click)="passwordForget()"
+                    [disabled]="forgetForm.controls['cnfrmNewPassword'].pristine || forgetForm.controls['cnfrmNewPassword'].errors?.MatchPassword">{{"Reset
+                    Password"|translate}}</button>
+                  <mat-spinner *ngIf=loading diameter="40" strokeWidth="5" class="spnr-styl">loading</mat-spinner>
+                  <app-error-msg></app-error-msg>
+                  </div>
+                  <div class="login-dialog-input" ><a (click)="loginDialog()" class="hvr"><small
+                    class="fpwd-styl">{{"Back to login page?"|translate}}</small></a>
+              </div>
+                </div>
+              </div>  
+                              <div class="login-footer-new" style="margin-top: 2px;">
+                <div class="text-center footer-class-new" *ngIf="footerBar">
+                  <span class="spn-styl-1">
+                    <span>&copy; <small>{{currentYear}}&nbsp;{{customerName != 'kyn' ? 'Trackerwave' : 'Kynhood Technologies private Limited'}}</small></span>
+                    <span class="bar">|</span>
+                    <!-- <span><a target="_blank" href="/assets/help/common/index.htm"><small>{{"Help"|translate}}</small></a></span> -->
+                    <span class="bar">|</span><span><a (click)="privacyDialog();"><small>{{"Privacy Policy"|translate}}</small></a></span>
+                    <span class="bar">|</span><span><a (click)="termsDialog();"><small>{{"Terms"|translate}}</small></a></span>
+                    <span class="bar">|</span><span><a (click)="supportDialog();"><small>{{"Support"|translate}}</small></a></span>
+                  </span>
+                </div>
+              </div>
+            </form>
+
+        </div>
+        <div *ngIf="resetPassword" class="login-body-new">
+            <form class="login-section" [formGroup]="resetForm" #myform="ng-form" novalidate>
+              <div class="text-center">
+                <img src="/assets/Alert/common_icons/new-logo.png" class="track-logo-new" alt="tw-logo"><br>
+                <p class="login-text-new">{{"Password Expired"|translate}}</p>
+                <div style="padding-bottom: 5%;">
+                  <mat-form-field class="login-input-new">
+                    <input matInput [type]="hide ? 'password' : 'text'" placeholder="{{'Old Password'|translate}}"
+                      formControlName="oldPassword" [errorStateMatcher]="matcher" autocomplete="new-password">
+                    <mat-icon matSuffix (click)="hide = !hide" class="float-r" tabindex="0" role="button" 
+                    (keydown.enter)="hide = !hide;"  (keydown.space)="hide = !hide;">{{hide ? 'visibility_off' : 'visibility'}}
+                    </mat-icon>
+                    <mat-error *ngIf="!resetForm.controls.oldPassword.valid">
+                      <span
+                        [hidden]="!resetForm.controls['oldPassword'].errors.required && !resetForm.controls['oldPassword'].touched">{{"Old
+                        Password is required."|translate}}</span>
+                    </mat-error>
+                  </mat-form-field><br>
+
+                  <mat-form-field class="login-input-new">
+                    <input matInput type="password" placeholder="{{'New Password'|translate}}" formControlName="newPassword"
+                      [errorStateMatcher]="matcher" maxlength="26" autocomplete="new-password">
+                    <mat-error *ngIf="resetForm.controls['newPassword'].invalid">{{"Password is required"|translate}}</mat-error>
+                  </mat-form-field><br>
+
+                  <mat-form-field class="login-input-new">
+                    <input matInput type="password" required placeholder="{{'Confirm New Password'|translate}}"
+                      formControlName="cnfrmNewPassword" [errorStateMatcher]="matcher" maxlength="26">
+                    <mat-error
+                      *ngIf="resetForm.controls['cnfrmNewPassword'].pristine || resetForm.controls['cnfrmNewPassword'].errors?.MatchPassword">
+                      {{"Password does not match"|translate}}</mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="reset-new">
+                  <button mat-button class="active-btn btn-mrgn ovi-prmry-bg-clr" style="padding: 0px 5px 0px 5px;"
+                    (click)="passwordReset()"
+                    [disabled]="resetForm.controls['cnfrmNewPassword'].pristine || resetForm.controls['cnfrmNewPassword'].errors?.MatchPassword">{{"Reset
+                    Password"|translate}}</button>
+                  <mat-spinner *ngIf=loading diameter="40" strokeWidth="5" class="spnr-styl">loading</mat-spinner>
+                  <app-error-msg></app-error-msg>
+                </div>
+              </div>
+              <div class="login-dialog-input" style="text-align: center;margin-top: 15px !important; "><a (click)="loginDialog()" class="hvr"><small
+                    class="fpwd-styl" >{{"Back to login page?"|translate}}</small></a>
+              </div>
+              <div class="login-footer-new" style="margin-top: 60px;">
+                <div class="text-center footer-class-new" *ngIf="footerBar">
+                  <span class="spn-styl-1">
+                    <span>&copy; <small>{{currentYear}}&nbsp;{{customerName != 'kyn' ? 'Trackerwave' : 'Kynhood Technologies private Limited'}}</small></span>
+                    <span class="bar">|</span>
+                    <!-- <span><a target="_blank" href="/assets/help/common/index.htm"><small style=" color:grey;">{{"Help"|translate}}</small></a></span> -->
+                    <span class="bar">|</span><span><a (click)="privacyDialog();"><small  style=" color:grey;">{{"Privacy Policy"|translate}}</small></a></span>
+                    <span class="bar">|</span><span><a (click)="termsDialog();"><small  style=" color:grey;">{{"Terms"|translate}}</small></a></span>
+                    <span class="bar">|</span><span><a (click)="supportDialog();"><small  style=" color:grey;">{{"Support"|translate}}</small></a></span>
+                  </span>
+                </div>
+              </div>
+            </form>
+        </div>
+        <div class="login-line-iot"></div>
+    </div>
+</div>
+
+<!-- -----------------------------pwa login------------------------------------------------------------ -->
+
+<div class="container-fluid ovi-font-family" *ngIf="isPatient" style="overflow: hidden;height: 100%;">
+  <div class="block-1" style="overflow: auto;height: calc(100% - 60px);">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit();" novalidate autocomplete="off">
+      <div class="mob-img-size">
+        <div *ngIf="customerName == 'tw'" style="display: flex;justify-content: center; margin-bottom: 10px;">
+          <img src="/assets/Alert/common_icons/kpj-logo.webp" style="max-width: 65%;" alt="tw-logo"><br>
+        </div>
+        <div *ngIf="customerName == 'apollo'" style="display: flex;justify-content: center; margin-bottom: 10px;">
+          <img src="/assets/Alert/common_icons/apollo.png" style="padding-top: 15px; width: 80px;" alt="tw-logo"><br>
+        </div>
+        <div *ngIf="customerName == 'max'" style="display: flex;justify-content: center; margin-bottom: 10px;">
+          <img src="/assets/Alert/common_icons/max-logo.png" style="max-width: 65%;" alt="tw-logo"><br>
+        </div>
+        <div *ngIf="customerName == 'medanta'" style="display: flex;justify-content: center; margin-bottom: 10px;">
+          <img src="/assets/Alert/common_icons/medanta-logo.jpg" style="max-width: 65%;" alt="tw-logo"><br>
+        </div>
+        <p class="login-pwa-pwd">Powered By</p>
+        <div style="display: flex;justify-content: center;">
+          <img src="/assets/Alert/common_icons/new-logo.png" style="width: 50%;height:50%;" alt="ovi-logo">
+        </div>
+      </div>
+      <div style="display: flex;flex-direction: column;align-items: center;" *ngIf="!sendotp">
+        <mat-form-field class="inputtext ovi-font-family login-pwa-lbl" >
+          <mat-label>{{"Patient Name"|translate}}</mat-label>
+          <span matPrefix class="material-icons" style="color: black;">person</span>
+          <input matInput  placeholder="{{'Patient Name'|translate}}"  formControlName="patientName" autocomplete="off">
+        </mat-form-field><br>
+        <mat-form-field class="inputtext ovi-font-family login-pwa-lbl">
+          <mat-label>{{"Mobile No"|translate}}</mat-label>
+          <input matInput placeholder="{{'Mobile No'|translate}}"   formControlName="mobileNo">
+          <mat-error *ngIf="!loginForm.controls.mobileNo.valid">
+            <span [hidden]="!loginForm.controls['mobileNo'].errors.required">
+              {{"Mobile number is required."|translate}}
+            </span>
+            <span [hidden]="!loginForm.controls['mobileNo'].errors.pattern">
+              {{"Invalid Mobile number"|translate}}
+          </span>
+          </mat-error>
+            <span matPrefix class="material-icons">send_to_mobile</span>   
+        </mat-form-field>
+         <!-- // NOSONAR
+           <div style="width: 50%;font-size: 15px;"><a style="cursor: default;"class="hvr"><small>Forgot Username / Password?</small></a></div>-->
+      </div>
+      <div style="display: flex;flex-direction: column;align-items: center;padding-top: 30%;" *ngIf="sendotp && false">
+        <mat-form-field class="inputtext ovi-font-family login-pwa-lbl">
+          <mat-label>{{"Verify OTP"|translate}}</mat-label>
+          <input matInput placeholder="{{'Verify OTP'|translate}}" type="number" formControlName="verifyOtp">
+        </mat-form-field>
+      </div>
+      <div *ngIf="captchaShow" style="display: flex;justify-content: center;align-items: center;">
+        <ngx-captcha class="captcha" [config]="captchaConfig"></ngx-captcha>
+      </div>
+      <div class="act-space-ttl">
+        <div class="box-14">
+          <span class="act-space-around">
+            <mat-checkbox formControlName="autoComplete"></mat-checkbox>
+              <span> {{"I hereby consent to the sharing of my name and phone number with Trackerwave and the concerned hospital solely for facilitating the provision of wheelchair services."|translate}}
+               </span>
+                <!--// NOSONAR 
+                 <div style="display: flex;flex-direction: column;">
+                  <span> (i) used solely for the purpose stated above.</span>
+                  <span> (ii) retained for 24 hours, and </span>
+                  <span> (iii) handled in compliance with applicable privacy laws.</span>
+                </div> -->
+          </span>
+        </div>
+      </div>
+      <div class="cls-hgt-new" style="display: flex;justify-content: center;padding-top: 2%;gap: 5px;" >
+        <button mat-button class="active-btn btn-mrgn ovi-prmry-bg-clr" style="display:flex;border-radius: 20px;"
+         [disabled]="!loginForm.controls.autoComplete.value || !captchaStatus || loginForm.controls.mobileNo.invalid" (click)="getGuestInfo(params['gtk'])">{{"Login"|translate}}</button>
+          <!-- // NOSONAR 
+        <button mat-button class="active-btn btn-mrgn" *ngIf="!sendotp"
+          style="background-color: #1e8fc8;display:flex" [disabled]="loginForm.controls.mobileNo.invalid || !loginForm.controls.autoComplete.value" (click)="Sendbutton('sent')">Send-OTP</button>
+          <button mat-button class="active-btn btn-mrgn" *ngIf="sendotp"
+          style="background-color: #1e8fc8;display:flex"  [disabled]="loginForm.controls.verifyOtp.invalid" (click)="VerifyOTP()">Verify OTP</button>
+          <button mat-button class="active-btn btn-mrgn" *ngIf="sendotp"
+          style="background-color: #1e8fc8;display:flex" [disabled]="isResendDisabled" (click)="Sendbutton('resent')">Resend OTP</button> -->
+      </div>
+      <div *ngIf="isResendDisabled && sendotp && false" class="mob-timer">
+        {{"Resend OTP in"|translate}} {{ resendTimer | number:'2.0' }} seconds
+      </div>
+      <mat-spinner *ngIf=loading diameter="40" strokeWidth="5" class="spnr-styl">loading</mat-spinner>
+      <app-error-msg></app-error-msg>
+    </form>
+  </div>
+  <div class="login-footer-new">
+    <div class="text-center footer-class-new" style="display: flex;justify-content: center;align-items: center;">
+    <ng-template ngFor let-lang [ngForOf]="languages">
+      <span class="line">
+        <a class="button" (click)="changeLanguage(lang.code)"
+          [ngStyle]="{'color': selectedLang === lang.code ?  '' : 'blue'}"  style="margin-right: 10px;">{{lang.label}}</a>
+      </span>
+    </ng-template>
+    </div>
+    <div class="text-center footer-class-new">
+      <span><a (click)="termsDialog();"><small style=" color:black;">{{"Terms and Conditions"|translate}}</small></a></span>
+      <span class="bar">|</span><span><a (click)="privacyDialog();"><small style=" color:black;">{{"Privacy
+            Policy"|translate}}</small></a></span>
+    </div>
+    <div class="text-center footer-class-new">
+      <span class="spn-styl-1">
+        <span>&copy; <small>{{currentYear}}&nbsp;{{customerName != 'kyn' ? 'Trackerwave' : 'Kynhood Technologies
+            private Limited'}}</small></span>
+      </span>
+    </div>
+  </div>
+</div>

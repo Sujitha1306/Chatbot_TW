@@ -1,0 +1,32 @@
+<div class="mat-elevation-z8">
+    <div style="margin: 10px 0px;overflow-x: auto;width: 100%;">
+        <table mat-table [dataSource]="dataSource" style="table-layout: fixed;width: 100%;">
+            <ng-container *ngFor="let column of tableColumns" [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header" style="background-color: #EEEFF1;"><span *ngIf="column!='action'">{{ column }}</span></th>
+                <td mat-cell *matCellDef="let element;let i = index">
+                  <span *ngIf="column!='action'">{{ element[column] }}</span>
+                  <span *ngIf="column=='action'">
+                    <span style="float: left;margin-right: 2px;" *ngIf="action.edit">
+                        <button mat-button appDebounceClick class="ovi-fnt-sze10"
+                            style="border-radius: 3px; background: #65a95b; color: white; line-height: 22px; padding: 0 5px; min-width: 40px;"
+                            (click)="actionTrigger('edit', element,i)" [debounceTime]="300" cdkFocusInitial>
+                            {{"Edit"|translate}}
+                        </button>
+                    </span>
+                    <span style="float: left;" *ngIf="action.delete">
+                        <button mat-button appDebounceClick class="ovi-fnt-sze10"
+                            style="border-radius: 3px; background: #f33c3c; color: white; line-height: 22px; padding: 0 5px; min-width: 40px;"
+                            (click)="actionTrigger('delete', element,i)" [debounceTime]="300" cdkFocusInitial>
+                            {{"Delete"|translate}}
+                        </button>
+                    </span>
+                  </span>
+                  
+                </td>
+              </ng-container>
+            <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+            <tr mat-row *matRowDef="let row; let i = index; columns: tableColumns;"></tr>
+        </table>
+    </div>
+    <mat-paginator class="ovi-formtbl-matpag" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+</div>

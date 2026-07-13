@@ -1,0 +1,50 @@
+<div class="mat-tab-content" [formGroup]="userPoolLocationForm">
+    <div class="ovi-row-gap ">
+        <div *ngIf="type === 'location'" class="ovi-row-two-clmn  ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{"User Pool Location"|translate}} </mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search location'|translate"
+                id="location" appTypeHit (typeHit)="searchLocationlist($event)" [matAutocomplete]="autoLocation" formControlName="locationId">
+                <mat-autocomplete autoActiveFirstOption
+                [displayWith]="this.locationEnabled === true ? getLocationList.bind(locationList) : ''" #autoLocation="matAutocomplete">
+                    <mat-option *ngFor="let list of locationList" [value]="list.id">
+                        <div class="tot-wid-styl">
+                            {{list.fullName}}</div>
+                    </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="userPoolLocationForm.controls.locationId.errors?.invalidLocation">
+                {{ 'Please select a valid location name from the list.' | translate }}
+                </mat-error>
+            </mat-form-field>
+        </div>
+        <div *ngIf="type === 'user'" class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+            <mat-label class="ovi-lbl-text-size">{{ "Department" | translate }}</mat-label>
+            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search department'|translate"
+                id="department" appTypeHit (typeHit)="searchDepartmentDetails($event)" [matAutocomplete]="autoDepartment" formControlName="departmentId"/>
+                <mat-autocomplete autoActiveFirstOption
+                 [displayWith]="this.departmentEnabled === true ? getLocationList.bind(departmentList) : ''" #autoDepartment="matAutocomplete">
+                <mat-option *ngFor="let list of departmentList" [value]="list.id">
+                    <div class="tot-wid-styl">{{ list.name }}</div>
+                </mat-option>
+                </mat-autocomplete>
+                <mat-error *ngIf="userPoolLocationForm.controls.departmentId.errors?.invalidDepartment" class="error-txt">
+                {{ "Please select value from the option" | translate }}
+                </mat-error>
+            </mat-form-field>
+        </div>
+        <div class="ovi-row-two-clmn " style="margin-top: 25px;">
+                <button mat-button [disabled]="!userPoolLocationForm.valid"
+                class="active-btn" appDebounceClick (debounceClick)="postData()"
+                [debounceTime]="300" cdkFocusInitial >{{"Add"|translate}}</button>
+        </div>
+    </div>
+    <div *ngIf="userPoolSource.length > 0 && showTable "  style="padding: 10px 10px 10px 0px;" >
+    <angular-table-component [id]="'userPool'" [type]="'ng-table'" [tableData]="userPoolSource"
+    [columns]="displayedColumns"
+    [columnData]="columnData"
+    (triggerAction)="triggerAction($event)">
+    </angular-table-component>
+    </div>
+    <div *ngIf="userPoolSource.length === 0" class ="no-shift">{{"No records Found"|translate}}</div>
+</div>

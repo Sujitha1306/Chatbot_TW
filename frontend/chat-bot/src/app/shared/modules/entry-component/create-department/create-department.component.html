@@ -1,0 +1,71 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Department"| translate}}</div>
+        <div *ngIf="data">{{"Modify Department" | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [ngStyle]="{'height': selectedTabIndex != 1 ? 
+    'calc(100% - 136px)' : 'calc(100% - 95px)'}" style="overflow: auto;">
+        <mat-tab-group (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedTabIndex">
+            <mat-tab label="Details">
+                <ng-template  mat-tab-label>{{"Details"|translate}}</ng-template>
+                <div class="ovi-row-gap" style="overflow: hidden;" [formGroup]="departInfoForm">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Department Name"|translate}}<span
+                                class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department Name'|translate" formControlName="departmentName" autocomplete="off" >
+                            <mat-error *ngIf="departInfoForm.controls.departmentName.invalid" class="error-txt-1">
+                                <span [hidden]="!departInfoForm.controls['departmentName'].errors.required">
+                                    {{"Department Name is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Source Id"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Source Id'|translate" formControlName="sourceId" autocomplete="off">
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{"Source Type"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Source Type'|translate" formControlName="sourceType" autocomplete="off">
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{'Department Type' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department Type'|translate"
+                                formControlName="departmentType">
+                                <mat-option *ngFor="let list of departmentlist" [value]="list.code">
+                                    <div class="tot-wid-styl">{{list.value}}</div>
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{'Role List' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role List'|translate"
+                                formControlName="departmentLink" matSelectSearch multiple>
+                                <mat-option *ngFor="let Role of RoleList" [value]="Role.id">
+                                    {{Role.name}}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="data" label="Group Mapping">
+                <ng-template mat-tab-label >{{"Group Mapping"|translate}}</ng-template>
+                <app-resource-map [inputData]="mapData"></app-resource-map>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div *ngIf="selectedTabIndex != 1" class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data" mat-button class="active-btn" appDebounceClick (debounceClick)="savePatient()" [debounceTime]="300">{{"Save"|translate}}</button>
+        <button *ngIf="data" mat-button class="active-btn" appDebounceClick (debounceClick)="updatePatient()" [debounceTime]="300">{{"Update"|translate}}</button>
+    </div>
+</div>

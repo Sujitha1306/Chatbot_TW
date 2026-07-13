@@ -1,0 +1,320 @@
+<ng-container *ngIf="!loading && assetOverviewData">
+    <div class="input-component-holder ovi-font-family" style="height:100%;width:100%;overflow:hidden">
+      <div class="ovi-pop-hdr">
+        <div>{{'Asset Overview'|translate}}</div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <mat-icon class="ovi-ao-header-btn" appTooltip tooltipText="{{'Edit'|translate}}"
+            (click)="onEdit()">edit</mat-icon>
+          <mat-icon class="ovi-ao-header-btn" appTooltip tooltipText="{{'Export'|translate}}"
+            (click)="exportAsPdf()" [class.ovi-ao-header-btn-disabled]="exporting">download</mat-icon>
+          <mat-icon class="ovi-ao-header-btn" appTooltip tooltipText="{{'Close'|translate}}"
+            (click)="onClose()">highlight_off</mat-icon>
+        </div>
+      </div>
+      <div #overviewContent id="overviewContent" class="ovi-asset-overview-dialog popup-margin" style="overflow:auto;height:calc(100% - 80px);">
+
+        <!-- Workflow banner -->
+        <div class="ovi-ao-banner" *ngIf="assetOverviewData.workflow && bannerVisible">
+          <mat-icon class="ovi-ao-banner-icon">sync</mat-icon>
+          <div class="ovi-ao-banner-body">
+            <div class="ovi-ao-banner-title">{{ assetOverviewData.workflow.title }}</div>
+            <div class="ovi-ao-banner-sub">{{ assetOverviewData.workflow.subtitle }}</div>
+            <div class="ovi-ao-banner-step">
+              <ng-container *ngFor="let step of assetOverviewData.workflow.steps; let i = index; let last = last">
+                <div class="ovi-ao-step-dot"
+                  [ngClass]="{'ovi-ao-step-done': step.status === 'done', 'ovi-ao-step-active': step.status === 'active', 'ovi-ao-step-todo': step.status === 'todo'}"
+                  [title]="step.label">
+                  <mat-icon *ngIf="step.status === 'done'" class="ovi-ao-step-icon">check</mat-icon>
+                  <span *ngIf="step.status !== 'done'">{{ i + 1 }}</span>
+                </div>
+                <div class="ovi-ao-step-line" *ngIf="!last" [ngClass]="{'ovi-ao-step-line-done': step.status === 'done'}"></div>
+              </ng-container>
+              <span class="ovi-ao-step-label">{{'Step'|translate}} {{ assetOverviewData.workflow.currentStep }} {{'of'|translate}} {{ assetOverviewData.workflow.totalSteps }}: {{ assetOverviewData.workflow.steps[assetOverviewData.workflow.currentStep - 1]?.label }}</span>
+            </div>
+          </div>
+          <button class="ovi-ao-banner-dismiss" *ngIf="assetOverviewData.workflow.dismissible" (click)="dismissBanner()"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <!-- Asset header card -->
+        <div class="ovi-ao-header-card">
+          <div class="ovi-ao-header-icon">
+            <mat-icon>{{ assetOverviewData.basicInfo?.assetIcon || 'inventory' }}</mat-icon>
+          </div>
+          <div class="ovi-ao-header-info">
+            <div class="ovi-ao-id-tag">{{ assetOverviewData.basicInfo?.assetId }}</div>
+            <div class="ovi-ao-name">{{ assetOverviewData.basicInfo?.assetName }}</div>
+            <div class="ovi-ao-mini-cards" *ngIf="assetOverviewData.basicInfo?.badges?.length">
+              <div class="ovi-ao-mini-card ovi-ao-card-status" *ngIf="assetOverviewData.basicInfo?.badges?.[0]">
+                <div class="ovi-ao-mini-card-lbl">{{'Status'|translate}}</div>
+                <div class="ovi-ao-mini-card-val"><mat-icon class="ovi-ao-mini-card-icon">check</mat-icon>{{ assetOverviewData.basicInfo.badges[0].label }}</div>
+              </div>
+              <div class="ovi-ao-mini-card ovi-ao-card-category" *ngIf="assetOverviewData.basicInfo?.badges?.[1]">
+                <div class="ovi-ao-mini-card-lbl">{{'Category'|translate}}</div>
+                <div class="ovi-ao-mini-card-val"><mat-icon class="ovi-ao-mini-card-icon">label</mat-icon>{{ assetOverviewData.basicInfo.badges[1].label }}</div>
+              </div>
+              <div class="ovi-ao-mini-card ovi-ao-card-created">
+                <div class="ovi-ao-mini-card-lbl">{{'Created by'|translate}}</div>
+                <div class="ovi-ao-mini-card-val"><mat-icon class="ovi-ao-mini-card-icon">person_outline</mat-icon>{{ data?.createdUserName || '-' }}</div>
+              </div>
+              <div class="ovi-ao-mini-card ovi-ao-card-modified">
+                <div class="ovi-ao-mini-card-lbl">{{'Modified by'|translate}}</div>
+                <div class="ovi-ao-mini-card-val"><mat-icon class="ovi-ao-mini-card-icon">edit_note</mat-icon>{{ data?.modifiedUserName || '-' }}</div>
+              </div>
+            </div>
+            <div class="ovi-ao-meta-grid">
+              <div class="ovi-ao-meta-item" *ngFor="let field of assetOverviewData.metaFields" [class.ovi-ao-hide]="!field.value">
+                <div class="ovi-ao-meta-label">{{ field.label | translate }}</div>
+                <div class="ovi-ao-meta-val" [class.ovi-ao-mono]="field.label === 'Serial No' || field.label === 'Model No'">{{ field.value }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <!-- Tickets + Work Orders -->
+      <div class="ovi-ao-two-col ovi-ao-anim-section ovi-ao-delay-1 ovi-ao-section-gap">
+        <div>
+          <div class="ovi-ao-section-label">{{'Ticket summary'|translate}}</div>
+          <div class="ovi-ao-card">
+            <div class="ovi-ao-card-title"><mat-icon  class="ovi-ao-card-icon">confirmation_number</mat-icon>{{'Tickets'|translate}}</div>
+            <ng-container *ngIf="assetOverviewData.tickets && assetOverviewData.tickets.total > 0; else noTicketsDlg">
+              <div class="ovi-ao-four-col" style="margin-bottom:14px;">
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.tickets.total }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Total'|translate}}</div>
+                </div>
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.tickets.completed }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Completed'|translate}}</div>
+                </div>
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.tickets.cancelled }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Cancelled'|translate}}</div>
+                </div>
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.tickets.closed }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Closed'|translate}}</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;">
+                <a class="ovi-ao-view-all" (click)="navigateToAsset('Ticket')">
+                  <mat-icon class="ovi-ao-link-icon">confirmation_number</mat-icon>{{'View all tickets'|translate}}
+                  <mat-icon class="ovi-ao-arrow-icon">arrow_forward</mat-icon>
+                </a>
+              </div>
+            </ng-container>
+            <ng-template #noTicketsDlg>
+              <div class="ovi-ao-empty-state">{{'No tickets found'|translate}}</div>
+            </ng-template>
+          </div>
+        </div>
+        <div>
+          <div class="ovi-ao-section-label">{{'Work order summary'|translate}}</div>
+          <div class="ovi-ao-card">
+            <div class="ovi-ao-card-title"><mat-icon class="ovi-ao-card-icon">assignment</mat-icon>{{'Work orders'|translate}}</div>
+            <ng-container *ngIf="assetOverviewData.workOrders && assetOverviewData.workOrders.total > 0; else noWorkOrdersDlg">
+              <div class="ovi-ao-four-col" style="margin-bottom:14px;">
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.workOrders.total }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Total'|translate}}</div>
+                </div>
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.workOrders.completed }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Completed'|translate}}</div>
+                </div>
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.workOrders.cancelled }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Cancelled'|translate}}</div>
+                </div>
+                <div class="ovi-ao-metric">
+                  <div class="ovi-ao-metric-val">{{ assetOverviewData.workOrders.closed }}</div>
+                  <div class="ovi-ao-metric-lbl">{{'Closed'|translate}}</div>
+                </div>
+              </div>
+              <div style="margin-top:14px;">
+                <a class="ovi-ao-view-all" (click)="navigateToAsset('WorkOrder')">
+                  <mat-icon class="ovi-ao-link-icon">assignment</mat-icon>{{'View all work orders'|translate}} <mat-icon
+                    class="ovi-ao-arrow-icon">arrow_forward</mat-icon>
+                </a>
+              </div>
+            </ng-container>
+            <ng-template #noWorkOrdersDlg>
+              <div class="ovi-ao-empty-state">{{'No work orders found'|translate}}</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+        <div class="ovi-ao-single-col ovi-ao-anim-section ovi-ao-delay-2 ovi-ao-section-gap">
+          <div class="ovi-ao-section-label">{{'Maintenance summary'|translate}}</div>
+          <div class="ovi-ao-card ovi-ao-card-maint">
+            <div class="ovi-ao-card-title"><mat-icon class="ovi-ao-card-icon">build</mat-icon>{{'Open & due items'|translate}}</div>
+            <ng-container *ngIf="assetOverviewData.maintenance?.length; else noMaint">
+              <div class="ovi-ao-maint-row" *ngFor="let item of assetOverviewData.maintenance | slice:0:5">
+                <div class="ovi-ao-maint-left">
+                  <div class="ovi-ao-maint-icon" [style.background]="item.iconBg" [style.color]="item.iconColor">
+                    <mat-icon>{{ item.icon }}</mat-icon>
+                  </div>
+                  <div>
+                    <div class="ovi-ao-maint-name">{{ item.name }}</div>
+                    <div class="ovi-ao-maint-meta" *ngIf="item.description">{{ item.description }}</div>
+                    <div class="ovi-ao-maint-meta" *ngIf="item.dueDate"><span class="ovi-ao-next-due">{{'Next
+                        due'|translate}}: {{ item.dueDate }}</span></div>
+                  </div>
+                </div>
+                <span class="ovi-ao-badge" [ngClass]="item.statusClass" *ngIf="item.status">
+                  <mat-icon class="ovi-ao-badge-icon" *ngIf="item.statusClass?.includes('success')">check</mat-icon>
+                  <mat-icon class="ovi-ao-badge-icon" *ngIf="item.statusClass?.includes('info')">schedule</mat-icon>
+                  <mat-icon class="ovi-ao-badge-icon" *ngIf="item.statusClass?.includes('danger')">warning</mat-icon>
+                  {{ item.status }}
+                </span>
+              </div>
+            </ng-container>
+            <ng-template #noMaint>
+              <div class="ovi-ao-empty-state">{{'No maintenance records found'|translate}}</div>
+            </ng-template>
+            <div style="margin-top:14px;display:flex;gap:10px;align-items:center;" *ngIf="assetOverviewData.maintenance?.length">
+              <a class="ovi-ao-view-all" (click)="navigateToAsset('Maintenance')">
+                <mat-icon class="ovi-ao-link-icon">build</mat-icon>{{'View full maintenance schedule'|translate}}
+                <mat-icon class="ovi-ao-arrow-icon">arrow_forward</mat-icon>
+              </a>
+              <span class="ovi-ao-status-divider">&middot;</span>
+              <span class="ovi-ao-attention-text" *ngIf="needsAttention > 0">{{ needsAttention }} {{'items need attention'|translate}}</span>
+            </div>
+          </div>
+        </div>
+
+      <div class="ovi-ao-two-col ovi-ao-anim-section ovi-ao-delay-3 ovi-ao-section-gap">
+        <div>
+          <div class="ovi-ao-section-label">{{'Cost summary'|translate}}</div>
+          <div class="ovi-ao-card">
+            <div class="ovi-ao-card-title"><mat-icon class="ovi-ao-card-icon">receipt_long</mat-icon>{{'Cost summary'|translate}}</div>
+            <ng-container *ngIf="assetOverviewData.costs && assetOverviewData.costs.purchaseValue; else noCostDlg">
+              <div class="ovi-ao-maint-row" *ngIf="assetOverviewData.costs.purchaseValue">
+                <div class="ovi-ao-maint-left">
+                  <div class="ovi-ao-maint-icon" style="background:#eef2fd;color:#1a4fd6;">
+                    <mat-icon>shopping_cart</mat-icon></div>
+                  <div>
+                    <div class="ovi-ao-maint-name">{{'Purchase value'|translate}}</div>
+                  </div>
+                </div>
+                <span class="ovi-ao-badge ovi-ao-badge-accent">{{ assetOverviewData.costs.purchaseValue }}</span>
+              </div>
+              <div class="ovi-ao-maint-row" *ngIf="assetOverviewData.costs.depreciationInfo">
+                <div class="ovi-ao-maint-left">
+                  <div class="ovi-ao-maint-icon" style="background:#fef2f2;color:#b91c1c;">
+                    <mat-icon>trending_down</mat-icon></div>
+                  <div>
+                    <div class="ovi-ao-maint-name">{{'Depreciation'|translate}}</div>
+                  </div>
+                </div>
+                <span class="ovi-ao-badge ovi-ao-badge-danger">{{ assetOverviewData.costs.depreciationInfo }}</span>
+              </div>
+              <div class="ovi-ao-maint-row" *ngIf="assetOverviewData.costs.usefulLife">
+                <div class="ovi-ao-maint-left">
+                  <div class="ovi-ao-maint-icon" style="background:#e9f4fd;color:#0f5e8a;">
+                    <mat-icon>calendar_today</mat-icon></div>
+                  <div>
+                    <div class="ovi-ao-maint-name">{{'Useful life'|translate}}</div>
+                  </div>
+                </div>
+                <span class="ovi-ao-badge ovi-ao-badge-info">{{ assetOverviewData.costs.usefulLife }}</span>
+              </div>
+              <div style="margin-top:14px;">
+                <a class="ovi-ao-view-all" (click)="navigateToAsset('Financial')">
+                  <mat-icon class="ovi-ao-link-icon">receipt_long</mat-icon>{{'View cost summary'|translate}} <mat-icon class="ovi-ao-arrow-icon">arrow_forward</mat-icon>
+                </a>
+              </div>
+            </ng-container>
+            <ng-template #noCostDlg>
+              <div class="ovi-ao-empty-state">{{'No cost data found'|translate}}</div>
+            </ng-template>
+          </div>
+        </div>
+        <div>
+          <div class="ovi-ao-section-label">{{'Utilization summary'|translate}}</div>
+          <div class="ovi-ao-card">
+            <div class="ovi-ao-card-title"><mat-icon
+                class="ovi-ao-card-icon">insights</mat-icon>{{'Utilization'|translate}}</div>
+            <ng-container *ngIf="sensorSummaryData?.length; else noUtilDlg">
+              <div style="overflow-x:auto;">
+                <table class="ovi-ao-consumer-table">
+                  <thead>
+                    <tr>
+                      <th>{{'Sensor Name'|translate}}</th>
+                      <th>{{'Sensor Value'|translate}}</th>
+                      <th>{{'Time'|translate}}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of sensorSummaryData">
+                      <td>{{ item.identifyingText }}</td>
+                      <td>{{ item.identifyingValue }}</td>
+                      <td>{{ item.eventDatetime | date: 'shortTime' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top:14px;"><a class="ovi-ao-view-all" (click)="navigateToAsset('Sensor')"><mat-icon
+                    class="ovi-ao-link-icon">insights</mat-icon>{{'View utilization analytics'|translate}} <mat-icon
+                    class="ovi-ao-arrow-icon">arrow_forward</mat-icon></a></div>
+            </ng-container>
+            <ng-template #noUtilDlg>
+              <div class="ovi-ao-empty-state">{{'No utilization data found'|translate}}</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consumables (fixed: overflow-x:visible) -->
+        <div class="ovi-ao-single-col ovi-ao-anim-section ovi-ao-delay-4 ovi-ao-section-gap">
+          <div class="ovi-ao-section-label">{{'Consumables'|translate}}</div>
+          <div class="ovi-ao-card ovi-ao-card-consumed">
+            <div class="ovi-ao-card-title"><mat-icon class="ovi-ao-card-icon">inventory</mat-icon>{{'Consumed
+              Items'|translate}}</div>
+            <ng-container *ngIf="consumedItems?.length; else noConsumedDlg">
+              <!-- FIX: overflow-x:visible, width:100% -->
+              <div style="overflow-x:visible; width:100%;">
+                <table class="ovi-ao-consumer-table">
+                  <thead>
+                    <tr>
+                      <th>{{'Name'|translate}}</th>
+                      <th>{{'Batch ID'|translate}}</th>
+                      <th>{{'Request ID'|translate}}</th>
+                      <th>{{'Quantity'|translate}}</th>
+                      <th>{{'Requested By'|translate}}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of consumedItems | slice:0:5">
+                      <td>{{ item.itemMasterName }}</td>
+                      <td>{{ item.batchId }}</td>
+                      <td>{{ item.requestId }}</td>
+                      <td>{{ item.requestedQuantity }}</td>
+                      <td>{{ item.requestUserName }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top:14px;">
+                <a class="ovi-ao-view-all" (click)="navigateToAsset('Inventory')">
+                  <mat-icon class="ovi-ao-link-icon">inventory</mat-icon>{{'View consumed items'|translate}} <mat-icon class="ovi-ao-arrow-icon">arrow_forward</mat-icon>
+                </a>
+              </div>
+            </ng-container>
+            <ng-template #noConsumedDlg>
+              <div class="ovi-ao-empty-state">{{'No consumables data found'|translate}}</div>
+            </ng-template>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+</ng-container>
+
+<div class="ovi-ao-export-overlay" *ngIf="exporting">
+  <div class="ovi-ao-export-spinner"></div>
+  <span>{{'Generating PDF...'|translate}}</span>
+</div>
+
+<lazy-loader *ngIf="loading"></lazy-loader>

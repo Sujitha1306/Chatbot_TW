@@ -1,0 +1,224 @@
+<div class="font-style ovi-font-family">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="1" class="arrow">
+            <div id="arrowbox"><span>{{"Resident"|translate}}</span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}" [selected]="i==0 ? true : null">{{i.name}}</option>
+                </select> 
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'vitals-chart-rs' || HCselected =='geofencevio'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker"  class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'vitals-chart-rs' && HCselected != 'geofencevio'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker"  class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'vitals-chart-rs' || HCselected == 'geofencevio'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker"  class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <div class="custom-button" [ngClass] = "HCselected == 'vitals-chart-rs' ? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate && selected['Uhid'] == Uhid ? 'disabled-content' : 'none':(HCselected == 'OT-Rep' || HCselected == 'geofencevio') ? selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none' :selected['selectedId']== HCselected && selected['todate'] == toDate ? 'disabled-content' : 'none'"(click)="getinPatientReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100"  (keydown.enter)="fixClick()">
+                            {{"Get Insights"|translate}}
+                    </div>     
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getinPatientReports(HCselected)"  (keydown.enter)="fixClick()" >autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list> 
+</div>
+
+<!--INPATIENT SUMMARY-->
+<mat-grid-list class="list" cols = 4 rowHeight="200px" [ngStyle]="{display: HCselected=='patient-status-rs' && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-bottom: 5px;">
+    <mat-grid-tile class="ot-chart" style="width: 25%;">
+        <canvas id="IPgender"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="ot-chart" style="width: 25%;"> 
+        <canvas id="IPdevice"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="ot-chart" style="width: 25%;"> 
+        <canvas id="IPlanguage"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="ot-chart" style="width: 25%;"> 
+        <canvas id="IPage"></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<mat-grid-list class="inPatient-summary2" cols = 4 rowHeight="140px"  style="width: 100%;" [ngStyle]="{display:HCselected=='patient-status-rs'&& HCselected == reportData['prevselected'] ? 'block' : 'none'}" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="list" style="width: 30%;">          
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Admission Count"|translate}}</mat-grid-tile-header>
+            <mat-list style="width: 100%;">
+                <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"Admitted"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['admitted']}} </span></mat-list-item>
+                <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -10px;">{{"Discharged"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['discharged']}} </span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" style="width: 30%;">         
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Beds Availability"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"Occupied"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['bedsOccupied']}} </span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -10px;">{{"Available"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['bedsAvailable']}} </span></mat-list-item>
+        </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" style="width: 20%;">
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Bed Occupancy Rate"|translate}}</mat-grid-tile-header>
+        <div class="ovi-fnt-sze30" style="font-weight:bold; margin-top: 10px;">{{reportData['bedOccupancyRate']}}</div>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" style="width: 20%;">
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"ALOS"|translate}}</mat-grid-tile-header>
+        <div class="ovi-fnt-sze30" style="font-weight:bold; margin-top: 10px;">{{reportData['ALOS']}}</div>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<mat-grid-list cols = 2 rowHeight="350px" [ngStyle]="{display: HCselected=='patient-status-rs' && HCselected == reportData['prevselected']? 'block' : 'none'}" [ngStyle]="pagebgcolor && {'background':pagebgcolor}" >
+    <mat-grid-tile class="list" style="width: 400px; height: 350px;">           
+        <canvas id="IPward" width = 400px height = 350px ></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" style="width: 400px; height: 350px;">           
+        <canvas id="IPspeciality" width = 400px  height = 350px ></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<!--VITALS CHART-->
+<div class="dq-filter" *ngIf="HCselected == 'vitals-chart-rs'" style="width: 50%;padding-top: 25px;" >
+    <div id="box-left">
+        {{"Patient Identifier"|translate}}
+    </div>
+    <div id="box-right" style="position: relative">
+        <input [class.disabled-content]="reportData['loading']" type="text"  [formControl]="patientUhid" (change)="Uhid = $event.target.value" style="border: none;outline: none;height: 100%;position: relative;">
+    </div>
+</div>
+<mat-grid-list class="vitals" cols = 3 rowHeight="85px" style="width: 100%;margin-top: 40px;" *ngIf="selected['selectedId'] == 'vitals-chart-rs' && !reportData['noRecords'] && !reportData['loading'] && !reportData['nullIdentifier']&& HCselected == reportData['prevselected']" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile  class="vitals-report" style="width: 100%;">        
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -20px;"><span style="font-weight: bold; color: #019F96;">{{"Patient Name"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['patientName']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>    
+    <mat-grid-tile  class="vitals-report" style="width: 100%;">         
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -20px;"><span style="font-weight: bold; color: #019F96;">{{"Gender"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['patientAge']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile  class="vitals-report" style="width: 100%;">         
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -20px;"><span style="font-weight: bold; color: #019F96;">{{"Age"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px; color: black;">{{reportData['patientGender']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+</mat-grid-list>
+
+<div class="vitals-line-chart" style="width: 100%; height: 450px; position: relative; margin-top: -30px; overflow: hidden;"  [ngStyle]="{display: selected['selectedId'] == 'vitals-chart-rs' && !reportData['loading'] && !reportData['noRecords'] && !reportData['nullIdentifier']? 'block' : 'none'}">
+    <div style="width:4%;float:right;text-align: left;margin-left:5px; margin-right: 50px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('resp_rate')"[ngClass]="{'highlight' : vitalParam === 'resp_rate'}" style="width: 30px;background-color :#FFC0CB; margin-right: 10px;">{{"Resp_Rate"|translate}}</button></div>
+    <div style="width:4%;float:right;text-align: left;margin-left:5px; margin-right: 40px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('HRV')"[ngClass]="{'highlight' : vitalParam === 'HRV'}" style="width: 30px;background-color : #8e5ea2; margin-right: 10px;">{{"HRV"|translate}}</button></div>
+    <div style="width:4%;float:right;text-align: left;margin-left:5px; margin-right: 40px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('HR')"[ngClass]="{'highlight' : vitalParam === 'HR'}" style="width: 30px;background-color :  #FFC300; margin-right: 10px;">{{"HR"|translate}}</button></div>
+    <div style="width:4%;float:right;text-align: left;margin-left:5px; margin-right: 40px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('SPO2')"[ngClass]="{'highlight' : vitalParam === 'SPO2'}" style="width: 30px;background-color : #284255; margin-right: 10px;">{{"SPO2"|translate}}</button></div>
+    <div style="width:5%;float:right;text-align: left;margin-left:5px; margin-right: 30px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('temperature')"[ngClass]="{'highlight' : vitalParam === 'temperature'}" style="width: 30px;background-color : #00FF5A; margin-right: 10px;">{{"Temp"|translate}}</button></div>
+    <div style="width:4%;float:right;text-align: left;margin-left:5px; margin-right: 40px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('pulse')"[ngClass]="{'highlight' : vitalParam === 'pulse'}" style="width: 30px;background-color : #03AAE8; margin-right: 10px;">{{"Pulse"|translate}}</button></div>
+    <div style="width:4%;float:right;text-align: left;margin-left:5px; margin-right: 40px;"><button mat-button class="ovi-prmry-wht-clr" (click)="getVitalsParam('all')" [ngClass]="{'highlight' : vitalParam === 'all'}" style="width: 30px;background-color : #28425560; margin-right: 10px;">{{"All"|translate}}</button></div>
+    <!-- <div class="rep-style" style="font-size: 14; font-weight: 600; text-transform: uppercase; padding-left: 15px;"> Vitals Parameters</div> -->
+    <div class="chart-container" style="width: 100%; height: 88%; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 25px;">
+        <canvas id="pulse-and-temp"></canvas>
+    </div>
+</div>
+
+
+
+<!--GEOFENCE VIOLATION-->
+<div class="list" [ngStyle]="{display: HCselected=='geofencevio'&& HCselected == reportData['prevselected'] && !reportData['noRecords']? 'block' : 'none'}" style="width: 500px;height: 250px;padding-bottom: 20px;">
+    <canvas id="geofenceViolation" width="450px" height="350px"></canvas> 
+</div>
+
+<!--PATIENT FALL-->
+<div [ngStyle]="{display:HCselected == 'patientfall' && !reportData['noRecords'] ? 'block' : 'none'}" style="width: 500px;height: 250px;padding-bottom: 20px;">
+    <canvas id="patientFall"></canvas> 
+</div>
+<div id="patient-fall" *ngIf="HCselected == 'patientfall' && !reportData['noRecords']">
+    <app-table-component [data]="reportData['Table']" [id]="selected['selectedId']" ></app-table-component>
+</div>
+
+<!-- NURSE CALL EFFICIENCY REPORT -->
+<mat-grid-list class="nurse-call-efficiency-summary" cols = 3 rowHeight="140px"  style="width: 100%;padding-top:10px;padding-bottom: 30px;" *ngIf="selected['selectedId'] == 'nurse-call-rs' && !reportData['noRecords'] && !reportData['loading']" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile  class="list">  
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Number Of Nurses"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"Number of Nurses"|translate}}: <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['totalNurses']}}</span></mat-list-item>
+        </mat-list>        
+        </mat-grid-tile>
+    <mat-grid-tile class="list">
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Nurse Call TAT"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"Ward"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['nursesCallTatInWard']}}</span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -10px;">{{"ICU"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['nursesCallTatInIcu']}} </span></mat-list-item>
+        </mat-list> 
+    </mat-grid-tile>
+    <mat-grid-tile class="list">
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Nurse Ratio"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"Ward"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['nursesCallRatioInWard']}}</span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -10px;">{{"ICU"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['nursesCallRatioInIcu']}} </span></mat-list-item>
+        </mat-list>       
+    </mat-grid-tile>     
+</mat-grid-list>
+<div class="list" [ngStyle]="{display: selected['selectedId'] == 'nurse-call-rs' && !reportData['noRecords'] && !reportData['loading'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 30px;">
+    <canvas id="nurseCall" width=100% rowheight="300px" style="position: relative;padding-top: 10px;overflow-x: auto;"></canvas> 
+</div>
+<div class="list" [ngStyle]="{display: selected['selectedId'] == 'nurse-call-rs' && !reportData['noRecords'] && !reportData['loading']? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 60px;">
+    <canvas id="hourlyCall" width=100% height="245px" style="position: relative;padding-top: 10px;overflow-x: auto;"></canvas> 
+</div>
+<!--TABLE-->
+<div [ngStyle]="{display: reportData['showTable']&& HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="padding-top: 10px;width:100%;overflow-x: auto;">
+    <angular-table-component [id]="selected['selectedId']" [tableData]="reportData['Table']" [columns]="reportData['TableColumns']" [chartData]="this.reportData['charts']" style="overflow-x: auto;"></angular-table-component>
+</div> 
+<div *ngIf="reportData['noRecords'] && !reportData['invalidDate'] && !reportData['nullIdentifier']&& HCselected == reportData['prevselected'] && selected['selectedId']!='patientfall'" style="text-align: center;margin: 2% 0 0 -7%;">{{"No Records"|translate}}</div>
+<div *ngIf="reportData['invalidDate']&& HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;">{{reportData['invalidDateMessage']}}</div>
+<div *ngIf="reportData['nullIdentifier']&& HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Identifier Required"|translate}}</div>

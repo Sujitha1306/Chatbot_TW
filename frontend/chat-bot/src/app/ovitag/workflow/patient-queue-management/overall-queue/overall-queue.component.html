@@ -1,0 +1,58 @@
+<div class="ovi-font-family" [ngStyle]="{'padding': matTabIndex != 0 ? '5px' : '15px'}">
+    <div *ngIf="matTabIndex != 0" style="padding-bottom: 5px;">
+        <div class="filter-item-box filter-box1-box2" style="align-items: center;">
+            <div id="filter-box1" style="min-width: 50px;"> {{"Floor"|translate}} </div>
+            <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 180px  !important;">
+                <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none">
+                    <mat-select [formControl]="floorId">
+                        <mat-option *ngFor="let floor of floorList" (click)="getFloorDetail(floor.id)" [value]="floor.id"
+                            (keydown.enter)="fixClick()">
+                            {{floor.name+', '+floor.blockName}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+    <mat-grid-list cols="100" gutterSize="30px" class="grid-list-container-overall">
+       <mat-grid-tile class="grid-title-container-overall" *ngFor="let group of locationQueue" [colspan]="32">
+        <div>
+            <div style="padding: 8px 10px 0; background: #eeeff161">
+                <div class="over-view-header-container">
+                    <span>{{group.name}}</span>
+                    <mat-icon class="ovi-fnt-sze20" style="padding: 0;height: fit-content;width: fit-content;color: #B8B8B8;">error_outline</mat-icon>
+                </div>
+                <mat-divider class="header-bottom-line"></mat-divider>
+            </div>
+            <div>
+                <mat-list class="list-block">
+                    <mat-list-item class="item-container" *ngFor="let location of group.locations">
+                        <div class="list-container">
+                            <div class="left-location">
+                                <div class="text-dot-dot" style="font-weight: 600;">{{location.testName}}</div>
+                                <div class="text-dot-dot ovi-fnt-sze12" style="color: #B8B8B8;">
+                                    <span *ngIf="location.floorName">{{location.floorName}},</span>
+                                    <span>{{location.name}}</span>
+                                </div>
+                            </div>
+                            <div class="right-count">
+                                <div class="count-box" style="background: #FFA740;" 
+                                 (click)="locationInfo(location.id, location.testName, 'QS-IP', location.testId, location.inprogressCount, location.testType, group.visitStatusId, group.planTypeId)"
+                                 (keydown.enter)="fixClick()">{{location.inprogressCount}}</div>
+                                <div class="count-box" style="background: #7CA7FF;"
+                                 (click)="locationInfo(location.id, location.testName, 'QS-WT', location.testId, location.waitingCount, location.testType, group.visitStatusId, group.planTypeId)"
+                                 (keydown.enter)="fixClick()">{{location.waitingCount}}</div>
+                                <div class="count-box" style="background: #09BE03;"
+                                 (click)="locationInfo(location.id, location.testName, 'QS-CO', location.testId, location.completedCount, location.testType, group.visitStatusId, group.planTypeId)"
+                                 (keydown.enter)="fixClick()">{{location.completedCount}}</div>
+                                <div class="count-box" style="background: #0E83F6;"
+                                 (click)="locationInfo(null, location.testName, 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)"
+                                 (keydown.enter)="fixClick()">{{location.pendingCount}}</div>
+                            </div>
+                        </div>
+                    </mat-list-item>
+                </mat-list>
+            </div>
+        </div>
+       </mat-grid-tile>
+    </mat-grid-list>
+</div>

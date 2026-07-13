@@ -1,0 +1,286 @@
+<div class="font-style ovi-font-family ">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="1" class="arrow">
+            <div id="arrowbox"><span> {{"Maintenance"|translate}} </span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}">{{i.name}}</option>
+                </select>
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'maintenancerep' && HCselected != 'battery-history'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'maintenancerep' && HCselected != 'battery-history'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <div class="custom-button" [ngClass] = "HCselected == 'battery-history' && selected['ttype'] != selectedTagType? 'none' : selected['selectedId']== HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none'" (click)="getReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100"  (keydown.enter)="fixClick()">
+                            {{"Get Insights"|translate}}
+                    </div>
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getReports(HCselected)"  (keydown.enter)="fixClick()" >autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon"  (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"   alt="pdf_icon"  (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey"  width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon"  (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list>
+</div>
+<div *ngIf="HCselected == 'maintenancerep' && selected['selectedId'] == 'maintenancerep'" class="report-content" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <div class="report-content-header" *ngIf="maintenanceReportModel.MR_CSH">{{"Current Summary"|translate}}
+        <!-- <img src="/assets/Alert/common_icons/pdf_icon.png" (click)="downloadPDF()" width = 30px style="padding:0px 5px;cursor: pointer; float: right;"> -->
+    </div>
+    <mat-grid-list [cols]="4" rowHeight="165px" (window:resize)="onResize($event)" style="width: 100%;">
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_CST"  [colspan]="maintenanceReportModelCols.MR_CST" [rowspan] ="maintenanceReportModelRows.MR_CST" class="oflw-style" [ngStyle]="bgcolor && {'background':bgcolor}">
+            <div class="widget-class" [id]="maintenanceReportModelId.MR_CST">
+                <div class="rs-header"></div>
+                <div class="rs-body"><div class="rs-body-content"><img src="/assets/Alert/common_icons/tag.svg" alt="tag"><div class="rs-body-content-name">{{"Tag"|translate}}<br><span>{{tagLength}}</span></div></div></div>
+                <div class="rs-footer" (click) = "getTagInfo()" style="cursor: pointer; color: #284255;"  (keydown.enter)="fixClick()">{{"VIEW MORE"|translate}}</div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_CSR" [colspan]="maintenanceReportModelCols.MR_CSR" [rowspan] ="maintenanceReportModelRows.MR_CSR" class="oflw-style" [ngStyle]="bgcolor && {'background':bgcolor}">
+            <div class="widget-class" [id]="maintenanceReportModelId.MR_CSR">
+                <div class="rs-header"></div>
+                <div class="rs-body"><div class="rs-body-content"><img src="/assets/Alert/common_icons/reader.svg" alt="reader"><div class="rs-body-content-name">{{"Reader"|translate}}<br><span>{{readerLength}}</span></div></div></div>
+                <div class="rs-footer" (click) = "getReaderInfo()" style="cursor: pointer; color: #284255;" (keydown.enter)="fixClick()">{{"VIEW MORE"|translate}}</div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_CSG" [colspan]="maintenanceReportModelCols.MR_CSG" [rowspan] ="maintenanceReportModelRows.MR_CSG" class="oflw-style" [ngStyle]="bgcolor && {'background':bgcolor}">
+            <div class="widget-class" [id]="maintenanceReportModelId.MR_CSG">
+                <div class="rs-header"></div>
+                <div class="rs-body"><div class="rs-body-content"><img src="/assets/Alert/common_icons/gateway.svg" alt="gateway"><div class="rs-body-content-name">{{"Gateway"|translate}}<br><span>{{gatewayLength}}</span></div></div></div>
+                <div class="rs-footer" (click) = "getGatewayInfo()" style="cursor: pointer; color:#284255;" (keydown.enter)="fixClick()">{{"VIEW MORE"|translate}}</div>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_CSG" [colspan]="maintenanceReportModelCols.MR_CSG" [rowspan] ="maintenanceReportModelRows.MR_CSG" class="oflw-style" [ngStyle]="bgcolor && {'background':bgcolor}">
+            <div class="widget-class" [id]="maintenanceReportModelId.MR_CSG">
+                <!-- <div class="rs-header"></div> -->
+                <!-- <div class="rs-body"><div class="rs-body-content"><img src="assets/Alert/common_icons/gateway.svg"><div class="rs-body-content-name">Gateway<br><span>{{gatewayLength}}</span></div></div></div>  -->
+                <canvas id="battery"></canvas>
+                <div class="rs-footer" (click) = "getBatteryInfo()" style="cursor: pointer; color:#284255;" (keydown.enter)="fixClick()">{{"VIEW MORE"|translate}}</div>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+    <div class="tag-type-chart" style=" height: 400px; margin-right: 10px; margin-left: 10px;">
+        <canvas id="tagType" style="width : 100% ; height : 350px ;padding-bottom: 10px;"></canvas>
+    </div>
+    <div class="reader-type-chart" style=" height: 400px; margin-right: 10px; margin-left: 10px;">
+        <canvas id="readerType" style="width :100% ; height : 350px ;padding-bottom: 10px;"></canvas>
+    </div>
+    <!-- <mat-grid-list [cols]="gridCols" rowHeight="165px" (window:resize)="onResize($event)">
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ACS" [colspan]="maintenanceReportModelCols.MR_ACS" [rowspan] ="maintenanceReportModelRows.MR_ACS" class="oflw-style">
+            <div class="widget-class font-family" [id]="maintenanceReportModelId.MR_ACS">
+                <mat-grid-list [cols]="gridCols2" rowHeight="310px">
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ACS1" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1" class="disp-style">
+                                    <div class="rep-style">Patient Tag</div>
+                                    <canvas baseChart height="350px" [data]="MR_ACS1_doughnutData" [labels]="MR_ACS1_doughnutLabels" [chartType]="MR_ACS1_doughnutType" [colors]="MR_ACS1_doughnutColors" [options]="MR_ACS1_doughnutOption" [legend]="MR_ACS1_doughnutLegend"></canvas>
+                                </div>
+                            </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ACS2" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Asset Tag</div>
+                                        <canvas baseChart height="350px" [data]="MR_ACS2_doughnutData" [labels]="MR_ACS2_doughnutLabels" [chartType]="MR_ACS2_doughnutType" [colors]="MR_ACS2_doughnutColors" [options]="MR_ACS2_doughnutOption" [legend]="MR_ACS2_doughnutLegend"></canvas>
+                              </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ACS3" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Care Provider Tag</div>
+                                        <canvas baseChart height="240px" [data]="MR_ACS3_doughnutData" [labels]="MR_ACS3_doughnutLabels" [chartType]="MR_ACS3_doughnutType" [colors]="MR_ACS3_doughnutColors" [options]="MR_ACS3_doughnutOption" [legend]="MR_ACS3_doughnutLegend"></canvas>
+                                    </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ACS4" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Reader</div>
+                                        <canvas baseChart height="240px" [data]="MR_ACS4_doughnutData" [labels]="MR_ACS4_doughnutLabels" [chartType]="MR_ACS4_doughnutType" [colors]="MR_ACS4_doughnutColors" [options]="MR_ACS4_doughnutOption" [legend]="MR_ACS4_doughnutLegend"></canvas>
+                                 </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ACS5" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Gateway</div>
+                                        <canvas baseChart height="240px" [data]="MR_ACS5_doughnutData" [labels]="MR_ACS5_doughnutLabels" [chartType]="MR_ACS5_doughnutType" [colors]="MR_ACS5_doughnutColors" [options]="MR_ACS5_doughnutOption" [legend]="MR_ACS5_doughnutLegend"></canvas>
+                                    </div>
+                        </mat-grid-tile>
+                </mat-grid-list>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ARS" [colspan]="maintenanceReportModelCols.MR_ARS" [rowspan] ="maintenanceReportModelRows.MR_ARS" class="oflw-style">
+            <div class="widget-class font-family" [id]="maintenanceReportModelId.MR_ARS">
+                <mat-grid-list [cols]="gridCols2" rowHeight="310px">
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ARS1" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                    <div class="rep-style">Reader Connected</div>
+                                    <app-pie-chart class="form-field" [barType]="MR_ARS1_pieChartType" [barData]="MR_ARS1_pieChartData" [barLabels]="MR_ARS1_pieChartLabels" [barColors]="MR_ARS1_pieChartColors" [barOptions]="MR_ARS1_pieChartOptions" [barLegend]="MR_ARS1_pieLegend"></app-pie-chart>
+                                </div>
+                            </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ARS2" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Beacon Status</div>
+                                        <app-pie-chart  class="form-field" [barType]="MR_ARS2_pieChartType" [barData]="MR_ARS2_pieChartData" [barLabels]="MR_ARS2_pieChartLabels" [barColors]="MR_ARS2_pieChartColors" [barOptions]="MR_ARS2_pieChartOptions" [barLegend]="MR_ARS2_pieLegend"></app-pie-chart>
+                                    </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ARS3" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">BLE/UWB Status</div>
+                                        <app-pie-chart  class="form-field" [barType]="MR_ARS3_pieChartType" [barData]="MR_ARS3_pieChartData" [barLabels]="MR_ARS3_pieChartLabels" [barColors]="MR_ARS3_pieChartColors" [barOptions]="MR_ARS3_pieChartOptions" [barLegend]="MR_ARS3_pieLegend"></app-pie-chart>
+                                    </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ARS4" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Geo Fencing Status</div>
+                                        <app-pie-chart  class="form-field" [barType]="MR_ARS4_pieChartType" [barData]="MR_ARS4_pieChartData" [barLabels]="MR_ARS4_pieChartLabels" [barColors]="MR_ARS4_pieChartColors" [barOptions]="MR_ARS4_pieChartOptions" [barLegend]="MR_ARS4_pieLegend"></app-pie-chart>
+                                    </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ARS5" colspan="1" rowspan ="1">
+                                <div id="grid-cl-r-1-1">
+                                        <div class="report-style">Pressure Status</div>
+                                        <app-pie-chart  class="form-field" [barType]="MR_ARS5_pieChartType" [barData]="MR_ARS5_pieChartData" [barLabels]="MR_ARS5_pieChartLabels" [barColors]="MR_ARS5_pieChartColors" [barOptions]="MR_ARS5_pieChartOptions" [barLegend]="MR_ARS5_pieLegend"></app-pie-chart>
+                                    </div>
+                        </mat-grid-tile>
+                </mat-grid-list>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_AGD" [colspan]="maintenanceReportModelCols.MR_AGD" [rowspan] ="maintenanceReportModelRows.MR_AGD" class="oflw-style">
+            <div class="widget-class font-family" [id]="maintenanceReportModelId.MR_AGD">
+                <div class="widget-header">Gateway Details</div>
+                <mat-grid-list [cols]="gridCols" rowHeight="110px">
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_AGD1" [colspan]="maintenanceReportModelCols.MR_AGD1" [rowspan] ="maintenanceReportModelRows.MR_AGD1">
+                            <div [id]="maintenanceReportModelId.MR_AGD1">
+                                <mat-grid-list [cols]="gridCols2" rowHeight="100px">
+                                    <mat-grid-tile colspan="1" rowspan ="1">
+                                        <div id="grid-cl-r-1-1">
+                                            <div matLine class="font-wgt">Gateway ID</div>
+                                            <div matLine>Gateway 001</div>
+                                        </div>
+                                    </mat-grid-tile>
+                                    <mat-grid-tile colspan="1" rowspan ="1">
+                                        <div id="grid-cl-r-1-1">
+                                            <div matLine class="font-wgt">Port Number</div>
+                                            <div  matLine>9090</div>
+                                        </div>
+                                    </mat-grid-tile>
+                                    <mat-grid-tile colspan="1" rowspan ="1">
+                                        <div id="grid-cl-r-1-1">
+                                                <div matLine class="font-wgt">DNS Name</div>
+                                                <div matLine>www.trackerwave.com</div>
+                                        </div>
+                                    </mat-grid-tile>
+                                    <mat-grid-tile colspan="1" rowspan ="1">
+                                        <div id="grid-cl-r-1-1">
+                                                <div matLine class="font-wgt">Status</div>
+                                                <div matLine>Connected</div>
+                                        </div>
+                                    </mat-grid-tile>
+                                    <mat-grid-tile colspan="1" rowspan ="1">
+                                        <div id="grid-cl-r-1-1">
+                                                <div matLine class="font-wgt">Last Communicated</div>
+                                                <div matLine>20:45:00Hrs</div>
+                                        </div>
+                                    </mat-grid-tile>
+                                </mat-grid-list>
+                            </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_AGD2" [colspan]="maintenanceReportModelCols.MR_AGD2" [rowspan] ="maintenanceReportModelRows.MR_AGD2">
+                            <div [id]="maintenanceReportModelId.MR_AGD3">
+                                <div class="widget-header">CPU Utilization</div>
+                            <div class="widgt-style">
+                                <canvas baseChart height="250" width="600" *ngIf="MR_AGD1_barChartType" [chartType]="MR_AGD1_barChartType" [datasets]="MR_AGD1_barChartData" [labels]="MR_AGD1_barChartLabels" [colors]="MR_AGD1_barChartColors" [options]="MR_AGD1_barChartOptions" [legend]="MR_AGD1_barLegend" (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+                            </div>
+                            </div>
+                        </mat-grid-tile>
+                        <mat-grid-tile *ngIf="maintenanceReportModel.MR_AGD3" [colspan]="maintenanceReportModelCols.MR_AGD3" [rowspan] ="maintenanceReportModelRows.MR_AGD3">
+                                <div [id]="maintenanceReportModelId.MR_AGD3">
+                                    <div class="widget-header">Memory</div>
+                                    <div class="widgt-style">
+                                        <canvas baseChart height="250" width="600" *ngIf="MR_AGD2_barChartType" [chartType]="MR_AGD2_barChartType" [datasets]="MR_AGD2_barChartData" [labels]="MR_AGD2_barChartLabels" [colors]="MR_AGD2_barChartColors" [options]="MR_AGD2_barChartOptions" [legend]="MR_AGD2_barLegend" (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+                                    </div>
+                               </div>
+                        </mat-grid-tile>
+                </mat-grid-list>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile *ngIf="maintenanceReportModel.MR_ATBS" [colspan]="maintenanceReportModelCols.MR_ATBS" [rowspan] ="maintenanceReportModelRows.MR_ATBS" class="oflw-style">
+            <div class="widget-class font-family" [id]="maintenanceReportModelId.MR_ATBS">
+                <div class="widget-header">Tag Battery Status</div>
+                <div class="widgt-style">
+                    <canvas baseChart height="400" width="1288" *ngIf="MR_ATBS_barChartType" [chartType]="MR_ATBS_barChartType" [datasets]="MR_ATBS_barChartData" [labels]="MR_ATBS_barChartLabels" [colors]="MR_ATBS_barChartColors" [options]="MR_ATBS_barChartOptions" [legend]="MR_ATBS_barLegend" (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)"></canvas>
+                </div>
+            </div>
+        </mat-grid-tile>
+
+    </mat-grid-list> -->
+</div>
+<!--BATTERY HISTORY-->
+<div *ngIf="HCselected == 'battery-history'">
+    <mat-grid-list class="rollcall" cols = 2 rowHeight="80px" *ngIf="HCselected == 'battery-history'" [gutterSize]="'10px'" style="padding-bottom: 5px;padding-top: 10px;">
+        <mat-label class="ovi-lbl-text-size">{{"Choose TagType"|translate}}</mat-label>
+        <div class="row-field-2">
+            <mat-form-field class="example-full-width form-field" appearance="outline" required>
+                <mat-select placeholder="{{'TagType'|translate}}" [(value)]="selectedTagType">
+                    <mat-option *ngFor="let data of tagTypelist" [value]="data.value">
+                        {{data.value}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </mat-grid-list>
+</div>
+<!-- TABLE-->
+<div [ngStyle]="{display: reportData['showTable'] && HCselected == reportData['prevselected']? 'block' : 'none'}" style="padding-top: 10px;" *ngIf="this.reportData['showTable']">
+    <div id = "rep-style" class="ovi-prmry-wht-clr" *ngIf="HCselected == 'battery-history' && selected['selectedId'] == 'battery-history'" style="height: 33px;padding-top: 5px;padding-left: 20px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Battery Summary (in percentage)"|translate}}</div>
+    <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']"></angular-table-component>
+</div>
+<div *ngIf="reportData['noRecords'] && HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;">{{"No Records"|translate}}</div>

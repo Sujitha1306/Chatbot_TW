@@ -1,0 +1,1315 @@
+<div fxLayout="column" class="mat-elevation-z4 tw-manage-component" [ngClass.xs]="'components-container-xs'" [ngClass]="component === 'employee' ? 'table-page' : ''"
+fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="tableClass === 'tab-table' ? 'twt-tab-table' : tableClass === 'tab-table-with-header' ? 'twt-tab-table-with-header' : tableClass === 'table-with-header' ? 'twt-table-with-header' : tableClass === 'table-icon-header' ? 'twt-table-icon-header' : tableClass === 'table-pop-with-header' ? 
+'twt-table-pop-with-header' : tableClass === 'table-ex-pop-with-header' ? 'twt-table-ex-pop-with-header' : 'twt-table'">
+<div class="tw-mat-table-overflow" (scroll)="enableScroll ? onTableScroll($event) : null" [ngStyle]="{'max-height': component === 'coaster' ? '320px' : component === 'coaster-tag' ? '160px' : ''}">
+    <table mat-table class="tw-table" [dataSource]="dataSource" matSort (matSortChange)="component === 'staffRoutine' || component === 'student' ? eventTrigger('sort', $event) : ''" [trackBy]="trackByRowId">
+        <ng-container *ngFor="let col of TWDisplayedColumns" matColumnDef="{{col}}"  [sticky]="isFixed(col)" [stickyEnd]="fixedColumnsAtEnd.includes(col)">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header [disabled]="!(sortColumn?.indexOf(col) > -1)" class="tw-manage-table-header tw-table-content .mat-sort-header-disabled"
+                [ngStyle]="{'width': iconHeader?.indexOf(col) > -1 ? '40px' : col === 'select' ? '30px' : col === 'Alerts' && component === 'location-management' ? '5%' : '',
+                            'min-width': col === 'Nurse Call' || (component === 'nursecall-view' && col === 'Alerts') || (col === 'Additional Info' && component === 'audit-log' || component === 'error-log') || (col === 'URL' && component === 'audit-log' || component === 'error-log') || (col === 'Message' && component === 'audit-log' || component === 'error-log') || (col === 'Component Name' && component === 'error-log')
+                            || (col === 'Stack Trace' && component === 'error-log')|| (col === 'Error Message' && component === 'error-log')  && component !== 'staffRoutine' && component !== 'student' ? '180px' : 
+                            col === 'Alert' && component !== 'staffRoutine' && component !== 'alertInfo' && component !== 'student'&& component !== 'asset-management'? '160px' : '',
+                            'max-width': ((col === 'Description' || col === 'Pickup' || col === 'Drop' || col === 'Remarks' || col === 'Requester' || col ==='Rating Comments')
+                            && component === 'porter') || (col === 'Pickup' && component === 'ambulance' ||
+                            col === 'Drop' && component === 'ambulance') ? '250px' : ''}">
+                
+                <span *ngIf="(col === 'select' && (component === 'task' || component === 'hazmat-training-list')) || (col === 'select' && component === 'layout') || (col === 'select' && component === 'print-sticker') || (col === 'select' && component === 'asset-maintenance') || (col === 'select' && component === 'reader') || (col === 'select' && component === 'hygiene') || (col === 'select' && component === 'audit-schedule-management') || (col === 'select' && component === 'door-controller') " >
+                    <mat-checkbox (change)="$event ? masterToggle() : null"
+                        [checked]="selection.hasValue() && isAllSelected()"
+                        [indeterminate]="selection.hasValue() && !isAllSelected()" [aria-label]="checkboxLabel()">
+                    </mat-checkbox>                                         
+                </span>
+                <span *ngIf="col === 'Report' && component === 'asset-management'">
+                    <mat-icon class="tw-rep-icon-colr ovi-fnt-sze20" appTooltip tooltipText="{{'Report'|translate}}" placement="bottom">description</mat-icon>
+                </span>
+                <span *ngIf="col === 'Overview' && component === 'asset-management'">
+                    <mat-icon class="tw-rep-icon-colr ovi-fnt-sze20" appTooltip tooltipText="{{'Overview'|translate}}" placement="bottom">dashboard</mat-icon>
+                </span>
+                <!-- <span *ngIf="component === 'activities'" >{col, select, S.No {S.No} Name {Name} Routine Type {Routine Type} Description {Description} Status {Status}}</span> -->
+                <span  *ngIf="!(iconHeader?.indexOf(col) > -1) && !(col === 'select')">{{col | translate}} </span>
+                <!-- <span  *ngIf="!(iconHeader?.indexOf(col) > -1) && !(col === 'select')">{col, select, S.No {{{"S.No"|translate}}} Name {{{"Name"| translate}}} Routine Type {{{"Routine Type"|translate}}} Description { {{"Description"|translate}} } Status {{{"Status"|translate}}} Gateway ID {{{"Gateway ID"|translate}}} Routine {{{"Routine"|translate}}} Length of stay {{{"Length of stay"|translate}}}  Length of stay (hh:mm) {{{"Length of stay (hh:mm)" | translate}}}
+                Gateway Name {{{"Gateway Name"|translate}}} Gateway Id {{{"Gateway Id"|translate}}} Software Version {{{"Software Version"|translate}}} IP Address {{{"IP Address"|translate}}} MQTT Broker (Local) {{{"MQTT Broker (Local)"|translate}}} MQTT Broker (Cloud) {{{"MQTT Broker (Cloud)"|translate}}} Facility Name {{{"Facility Name"|translate}}} Boot Time {{{"Boot Time"|translate}}}
+                Last Updated Date {{{"Last Updated Date"|translate}}} Serial Number {{{"Serial Number"|translate}}} Type {{{"Type"|translate}}} Associated Type {{{"Associated Type"|translate}}} Associated ID {{{"Associated ID"|translate}}} Associated Name {{{"Associated Name"|translate}}} Current Location{{{"Current Location"|translate}}} Battery {{{"Battery"|translate}}} Asset Name {{{"Asset Name"|translate}}} Asset Type {{{"Asset Type"|translate}}} 
+                Tag ID {{{"Tag ID"|translate}}} Email {{{"Email"|translate}}} Contact {{{"Contact"|translate}}} Rule ID {{{"Rule ID"|translate}}} Alert Name {{{"Alert Name"|translate}}} Rule Name {{{"Rule Name"|translate}}} Scope Name {{{"Scope Name"|translate}}} Alert Type {{{"Alert Type"|translate}}} Plan Type {{{"Plan Type"|translate}}} Package Name {{{"Package Name"|translate}}} Source ID {{{"Source ID"|translate}}} Gender {{{"Gender"|translate}}}
+                Test Name {{{"Test Name"|translate}}} Group Name {{{"Group Name"|translate}}} Test Type {{{"Test Type"|translate}}} Rule {{{"Rule"|translate}}} Avg. Test Time {{{"Avg. Test Time"|translate}}} Test Location {{{"Test Location"|translate}}} No.of Activities {{{"No.of Activities"|translate}}} Speciality {{{"Speciality"|translate}}} Code {{{"Code"|translate}}} Model Id {{{"Model Id"|translate}}} Model Name {{{"Model Name"|translate}}}
+                Widget Type {{{"Widget Type"|translate}}} Is Active {{{"Is Active"|translate}}} Version {{{"Version"|translate}}} IsFacility {{{"IsFacility"|translate}}} Dashboard Name {{{"Dashboard Name"|translate}}} Resource Code {{{"Resource Code"|translate}}} Resource Name {{{"Resource Name"|translate}}} User Name {{{"User Name"|translate}}} LabelName {{{"LabelName"|translate}}} DefaultValue {{{"DefaultValue"|translate}}}
+                TypeName {{{"TypeName"|translate}}} UHID {UHID} Visit Id {{{"Visit Id"|translate}}} Mobile {{{"Mobile"|translate}}} Consultant Name {{{"Consultant Name"|translate}}} Visit Status {{{"Visit Status"|translate}}} Health Plan {{{"Health Plan"|translate}}} Report Collected {{{"Report Collected"|translate}}} Sample Collected {{{"Sample Collected"|translate}}} DOB {{{"DOB"|translate}}} Floor {{{"Floor"|translate}}}
+                Employee Name {{{"Employee Name"|translate}}} Employee ID {{{"Employee ID"|translate}}} Battery Percentage {{{"Battery Percentage"|translate}}} No. of Contacts {{{"No. of Contacts"|translate}}} Close Contact {{{"Close Contact"|translate}}} Visitor ID {{{"Visitor ID"|translate}}} Visiting Employee ID {{{"Visiting Employee ID"|translate}}} Start Time {{{"Start Time"|translate}}}
+                End Time {{{"End Time"|translate}}} Reason {{{"Reason"|translate}}} Reporting Employee ID {{{"Reporting Employee ID"|translate}}} Asset ID {{{"Asset ID"|translate}}} Home Location {{{"Home Location"|translate}}} Assigned Location {{{"Assigned Location"|translate}}} Current Location {{{"Current Location"|translate}}} Idle {{{"Idle"|translate}}} Alert {{{"Alert"|translate}}} Alerts {{{"Alerts"|translate}}} Bed No {{{"Bed No"|translate}}} Bed Name {{{"Bed Name"|translate}}} 
+                Resident Name {{{"Resident Name"|translate}}} Age {{{"Age"|translate}}} Consulting Doctor {{{"Consulting Doctor"|translate}}} Nurse Call {{{"Nurse Call"|translate}}} Requester { {{"Requester" | translate}} } Needed {{{"Needed"|translate}}} Group {{{"Group"|translate}}} Time {{{"Time"| translate}}} Pickup { {{"Pickup"|translate}}} Drop {{{"Drop"|translate}}} PorterName {{{"PorterName"|translate}}} Count { {{"Count"|translate}} }
+                Remarks {{{"Remarks"|translate}}} Assigned {{{"Assigned"|translate}}} Drop Time {{{"Drop Time"|translate}}} Manual Complete {{{"Manual Complete"|translate}}} Location {{{"Location"|translate}}} Consultant {{{"Consultant"|translate}}} Visit Identifier {{{"Visit Identifier"|translate}}} Visit Type {{{"Visit Type"|translate}}} OT Location {{{"OT Location"|translate}}} Surgery Name {{{"Surgery Name"|translate}}}
+                Doctor Name {{{"Doctor Name"|translate}}} Check-in {{{"Check-in"|translate}}} Check-out {{{"Check-out"|translate}}} Plan Name {{{"Plan Name"|translate}}} Patient Name {{{"Patient Name"|translate}}} Pickup Time {{{"Pickup Time"|translate}}} Ambulance Name {{{"Ambulance Name"|translate}}} Comments {{{"Comments"|translate}}} Task {{{"Task"|translate}}} Temp {{{"Temp"|translate}}} Doctor {{{"Doctor"|translate}}} Consumer Number {{{"Consumer Number"|translate}}}
+                Installation Date {{{"Installation Date"|translate}}} GPS Location {{{"GPS Location"|translate}}} Supervisor {{{"Supervisor"|translate}}} Department {{{"Department"|translate}}} Volume {{{"Volume"|translate}}} Request ID {{{"Request ID"|translate}}} Request Detail ID {{{"Request Detail ID"|translate}}} Requested Doctor {{{"Requested Doctor"|translate}}} Requested Volume {{{"Requested Volume"|translate}}}
+                Requested By {{{"Requested By"|translate}}} Delivery Location {{{"Delivery Location"|translate}}} Requested Date {{{"Requested Date"|translate}}} Dispatched Date {{{"Dispatched Date"|translate}}} Received Date {{{"Received Date"|translate}}} File Age {{{"File Age"|translate}}} Last Seen Location {{{"Last Seen Location"|translate}}} Last Seen Time {{{"Last Seen Time"|translate}}} To {{{"To"|translate}}}
+                Tag Id {{{"Tag Id"|translate}}} Subject {{{"Subject"|translate}}} Response {{{"Response"|translate}}} Id {{{"Id"|translate}}} Attendance {{{"Attendance"|translate}}} Role {{{"Role"|translate}}} E-mail {{{"E-mail"|translate}}} Phone No {{{"Phone No"|translate}}} Schedule {{{"Schedule"|translate}}} Driver Name {{{"Driver Name"|translate}}} Mobile No {{{"Mobile No"|translate}}} Test Status {{{"Test Status"|translate}}} Location Name {{{"Location Name"| translate}}} 
+                Wait Time (mins) {{{"Wait Time (mins)"|translate}}} Server Name {{{"Server Name"|translate}}} Host Name {{{"Host Name"|translate}}} Health Percent {{{"Health Percent"|translate}}} is Enable {{{"is Enable"|translate}}} Job Value {{{"Job Value"|translate}}} Job Type {{{"Job Type"|translate}}} Job Name {{{"Job Name"|translate}}} EMT Name {{{"EMT Name"|translate}}} Assigned Time {{{"Assigned Time"|translate}}} 
+                Length Of Stay {{{"Length Of Stay"|translate}}} Assigned To {{{"Assigned To"|translate}}} Performed By {{{"Performed By"|translate}}} Entity Name {{{"Entity Name"|translate}}} Event Time {{{"Event Time"|translate}}} Action {{{"Action"|translate}}} Schedule Time {{{'Schedule Time'|translate}}} Detail {{{"Detail"|translate}}} Porter {{{"Porter"|translate}}} Initiated Time {{{"Initiated Time"|translate}}} Distance {{{"Distance"|translate}}} Total Time{{{"Total Time"|translate}}} ETA{{{"ETA"|translate}}}
+                Request Time {{{"Request Time"|translate}}} Accepted Time {{{"Accepted Time"|translate}}} Admit Date {{{"Admit Date"|translate}}} Porter Pool / Location {{{"Porter Pool / Location"|translate}}} Started Time {{{"Started Time"|translate}}} Date {{{"Date"|translate}}} preview {{{"preview"|translate}}} Porter Pool Location {{{"Porter Pool Location"|translate}}} Bed Details {{{"Bed Details"|translate}}} Ack {{{"Ack"|translate}}} ModifiedBy {{{"ModifiedBy"|translate}}} 
+                Acknowledged Time {{{"Acknowledged Time"|translate}}} TicketNo {{{"TicketNo"|translate}}} Start Date {{{"Start Date"|translate}}} End Date {{{"End Date"|translate}}} Deal Type {{{"Deal Type"|translate}}} Billing Type {{{"Billing Type"|translate}}} Budget Amount {{{"Budget Amount"|translate}}} Payment Terms {{{"Payment Terms"|translate}}} Customer Name {{{"Customer Name"|translate}}} Broker Type {{{"Broker Type"|translate}}} Mosquitto Host {{{"Mosquitto Host"|translate}}}
+                MQTT Port {{{"MQTT Port"|translate}}} Websocket Port {{{"Websocket Port"|translate}}} Username {{{"Username"|translate}}} Password {{{"Password"|translate}}} Is Enable {{{"Is Enable"|translate}}} SSL {{{"SSL"|translate}}} MA {{{"MA"|translate}}} RequestID { {{"RequestID"|translate}} } Ro Number {{{"Ro Number"|translate}}} Request Status {{{"Request Status"|translate}}} Master Selection {{{"Master Selection"|translate}}} Host {{{"Host"|translate}}} Config Key {{{"Config Key"|translate}}}
+                Content {{{"Content"|translate}}} Config File Identity {{{"Config File Identity"|translate}}} Porter ID {{{"Porter ID"|translate}}} PFRuleName {{{"PFRuleName"|translate}}} Alert Config {{{"Alert Config"|translate}}}AlertDatetime {{{"AlertDatetime"|translate}}} AlertTypeName{{{"AlertTypeName"|translate}}} ScopeName{{{"ScopeName"|translate}}} Message {{{"Message"|translate}}}  IdentifyingType 
+                {{{"IdentifyingType"|translate}}} IdentifyingId {{{"IdentifyingId"|translate}}} EventName{{{"EventName"|translate}}} Comments{{{"Comments"|translate}}} Ack Time{{{"Ack Time"|translate}}} ClosedDatetime{{{"ClosedDatetime"|translate}}} App Term Code{{{"App Term Code"|translate}}} App Term Name{{{"App Term Name"|translate}}} Global{{{"Global"|translate}}} Default{{{"Default"|translate}}} Link Group{{{"Link Group"|translate}}} Link App Term Code{{{"Link App Term Code"|translate}}} 
+                Link App Term Name{{{"Link App Term Name"|translate}}} Language Name{{{"Language Name"|translate}}} Form Status{{{"Form Status"|translate}}} Create Time{{{"Create Time"|translate}}} Ack Comments{{{"Ack Comments"|translate}}} Close Time{{{"Close Time"|translate}}} Config{{{"Config"|translate}}} Event{{{"Event"|translate}}} ackDatetime{{{"ackDatetime"|translate}}} Layout Name{{{"Layout Name"|translate}}} Linked Resource Name{{{"Linked Resource Name"|translate}}} Break Status{{{"Break Status"|translate}}} 
+                Service {{{"Service"|translate}}} Activity Name {{{"Activity Name"|translate}}} Used By Department {{{"Used By Department"|translate}}} Current State {{{"Current State"|translate}}} Grade {{{"Grade"|translate}}} Roll No{{{"Roll No"|translate}}} Asset Serial No {{{"Asset  Serial No"|translate}}} Category {{{"Category"|translate}}} GatePass {{{"GatePass"|translate}}} Day{{{"Day"|translate}}} Created by{{{"Created by"|translate}}} Created on{{{"Created on"|translate}}} Modified by{{{"Modified by"|translate}}} Modified on{{{"Modified on"|translate}}} 
+                Partially Completed {{{"Partially Completed"|translate}}} Is Facility Specific{{{"Is Facility Specific"|translate}}} Group By{{{"Group By"|translate}}} Shift {{{"Shift"|translate}}} Token {{{"Token"|translate}}}Event Status{{{"Event Status"|translate}}} From Time{{{"From Time"|translate}}} To Time{{{"To Time"|translate}}} Duration{{{"Duration"|translate}}} Current State{{{"Current State"|translate}}} Event Context{{{"Event Context"|translate}}} Event Status{{{"Event Status"|translate}}} From {{{"From"|translate}}} 
+                To {{{"To"|translate}}} Event Date{{{"Event Date"|translate}}} Performed By{{{"Performed By"|translate}}}Token Type{{{"Token Type"|translate}}} Product Serial No{{{"Product Serial No"|translate}}}Model No {{{"Model No"|translate}}} Owned Department{{{"Owned Department"|translate}}} Supplier Name {{{"Supplier Name"|translate}}} City {{{"City"|translate}}} ID {{{"ID"|translate}}} Item No {{{"Item No"|translate}}} Item Type {{{"Item Type"|translate}}} Item Category {{{"Item Category"|translate}}} 
+                Total Quantity {{{"Total Quantity"|translate}}} Min Stock Level {{{"Min Stock Level"|translate}}} Reorder Level {{{"Reorder Level"|translate}}} Batch Id {{{"Batch Id"|translate}}} Purchase Req No {{{"Purchase Req No"|translate}}} Purchase Order {{{"Purchase Order"|translate}}} Item Master Name {{{"Item Master Name"|translate}}} Expiry Date {{{"Expiry Date"|translate}}} Transaction Type {{{"Transaction Type"|translate}}} Department {{{"Department"|translate}}} Requested User Name {{{"Requested User Name"|translate}}}
+                Delivered Time {{{"Delivered Time"|translate}}} Delivery Status {{{"Delivery Status"|translate}}} Requested Quantity {{{"Requested Quantity"|translate}}} Allocated Quantity {{{"Allocated Quantity"|translate}}} Delivered Date {{{"Delivered Date"|translate}}} Package{{{"Package"|translate}}} Completed Time{{{"Completed Time"|translate}}} Qty {{{"Qty"|translate}}} Order Time{{{"Order Time"|translate}}} Cost Type{{{"Cost Type"|translate}}} Contact Number {{{"Contact Number"|translate}}}
+                Country {{{"Country"|translate}}} Tax Id {{{"Tax Id"|translate}}} Phone Number {{{"Phone Number"|translate}}} User Id {{{"User Id"|translate}}}  Recovery SLA{{{"Recovery SLA"|translate}}} Preparation SLA{{{"Preparation SLA"|translate}}} Surgery SLA {{{"Surgery SLA"|translate}}} Batch Id {{{"Batch Id"|translate}}} Add Stock {{{"Add Stock"|translate}}} Delivery {{{"Delivery"|translate}}} Balanced Qty {{{"Balanced Qty"|translate}}} Item Name {{{"Item Name"|translate}}} viewHistory {{{"viewHistory"|translate}}} Preview {{{"Preview"|translate}}}
+                Event Name {{{"Event Name"|translate}}} Ack Datetime {{{"Ack Datetime"|translate}}} Closed Datetime {{{"Closed Datetime"|translate}}} Alert Datetime {{{"Alert Datetime"|translate}}} Designation {{{"Designation"|translate}}} Total TAT{{{"Total TAT"|translate}}} Acknowledged By{{{"Acknowledged By"|translate}}} Ack By{{{"Ack By"|translate}}} TAT {TAT} Sent Datetime {{{"Sent Datetime"|translate}}} IP No{{{"IP No"|translate}}}  Ack Name {{{"Ack Name" | translate}}} Tag Status {{{"Tag Status" | translate}}}
+                Rule Category {{{"Rule Category"|translate}}} Connectivity status {{{"Connectivity Status"|translate}}}  Image {Image} Parent Location {Parent Location} Care Setting {{{"Care Setting" | translate}}} Identifier {{{"Identifier" | translate}}} Location Owner {{{"Location Owner" | translate}}} Source Id {{{"Source Id" | translate}}} Department Name {{{"Department Name" | translate}}} Department Type {{{"Department Type" | translate}}} Context {{{"Context" | translate}}} Context Id {{{"Context Id" | translate}}} Assigned Type {{{"Assigned Type" | translate}}} Visitor Type {{{"Visitor Type"|translate}}} Purpose {{{"Purpose"|translate}}}
+                Identifier {{{"Identifier" | translate}}} Visitors Destination {{{"Visitors Destination"|translate}}} ScheduleTime {{{"ScheduleTime"|translate}}} IP Issue No {{{"IP Issue No" | translate}}} Login Name {{{"Login Name" | translate}}} Scope {{{"Scope" | translate}}} Routine Name {{{"Routine Name" | translate}}} Schedule Type {{{"Schedule Type" | translate}}} Schedule Date {{{"Schedule Date" | translate}}} From Date {{{"From Date" | translate}}} To Date {{{"To Date" | translate}}} Visitor DateTime {{{"Visitor DateTime" | translate}}} 
+                Visitor Status {{{"Visitor Status" | translate}}} ScheduleDate {{{"Schedule Date"|translate}}}  ScheduleType {{{"Schedule Type" | translate}}} No.Of.Visitors {{{"No.Of.Visitors" | translate}}} Requester Status {{{"Requester Status" | translate}}} Requester {{{"Requester" | translate}}} Requester Type {{{"Requester Type" | translate}}} Identifying Value {{{"Identifying Value" | translate}}} Identifying Type {{{"Identifying Type" | translate}}} Page {{{"Page" | translate}}} Items {{{"Items" | translate}}} Updated By {{{"Updated By" | translate}}}  Updated Time {{{"Updated Time" | translate}}} Item ID {{{"Item ID" | translate}}}
+                Procedure {{{"Procedure" | translate}}} OT Location {{{"OT Location" | translate}}} Patient Name {{{"Patient Name" | translate}}} Request Date {{{"Request Date" | translate}}} Request By {{{"Request By" | translate}}}    
+                Patient {{{"Patient" | translate}}} Driver {{{"Driver" | translate}}} Doctor {{{"Doctor" | translate}}} Time Taken {{{"Time Taken" | translate}}} 
+                EMT {{{"EMT" | translate}}}  Qualifier {{{"Qualifier" | translate}}} Entity Type {{{"Entity Type" | translate}}} Identifying Name {{{"Identifying Name" | translate}}}
+                Linen ID {{{"Linen ID" | translate}}} Linen Type {{{"Linen Type"|translate}}}  Size {{{"Size" | translate}}} Color {{{"Color" | translate}}} Material {{{"Material" | translate}}} Date of Procurement {{{"Date of Procurement" | translate}}} 
+                First Use Date {{{"First Use Date" | translate}}} Total Wash Count {{{"Total Wash Count" | translate}}} Last Wash Date {{{"Last Wash Date" | translate}}} Used By {{{"Used By" | translate}}} Storage Location {{{"Storage Location" | translate}}} Storage Date {{{"Storage Date" | translate}}}  Batch No {{{"Batch No" | translate}}}
+                Assgned Department {{{"Assgned Department" | translate}}} Collected DateTime {{{"Collected DateTime" | translate}}} Collected By {{{"Collected By" | translate}}} Laundary type {{{"Laundary type" | translate}}} Batach Start datetime {{{"Batach Start datetime" | translate}}}  Batch End datetime {{{"Batch End datetime" | translate}}}
+                ER Start Time {{{"ER Start Time" | translate}}} Discharge Reason {{{"Discharge Reason" | translate}}} Reader Number {{{"Reader Number" | translate}}} Connectivity Type {{{"Connectivity Type" | translate}}} Algorithm {{{"Algorithm" | translate}}} Coordinate {{{"Coordinate" | translate}}} 
+                Truck Number {{{"Truck Number" | translate}}} Boarding Plan {{{"Boarding Plan" | translate}}} Facility {{{"Facility" | translate}}} Function {{{"Function" | translate }}} Value {{{"Value" |translate}}} Template Name {{{"Template Name" | translate}}} {{{"Ward" | translate}}} Device ID {{{"Device ID" | translate}}} Asset Name {{{"Asset Name" | translate}}}
+                Asset Serial Number {{{"Asset Serial Number" | translate}}}  Hosted On {{{"Hosted On" | translate}}} OS Type {{{"OS Type" | translate}}} Processor Architecture {{{"Processor Architecture" | translate}}} OS Version {{{"OS Version" | translate}}}  Due On {{{"Due On" | translate}}}   Activity Rule {{{"Activity Rule" | translate}}} Activity {{{"Activity" | translate}}} Rule Group {{{"Rule Group" | translate}}} Step Type {{{"Step Type" | translate}}}
+                KPI ID {{{"KPI ID" | translate}}} KPI Name {{{"KPI Name" | translate}}} Entity ID {{{"Entity ID" | translate}}} Metric Type {{{"Metric Type" | translate}}} Formula {{{"Formula" | translate}}} Next Due {{{"Next Due" | translate}}} Link Code {{{"Link Code" | translate}}} Link Name {{{"Link Name" | translate}}} Sequence {{{"Sequence" | translate}}} Include {{{"Include" | translate}}}
+                Role Name {{{"Role Name" | translate}}} Resources Type {{{"Resources Type" | translate}}}  Rating {{{"Rating" | translate}}} Rating Comments {{{"Rating Comments" | translate}}} Permit All {{{"Permit All" | translate}}} Report Status {{{"Report Status" | translate}}} Reported By {{{"Reported By" | translate}}} Reported Date {{{"Reported Date" | translate}}}
+                Rule Type {{{"Rule Type" | translate}}} Used Department {{{"Used Department" | translate}}}Criticality Type {{{"Criticality Type" | translate}}}  Location Type{{{"Location Type" | translate}}}  Location Category{{{"Location Category" | translate}}} Last Updated {{{"Last Updated"| translate}}} Work Orders {{{"Work Orders" | translate}}} DeliveryStatus Name{{{"DeliveryStatus Name"|translate}}} Request Datetime{{{"Request Datetime"|translate}}} RequestedBy UserName{{{"RequestedBy UserName"|translate}}} Reader Type{{{"Reader Type"|translate}}} Hardware Type{{{"Hardware Type"|translate}}} 
+                Asset Category {{{"Asset Category" | translate}}}  AMC {{{"AMC" | translate}}}  PMS {{{"PMS" | translate}}}  Calibration {{{"Calibration" | translate}}}  Corrective {{{"Corrective" | translate }}} Major Type {{{"Major Type" | translate}}} Minor Type {{{"Minor Type" | translate}}} Unit {{{"Unit" | translate}}} Target {{{"Target" | translate}}} Value Type {{{"Value Type" | translate}}} Frequency {{{"Frequency" | translate}}} Order Id {{{"Order Id" | translate}}} Order No {{{"Order No" | translate}}} Purchaser {{{"Purchaser" | translate}}} Order Details {{{"Order Details" | translate}}} Expected Delivery Date {{{"Expected Delivery Date" | translate}}} Progress {{{"Progress" | translate}}} Last Status{{{"Last Status"|translate}}} 
+                Production Plan {{{"Production Plan" | translate}}} Action Type {{{"Action Type"|translate}}} Audited By {{{"Audited By"|translate}}} Audited DateTime {{{"Audited DateTime"|translate}}} Activity CategoryName {{{"Activity CategoryName" | translate}}} Schedule Start {{{"Schedule Start" | translate}}} Schedule End {{{"Schedule End" | translate}}} Relay Id {{{"Relay Id"|translate}}} Relay Status {{{"Relay Status"|translate}}} Completed Test Count {{{"Completed Test Count"|translate}}} Total Test Count {{{"Total Test Count"|translate}}} Test Event Time {{{"Test Event Time"|translate}}} Requested Department {{{"Requested Department" | translate}}} Parent ID {{{"Parent ID"|translate}}} Assign Type {{{"Assign Type" | translate}}} 
+                Assign To {{{"Assign To" | translate}}} Serial No {{{"Serial No" | translate}}} Test ID {{{"Test ID" | translate}}} Channel ID {{{"Channel ID" | translate}}} Channel Name {{{"Channel Name" | translate}}} PFRuleTypeName {{{"PFRuleTypeName" | translate}}} Template Format {{{"Template Format" | translate}}} Created By {{{"Created By" | translate}}} Modified By {{{"Modified By" | translate}}} Config Input {{{"Config Input" | translate}}} Config Input ID {{{"Config Input ID" | translate}}} Lable Name {{{"Lable Name" | translate}}} Default Value {{{"Default Value" | translate}}} Appterms Group {{{"Appterms Group" | translate}}} }</span> -->
+
+                <span *ngIf="col === 'Device' && component !== 'visitors' && component !== 'inpatient'">
+                    <img style="width:16px" src="/assets/Alert/common_icons/mob_coaster.svg" alt="device_img"  appTooltip [tooltipText]=col|translate placement="top">
+                </span>                
+                <span *ngIf="col === 'visitor Count' && component === 'visitor'">
+                    <img style="width:16px;padding-top: 4px;" src="/assets/icons/users 1.svg" alt="device_img"  appTooltip [tooltipText]=col|translate placement="top">
+                </span>
+                <span *ngIf="col === 'Call' && component === 'ambulance'">
+                    <img style="width:16px;padding-top: 4px;" src="/assets/icons/call.svg" alt="device_img" appTooltip [tooltipText]=col|translate placement="top">
+                </span>
+                
+                <span *ngIf="col === 'Device' && component !== 'visitors' && component === 'inpatient'">
+                    <img style="width: 16px; padding-top: 10px;" src="/assets/Alert/common_icons/coaster-header.svg" alt="device_img">
+                </span>
+                
+                <span *ngIf="col === 'Gender' && component !== 'package' && component !== 'common-search'">
+                    <img style="width:16px" src="/assets/Alert/common_icons/gender_male_female.svg" alt="gender_img" appTooltip [tooltipText]=col|translate  placement="top">
+                </span>
+                <span *ngIf="col === 'Patient Type'">
+                    <img style="width:20px" src="/assets/Alert/common_icons/amb.svg" alt="amb_img" appTooltip [tooltipText]=col|translate  placement="top">
+                </span>
+                <span *ngIf="(col === 'Icons' && component === 'ot') || (col === 'Alert' && component === 'porter')">
+                    <mat-icon class="ovi-fnt-sze17" style="height: 16px;width: 18px;">warning</mat-icon>
+                </span>
+                
+                <span *ngIf="col === 'Priority' && component === 'porter'">
+                    <img style="width:16px" src="/assets/Alert/common_icons/priority_high.svg" alt="priority_img">
+                </span>
+                
+                <span *ngIf="col === 'Gender' && component === 'package'">{{col | titlecase}}</span>
+                
+                <span *ngIf="col === 'Token No'">
+                    <img style="width:16px" src="/assets/Alert/common_icons/token.svg" alt="token_img" appTooltip [tooltipText]=col|translate placement="top">
+                </span>
+                
+                <span *ngIf="col === 'Diabetic'">
+                    <img style="width:16px" src="/assets/Alert/common_icons/diabetic.svg" alt="diabetic_img" appTooltip [tooltipText]=col|translate placement="top">
+                </span>
+                
+                <span *ngIf="col === 'Due Date' && component === 'asset-management'">
+                    <img style="width:16px" src="/assets/Alert/common_icons/asset_due_date.svg" alt="due_date_img">
+                </span>
+            </th>
+            <ng-container>
+                <td mat-cell style="padding-right: 20px;" *matCellDef="let element;let i = index;"
+                    (click)="enableAction && rowClick && component !=='token'&& component !=='config'&& component !== 'inpatient' && component !== 'staffRoutine' && component !== 'student' &&
+                     component !== 'outpatient' && component !== 'ot' &&  component !== 'task' && component !== 'hazmat-training-list' && component !== 'widget' && component !== 'medicalRecord' && component !== 'porter' &&
+                     component !== 'ambulance' && component !== 'workflowForm' && component !== 'ticket' && component !== 'appterm' && component !== 'groups' &&
+                     component !== 'broker' && component !== 'item-master' ? rowClickEvent(element) : ''"
+                    (dblclick)="enableAction && rowDbClick && component !== 'tag' ? rowDbClickEvent(element) : ''"
+                    [ngClass]="eventColumn?.indexOf(col) > -1  && component !== 'tag' && element['reqDetailStatusId'] !== 'MR-REC' ? 'event-link' : ''" appDebounceClick [debounceTime]="300"
+                    (debounceClick)="eventColumn?.indexOf(col) > -1  && element['reqDetailStatusId'] !== 'MR-REC' ? eventTrigger(col,element) : ''"
+                    [ngStyle]="{'color': element['Alert Type'] === 'Critical' && col === 'Alert Type' ? '#ED5135' :  
+                                element['Alert Type'] === 'Reminder' && col === 'Alert Type' ? '#288EE9' : 
+                                element['Alert Type'] === 'Warning' && col === 'Alert Type' ? '#FF7200' :
+                                element['Alert Type'] === 'Info' && col === 'Alert Type' ? '#4BB1CF' : '' ,
+                                'font-weight': col === 'Alert Type' ? '600' : '',
+                                'text-align': col === 'Length of stay' || col === 'Porter Count' || col === 'Weightage' || col === 'Report Collected' || 
+                                col === 'Completed Test Count' || col === 'Total Test Count' || (col === 'Location' && component === 'ambulance') ? 'center' : '',
+                                'padding-left': col ==='ID'?'5px':'',
+                                'width': col === 'Gender' || col === 'Age' || col === 'Id' ? '5%' :col === 'Device' && component === 'asset-management'||col === 'ID' ? '2%' : '',
+                                'min-width': col === 'Nurse Call' || (component === 'nursecall-view' && col === 'Alerts') && component !== 'staffRoutine' && component !== 'student' || (col === 'Location' && component == 'asset-maintenance') || ((col === 'Input Params' || col == 'Output Params' || col == 'API URL') && component == 'pf-models') || (col === 'Label Name' || col === 'Description' && component == 'dataItem') || (col === 'Entity Name' && component == 'entity-association') || (col === 'IP Issue No' && component == 'porter')  || (col === 'Template Format' && component === 'channel-template') || (col === 'Value' && component === 'User-Preferences')
+                                 || (col === 'Additional Info' && component === 'audit-log' || component === 'error-log') || (col === 'URL' && component === 'audit-log' || component === 'error-log') || (col === 'Message' && component === 'audit-log' || component === 'error-log') || (col === 'Component Name' && component === 'error-log') || (col === 'Stack Trace' && component === 'error-log')|| (col === 'Error Message' && component === 'error-log')  ? '180px' : 
+                                col === 'Alert' && component !== 'staffRoutine' && component !== 'student' && component !== 'alertInfo' &&  component !== 'asset-management'? '160px' : (col === 'Description' && component == 'task') ? '260px' : ( col === 'Default Value' && component == 'dataItem') ? '300px' : '',
+                                'max-width': ((col === 'Description' || col === 'Remarks')
+                                && component === 'porter') || (col === 'Pickup' && component === 'ambulance' || 
+                                col === 'Drop' && component === 'ambulance')|| (col === 'Message' && component === 'alert-management') || (col === 'Message' && component === 'messageCenteroaster') || (col === 'Location' && component == 'asset-maintenance') || ((col === 'Input Params' || col == 'Output Params' || col == 'API URL') && component == 'pf-models') || (col === 'Label Name' || col === 'Description' && component == 'dataItem') || (col === 'Entity Name' && component == 'entity-association') || (col === 'IP Issue No' && component == 'porter') || (col === 'Template Format' && component === 'channel-template') || (col === 'Value' && component === 'User-Preferences')
+                                 || (col === 'Additional Info' && component === 'audit-log' || component === 'error-log')  || (col === 'URL' && component === 'audit-log' || component === 'error-log') || (col === 'Message' && component === 'audit-log' || component === 'error-log') || (col === 'Component Name' && component === 'error-log') || (col === 'Stack Trace' && component === 'error-log')|| (col === 'Error Message' && component === 'error-log')  ? '250px' : 
+                                (col === 'Pickup' || col === 'Drop' && component === 'porter') || (col === 'Surgery Name' && component === 'ot') || (col === 'Location Name' && component ==='audit-management') ? '120px' :
+                                ((col === 'Requester'|| col === 'Rating Comments') && component === 'porter') ? '75px' : (col === 'Description' && component == 'task')||(col === 'Remarks' && component === 'audit-schedule-management') ? '300px' : ( col === 'Default Value' && component == 'dataItem') ? '350px' : '',
+                                'overflow': ((col === 'Description' || col === 'Pickup' || col === 'Drop' || col === 'Remarks' || col === 'Requester' || 'Rating Comments')
+                                && component === 'porter') || (col === 'Pickup' && component === 'ambulance' || 
+                                col === 'Drop' && component === 'ambulance') || (col === 'Message' && component === 'alert-management') || (col === 'Message' && component === 'messageCenteroaster') ||
+                                (col === 'Surgery Name' && component === 'ot')|| (col === 'Location Name' && component ==='audit-management') || (col === 'Location' && component == 'asset-maintenance') || ((col === 'Input Params' || col == 'Output Params' || col == 'API URL') && component == 'pf-models') || ((col === 'Label Name' || col === 'Description' || col === 'Default Value') && component == 'dataItem') || (col === 'Description' && component == 'task') || (col === 'Entity Name' && component == 'entity-association') || (col === 'IP Issue No' && component == 'porter') || (col === 'Template Format' && component === 'channel-template') || (col === 'Value' && component === 'User-Preferences')
+                                || (col === 'Additional Info' && component === 'audit-log' || component === 'error-log') || (col === 'URL' && component === 'audit-log' || component === 'error-log') || (col === 'Message' && component === 'audit-log' || component === 'error-log') || (col === 'Component Name' && component === 'error-log') || (col === 'Stack Trace' && component === 'error-log')|| (col === 'Error Message' && component === 'error-log')  ? 'hidden' : '',
+                                'text-overflow': ((col === 'Description' || col === 'Pickup' || col === 'Drop' || col === 'Remarks' || 
+                                 col === 'Requester'|| col === 'Rating Comments') && component === 'porter') || (col === 'Pickup' && component === 'ambulance' || 
+                                col === 'Drop' && component === 'ambulance') || (col === 'Message' && component === 'alert-management')|| (col === 'Message' && component === 'messageCenteroaster') ||
+                                (col === 'Surgery Name' && component === 'ot') || (col === 'Location Name' && component ==='audit-management') ? 'ellipsis' : '',
+                                'white-space': ((col === 'Description' || col === 'Pickup' || col === 'Drop' || col === 'Remarks' || 
+                                col === 'Requester' || col === 'Rating Comments') && component === 'porter') || (col === 'Pickup' && component === 'ambulance' ||
+                                col === 'Drop' && component === 'ambulance') || (col === 'Surgery Name' && component === 'ot') || (col === 'Location Name' && component ==='audit-management') ? 'nowrap' : (col === 'Porter Pool / Location' && component == 'task') ||(col === 'Remarks' && component === 'audit-schedule-management')? 'wrap': (col === 'Location' && component == 'asset-maintenance') || ((col === 'Input Params' || col == 'Output Params' || col == 'API URL') && component == 'pf-models') || (col === 'Label Name' || (col === 'Description' || col === 'Default Value') && component == 'dataItem') || (col === 'Description' && component == 'task') || (col === 'IP Issue No' && component == 'porter') || (col === 'Template Format' && component === 'channel-template') || (col === 'Value' && component === 'User-Preferences')
+                                || (col === 'Additional Info' && component === 'audit-log' || component === 'error-log') || (col === 'URL' && component === 'audit-log' || component === 'error-log') || (col === 'Message' && component === 'audit-log' || component === 'error-log') || (col === 'Component Name' && component === 'error-log') || (col === 'Stack Trace' && component === 'error-log') || (col === 'Error Message' && component === 'error-log') || (col === 'Entity Name' && component == 'entity-association') ? 'normal' : '', 
+                                'word-break' : (col === 'Location' && component == 'asset-maintenance') || ((col === 'Input Params' || col == 'Output Params' || col == 'API URL') && component == 'pf-models') || ((col === 'Label Name' || col === 'Description' || col === 'Default Value') && component == 'dataItem') || (col === 'Description' && component == 'task') || (col === 'IP Issue No' && component == 'porter') || (col === 'Template Format' && component === 'channel-template')
+                                || (col === 'Additional Info' && component === 'audit-log' || component === 'error-log') || (col === 'URL' && component === 'audit-log' || component === 'error-log') || (col === 'Message' && component === 'audit-log' || component === 'error-log') || (col === 'Component Name' && component === 'error-log') || (col === 'Stack Trace' && component === 'error-log') || (col === 'Error Message' && component === 'error-log') || (col === 'Entity Name' && component == 'entity-association')|| (col === 'Remarks' && component === 'audit-schedule-management') ? 'break-word' : (col === 'Remarks' && component === 'audit-schedule-management') ? 'break-spaces': '' }"  (keydown.enter)="fixClick()">
+                        
+                    <span *ngIf="col === 'select'">                                
+                        <mat-checkbox (click)="checkboxEvent($event, 'row', element)"
+                        [checked]="selection.isSelected(element)" [aria-label]="checkboxLabel(element)">
+                        </mat-checkbox>
+                    </span>
+                    <span *ngIf="dateTimeColumns?.includes(col)">
+                        {{element[col] | date: (dateTimeFormat ?? 'dd MMM yyyy,HH:mm') }}
+                    </span>
+                    <span *ngIf="dateColumns?.includes(col)">
+                        {{element[col] | date: (dateFormat ?? 'dd MMM yyyy') }}
+                    </span>
+                    <span *ngIf="timeColumns?.includes(col)">
+                        {{element[col] | date: (timeFormat ?? 'HH:mm:ss') }}
+                    </span>
+                    <span *ngIf="!(iconColumn?.indexOf(col) > -1) && ! dateTimeColumns?.includes(col) && ! dateColumns?.includes(col) && ! timeColumns?.includes(col)&& !(col === 'DoorControllerStatus' && component ==='door-controller')&&!(component === 'ambulance' && col === 'Live Video')&&!(col === 'Location' && component ==='door-controller') && !(col === 'Linked Asset' && component === 'asset-management') && !(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].includes(col) && component === 'asset-maintenance')" 
+                        appTooltip [tooltipText]="(col === 'Identifier' && component == 'task') ? 'Manage ' + element.routineTypeName : (col === 'Status' && component == 'task') ? 'View History' : (col === 'Assigned To' && component == 'task') ? 
+                        'Manage Assignment': (col === 'Parent ID' && component == 'task') ? 'Manage Ticket' : (col === 'Type' && component == 'task') ? element?.routineTypeName : (col === 'Asset Name' && component == 'asset-management') ? 'Manage Asset' : 
+                        (col === 'Status' && component == 'asset-management') ? 'Manage Event' :(col === 'Identifier' && component == 'eventRoutine') ? 'Manage Maintenance' : (col ==='Status' && component == 'manageRoutine') ? 'Manage Routine' : ''">{{element[col]}}</span>
+                    <span *ngIf="col === 'Surgery Name' && component === 'ot'" appTooltip [tooltipText]="element['otProcedureName']" placement="top">{{element[col]}}</span>
+                  <!-- <span mat-icon-button *ngIf="col === 'Status' && component === 'inpatient'" (mouseover)="rowOverEvent(element,$event)">{{element[col]}}</span>
+                  <div style="visibility: hidden; position: fixed;" #clickHoverMenuTrigger="matMenuTrigger" [matMenuTriggerFor]="clickHoverMenu" [style.left.px]="menuTopLeftPosition.x" [style.top.px]="menuTopLeftPosition.y"></div>
+                  <mat-menu #clickHoverMenu="matMenu" style="padding-top: 2px;padding-bottom: 5px;" [overlapTrigger]="true">
+                    <span (mouseleave)="rowHideEvent(element)">
+                      <button mat-menu-item style="height:40px;padding: 0px 10px 0px 10px;" (click)="headerEventTrigger('manageAction', obj.code, element)" *ngFor="let obj of mouseOverAction;">
+                        <img style="height: 20px;width: 20px;padding: 8px 8px 0px 8px;opacity: 80%;" class="svg-icon" matListIcon
+                        src="/assets/Menus/{{ obj.link }}.svg">{{obj.name}}</button>
+                    </span>
+                  </mat-menu> -->
+                   <div *ngIf="col === 'Location' && component === 'door-controller'" style="display: inline-block; position: relative;">
+                        <span class="tw-asset-tooltip-item">
+                            <span (mouseenter)="showTooltip($event)" (mouseleave)="hideTooltip()"
+                             class="location-truncate">
+                                {{ element[col] }}
+                                <div class="tw-asset-tooltip-con" style="position: fixed;left: var(--cell-left);top: var(--cell-top);z-index: 99999;padding: 10px;border: 1px solid #00aaff;border-radius: 8px;background: white;box-shadow: 0 2px 6px rgba(0,0,0,0.15);display: inline-block;max-height: 150px;max-width: 90vw;min-width: 100px;white-space: normal;word-break: break-word;overflow-y: auto;overflow-x: visible;">
+                                    <div class="tw-asset-tooltip-header" style="font-weight: bold; color: #00aaff; margin-bottom: 0px;">
+                                        Locations
+                                    </div>
+                                    <div class="tw-asset-tooltip-scroll" style="max-height: 110px;overflow-y: auto;    width: auto; overflow-x: auto; word-break: break-word;white-space: nowrap;">
+                                        <div class="tw-asset-tooltip-row" style="display: flex; flex-direction: column; gap: 0px; width: max-content">
+                                            <div class="tooltip-item" *ngFor="let item of element[col]">
+                                                <div class="tooltip-icon"></div>
+                                                <span class="tooltip-text" style="white-space: normal; word-break: break-word;">{{ item }}</span>
+                                            </div>                                
+                                    </div>
+                                    </div>
+                                </div>
+                            </span>
+                        </span>
+                    </div>
+                    <span *ngIf="component === 'config-layout' && col === 'Default Value'"
+                        style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; max-width: 150px;">
+                        <span *ngIf="element[col]">
+                            {{ (element.name === 'toDate' || element.name === 'fromDate') ? (element[col] | date:'dd-MM-yyyy')
+                            : (element.name === 'fromDateTime' || element.name === 'toDateTime') ? (element[col] | date:'hh:mm a, d
+                            MMM') : element[col] }}
+                        </span>
+                    </span>
+
+                    <span *ngIf="col === 'Report Status' && (component === 'health-checkup' || component === 'follow-up')" style="font-weight: 600;"
+                    (click)="element['status'] !== 'Assign Token' && element['reportStatusId'] !== 'RS-REC' ? eventTrigger(col,element) : ''"
+                    [ngStyle]="{'color': element['reportStatusId'] === 'RS-PEN' && element['status'] !== 'Assign Token' ? 'grey' : element['reportStatusId'] === 'RS-DIS' ? 
+                    '#1e8fc8' : element['reportStatusId'] === 'RS-REC' ? '#1ABF20' : 'lightgrey',
+                    'cursor': element['status'] !== 'Assign Token' && element['reportStatusId'] !== 'RS-REC' ? 'pointer' : ''}"  (keydown.enter)="fixClick()">{{element[col]}}</span>
+
+                    <span *ngIf="component === 'inpatient' && col === 'Patient Name' && element['patientName'] !== null" 
+                        appTooltip [tooltipText]="element['patientName']" placement="top"
+                        style="cursor:pointer;color: blue" (keydown.enter)="fixClick()"
+                        (click)="eventTrigger(col,element)">{{element[col]}}</span>
+
+                    <span *ngIf="component === 'token' && col === 'Token' && element['Token'] !== null" 
+                        style="cursor:pointer;color: blue" (keydown.enter)="fixClick()"
+                        (click)="eventTrigger(col,element)">{{element[col]}}</span>
+
+                    <span *ngIf="component === 'ot' && col === 'DOB' && element['DOB'] !== null">{{element[col] | date: 'dd/MM/yyyy' | maskData: (element['vipTypeId'] === null || element['vipTypeId'] === 'General'): true}}</span>
+
+                    <span *ngIf="component === 'ot' && col === 'Mobile' && element['Mobile'] !== null">{{element[col] | maskData: (element['vipTypeId'] === null || element['vipTypeId'] === 'General'): true}}</span>
+
+                    <span *ngIf="component === 'ot' && col === 'Name' && element['name'] !== null"
+                    style="cursor:pointer;color: blue"  (keydown.enter)="fixClick()"
+                    (click)="eventTrigger(col,element)">
+                    {{element[col] | maskData: (element['vipTypeId'] === null || element['vipTypeId'] === 'General')}}</span>
+
+                     <span *ngIf="component === 'inpatient' && col === 'Consulting Doctor' && element['doctor'] !== null" 
+                        appTooltip [tooltipText]="element['doctor']" placement="top">{{element[col]}}</span>
+
+                    <span *ngIf="component === 'device' && col === 'Battery'">{{element[col] / 100 | percent}}</span>
+                    
+                    <span *ngIf="component === 'device' && col === 'isAssociated'">
+                        <img *ngIf="element['isAssociated']"  alt="link" src="/assets/Alert/common_icons/noun_link_1832640.svg" style="width:25px;cursor: pointer;"
+                        appTooltip tooltipText="{{'Tag already Linked'|translate}}" placement="bottom" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                        <img *ngIf="!element['isAssociated']"  alt="link" src="/assets/Alert/common_icons/noun_unlink_1561908.svg" style="width:25px;cursor: pointer;"
+                        appTooltip tooltipText="{{'Tag yet to be Linked'|translate}}" placement="bottom" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                    </span>
+               <span *ngIf="component === 'ambulance' && col === 'Live Video' && element['streamUrl']&& 
+                element['status'] !== 'RQ-CO' && element['status'] !== 'RQ-CA' && element['status'] !== 'RQ-RJ'" class="live-video-icon"(click)="eventTrigger(col,element)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"></polygon>
+                    </svg>
+                </span>
+                    <span *ngIf="col ==='Audited DateTime'">
+                             {{ element[col] | date:"dd MMM yyyy hh:mm:ss a" }}
+                    </span>
+
+                    <span *ngIf="col === 'Diabetic' && element[col] !== null && element[col] !== ''">
+                        {{element[col]}}
+                    </span>
+
+                    <span *ngIf="component === 'task' && col === 'Associate Driver'">
+                        <img *ngIf="element['userId'] !== null"  alt="link" src="/assets/Alert/common_icons/noun_link_1832640.svg" style="width:25px;cursor: pointer;"
+                        appTooltip tooltipText="{{'Driver already Linked'|translate}}" placement="bottom" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                        <img *ngIf="element['userId'] ===  null"  alt="link"  src="/assets/Alert/common_icons/noun_unlink_1561908.svg" style="width:25px;cursor: pointer;"
+                        appTooltip tooltipText="{{'Driver yet to be Linked'|translate}}" placement="bottom" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                    </span>
+                    <span *ngIf="col === 'DoorControllerStatus' && component === 'door-controller'">
+                        <div class="door-controller-actions">
+                            <button *ngIf="loadingMap[element?.id] " class="loading-btn" disabled>
+                                Loading...
+                            </button>
+                    
+                            <ng-container
+                                *ngIf="!(loadingMap[element?.id])">
+                                <button class="btn-open"
+                                    [class.active]="element?.DoorControllerStatus === 'Open'"
+                                    (click)="toggleOption('DoorControllerStatus', element,'Open')">
+                                    Open
+                                </button>
+                    
+                                <button class="btn-close" 
+                                    [class.active]="element?.DoorControllerStatus === 'Close'"
+                                    (click)="toggleOption('DoorControllerStatus', element, 'Close')">
+                                    Close
+                                </button>
+                            </ng-container>
+                        </div>
+                    </span>
+                    <span *ngIf="col === 'Linked Asset' && component === 'asset-management'">
+                     <div class="linked-asset-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <span class="count-badge" *ngIf="element?.[col] && element[col] > 0">{{ element[col] }}</span>
+                     </div>
+                    </span>
+                    <span *ngIf="col === 'Record ID'">
+                        <img *ngIf="element['assetTagId'] === null" style="width:35px;"
+                            src="/assets/Alert/common_icons/MR_grey.svg" alt="tag">
+                        <img *ngIf="element['assetTagId'] !== null" style="width:35px;" 
+                            src="/assets/Alert/common_icons/MR_green.svg" alt="tag">
+                    </span>
+                    <!-- <span *ngIf="col === 'Task' && component === 'inpatient'">{{element[col]}}</span> -->
+                    <span *ngIf="col === 'Task' && (component === 'inpatient' || component === 'staffRoutine' || component === 'student')">
+                        <img style="width:16px;cursor: pointer;" appTooltip [tooltipText]="element['routineName'] ? element['routineName'] : ''"
+                        [src]="element['routineStatusName'] ? '/assets/Menus/BL_task.svg' : '/assets/Menus/G_task.svg'" alt="task icon">&nbsp;
+                        <span *ngIf="component === 'inpatient' || ((component === 'staffRoutine' || component === 'student') && element['routineProgressValue'] === null)" style="display: inline-block;">
+                            <div class="spinner-container" *ngIf="element['routineStatusName']">
+                                <div class="spinner-background" >{{element['routineProgressValue']/100 | percent}}</div>
+                                <mat-progress-spinner #spinner
+                                    mode="determinate"
+                                    value="{{element['routineProgressValue']/100 | percent}}"
+                                    strokeWidth="6"
+                                    diameter="30" style="top: 4px;">
+                                </mat-progress-spinner>
+                            </div>
+                        </span>
+                    </span>
+                    <span *ngIf="col === 'Porter' && (component === 'inpatient' || component === 'ot')">
+                        <img style="width:16px;cursor: pointer;" [ngStyle]="{opacity: element['porterRequestId'] === null ? '38%' : ''}" 
+                        src="/assets/Menus/SMW_porter_management.svg" alt="porter icon">
+                    </span>
+                    <span *ngIf="col === 'Rating' && component === 'porter'" style="display: flex;position:relative;align-items:center;justify-content:center;">
+                        <mat-icon *ngIf="element.status =='RQ-CO' && element.performer?.length > 0" appTooltip [tooltipText]="element.rating > 0 ? element.rating + ' ' + (element.rating === '1' ? ('Rating' | translate) : ('Ratings' | translate)) : ''"
+                        appDebounceClick (debounceClick)="eventTrigger(col,element)" [debounceTime]="300" style="height:28px; width:28px; padding-top:0px;" class="ovi-fnt-sze28" [style.color]="(element.rating || 0) > 0 ? 'rgb(229 164 19)' : 'lightgray'">star</mat-icon>
+                        <span *ngIf="element.status =='RQ-CO' && element.performer?.length > 0 && element.rating !== null && element.rating !== 0" style="position: absolute;top: 50%;left:50%;transform: translate(-50%,-50%);pointer-events: none;font-weight:600">{{ element.rating }}</span>
+                    </span>
+                    <span *ngIf="col === 'Rating Comments' && component === 'porter' && element['ratingcomments'] !== null" 
+                    appTooltip [tooltipText]="element['ratingComments']" placement="bottom">
+                    {{element['ratingComments']}}</span>
+                    <span *ngIf="col === 'Location Name' && component === 'audit-management' && element['locationName'] !== null" 
+                    appTooltip [tooltipText]="element['locationName']" placement="bottom">
+                    {{element['locationName']}}</span>
+                    <div *ngIf="col === 'Care Provider Graph'" style="width: 280px; height: 120px;">
+                        <canvas baseChart width = "calc(100% - 70px)" height = "calc(100% - 70px)" 
+                            [type]="element['type']" [datasets]="element['datasets']"
+                            [labels]="element['labels']" [colors]="element['colors']"
+                            [options]="chartOptions">
+                        </canvas>
+                    </div>
+                    <span *ngIf="col === 'deleteEdit' && component === 'appterm'">
+                        <mat-icon  class="ovi-prmry-clr ovi-fnt-sze21"
+                                appTooltip tooltipText="{{'Edit'|translate}}" placement="bottom" appDebounceClick
+                                        (debounceClick)="eventTrigger('Edit',element)" [debounceTime]="300"
+                                        cdkFocusInitial>edit</mat-icon>
+                        <mat-icon matSuffix style="color: #E65100" appTooltip tooltipText="{{'Delete'|translate}}" appDebounceClick
+                                        (debounceClick)="eventTrigger('Delete',element)" [debounceTime]="300"
+                                        cdkFocusInitial>delete</mat-icon>
+                    </span>
+                    <span *ngIf="col === 'Schedule Time' && component === 'ot'">
+                        <div style="display: inline-flex;">
+                            <img *ngIf="element['delayScheduleStartTime'] === null" (click)="eventTrigger(col,element)"   alt="time-delay"
+                            src="../../../assets/Alert/common_icons/time_delay_grey.svg"  appTooltip tooltipText="{{'Surgery Start Delay'|translate}}" class="ovi-img-size-delay" (keydown.enter)="fixClick()">
+                            <img *ngIf="element['delayScheduleStartTime'] !== null" (click)="eventTrigger(col,element)" 
+                            src="../../../assets/Alert/common_icons/time_delay_amber.svg"  alt="time-delay" appTooltip tooltipText="{{'Surgery Start Delay'|translate}}"  class="ovi-img-size-delay" (keydown.enter)="fixClick()">
+                            <span *ngIf="element['delayScheduleStartTime'] !== null" class="ot-badge" matBadgeSize="small" [matBadgeHidden]="element['delayScheduleStartTime'] === null" [matBadge]="element['delayStartTime']"></span>
+                            <div style="padding-top: 5px; padding-left: 10px;">{{ (element?.scheduleStartTime ? element.scheduleStartTime : element?.visitEventFrmTime) | date: 'hh:mm a' }}</div>
+                        </div>
+                    </span>
+                    <span *ngIf="col === 'End Time' && component === 'ot'">
+                        <div style="display: inline-flex;">
+                        <img *ngIf="element['delayScheduleEndTime'] === null" (click)="eventTrigger(col,element)"  (keydown.enter)="fixClick()"
+                            src="../../../assets/Alert/common_icons/time_delay_grey.svg" alt="time-delay" appTooltip tooltipText="{{'Surgery End Delay'|translate}}"  class="ovi-img-size-delay">
+                            <img *ngIf="element['delayScheduleEndTime'] !== null" (click)="eventTrigger(col,element)"  (keydown.enter)="fixClick()"
+                            src="../../../assets/Alert/common_icons/time_delay_amber.svg"  alt="time-delay" appTooltip tooltipText="{{'Surgery End Delay'|translate}}"  class="ovi-img-size-delay">
+                            <span *ngIf="element['delayScheduleEndTime'] !== null" class="ot-badge" matBadgeSize="small" [matBadgeHidden]="element['delayScheduleEndTime'] === null" [matBadge]="element['delayEndTime']"></span>
+                            <div style="padding-top: 5px;padding-left: 10px;">{{element[col] | date : "hh:mm a"}}</div>
+                        </div>
+                    </span>
+                    <span *ngIf="col === 'Weightage' && component === 'inpatient' && element['routineProgressValue'] !== null">{{element['routineProgressValue']/100 | percent}}</span>
+                    <span *ngIf="col === 'Routine'">{{element['routineEventStatusName'] === null && element['routineStatus'] === 'QS-PE' ? element['routineStatusName'] : element['routineEventStatusName']}}</span>
+                    <span *ngIf="col === 'Gender' && (component !== 'package' && component !== 'common-search')"
+                        [ngClass]="{'male': element.Gender == 'Male', 'female': element.Gender == 'Female'}"
+                        >{{element[col] | slice:0:1}}
+                    </span>
+                    <span *ngIf="col === 'Patient Type'">
+                        <img *ngIf="element[col] == 'Ambulance'" style="width:20px" src="/assets/Alert/common_icons/amb.svg" alt="amb_img" appTooltip [tooltipText]=col|translate  placement="top">
+                    </span>
+                    <span *ngIf="col === 'Icons' && component === 'ot'">
+                        <span *ngIf="element['surgeryTypeId']== 'SGT-EM'" appTooltip [tooltipText]="'Emergency'| translate" placement="bottom">
+                            <img alt="Emergency" src="../../../../../assets/icons/emergency.png" height="18px" width="18px">
+                        </span>
+                        <span *ngIf="element['isVulnerable']">
+                            <mat-icon class=" ovi-fnt-sze17" style="color: orange;height: 16px;width: 18px;" appTooltip [tooltipText]="'Vulnerable'|translate" placement="bottom">warning</mat-icon>
+                        </span>
+                        <span *ngIf="element['threats']!=null">
+                            <mat-icon class=" ovi-fnt-sze17" style="color: red;height: 16px;width: 18px;" appTooltip [tooltipText]="element['threatsTooltip']" placement="bottom">warning</mat-icon>
+                        </span>
+                        <span *ngIf="element['vipTypeId'] !== null && element['vipTypeId'] != 'General'">
+                            <img src="/assets/Alert/common_icons/vip.svg" height="17px" width="13px" alt='VIP' appTooltip [tooltipText]="'VIP'|translate" placement="bottom">
+                        </span>
+                        <span *ngIf="element['hasOverlap'] && element['hasOverlap'] == true">
+                            <img src="/assets/Alert/common_icons/overlap.svg" height="15px" width="17px" alt='VIP' appTooltip [tooltipText]="'Overlap'|translate" placement="bottom">
+                        </span>
+                    </span>
+                    
+                    <span *ngIf="col === 'Alert' && component === 'porter'">
+                        <mat-icon *ngIf="element['Alert'] != null" class=" ovi-fnt-sze17" style="height: 16px;width: 18px;color: red;"
+                        appTooltip [tooltipText]="element['Alert']" placement="top">warning</mat-icon>
+                    </span>
+
+                    <span *ngIf="col === 'Priority' && component === 'porter'">
+                        <img *ngIf="element['priority']" style="width:25px;"
+                            src="/assets/Alert/common_icons/priority_high.svg" alt="priority">
+                    </span>
+
+                    <!-- <span *ngIf="((col === 'DOB')|| col === 'Installation Date') && component !== 'ot'">{{element[col] | date: 'dd/MM/yyyy'}}</span> -->
+                    <span *ngIf="col === 'Event Date'">{{element[col] | date: 'dd/MM/yyyy'}}</span>
+                    <span *ngIf="col === 'GatePass'">
+                        <mat-icon *ngIf="element['gatePassStatusId'] === 'ATE-GISD'" appTooltip tooltipText="{{'Gatepass Issued' | translate}}" appDebounceClick
+                        (debounceClick)="eventTrigger(col,element)" [debounceTime]="300" cdkFocusInitial style="color: #ffd300; cursor: pointer;">exit_to_app</mat-icon>
+                        <mat-icon *ngIf="element['gatePassStatusId'] === 'ATE-GEXP'"  appTooltip tooltipText="{{'Exit Approved' | translate}}"appDebounceClick
+                        (debounceClick)="eventTrigger(col,element)" [debounceTime]="300" cdkFocusInitial style="color: orange; cursor: pointer;">exit_to_app</mat-icon>
+                        <mat-icon *ngIf="element['gatePassStatusId'] === 'ATE-GENP'" appTooltip tooltipText="{{'Entry Approved' | translate}}"appDebounceClick
+                        (debounceClick)="eventTrigger(col,element)" [debounceTime]="300" cdkFocusInitial style="color: green; cursor: pointer;">exit_to_app</mat-icon>
+                    </span>
+                    <span *ngIf="col === 'Event Status' && element.assetTransferTypeName !='Active'">
+                        {{element.assetTransferTypeName}} {{element.transferEventStatus}}
+                    </span>
+                    <span *ngIf="col === 'Audit Status'">{{element.isAudit === true ? 'Audited' : 'Non-Audited'}}</span>
+                    <span *ngIf="col === 'Open Task' && component === 'manageRoutine' && element.noOfOpenTasks != null && element.noOfOpenTasks > 0" class="open-badge"
+                      appTooltip [tooltipText]="((element.noOfOpenTasks === 1 ? (element.noOfOpenTasks + ' Open Task')  : (element.noOfOpenTasks + ' Open Tasks'))) | translate">
+                    {{ element.noOfOpenTasks > 99 ? '99+' : element.noOfOpenTasks }}
+                    </span>
+                    <span *ngIf="col === 'Alert' && component === 'asset-management'">
+                        <mat-icon *ngIf="element['taskCount']" appTooltip class=" ovi-fnt-sze18" appDebounceClick (debounceClick)="eventTrigger(col,element,'Ticket')"
+                         [tooltipText]="(element.taskCount) === 1 ? (element.taskCount + ' ' + ('Ticket Open' | translate)): (element.taskCount + ' ' + ('Tickets Open' | translate))"
+                         style="color: #3381cc;cursor: pointer;padding:0; position:relative;">task</mat-icon>
+                        <mat-icon *ngIf="element['workOrderCount']" appTooltip class=" ovi-fnt-sze18"appDebounceClick (debounceClick)="eventTrigger(col,element,'WorkOrder')"
+                         [tooltipText]="(element.workOrderCount) === 1 ? (element.workOrderCount + ' ' + ('Work Order Open' | translate)): (element.workOrderCount + ' ' + ('Work Orders Open' | translate))"
+                         style="color: rgb(57, 179, 158);cursor: pointer;padding:0px;position:relative;">fact_check</mat-icon>
+                        <mat-icon *ngIf="element.routineCount"  appTooltip class=" ovi-fnt-sze18" appDebounceClick (debounceClick)="eventTrigger(col,element,'Maintenance')"
+                         [tooltipText]="(element.routineCount) === 1 ? (element.routineCount + ' ' + ('Maintenance Open' | translate)): (element.routineCount + ' ' + ('Maintenances Open' | translate))"
+                         style="color: rgb(158, 194, 228); cursor: pointer;padding:0px;">settings_suggest</mat-icon>
+                        <mat-icon *ngIf="element.routineDueCount"  appTooltip class=" ovi-fnt-sze18" appDebounceClick (debounceClick)="eventTrigger(col,element,'Maintenance')"
+                         [tooltipText]="(element.routineDueCount) === 1 ? (element.routineDueCount + ' ' + ('Maintenance Due' | translate)): (element.routineDueCount + ' ' + ('Maintenances Due' | translate))"
+                         style="color: rgb(235, 170, 57); cursor: pointer;padding:0px;">settings_suggest</mat-icon>
+                    </span>
+                    <span *ngIf="col === 'Report' && component === 'asset-management'">
+                        <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" *ngIf="activate_btn.includes('BT_ASTRPT')"
+                        appTooltip tooltipText="{{'Report'|translate}}" placement="bottom"[debounceTime]="500"
+                        appDebounceClick (debounceClick)="eventTrigger(col,element)"
+                        (keydown.enter)="fixClick()">description</mat-icon>
+                    </span>
+                    <span *ngIf="col === 'Overview' && component === 'asset-management'">
+                        <mat-icon class="ovi-prmry-clr ovi-fnt-sze20"
+                        appTooltip tooltipText="{{'Overview'|translate}}" placement="bottom"[debounceTime]="500"
+                        appDebounceClick (debounceClick)="eventTrigger(col,element)"
+                        (keydown.enter)="fixClick()">dashboard</mat-icon>
+                    </span>
+                    
+                    <span *ngIf="col === 'Report' && (component  === 'manageRoutine'||component  ==='print-sticker')">
+                        <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" *ngIf="activate_btn.includes('BT_MAINRQRPT')"
+                        appTooltip tooltipText="{{'Report'|translate}}" placement="bottom"[debounceTime]="500"
+                        appDebounceClick (debounceClick)="eventTrigger(col,element)"
+                        (keydown.enter)="fixClick()">description</mat-icon>
+                    </span>
+                    <span *ngIf ="col ==='Type' && component ==='assetAlert'">
+                        {{element.ruleCategoryId === 'RC-API' ? element.requestTypeName : element.pfRuleName}}
+                    </span>
+                     <span *ngIf="col === 'Test Status' && component === 'health-checkup'"
+                     [ngClass]="{'clr-blue' : element['testStatusId'] === 'QS-IP',
+                     'clr-green' : element['testStatusId'] === 'QS-CO',
+                     'clr-orange' : element['testStatusId'] === 'QS-WT',
+                     'clr-red' : element['testStatusId'] === 'QS-PE'}">{{element[col]}}</span>
+                     <span *ngIf="col ==='Status' && component ==='assetAlert'">
+                        {{element?.['isSeen'] == true ? 'Read' :'Unread'}}
+                     </span>
+                    <span *ngIf="(col === 'Requested Date' && component !== 'item-master') || col === 'Dispatched Date' || col === 'Received Date' ||  ((col === 'Start Date' || col === 'End Date')  && component !='audit-management') || (col === 'Schedule Date' && component !== 'item-master') || (component === 'patient-report-history' && col === 'Reported Date') || ((col ==='Alert Time' || col ==='Closed Time'|| col ==='Read Time') && component==='assetAlert')||
+                    (col === 'End Time' && component !== 'ot'&& component!=='staffMustering' && component !== 'shift-master')  || col === 'AlertDatetime' || col === 'ClosedDatetime'|| col === 'Request Datetime' || 
+                    (col === 'Expected Delivery Date' || col === 'Date' && component === 'so-routine') || (col === 'Schedule Start' || col ==='Schedule End' && component === 'maintenanceInfo') ">
+                    {{element[col] | date : "hh:mm a, d MMM"}}</span>
+                    <!-- <span *ngIf="component === 'alertInfo' && ()">{{element[col] | date : "hh:mm a, d MMM YYYY"}}</span> -->
+                    <!-- <span *ngIf="col === 'Schedule Date' || col === 'Requested Date' && component === 'item-master'">{{element[col] | date: "dd-MM-yyyy HH:mm"}}</span>  -->
+                    <span *ngIf="(col === 'Time' && component !=='assetAlert' ||  col === 'Completed Time'  || col === 'Create Time' || col === 'Close Time') && component !== 'porter'">{{element[col] | date: "dd-MM-yyyy HH:mm"}}</span>
+                    <span *ngIf="(col ==='Time'&& component ==='assetAlert') || col ==='Event Date and Time'">{{element[col] | date : "dd-MM-yyyy  hh:mm a "}}</span>
+                    <span *ngIf="(component === 'porter' || component === 'manage-user') && col === 'Message'">
+                        <div class="chat-meg-btn" appTooltip [tooltipText]="'message' | translate" [debounceTime]="500"
+                            appDebounceClick (debounceClick)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                            <mat-icon class="ovi-fnt-sze20" [ngStyle]="{'color': !element?.conversationId ?  '#D1D1D1' : '#0d89eb'}">message</mat-icon>
+                            <span class="chat-badge" *ngIf="element?.unreadCount > 0">
+                                {{ element?.unreadCount > 99 ? '99+' : element?.unreadCount }}
+                            </span>
+                        </div>
+                    </span>
+                    <span *ngIf="iconColumn?.indexOf(col) !== -1 && col === 'Device'  && component !== 'asset-management' && component !== 'inpatient' && component !== 'staffRoutine' && component !== 'student'">
+                        <span *ngIf="element['Device'] === null && element['tag_type'] === null && element.status != 'Assign Token'">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+                        </span>
+                        <span *ngIf="element['Device'] === null && element['tag_type'] !== null && element['tag_type'] !== 'TT-MB'">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+                        </span>
+                        <span *ngIf="element['Device'] !== null && element['tag_type'] !== null && element['tag_type'] !== 'TT-MB'" appTooltip [tooltipText]="element['tagId']">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/coaster.svg" alt="coaster_img">
+                        </span>
+                        <span *ngIf="element['iotAlertStatus'] === 'Y' && element['tag_type'] !== null && element['tag_type'] !== 'TT-MB' && element['tag_type'] !== 'TT-PA'">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/coaster-missing.svg" alt="coaster_img">
+                        </span>
+                        <span *ngIf="element['Device'] !== null && element['tag_type'] === 'TT-MB'">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/mobile_phone.svg" alt="coaster_img">
+                        </span>
+                        <span *ngIf="element['Device'] === null && element['tag_type'] === 'TT-MB'">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/mobile_phone-g.svg" alt="coaster_img">
+                        </span>
+                    </span>
+                        
+                    <span *ngIf="col === 'Device' && (component === 'asset-management' || component === 'inpatient' || component === 'staffRoutine' || component === 'student')">
+                        <span *ngIf="element['Device'] === null">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/coaster-g.svg" alt="coaster_img">
+                        </span>
+                        <span *ngIf="element['Device'] !== null">
+                            <img style="width:16px;" src="/assets/Alert/common_icons/coaster.svg" alt="coaster_img"
+                                appTooltip [tooltipText]="element['Device']" placement="top">
+                        </span>
+                    </span>
+                    
+                    <span *ngIf="col === 'Schedule' && component === 'task'">
+                        <span *ngIf="element['scheduleActivityTypeId'] === 'SAT-BTM'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+                        <span *ngIf="element['scheduleActivityTypeId'] === 'SAT-ATM'">{{element[col] | date : "d MMM"}}</span>
+                        <span *ngIf="element['scheduleActivityTypeId'] === 'SAT-RGAT'">{{element[col] | date : "d MMM"}} - {{element['scheduleEndTime'] | date : "d MMM"}}</span>
+                        <span *ngIf="element['scheduleActivityTypeId'] === 'SAT-RGBT'">{{element[col] | date : "hh:mm a, d MMM"}} - {{element['scheduleEndTime'] | date : "d MMM"}}</span>
+                    </span>
+
+                    <span *ngIf="component === 'workflowForm' && col === 'Preview'">
+                        <div class="inventory-btn" appTooltip tooltipText="{{'Preview'|translate}}" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                            <mat-icon style="height: fit-content; width: fit-content;padding: 0;" class="ovi-fnt-sze20">launch</mat-icon>
+                        </div>
+                    </span>
+
+                    <span *ngIf="component === 'workflowForm' && col === 'viewHistory'">
+                        <img src="../../../../../assets/icons/view-history.svg" alt="History" appTooltip tooltipText="{{'View History'|translate}}" placement="bottom"
+                        (click)="eventTrigger(col,element)" style="width: 30px;" (keydown.enter)="fixClick()">
+                    </span>
+                        
+                    <span *ngIf="col === 'isTagAssociated'">
+                        <img *ngIf="element[col] === true" style="width:18px;"
+                            src="/assets/Alert/common_icons/noun_link_1832640.svg" alt="tag"
+                             />
+                        <img *ngIf="element[col] === false" style="width:18px;"
+                            src="/assets/Alert/common_icons/noun_unlink_1561908.svg" alt="no-tag"
+                            />
+                    </span>
+                        
+                    <span *ngIf="col === 'S.No'"> {{i+1}}</span>
+                        
+                    <span *ngIf="col === 'Rule'" (click)="eventTrigger(col, element)" (keydown.enter)="fixClick()">
+                        <mat-icon style="color:gray;cursor: pointer;">insert_link</mat-icon>
+                    </span>
+
+                    <span *ngIf="col === 'Nurse Call' || (component === 'nursecall-view' && col === 'Alerts') && component !== 'staffRoutine' && component !== 'student'">
+                        <span *ngFor="let alert of element['alerts']">
+                        <span *ngIf="alert.eventCode">
+
+                        <img *ngIf="alert.eventCode === 'CE-CL'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
+                            appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/nurse-call.svg"  (keydown.enter)="fixClick()">
+                        <img *ngIf="alert.eventCode === 'CE-AD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
+                            appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
+                        <img *ngIf="alert.eventCode === 'CE-FD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
+                            appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/food.svg" (keydown.enter)="fixClick()"> 
+                        <img *ngIf="alert.eventCode === 'CE-HK'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
+                            appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/housekeeping.svg" (keydown.enter)="fixClick()"> 
+                        <img *ngIf="alert.eventCode === 'CE-SO'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
+                            appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
+                        <img *ngIf="alert.eventCode === 'CE-MD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
+                            appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                        </span>
+                        </span>
+                    </span>
+
+                    <div *ngIf="component === 'maintenanceInfo'">
+                        <span *ngIf="col === 'ActivityIcon'">
+                            <img [src]="element?.activityCategoryId === 'AC-AMC' ? 'assets/icons/AMC_02.svg': element?.activityCategoryId === 'AC-PMS' ? 'assets/icons/PMC_01.svg': element?.activityCategoryId === 'AC-CAL'
+                              ? 'assets/icons/calibrate1.svg' : 'assets/icons/Corrective1_clipboard-check-outline.svg'"  [ngStyle]="{ filter: (element?.isNextDue && element?.isOverDue) ? 
+                                'invert(43%) sepia(77%) saturate(7490%) hue-rotate(346deg) brightness(91%) contrast(92%)' : (element?.isOverDue ? 'invert(43%) sepia(77%) saturate(7490%) hue-rotate(346deg) brightness(91%) contrast(92%)' : 
+                                (element?.isNextDue ? 'invert(64%) sepia(96%) saturate(743%) hue-rotate(1deg) brightness(96%) contrast(95%)' : 'invert(54%) sepia(93%) saturate(2183%) hue-rotate(182deg) brightness(94%) contrast(94%)')) }"
+                              style="width:22px;" alt="maintenance-icon" />
+                        </span>
+                    </div>
+
+                    <div *ngIf="component === 'asset-maintenance'"  class="maintenance-wrapper" >
+                        <span *ngIf="['AMC', 'PMS', 'Calibration', 'Corrective'].includes(col)" class="tw-asset-tooltip-item" (mouseenter)="showTooltip($event)" (mouseleave)="hideTooltip()">
+                            <img class="maintenance-hidden" *ngIf="element?.isRoutine" (click)="!element[col] ? eventTrigger('createMaintenance', element ) : ''" [class.maintenance-hidden]="!element[col]"  [src]="col === 'AMC'? 'assets/icons/AMC_02.svg': col === 'PMS' ? 'assets/icons/PMC_01.svg': col === 'Calibration' 
+                              ? 'assets/icons/calibrate1.svg' : 'assets/icons/Corrective1_clipboard-check-outline.svg'" [ngStyle]="{ filter:  !element[col] ? 'invert(34%) sepia(12%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%);' : (element[col]?.isNextDue && element[col]?.isOverDue) ? 
+                                'invert(43%) sepia(77%) saturate(7490%) hue-rotate(346deg) brightness(91%) contrast(92%)' : (element[col]?.isOverDue ? 'invert(43%) sepia(77%) saturate(7490%) hue-rotate(346deg) brightness(91%) contrast(92%)' : 
+                                (element[col]?.isNextDue && !element[col]?.events? 'invert(64%) sepia(96%) saturate(743%) hue-rotate(1deg) brightness(96%) contrast(95%)' : 'invert(54%) sepia(93%) saturate(2183%) hue-rotate(182deg) brightness(94%) contrast(94%)')) }"
+                              style="width:22px; cursor:pointer;" alt="maintenance-icon"  appTooltip [tooltipText]="!element[col] ? 'Create Maintenance' : ''" />
+                            <span *ngIf="!element?.isRoutine" (click)="eventTrigger('createMaintenance', element )">
+                                 <img class="maintenance-hidden" [src]="col === 'AMC'? 'assets/icons/AMC_02.svg': col === 'PMS' ? 'assets/icons/PMC_01.svg': col === 'Calibration'
+                                    ? 'assets/icons/calibrate1.svg' : 'assets/icons/Corrective1_clipboard-check-outline.svg'" style="width:22px; cursor:pointer;filter: invert(34%) sepia(12%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%);" alt="maintenance-icon" 
+                                    appTooltip [tooltipText]="'Create Maintenance'"  placement="bottom"/>
+                            </span>
+                    
+                            <div *ngIf="element[col]" class="tw-asset-tooltip-con" style="position: fixed;left: var(--cell-left);top: var(--cell-top);z-index: 999;">
+                                <div class="tw-asset-tooltip-header">{{ col }} Details</div>
+                                <div *ngIf="element[col]?.events.length" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Assign To :</span>
+                                    <span *ngIf="element[col]?.events[0]?.performerName" class="tw-asset-tooltip-row-2 tw-asset-click-link ovi-fnt-sze12" (click)="eventTrigger('assignTo', element[col].events)"> {{ element[col]?.events[0].performerName}}  </span>
+                                    <span *ngIf="element[col]?.events.length && !element[col]?.events[0]?.performerName" class="tw-asset-tooltip-row-2"><span class="material-icons ovi-fnt-sze14 tw-asset-click-link" (click)="eventTrigger('assignTo', element[col].events)">edit</span></span>
+                                </div>
+                                 <div *ngIf="(element[col]?.isNextDue || element[col]?.isOverDue) && !element[col]?.events" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">{{ col }} :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ (element[col]?.isNextDue && element[col]?.isOverDue) ? 'Overdue' : (element[col]?.isNextDue && !element[col]?.isOverDue ? 'Upcoming' : element[col]?.isOverDue ? 'Overdue' : '') }}</span>
+                                </div>
+                                <div *ngIf="element[col]?.events[0]?.requestIdentifier" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Identifier :</span>
+                                    <span class="tw-asset-tooltip-row-2 tw-asset-click-link" style="cursor: pointer;" (click)="eventTrigger('Identifier',element[col]?.events[0])"(keydown.enter)="fixClick()">{{ element[col]?.events[0]?.requestIdentifier }}</span>
+                                </div>
+                                <div class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Status :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.statusName ? element[col]?.statusName : 'N/A' }}</span>
+                                </div>
+                                <div *ngIf="(element[col]?.startTime || element[col]?.overDueStartTime || element[col]?.nextDueStartTime) && (!element[col]?.scheduleActivityTypeId)" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Due On :</span>
+                                    <span class="tw-asset-tooltip-row-2">  {{((element[col]?.overDueStartTime && (!element[col]?.startTime || (element[col]?.overDueStartTime < element[col]?.startTime)) &&
+                                        (!element[col]?.nextDueStartTime || (element[col]?.overDueStartTime < element[col]?.nextDueStartTime))) ? element[col]?.overDueStartTime : ( (element[col]?.startTime &&
+                                        (!element[col]?.nextDueStartTime || (element[col]?.startTime < element[col]?.nextDueStartTime))) ? element[col]?.startTime: element[col]?.nextDueStartTime)) | date: 'd MMM'}}</span>
+                                </div>
+                                <div *ngIf="(element[col]?.startTime || element[col]?.overDueStartTime || element[col]?.nextDueStartTime) && (element[col]?.scheduleActivityTypeId)" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Due On :</span>
+                                    <span class="tw-asset-tooltip-row-2">  {{((element[col]?.overDueStartTime && (!element[col]?.startTime || (element[col]?.overDueStartTime < element[col]?.startTime)) &&
+                                        (!element[col]?.nextDueStartTime || (element[col]?.overDueStartTime < element[col]?.nextDueStartTime))) ? element[col]?.overDueStartTime : ( (element[col]?.startTime &&
+                                        (!element[col]?.nextDueStartTime || (element[col]?.startTime < element[col]?.nextDueStartTime))) ? element[col]?.startTime: element[col]?.nextDueStartTime)) | date: 'hh:mm a, d MMM'}}</span>
+                                </div>
+                                <!-- <div *ngIf="element[col]?.startTime" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Start :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.startTime | date : "hh:mm a, d MMM" }}</span>
+                                </div>
+                                <div *ngIf="element[col]?.endTime" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">End :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.endTime | date : "hh:mm a, d MMM" }}</span>
+                                </div>
+                                <div *ngIf="element[col]?.isOverDue" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Previous Start :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.overDueStartTime | date : "hh:mm a, d MMM" }}</span>
+                                </div>     
+                                <div *ngIf="element[col]?.isOverDue" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Previous End :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.overDueEndTime | date : "hh:mm a, d MMM" }}</span>
+                                </div>
+                                <div *ngIf="element[col]?.isNextDue" class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Next Start :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.nextDueStartTime | date : "hh:mm a, d MMM" }}</span>
+                                </div>                           
+                                <div *ngIf="element[col]?.isNextDue" class="tw-asset-tooltip-row">
+                                        <span class="tw-asset-tooltip-row-1">Next End :</span>
+                                        <span class="tw-asset-tooltip-row-2">{{ element[col]?.nextDueEndTime | date : "hh:mm a, d MMM" }}</span>
+                                </div> -->
+                                <div class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Frequency :</span>
+                                    <span class="tw-asset-tooltip-row-2">{{element[col]?.scheduleTypeName ?  element[col]?.scheduleTypeName :'N/A' }}</span>
+                                </div>
+                                <div  class="tw-asset-tooltip-row">
+                                    <span class="tw-asset-tooltip-row-1">Last Done:</span>
+                                    <span class="tw-asset-tooltip-row-2">{{ element[col]?.prevCompletedTime ? (element[col].prevCompletedTime | date ) : 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </span>
+                        <span *ngIf="['January','February','March','April','May','June','July','August','September','October','November','December'].includes(col)">
+                            <div *ngIf="element[col] as monthData">
+                                <div *ngFor="let type of [ { key: 'AMC', label: 'AMC' }, { key: 'PMS', label: 'PMS' }, { key: 'Calibration', label: 'CAL' }, { key: 'Corrective', label: 'COR' } ]">
+                                    <div *ngIf="monthData[type.key]?.length" class="maintenance-row">
+                                        <span class="type-label" [ngStyle]="{'margin-right': type.label === 'CAL' ? '9px' : type.label === 'COR' || type.label === 'PMS' ? '7px' : '6px' }">{{ type.label }} :</span>
+                                        <span *ngFor="let item of monthData[type.key]" class="maintenance-badge" [ngClass]="{ 'status-pending': item?.requestStatusId === 'RQ-PEN', 'status-completed': item?.requestStatusId === 'RQ-CO',
+                                        'status-cancelled': item?.requestStatusId === 'RQ-CA', 'status-scheduled': item?.requestStatusId === 'RQ-SH', 'status-assigned': item?.requestStatusId === 'RQ-CR'}" [matMenuTriggerFor]="detailMenu"(click)="setMenuData(item)">
+                                            {{ item?.scheduleStartTime | date:'dd' }}
+                                            <mat-menu #detailMenu="matMenu" class="asset-detail-menu ovi-font-family">
+                                            
+                                                <div class="main-del-header">
+                                                    {{ menuData?.activityCategoryName }} Details
+                                                </div>
+
+                                                 <div class="main-del-row">
+                                                    <span class="main-del-label">Identifier :</span>
+                                                    <span class="main-del-value1 tw-asset-click-link" style="cursor: pointer;" (click)="eventTrigger('Identifier',menuData)"(keydown.enter)="fixClick()">{{ 'ROU' + menuData?.requestId }}</span>
+                                                </div>
+                                            
+                                                <div class="main-del-row">
+                                                    <span class="main-del-label">Frequency :</span>
+                                                    <span class="main-del-value">{{ menuData?.scheduleTypeName ? menuData?.scheduleTypeName : 'N/A'}}</span>
+                                                </div>
+                                            
+                                                <div class="main-del-row">
+                                                    <span class="main-del-label">Start :</span>
+                                                    <span class="main-del-value">{{ menuData?.scheduleStartTime ? (menuData?.scheduleStartTime | date:'dd MMM') :'N/A' }}</span>
+                                                </div>
+                                            
+                                                <div class="main-del-row">
+                                                    <span class="main-del-label">End :</span>
+                                                    <span class="main-del-value">{{ menuData?.scheduleEndTime ? (menuData?.scheduleEndTime | date:'dd MMM' ):'N/A'}}</span>
+                                                </div>
+                                            
+                                                <div class="main-del-row">
+                                                    <span class="main-del-label">Status :</span>
+                                                    <span class="main-del-value">{{ menuData?.requestStatusName ? menuData?.requestStatusName :'N/A' }}</span>
+                                                </div>
+                                            
+                                            </mat-menu>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </span>
+                    </div>
+
+                <!-- <div *ngIf="component === 'asset-maintenance'" class="tooltip-wrapper">  -->
+                    <!-- <span *ngIf="['AMC', 'PMC', 'Calibration', 'Corrective'].includes(col)" class="tw-asset-tooltip-item">
+
+                        <img *ngIf="element[col] && col === 'AMC'" [ngStyle]="{'filter' : element[col].isOverDue ? 'invert(45%) sepia(95%) saturate(600%) hue-rotate(20deg) brightness(80%)' : 'invert(50%) sepia(90%) saturate(600%) hue-rotate(190deg) brightness(70%)'}" style="width:22px;cursor: pointer;"
+                         src="assets/icons/AMC_02.svg" alt="tag" />
+
+                        <img *ngIf="element[col] && col === 'PMC'" [ngStyle]="{'filter' : element[col].isOverDue ? 'invert(45%) sepia(95%) saturate(600%) hue-rotate(20deg) brightness(80%)' : 'invert(50%) sepia(90%) saturate(600%) hue-rotate(190deg) brightness(70%)'}" style="width:18px;cursor: pointer;" 
+                         src="assets/icons/PMC_01.svg" alt="no-tag"/>
+
+                          <img *ngIf="element[col] && col === 'Calibration'" [ngStyle]="{'filter' : element[col].isOverDue ? 'invert(45%) sepia(95%) saturate(600%) hue-rotate(20deg) brightness(80%)' : 'invert(50%) sepia(90%) saturate(600%) hue-rotate(190deg) brightness(70%)'}" style="width:22px;cursor: pointer;"
+                         src="assets/icons/calibrate1.svg" alt="tag" />
+
+                          <img *ngIf="element[col] && col === 'Corrective'" [ngStyle]="{'filter' : element[col].isOverDue ? 'invert(45%) sepia(95%) saturate(600%) hue-rotate(20deg) brightness(80%)' : 'invert(50%) sepia(90%) saturate(600%) hue-rotate(190deg) brightness(70%)'}" style="width:22px;cursor: pointer;"
+                         src="assets/icons/Corrective1_clipboard-check-outline.svg" alt="tag" />
+
+                        <div class="tw-asset-tooltip-con"> 
+                            <div class="tw-asset-tooleTip-icon"><Span>{{col}}: </Span>
+                                <span class="tw-asset-tip-color">{{element[col]?.isNextDue ? 'Upcoming' : 'Overdue'}}</span></div>
+
+                            <div class="tw-asset-tooleTip-icon"><Span>Date: </Span>
+                                <span class="tw-asset-tip-color">{{ element[col]?.startTime| date:'dd-MMM-yyyy, HH:mm'}}</span></div>
+                            
+                             <div class="tw-asset-tooleTip-icon"><span>Frequency: </span>
+                                <span class="tw-asset-tip-color">{{element[col]?.statusName }}</span></div>
+
+                            <div class="tw-asset-tooleTip-icon"><span>Status: </span>
+                                <span class="tw-asset-tip-color">{{element[col]?.statusName }}</span></div>
+                            
+                            
+                        </div>
+                    </span> -->
+                    <!-- <ng-container *ngFor="let type of ['AMC', 'PMC', 'Calibration', 'Corrective']">
+                        <span *ngIf="col === type && element[type]?.length" class="tooltip-wrapper tw-table-icon-header">
+                            <div *ngFor="let item of element[type] | slice:0:4" class="tw-asset-tooltip-item">
+                                <img style="width:16px; cursor:pointer;" [src]="type === 'AMC' ? '/assets/icons/info 1.svg' : type === 'PMC' ? '/assets/icons/departed-2.svg' :type === 'Calibration' ? '/assets/Menus/account-cog.svg' :
+                                    type === 'Corrective' ? '/assets/Menus/asset_utilization.svg' : '/assets/Alert/common_icons/asset_due_date.svg'" class="tw-status" [ngClass]="{'assigned': item?.statusId === 'RQ-CR','inprogress': item?.statusId === 'RQ-IP',
+                                    'complete': item?.statusId === 'RQ-CO','schedule': item?.statusId === 'RQ-SH','pending': item?.statusId === 'RQ-PEN','cancelled': item?.statusId === 'RQ-CA'}">
+                                <div class="tw-asset-tooltip-con">
+                                    <div class="tw-asset-tooleTip-icon"><i class="material-icons ovi-prmry-clr tw-asset-tooltip-iconsize">event_note</i> <span class="tw-asset-tip-color">{{item.scheduleTypeName }}</span></div>
+                                    <div class="tw-asset-tooleTip-icon"><i class="material-icons ovi-prmry-clr tw-asset-tooltip-iconsize">how_to_reg</i> <span class="tw-asset-tip-color">{{item.statusName }}</span></div>
+                                    <div class="tw-asset-tooleTip-icon"><i class="material-icons ovi-prmry-clr tw-asset-tooltip-iconsize">update</i> <span class="tw-asset-tip-color">{{ item.startTime| date:'dd-MMM-yyyy, HH:mm'}}</span></div>
+                                    <div class="tw-asset-tooleTip-icon"><i class="material-icons ovi-prmry-clr tw-asset-tooltip-iconsize">more_time</i> <span class="tw-asset-tip-color">{{ item.endTime| date:'dd-MMM-yyyy, HH:mm'}}</span></div>
+                                </div>
+                            </div>
+                            <div *ngIf="element[type].length > 4" class="ovi-prmry-clr" style="cursor:pointer; margin-top:-4px;"[matMenuTriggerFor]="moreMenu" 
+                                (menuOpened)="onMenuToggle(element[type])" (menuClosed)="onMenuToggle()">+{{ element[type].length - 4 }} more
+                            </div>
+                        </span>
+                    </ng-container>
+                    <mat-menu #moreMenu="matMenu" class="tw-asset-menu-template ovi-font-family">
+                        <div class="tw-asset-menu-header">Events</div>
+                        <div style="overflow-y:auto; height: 252px;">
+                            <div *ngFor="let event of eventlistInfo; let i = index">
+                                <div class="tw-asset-menu-event">
+                                    <div class="tw-asset-title">
+                                        <img style="width:17px;" [src]="event?.activityName === 'AMC' ? '/assets/icons/info 1.svg' : event?.activityName === 'PMC' ? '/assets/icons/departed-2.svg' : event?.activityName === 'Calibration' ? '/assets/Menus/account-cog.svg' :
+                                            event?.activityName === 'Corrective' ? '/assets/Menus/asset_utilization.svg' : '/assets/Alert/common_icons/asset_due_date.svg'" class="tw-status" [ngClass]="{'assigned': event?.statusId === 'RQ-CR','inprogress': event?.statusId === 'RQ-IP',
+                                            'complete': event?.statusId === 'RQ-CO','schedule': event?.statusId === 'RQ-SH','pending': event?.statusId === 'RQ-PEN','cancelled': event?.statusId === 'RQ-CA'}"><span style="padding-left: 6px; padding-bottom: 3px;">{{ event?.scheduleTypeName }} </span>
+                                    </div>
+                                    <div class="tw-asset-title">
+                                        <i class="material-icons ovi-prmry-clr" style="font-size:18px;">how_to_reg</i> <span style="padding-left: 5px; padding-top: 1px;"> {{ event?.statusName }} </span>
+                                    </div>
+                                    <div class="tw-asset-title">
+                                        <mat-icon class="tw-asset-icon-menu2">access_time</mat-icon>
+                                        <span style="padding-bottom: 4px;">{{ event?.startTime | date:'dd-MMM-yyyy, HH:mm' }} - {{ event?.endTime | date:'dd-MMM-yyyy, HH:mm' }}</span>
+                                    </div>
+                                </div>
+                                <mat-divider class="tw-asset-mat-divider" *ngIf="i < eventlistInfo.length - 1"></mat-divider>
+                            </div>
+                        </div>
+                    </mat-menu> -->
+                <!-- </div> -->
+
+                    <!-- <span *ngIf="col === 'Alert'">
+
+                        <img *ngIf="element['isMovementAlert'] === true" 
+                            style="width:25px;margin-right:5px" src="/assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
+                        <img *ngIf="element['isFallAlert'] === true" alt="fall-risk"
+                            style="width:25px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', element)" src="/assets/Alert/IP/fall.svg">
+                        <img *ngIf="element['isMissingAlert'] === true" 
+                            style="width:23px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
+                        <img *ngIf="element['isGeofenceAlert'] === true" 
+                            style="width:23px;margin-right:5px" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                    </span> -->
+                    <span *ngIf="col === 'Alerts' && component === 'manage-amb'">
+                        <button *ngIf="element['assetAlertCount']"  mat-icon-button
+                            appDebounceClick (debounceClick)="eventTrigger('assetAlertCount', element)" [debounceTime]="300">
+                            <mat-icon class="ovi-fnt-sze20" style="vertical-align: middle;">shopping_basket</mat-icon>
+                            <span class="icon-count">{{element['assetAlertCount']}}</span>
+                        </button>
+                        <button *ngIf="element['readerAlertCount']"  mat-icon-button
+                            appDebounceClick (debounceClick)="eventTrigger('readerAlertCount', element)" [debounceTime]="300">
+                            <mat-icon class="ovi-fnt-sze20" style="vertical-align: middle;">settings_remote</mat-icon>
+                            <span class="icon-count">{{element['readerAlertCount']}}</span>
+                        </button>
+                    </span>
+                    <span *ngIf="col === 'Alert' && component !== 'staffRoutine' && component !== 'student' && component !== 'alertInfo'">
+                        <span *ngFor="let alerts of element[col]">
+                        <span *ngIf="!alerts.eventCode">
+                            <img *ngIf="alerts.alertCode === 'RU-MO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
+                            <img *ngIf="alerts.alertCode === 'RU-FA'" alt="fall-risk" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="alerts.alertCode === 'RU-MI'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
+                            <img *ngIf="alerts.alertCode === 'RU-GO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                            <img *ngIf="alerts.alertCode === 'RU-SE'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/sensor.svg" alt="patient-sensor">
+                        </span>
+                        </span>
+                    </span>
+                    <span *ngIf="col === 'Alert' && (component === 'staffRoutine' || component === 'student')" >
+                        <span *ngFor="let alerts of element['alerts']">
+                        <span *ngIf="!alerts.eventCode">
+                            <img *ngIf="alerts.alertCode === 'RU-MO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
+                            <img *ngIf="alerts.alertCode === 'RU-FA'" alt="fall-risk" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="alerts.alertCode === 'RU-MI'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
+                            <img *ngIf="alerts.alertCode === 'RU-GO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                        </span>
+                        <span *ngIf="alerts.eventCode" style="cursor: pointer;">
+                            <img *ngIf="events.eventCode === 'CE-CL'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                            appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/nurse-call.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="events.eventCode === 'CE-AD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="events.eventCode === 'CE-FD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/food.svg" (keydown.enter)="fixClick()"> 
+                            <img *ngIf="events.eventCode === 'CE-HK'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/housekeeping.svg" (keydown.enter)="fixClick()"> 
+                            <img *ngIf="events.eventCode === 'CE-SO'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
+                            <img *ngIf="events.eventCode === 'CE-MD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="events.eventCode === 'CE-INS'" style="width:18px;margin-right:5px;cursor:pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-INS"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/CE-INS.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="events.eventCode === 'CE-TAM'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-TAM"
+                                appTooltip [tooltipText]="events.message" placement="top"  src="/assets/Alert/CE-TAM.svg" (keydown.enter)="fixClick()">
+                            <img *ngIf="events.eventCode === 'CE-WRP'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-WRP"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/CE-WRP.svg" (keydown.enter)="fixClick()">
+                        </span>
+                        </span>
+                    </span>
+
+                    <span *ngIf="col === 'ID'">
+                        <mat-icon [ngStyle]="{'color': element[rowId] === this.rowClickId ? '#808080' : '#D3D3D3'}" class="ovi-fnt-sze12"
+                                  style="cursor: pointer;" (click)="rowClickEvent(element); $event.stopPropagation()" (keydown.enter)="fixClick()">play_arrow</mat-icon>
+                      </span>
+
+                    <span *ngIf="col === 'Break Status'">
+                        <img *ngIf="element?.breakId == null && element?.associateId" (click)="eventTrigger('addBreak',element)" 
+                            style="width:35px;cursor: pointer;" src="assets\Alert\processing_break_g.svg" alt="AddBreak" (keydown.enter)="fixClick()">
+                        <img *ngIf="element?.breakId && element?.associateId" (click)="eventTrigger('closeBreak',element)" 
+                            style="width:35px;cursor: pointer;" src="assets\Alert\processing_break.svg" alt="OnBreak" (keydown.enter)="fixClick()">
+                        <!-- <button mat-button *ngIf="element?.breakId == null && element?.associateId" (click)="eventTrigger('addBreak',element)" style="background: aliceblue;border-radius: 18px;font-size: 12px;border: 1px solid #c2b8b8;">Add Break</button> -->
+                        <!-- <button mat-button *ngIf="element?.breakId && element?.associateId" style="border-radius: 18px;font-size: 12px;border: 1px solid #c2b8b8;" [disabled]="'true'">On Break</button> -->
+                    </span>
+                    <!-- <span *ngIf="col === 'IN/OUT'"> -->
+                    <span *ngIf="col === 'Service'">
+                        <div class=" ovi-fnt-sze10" style="text-align: center;">{{element['testName']}}</div>
+                        <div style="display: flex;justify-content: center;">
+                        <button *ngIf="element['visitStatusId'] === 'VS-SH' || element['visitStatusId'] === 'VS-TE'"  mat-button 
+                            class="in-btn margin-r-1" appDebounceClick
+                            (debounceClick)="eventTrigger('IN', element)" [debounceTime]="300"
+                            cdkFocusInitial>IN</button>
+                        <button *ngIf="element['visitStatusId'] === 'VS-IP'"  mat-button 
+                            class="out-btn margin-r-1" appDebounceClick
+                            (debounceClick)="eventTrigger('OUT', element)" [debounceTime]="300"
+                            cdkFocusInitial>OUT</button>
+                        </div>
+                    </span>
+
+                    <span *ngIf="col === 'UNDO'">
+                        <button mat-icon-button [matMenuTriggerFor]="menu">
+                            <mat-icon class="more-edit1">more_horiz</mat-icon>
+                        </button>
+                        <mat-menu #menu="matMenu">
+                            <button mat-menu-item>
+                                <span class="more-edit">{{"Undo"|translate}}</span>
+                            </button>
+                        </mat-menu>
+                    </span>
+
+                    <span *ngIf="col === 'Act' && component === 'alertInfo' && element['Ack Time'] !== null && activate_btn.includes('BT_IPNCCRTSK')">
+                        <button mat-icon-button [matMenuTriggerFor]="menu">
+                            <mat-icon class="more-edit1">more_horiz</mat-icon>
+                        </button>
+                        <mat-menu #menu="matMenu">
+                            <button mat-menu-item (click)="eventTrigger('createTask',element)">
+                                <span class="more-edit">{{"Create Task"|translate}}</span>
+                            </button>
+                        </mat-menu>
+                    </span>
+
+                    <span *ngIf="col === 'Action' && component === 'hazmat-training-list'" (click)="rowClickEvent(element)" (keydown.enter)="fixClick()">
+                        <button mat-icon-button [matMenuTriggerFor]="menu" *ngIf="element.requestStatus != 'Cancelled' && element.requestStatus != 'Reassigned' && element.requestStatus !== 'Completed' && (
+                            element.assignedToId == userId  || activate_btn.includes('BT_ALLTSKCO') || activate_btn.includes('BT_ALLTSKCA')
+                            || (element.createdUserId == userId && activate_btn.includes('BT_TSKCRUSR'))
+                        )">
+                            <mat-icon class="action-edit1">more_horiz</mat-icon>
+                        </button>
+                        <mat-menu #menu="matMenu" (closed)="close($event)">
+                            <button *ngIf="element.requestStatus !== 'Completed' && (
+                                element.assignedToId == userId  || activate_btn.includes('BT_ALLTSKCO')
+                                || (element.createdUserId == userId && activate_btn.includes('BT_TSKCRUSR')))" mat-menu-item (click)="eventTrigger('Complete',element)">
+                                <span class="action-edit">Complete</span>
+                            </button>
+                            <mat-divider></mat-divider>
+                            <button mat-menu-item (click)="eventTrigger('Cancel',element)"
+                            *ngIf="(element.assignedToId == userId || activate_btn.includes('BT_ALLTSKCA'))
+                                || (element.createdUserId == userId && activate_btn.includes('BT_TSKCRUSR'))">
+                                <span class="action-edit">{{"Cancel"|translate}}</span>
+                            </button>
+                        </mat-menu>
+                    </span>
+                    <span *ngIf="col === 'Unlock' && component === 'manage-user' && element.isLocked && activate_btn.includes('BT_ULUSRLGN')">
+                        <button style="border-radius: 5px; background: #7ec18f; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: white; border: 0px;" (keydown.enter)="fixClick()" (click) ="eventTrigger('Unlock', element)">
+                            <span><mat-icon style="padding: 0;" class="ovi-fnt-sze21">lock_open</mat-icon> </span>
+                            <span>{{"Unlock"|translate}}</span>
+                        </button>
+                    </span>
+                    <span *ngIf="col === 'Action' && component === 'task'">
+                        <div>
+                            <button *ngIf="(((element.routineTypeId === 'TAC-TKT' && ticketStatusFlow ==='Task')||(element.routineTypeId ==='TAC-TASK'))
+                                ? (
+                                    ((element.statusId === 'RQ-NEW' || element.statusId === 'RQ-PEN') && activate_btn.includes('BT_TMOP')) ||
+                                    ((element.statusId === 'RQ-OP' || element.statusId === 'RQ-PEN') && element.performerType === 'RT-US') ||
+                                    (element.statusId === 'RQ-OP' || element.statusId === 'RQ-PEN' || element.statusId === 'RQ-IP') ||
+                                    ((element.statusId === 'RQ-NEW' || element.statusId === 'RQ-CO') && activate_btn.includes('BT_TMCL')) ||
+                                    ((element.statusId === 'RQ-CL' || element.statusId === 'RQ-CO' || element.statusId === 'RQ-RES') && activate_btn.includes('BT_TMROP'))
+                                    )
+                                : (
+                                    ((element.statusId === 'RQ-CR' || element.statusId === 'RQ-PEN') && element.performerType === 'RT-US') ||
+                                    (element.statusId === 'RQ-CR' || element.statusId === 'RQ-PEN' || element.statusId === 'RQ-SH' || element.statusId === 'RQ-IP') ||
+                                    (activate_btn.includes('BT_TMCA') && (element.statusId === 'RQ-CR' || element.statusId === 'RQ-PEN' || element.statusId === 'RQ-SH')) ||
+                                    (element.statusId === 'RQ-CO' && activate_btn.includes('BT_TMCL')) ||
+                                    (element.statusId === 'RQ-CL' && activate_btn.includes('BT_TMROP'))
+                                    ) )
+                                  &&!(element?.openedWorkOrders > 0 || element?.openForms > 0)"
+                             mat-icon-button [matMenuTriggerFor]="menu" (click)="rowClickEvent(element)">
+                                <mat-icon class="action-edit1"  style="padding: 0;">more_horiz</mat-icon>
+                            </button>
+                            <span style="position: relative; top: 4px;">
+                                <img *ngIf="element.isForm" height="16px" width="16px" style="padding: 0 3px;"
+                                 src="../../../../../assets/Menus/task-form.svg" appDebounceClick (debounceClick)="eventTrigger(col,element,'Forms')" appTooltip [tooltipText]="'Form' | translate" placement="bottom" alt="task" />
+                                 <img *ngIf="element.isAttachFile" height="16px" width="16px" style="padding: 0 3px;"
+                                 src="../../../../../assets/Menus/task-document.svg" appDebounceClick (debounceClick)="eventTrigger(col,element,'Documents')" appTooltip [tooltipText]="'Document' | translate" placement="bottom"  alt="task" />
+                            </span>
+                        </div>
+                        <mat-menu #menu="matMenu" (closed)="close($event)">
+                            <ng-container *ngIf="((element.routineTypeId === 'TAC-TKT' && ticketStatusFlow === 'Task')|| element.routineTypeId === 'TAC-TASK'); else nonTaskFlow">
+                            <button *ngIf="(element.statusId === 'RQ-NEW' || element.statusId === 'RQ-PEN') && activate_btn.includes('BT_TMOP')"  mat-menu-item (click)="eventTrigger('Open', element)">
+                                <span class="action-edit">{{ 'Open' | translate }}</span>
+                            </button>
+
+                            <button *ngIf="(element.statusId === 'RQ-OP' || element.statusId === 'RQ-PEN') && element.performerType === 'RT-US'" mat-menu-item (click)="eventTrigger('InProgress', element)">
+                                <span class="action-edit">{{ 'InProgress' | translate }}</span>
+                            </button>
+                            <button *ngIf="element.statusId === 'RQ-OP' || element.statusId === 'RQ-PEN' || element.statusId === 'RQ-IP'" mat-menu-item (click)="eventTrigger('Complete', element)">
+                                <span class="action-edit">{{ 'Complete' | translate }}</span>
+                            </button>
+                            <button *ngIf="(element.statusId === 'RQ-NEW'|| element.statusId === 'RQ-CO')&& activate_btn.includes('BT_TMCL')" mat-menu-item (click)="eventTrigger('Close', element)">
+                                <span class="action-edit">{{ 'Close' | translate }}</span>
+                            </button>
+                            <button *ngIf="(element.statusId === 'RQ-CL' || element.statusId === 'RQ-CO' || element.statusId === 'RQ-RES') && activate_btn.includes('BT_TMROP')" mat-menu-item (click)="eventTrigger('ReOpen', element)">
+                                <span class="action-edit">{{ 'ReOpen' | translate }}</span>
+                            </button>
+                            </ng-container>
+
+                            <ng-template  #nonTaskFlow>
+                            <button *ngIf="(element.statusId === 'RQ-CR' || element.statusId === 'RQ-PEN') && element.performerType === 'RT-US'"  mat-menu-item (click)="eventTrigger('InProgress', element)">
+                                <span class="action-edit">{{ 'InProgress' | translate }}</span>
+                            </button>             
+                            <button *ngIf="element.statusId === 'RQ-CR' || element.statusId === 'RQ-PEN' || element.statusId === 'RQ-SH' || element.statusId === 'RQ-IP'" mat-menu-item (click)="eventTrigger('Complete', element)">
+                                <span class="action-edit">{{ 'Complete' | translate }}</span>
+                            </button>
+                            <button *ngIf="activate_btn.includes('BT_TMCA') && (element.statusId === 'RQ-CR' || element.statusId === 'RQ-PEN' || element.statusId === 'RQ-SH')" mat-menu-item (click)="eventTrigger('Cancel', element)">
+                                <span class="action-edit">{{ 'Cancel' | translate }}</span>
+                            </button>
+                            <button *ngIf="element.statusId === 'RQ-CO' && activate_btn.includes('BT_TMCL')" mat-menu-item (click)="eventTrigger('Close', element)">
+                                <span class="action-edit">{{ 'Closed' | translate }}</span>
+                            </button>
+                            <button *ngIf="element.statusId === 'RQ-CL' && activate_btn.includes('BT_TMROP')" mat-menu-item (click)="eventTrigger('Reopen', element)">
+                                <span class="action-edit">{{ 'Reopen' | translate }}</span>
+                            </button>
+                            </ng-template >
+                        </mat-menu>                        
+                    </span>
+
+                    <span *ngIf="col === 'Action' && component === 'task-management'">
+                        <div>
+                            <button *ngIf="element.requestStatusId !== 'RQ-SH' && element.requestStatusId !== 'RQ-CO' && element.routineTypeId !='TAC-TKT'"
+                             mat-icon-button [matMenuTriggerFor]="menu" (click)="rowClickEvent(element)">
+                                <mat-icon class="action-edit1" style="padding: 0;">more_horiz</mat-icon>
+                            </button>
+                        </div>
+                        <mat-menu #menu="matMenu" (closed)="close($event)">
+                            <button *ngIf="element.statusId === 'RQ-CR' || element.statusId === 'RQ-'" 
+                                    mat-menu-item 
+                                    (click)="eventTrigger(col, element, 'RQ-IP')">
+                                <span class="action-edit">{{ 'InProgress' | translate }}</span>
+                            </button>             
+                            <button *ngIf="element.statusId === 'RQ-IP'" 
+                                    mat-menu-item 
+                                    (click)="eventTrigger(col, element, 'RQ-CO')">
+                                <span class="action-edit">{{'Complete' | translate}}</span>
+                            </button>
+                        </mat-menu>                        
+                    </span>
+
+                    <span *ngIf="col === 'View' && component === 'task'">
+                        <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" appTooltip tooltipText="{{'View'|translate}}"
+                        placement="bottom"[debounceTime]="500" appDebounceClick (debounceClick)="eventTrigger('View',element)"
+                        (keydown.enter)="fixClick()">visibility</mat-icon>
+
+                        <mat-icon class="ovi-prmry-clr ovi-fnt-sze20" *ngIf="(['RQT-TKT','RQT-TASK','RQT-ROU'].includes(element.requestTypeId) && activate_btn.includes('BT_TKTRQRPT')) ||(element.requestTypeId === 'RQT-WRK' && activate_btn.includes('BT_WRKRQRPT'))"appTooltip tooltipText="{{'Report'|translate}}"
+                        placement="bottom"[debounceTime]="500" appDebounceClick (debounceClick)="eventTrigger('Report',element)"
+                        (keydown.enter)="fixClick()">description</mat-icon>
+                    </span>
+
+                    <span *ngIf="col === 'Approval Action'">
+                        <mat-icon *ngIf="element.isCurrentApproval" class="ovi-fnt-sze20" style="color:#28bf28" appTooltip tooltipText="{{'Approve'|translate}}"
+                        placement="bottom"[debounceTime]="500" appDebounceClick (debounceClick)="eventTrigger('Approve',element)"
+                        (keydown.enter)="fixClick()">check_circle</mat-icon>
+
+                        <mat-icon  *ngIf="element.isCurrentApproval && element.options?.status?.['RQ-RJ']"class="ovi-fnt-sze20" style="color:#bf2828" appTooltip tooltipText="{{'Reject'|translate}}"
+                        placement="bottom"[debounceTime]="500" appDebounceClick (debounceClick)="eventTrigger('Reject',element)"
+                        (keydown.enter)="fixClick()">highlight_off</mat-icon>
+                    </span>
+
+                    <span *ngIf="col === 'Action' && component === 'config-layout'">
+                        <mat-icon class="ovi-prmry-clr ovi-fnt-sze21" appTooltip tooltipText="{{'Edit'|translate}}"
+                            placement="bottom" appDebounceClick (debounceClick)="eventTrigger('Edit',element)" [debounceTime]="300"
+                            cdkFocusInitial>edit</mat-icon>
+                        <mat-icon matSuffix style="color: #E65100" appTooltip tooltipText="{{'Delete'|translate}}" appDebounceClick
+                            (debounceClick)="eventTrigger('Delete',element)" [debounceTime]="300"
+                            cdkFocusInitial>delete</mat-icon>
+                    </span>
+                    <span *ngIf="col === 'Action' &&  (component === 'widget' || component === 'User-Preferences')">
+                         <mat-icon matSuffix style="color: #E65100" appTooltip tooltipText="{{'Delete'|translate}}" appDebounceClick
+                            (debounceClick)="eventTrigger('Delete',element)" [debounceTime]="300"
+                            cdkFocusInitial>delete</mat-icon>
+                    </span>
+                    <span *ngIf="col === 'Attachments' && component === 'audit-schedule-management'">
+                    <ng-container *ngIf="element.fileUrl?.length > 0">
+                        <ng-container *ngFor="let file of element.fileUrl">
+                        <mat-icon appTooltip tooltipText="{{ 'Attachment' | translate }}"
+                            appDebounceClick (debounceClick)="eventTrigger('Attachment', file)" [debounceTime]="300" (keydown.enter)="fixClick()">
+                            attachment
+                        </mat-icon>
+                        </ng-container>
+                    </ng-container>
+                    </span>
+                    <span *ngIf="col === 'Idle'">
+                        <img *ngIf="element['Idle'] === true"   alt="floorplan" 
+                            style="width:25px;margin-right:5px" src="{{(component == 'asset-management' && element['commLost'] == 'true') ? ('/assets/Floorplan/TAT-AS-OLD.svg') : ('/assets/Floorplan/TAT-AS.svg') }}" alt="Idle">
+                    </span>
+                    <span *ngIf="col === 'Current Location' && !['ot', 'emergency-care'].includes(component) && component !== 'medicalRecord' && component !== 'device' && component !== 'health-checkup' && component !== 'follow-up' && component !== 'asset-management'
+                    && component !== 'inpatient'" style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)"(keydown.enter)="fixClick()">
+                        {{element['currentLocationName']}}<span *ngIf="element['currentLocationName'] !== null && element['floorName'] !== null">, </span>{{element['floorName']}}
+                    </span>
+                    <span *ngIf="col === 'Current Location' && component == 'asset-management' " style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)"
+                    appTooltip [tooltipText]="element['locationFromTime'] ? (element['locationFromTime'] | date : 'hh:mm a, d MMM') : ''" (keydown.enter)="fixClick()">
+                        {{element['currentLocationName']}}<span *ngIf="element['currentLocationName'] !== null && element['floorName'] !== null">, </span>{{element['floorName']}}
+                        <span *ngIf="element['currentLocationName'] !== null && element['floorName'] !== null && element['blockName']!= null">, </span>{{element['blockName']}}
+                    </span>
+                    <span *ngIf="col === 'Current Location' && ['ot', 'emergency-care'].includes(component)" style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                        {{element['currentLocationName']}}<span *ngIf="element['currentLocationName'] !== null && element['floorName'] !== null">, </span>{{element['currentFloorName']}}
+                    </span>
+
+                    <!-- <span *ngIf="col === 'Current Location' && component === 'medicalRecord'" style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)">
+                        <span *ngIf="element['Current Location'] !== null"><img style="width:15px;margin-right:5px" src="/assets/Alert/common_icons/map_marker.svg" alt="Current Location"
+                            (click)="getCurrentLocation(element)"
+                            ></span>
+                        <span *ngIf="element['Current Location'] === null"><img style="width:15px;margin-right:5px" src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Current Location"></span>
+                    </span> -->
+
+                    <span *ngIf="col === 'Current Location' && component === 'medicalRecord'" style="color: blue; cursor: pointer;" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                        <span *ngIf="element['Current Location'] !== null" (click)="getCurrentLocation(element)" (keydown.enter)="fixClick()">
+                            {{element['currentLocationFullName']}}
+                        </span>
+                    </span>
+
+                    <span *ngIf="col === 'Status' && (component === 'alert-config' || component === 'activities' ||  component === 'routine-management' || component === 'alert-management' || component === 'alertInfo' || component ==='entity-association'
+                     || component === 'KPI' || component === 'manage-permission' || component === 'permission'  || component === 'channel-template'|| component === 'server' || component === 'dataItem' || component === 'appterms' || component === 'shift-master' || component === 'User-Schedule') ">{{element[col] === true ? 'Active' : 'Inactive'}}</span>
+
+                     <span *ngIf="col === 'Default' && component === 'appterms'">{{element[col] === true ? 'Yes' : 'No'}}</span>
+
+                    <span *ngIf="col === 'Status' &&  (component === 'widget' || component === 'pf-models') ">{{element[col] === true || element[col] === null ? 'Active' : 'Inactive'}}</span>
+                    
+                    <span *ngIf="col === 'Requester' && component === 'porter'" style="cursor: pointer;color: blue;"
+                    appTooltip [tooltipText]="element['userName']" placement="bottom" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                        {{element['userName']}}</span>
+
+                    <!-- <span mat-cell *ngIf="col === 'Time' && component === 'porter'">{{ element['requestTime'] | date : "hh:mm a" }} </span> -->
+
+                    <!-- <span *ngIf="col === 'PorterName' && component === 'porter'">
+                        <span *ngIf="element['performer']?.length > 0">{{ element['performer'][0].name }}</span>
+                        <span *ngIf="element['performer']?.length > 1 && element['porterCount'] == 2">, &nbsp;{{ element['performer'][1].name }}</span>
+                    </span> -->
+
+                    <!-- <span *ngIf="col === 'Patient Name' && component === 'ambulance' && element['patient'] !== null">{{element['patient']['fullName']}}</span>
+                    <span *ngIf="col === 'Age' && component === 'ambulance' && element['patient'] !== null">{{element['patient']['age']}}</span>
+                    <span *ngIf="col === 'Mobile' && component === 'ambulance' && element['patient'] !== null">{{element['patient']['mobileNo']}}</span>
+                    <span *ngIf="col === 'Pickup' && component === 'ambulance' && element['sourceGeoCoordinate']['address'] !== null">{{element['sourceGeoCoordinate']['address']}}</span>
+                    <span *ngIf="col === 'Drop' && component === 'ambulance' && element['destinationGeoCoordinate']['address'] !== null">{{element['destinationGeoCoordinate']['address']}}</span> -->
+                    <span *ngIf="col === 'Admit Date' && component === 'inpatient'">{{ element['fromTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Request Time' && component === 'ambulance'">{{ element['startTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Accepted Time' && component === 'ambulance'">{{ element['actualTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Arrived Time' && component === 'ambulance'">{{ element['arrivedTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Started Time' && component === 'ambulance'">{{ element['startedDatetime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Drop Time' && component === 'ambulance' && element['status'] != 'RQ-CA' && element['status'] != 'RQ-RJ'">{{ element['endTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Initiated Time' && component === 'ambulance'">{{ element['initiatedTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Distance' && component === 'ambulance'">{{element['distance'] }} <span *ngIf="element['distance'] !== null">kms</span></span>
+                    <span *ngIf="col === 'Total Time' && component === 'ambulance'">{{element['totalTime']}} <span *ngIf="element['totalTime'] !== null">minutes</span></span>
+                    <span *ngIf="col === 'Acknowledged Time' && component === 'ambulance'">{{ element['acknowledgeTime'] | date : "hh:mm a, d MMM" }}</span>
+                    <span *ngIf="col === 'Status' && component === 'ambulance'" style="cursor: pointer;text-decoration: underline;" 
+                    [ngClass]="element['status'] == 'RQ-CA' || element['status'] == 'RQ-RJ' ? 'cancelled' : 'inprogress'" 
+                    (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">{{element['statusName']}}</span>
+                    <span *ngIf="col === 'Due Date' && component === 'asset-management'">
+                        <span *ngFor="let assets of element['assetAlerts']" style="cursor: pointer;">
+                            <img *ngIf="assets.amcDueAlert === 'red'" style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red"
+                            appTooltip [tooltipText]="assets.amcDueAlertText" placement="top" src="/assets/Alert/common_icons/warning.svg">
+                            <img *ngIf="assets.amcDueAlert === 'yellow'" style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red"
+                            appTooltip [tooltipText]="assets.amcDueAlertText" placement="top" src="/assets/Alert/common_icons/warning_.svg">
+                            <img *ngIf="assets.pmsDueAlert === 'red'" style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red"
+                            appTooltip [tooltipText]="assets.pmsDueAlertText" placement="top" src="/assets/Alert/common_icons/warning.svg">
+                            <img *ngIf="assets.pmsDueAlert === 'yellow'" style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red"
+                            appTooltip [tooltipText]="assets.pmsDueAlertText" placement="top" src="/assets/Alert/common_icons/warning_.svg">
+                            <img *ngIf="assets.caliDueAlert === 'red'" style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red"
+                            appTooltip [tooltipText]="assets.caliDueAlertText" placement="top" src="/assets/Alert/common_icons/warning.svg">
+                            <img *ngIf="assets.caliDueAlert === 'yellow'" style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red"
+                            appTooltip [tooltipText]="assets.caliDueAlertText" placement="top" src="/assets/Alert/common_icons/warning_.svg">
+                        </span>
+                    </span>
+                    <span *ngIf="component === 'ambulance' && col === 'Call' && ['RQ-RJ','RQ-CA','RQ-CO', 'RQ-PLN', 'RQ-WT'].includes(element['status']) == false">
+                        <img style="width:16px;padding-top: 4px;" src="/assets/icons/call.svg" alt="device_img" appTooltip [tooltipText]=col|translate placement="top">
+                    </span>
+                    <span *ngIf="component === 'ambulance' && col === 'Ambulance Name' && element['ambulanceName'] !== null" 
+                        appTooltip tooltipText = "{{element['doctorName'] ? 'Doctor: ' + element['doctorName'] : ''}}
+                        {{element['emtName'] ? ' EMT: ' + element['emtName'] : ''}}
+                        {{element['pilotName'] ? ' Driver: ' + element['pilotName'] : ''}}" placement="top"
+                        style="cursor:pointer;color: blue;" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">{{element[col]}}</span>
+                    <span *ngIf="col === 'Ack' && component === 'ambulance'" style="cursor: pointer;">
+                        <img *ngIf="element['acknowledgeTime'] !== null" src="/assets/Alert/IP/check-mark.svg" alt="ack" class="cur-ptr"
+                        style="width: 15px" appTooltip [tooltipText]="element['acknowledgeTime']" />                    
+                    </span>
+                    <span *ngIf="col === 'Ack' && component === 'alertInfo'" style="cursor: pointer;">
+                        <mat-icon *ngIf="element['Ack Time'] == null"  mat-mini-fab  class="ovi-prmry-clr" style="margin-top: 2%;"
+                        appTooltip tooltipText="Edit" (click)="eventTrigger('rdAck', element)" (keydown.enter)="fixClick()">edit</mat-icon>
+                        <img *ngIf="element['Ack Time'] !== null" src="/assets/Alert/IP/check-mark.svg" alt="ack" class="cur-ptr"
+                        style="width: 15px" appTooltip [tooltipText]="element['Ack Time']" />                  
+                    </span>
+                    <span *ngIf="col === 'Ack' && component === 'porter-req-detail' && element['status'] == 'RQ-CO'" style="cursor: pointer;">
+                        <img *ngIf = "element['acknowledgeTime'] && !element['isPartiallyCompleted']" src="/assets/Alert/IP/check-mark.svg" alt="ack" class="cur-ptr"
+                        style="width: 15px" appTooltip [tooltipText]="element['acknowledgedByName']" />
+                        <img *ngIf = "!element['acknowledgeTime'] && !element['isPartiallyCompleted']" src="/assets/Alert/common_icons/warning.svg" alt="ack" class="cur-ptr"
+                        style="width: 15px" appTooltip [tooltipText]="'Pending Acknowledgement'|translate" 
+                        (click)="eventTrigger('rdAck', element)"  (keydown.enter)="fixClick()"/>
+                        <img *ngIf="element['isPartiallyCompleted']" src="/assets/Alert/IP/check-mark-incomplete.svg" alt="ack" class="cur-ptr"
+                        style="width: 24px;margin-left: -4px;" appTooltip [tooltipText]="element['acknowledgedByName']" (click)="eventTrigger('rdAck', element)" (keydown.enter)="fixClick()"/>
+                    </span>
+
+                    <span *ngIf="col === 'Location' && component === 'ambulance'" style="color: blue; cursor: pointer;">
+                        <img *ngIf="element['performer']?.length > 0 && element['performer'][0].tagId !== null && ['RQ-CA','RQ-RJ','RQ-PLN'].indexOf(element['status']) == -1" src="/assets/Alert/common_icons/map_marker.svg" alt="Map-marker" class="cur-ptr"
+                            (click)="eventTrigger(col,element)"  (keydown.enter)="fixClick()"/>
+                        <img *ngIf="element['performer']?.length > 0 && element['performer'][0].tagId === null" src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Map-marker" class="cur-ptr">
+                    </span>
+                    <span *ngIf="col === 'Description' && component === 'porter' && element['comments'] !== null" 
+                    appTooltip [tooltipText]="element['comments']" placement="bottom">
+                    {{element['comments']}}</span>
+
+                    <span *ngIf="col === 'Pickup' && component === 'porter' && element['sourceLocationName'] !== null" 
+                    appTooltip [tooltipText]="element['sourceLocationName']" placement="bottom">
+                    {{element['sourceLocationName']}}</span>
+
+                    <span *ngIf="col === 'Drop' && component === 'porter' && element['destinationLocationName'] !== null" 
+                    appTooltip [tooltipText]="element['destinationLocationName']" placement="bottom">
+                    {{element['destinationLocationName']}}</span>
+
+                    <span *ngIf="col === 'Remarks' && component === 'porter' && element['remarks'] !== null" 
+                    appTooltip [tooltipText]="element['remarks']" placement="bottom">
+                    {{element['remarks']}}</span>
+
+                    <!-- <span *ngIf="col === 'Assigned Time' && component === 'porter'">{{element['actualPickupTime'] | date : 'hh:mm a'}}</span> -->
+
+                    <!-- <span *ngIf="col === 'Drop Time' && component === 'porter'">{{element['actualDropTime'] | date : 'hh:mm a'}}</span> -->
+
+                    <!-- <span *ngIf="col === 'Last Seen Time' && (component === 'student' || component === 'staffRoutine')">{{element['lastSeenTime'] | date : 'hh:mm a'}}</span> -->
+
+                    <span *ngIf="col === 'Status' && component === 'porter'" style="cursor: pointer;text-decoration: underline;" [ngClass]="{
+                    'inprogress': element['statusName'] == 'InProgress', 
+                    'completed': element['statusName'] == 'Completed', 
+                    'cancelled': element['statusName'] == 'Cancelled' || element['statusName'] == 'Rejected'}" (click)="eventTrigger(col,element)"
+                    [ngStyle] ="colColor && {'color': colColor[col][element['statusName']]}" (keydown.enter)="fixClick()">
+                        {{element['statusName']}} <span *ngIf="element['porterStatus'] === 'RQ-HLD'">&nbsp;({{ element['porterStatusName'] }})</span>
+                    </span>
+
+                    <span *ngIf="col === 'Location' && component === 'porter'" style="text-align: center;cursor: pointer;">
+                        <img src="/assets/Alert/common_icons/map_marker.svg" alt="Map-marker"
+                            *ngIf="element['status'] != 'RQ-CO' && element['status'] != 'RQ-RJ' && element['status'] != 'RQ-CA'" class="cur-ptr"
+                            (click)="eventTrigger(col,element)"  (keydown.enter)="fixClick()"/>
+
+                        <div *ngIf="element['status'] == 'RQ-CO'" class="cur-ptr" style="color: blue"
+                            (click)="eventTrigger('viewHistory', element)" (keydown.enter)="fixClick()">View History</div>
+
+                        <img src="/assets/Alert/common_icons/map_marker_grey.svg" alt="Map-marker-grey"
+                            *ngIf="element['status'] == 'RQ-RJ' || element['status'] == 'RQ-CA'" class="cur-ptr" />
+                    </span>
+                    <span *ngIf="col === 'Role' && component === 'task'">
+                        <span *ngIf="element['roles']?.length > 0">{{ element['roles'][0].name }}</span>
+                    </span>
+                    <span *ngIf="col === 'Transaction Type' && component === 'inventory'">
+                        <span style="font-weight: bold;" [ngStyle]="{color: element['Transaction Type'] === 'IN' ? 'green' : 'red'}">{{element['Transaction Type']}}</span>
+                    </span>
+                    <span *ngIf="col === 'Add Stock' && component === 'item-master'">
+                        <div class="inventory-btn" appTooltip tooltipText="Add Stock" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                            <mat-icon style="height: fit-content; width: fit-content;padding: 0;" class=" ovi-fnt-sze19">add_shopping_cart</mat-icon>
+                        </div>
+                    </span>
+                    <span *ngIf="col === 'Delivery' && component === 'item-master'">
+                        <div class="inventory-btn" appTooltip tooltipText="Delivery" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                            <img height="23px" width="23px" alt="Intend" src="../../../../../assets/Menus/Intend-red.svg" />
+                        </div>
+                    </span>
+                    <span *ngIf="col === 'Context Id' && component === 'task'" style="display: flex; justify-content: center;" appTooltip [tooltipText]="element?.requestCategoryName ? element?.requestCategoryName : 'General'">
+                        <img height="16px" width="16px" alt="task" [src]="element['requestCategoryId'] === 'PR-AT' ? '../../../../../assets/Menus/task-asset.svg' :
+                            element['requestCategoryId'] === 'PR-LC' ? '../../../../../assets/Menus/task-location.svg' :
+                            element['requestCategoryId'] === 'PR-PA' ? '../../../../../assets/Menus/task-patient.svg' :
+                            '../../../../../assets/Menus/task-general.svg'"/>
+                    </span>
+                    <span *ngIf="col === 'Name' && component === 'task'">
+                        {{element['requestCategoryId'] !== 'PR-GN' ? element[col] : element['title']}}
+                    </span>
+                    <span *ngIf="col === 'Context' && component === 'task'" appTooltip [tooltipText]="element?.requestCategoryName ? 'View ' + element.requestCategoryName : ''">
+                        {{element['requestCategoryId'] !== 'PR-GN' ? element[col] :'General'}}
+                    </span>
+                    <span *ngIf="col === 'Assigned Type' && (component === 'task' || component === 'eventRoutine' || component === 'task-management')">
+                        {{element[col] === 'RT-DT' ? 'Department' : element[col] === 'RT-US' ? 'User' : 'Role'}}
+                    </span>
+                    <span *ngIf="col === 'Assigned To' && ['task'].includes(component)" style="display: flex; align-items: center; gap: 4px;">
+                        <span *ngIf="element.performerType" class="icon-cover" [ngStyle]="{'background': element.performerType === 'RT-RO' ? '#F4ECF7' : 
+                            element.performerType === 'RT-US' ? '#EDF4FD' : '#ECF7F6'}" appTooltip [tooltipText]="element.performerType === 'RT-US' ? 'User' : 
+                            element.performerType === 'RT-RO' ? 'Role' : 'Department'">
+                            <img style="transform: scale(1.08); opacity: 0.95;" [ngStyle]="{
+                            height: element.performerType === 'RT-US' ? '13px' : '16px',
+                            width:  element.performerType === 'RT-US' ? '13px' : '16px'}" alt="task"
+                            [src]="element.performerType === 'RT-RO' ? '/assets/Menus/SMC_role.svg' :
+                            element.performerType === 'RT-DT' ? '/assets/Menus/SMC_department.svg' :
+                            element.performerType === 'RT-US' ? '/assets/Alert/user.svg' : ''" />
+                        </span>
+                        {{element[col]}}
+                    </span>
+                    <!-- <span *ngIf=" component === 'task-management'">
+                        <span *ngIf="col === 'Start Time'">{{element[col] | date: 'hh:mm a'}}</span>
+                        <span *ngIf="col === 'From Date'">{{element[col] | date: 'dd MMM yyyy'}}</span>
+                        <span *ngIf="col === 'To Date'">{{element[col] | date: 'dd MMM yyyy'}}</span>
+                        <span *ngIf="col === 'Next Due'">{{element[col] | date: 'dd MMM yyyy'}}</span>
+                    </span> -->
+
+                    <span *ngIf="component === 'coaster' || component === 'coaster-tag'">
+                        <span *ngIf="col === 'Associated Time' || col === 'Disassociated Time'">{{element[col] | date: 'hh:mm a, dd MMM yyyy'}}</span>
+                    </span>
+
+                    <span *ngIf="component === 'patientmovehistory'">
+                        <span *ngIf="col === 'From Time' || col === 'To Time'">{{element[col] | date: 'hh:mm a, dd MMM'}}</span>
+                    </span>
+
+                    <span *ngIf="col === 'Priority' && component === 'task'">
+                        <span *ngIf="element[col] !== null" class="priority" [ngStyle]="{'background': element[col] === 'PRL-HG'? '#d2fc78' : element[col] === 'PRL-MM'? '#fffe78' :
+                         element[col] === 'PRL-LW' ? '#fcd275' : '#f9a171'}" >{{element[col] === 'PRL-HG' ? 'P1' :  element[col] === 'PRL-MM' ? 'P2' : element[col] === 'PRL-LW'? 'P3' : 'P4'}}</span>
+                    </span>
+                    
+                    <!-- <span *ngIf="col === 'Due On' && component === 'print-sticker'">{{element[col] | date: 'd MMM'}}</span> -->
+
+                    <span *ngIf="col === 'print' && component === 'print-sticker'" (click)="eventTrigger(col,element)" (keydown.enter)="fixClick()">
+                        <button mat-button class="print-btn" [disabled]="element?.statusId !== 'RQ-CO'">
+                            <mat-icon class="ovi-fnt-sze16" style="width:fit-content;height:fit-content;padding:0;padding-bottom:3px;padding-right:2px;">print</mat-icon>Print
+                        </button>
+                    </span>
+                    <span *ngIf="col === 'Permit All'">{{element[col] ? 'Yes' : 'No'}}</span>
+                    <span *ngIf="col === 'Work Orders'" style="display: block; width: 100%; text-align: center;">{{element.closedWorkOrders}} / {{element[col]}}</span>
+                    <!-- <span *ngIf="col === 'Schedule' && component === 'task'">Schedule</span> -->
+                </td>
+            </ng-container>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="TWDisplayedColumns;sticky: true;" class="tw-manage-table-header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: TWDisplayedColumns; let i = index;"
+        [ngClass]="{'tw-row-highlight' : row[rowId]  === this.rowClickId, 'qr-request-highlight' : component == 'porter' && row['userName'] == 'QR Request', 'other-request-highlight' : subcomponent == 'my-request' && row['userId'] != userId }" [ngStyle]="rowColor && {'background-color': rowColor[rowColor['key']][row[rowColor['key']]]}"></tr>
+    </table>
+</div>
+<mat-paginator *ngIf="page" (page)="pagination !== null ? pageEvent = eventTrigger('pagination', $event) : ''" [length]="pageLength" [pageSize]="pageSize" 
+    #Paginator [pageSizeOptions]="component === 'device'  || component === 'messageCenteroaster' ?  [10, 15, 20, 50, 100] : [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]"
+    [showFirstLastButtons]="true" class="tw-paginator-sticky" style="border-radius: 5px;"></mat-paginator>
+</div>

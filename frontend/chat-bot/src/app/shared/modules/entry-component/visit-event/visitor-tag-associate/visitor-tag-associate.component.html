@@ -1,0 +1,68 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div > {{"Visitor Arrival"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div> 
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 90px);">
+        <div  style="display: flex; padding: 11px 0px; gap: 20px;">
+            <span class="banner-text"><img height="15px" width="15px" class="svg-blue" alt="visitor" src="../../../../../assets/icons/visitor-id 1.svg"/>{{visitorData.identifier}}</span>
+            <span class="banner-text"><img height="15px" width="15px" class="svg-blue"  alt="user" src="../../../../../assets/icons/user 1.svg"/>{{visitorData.fullName}}</span>
+            <span *ngIf="visitorData.gender" class="banner-text">
+                <span class="material-icons ovi-fnt-sze16" style="padding: 0;"
+                    [ngStyle]="{'color': visitorData.gender !== 'Male' ? '#e648a2' : '#039df6'}">
+                    {{visitorData.gender !== 'Male' ? 'female' : 'male'}}</span>
+                <span *ngIf="visitorData.birthDate">{{ visitorData.birthDate | age }}
+                    <span  class="ovi-fnt-sze10">Yrs</span></span>
+            </span>
+            <span *ngIf="visitorData.addVisitorCount !== null && visitorData.addVisitorCount > 0" class="banner-text"><img height="15px" width="15px" alt="user" class="svg-blue" src="../../../../../assets/icons/users 1.svg"/>{{visitorData.addVisitorCount}}</span>
+        </div>
+
+        <div class="ovi-row-gap" style=" margin-top: 8px ; gap: 10px;">
+            <mat-label class="ovi-lbl-text-size" style="font-weight: 600;">{{"Requested by :"|translate}}</mat-label>
+            <span class="ovi-fnt-sze12">{{visitorData.entityName}}</span>
+        </div>
+        <div class="ovi-row-gap" style=" margin-top: 8px ; gap: 10px;">
+            <mat-label class="ovi-lbl-text-size" style="font-weight: 600;">{{"Request Time :"|translate}} </mat-label>
+            <span class="ovi-fnt-sze12">{{visitorData.visitorEventTime | date: 'dd MMM yyyy hh:mm a'}}</span>
+        </div>
+        <div class="ovi-row-gap" style="margin-top: 14px;">
+            <mat-label  class="ovi-lbl-text-size" style="font-weight: 550;">{{"Assign Tag :"|translate}} </mat-label>
+        </div>
+        <div class="ovi-row-gap" style="display: flex; gap: 15px; padding: 5px 3px;" [formGroup]="visitorTagForm">
+            <div class="ovi-row-three-clmn-vst ovi-matfrmfld-input-box-pdg" >
+                <mat-label class="ovi-lbl-text-size">{{"Device"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device'|translate" id="device" appTypeHit
+                        (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom" formControlName="tagSerialNumber">
+                    <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                        <mat-option *ngFor="let option of searchCosterlist" [value]="option.tagId"> 
+                            {{option.tagId}} {{option.batteryPercentage ? '('+option.batteryPercentage + '%)' : ''}}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="visitorTagForm.controls.tagSerialNumber.invalid">
+                        <span [hidden]="!visitorTagForm.get('tagSerialNumber').hasError('invalidDevice')">{{"Please
+                            select value from the option" | translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn-vst ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate" formControlName="comments"
+                        rows=2></textarea>
+                </mat-form-field>
+            </div>
+        <div>
+            <mat-checkbox formControlName="isVisitorVerified"></mat-checkbox>&nbsp;
+            <span class="ovi-fnt-sze12" style="color: #565656;"> {{"Visitor proofs are verified and approved for the visit."|translate}} </span>
+        </div>
+    </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" style=" margin-right: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+           appDebounceClick (debounceClick)="associateTheTag()" [debounceTime]="300" [disabled]="visitorTagForm.invalid" cdkFocusInitial>{{"Submit"|translate}}
+        </button>
+    </div>
+</div>

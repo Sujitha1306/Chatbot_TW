@@ -1,0 +1,132 @@
+<div class="input-component-holder frame-size" style="position: inherit;">
+    <mat-toolbar class="input-header">
+        <div class="header-name" *ngIf="!data.serialNumber">{{"Compose"|translate}}</div>
+        <div class="header-close">
+            <button mat-icon-button mat-dialog-close class="close-button ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </div>
+    </mat-toolbar>
+    <div class="input-container1" [formGroup]="tagForm" style="overflow: hidden;">
+        <div class="msg_form_body-hig form-body-frame" style="overflow-x: hidden; overflow-y: auto;">
+            <div *ngIf="!data" class="form-row block-3" style="padding-top: 1%;">
+                <div class="radio-field">
+                    <span>
+                        <mat-radio-group formControlName="tagAssociationType" style="padding: 0px;">
+                            <mat-radio-button class="ovi-prmry-clr" style="margin:8px 9px;" value="TAT-CO"
+                                (click)="userSelection(0)"  (keydown.enter)="fixClick()">
+                                {{"Coaster"|translate}}
+                            </mat-radio-button>
+                            <mat-radio-button class="ovi-prmry-clr" *ngIf="employee !== true" style="margin:8px 9px;" value="TAT-PA"
+                            (click)="userSelection(1)" (keydown.enter)="fixClick()">
+                            {{"Patient"|translate}}
+                        </mat-radio-button>
+                        <mat-radio-button class="ovi-prmry-clr"  *ngIf="employee === true" style="margin:8px 9px;" value="TAT-PA"
+                            (click)="userSelection(1)" (keydown.enter)="fixClick()">
+                            {{"Employee"|translate}}
+                            </mat-radio-button>
+                            <mat-radio-button class="ovi-prmry-clr" style="margin: 8px 9px;" value="TAT-ST"
+                                (click)="userSelection(2)" (keydown.enter)="fixClick()">
+                                {{"Staff"|translate}}
+                            </mat-radio-button>
+                            <mat-radio-button class="ovi-prmry-clr" style="margin: 8px 10px;" value="role"
+                                (click)="userSelection(3)" (keydown.enter)="fixClick()">
+                                {{"Group"|translate}}
+                            </mat-radio-button>
+                            <mat-radio-button class="ovi-prmry-clr" style="margin: 8px 10px;" value="loc"
+                                (click)="userSelection(4)" (keydown.enter)="fixClick()">{{"Group
+                                By Location"|translate}}
+                            </mat-radio-button>
+                        </mat-radio-group>
+                    </span>
+                </div>
+            </div>
+            <br>
+            <div class="block-3">
+                <div class="form-row-2">
+                    <div class="row-field-7 custom-name">
+                        <mat-label>{{"To"|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+
+                            <input matInput *ngIf="coaster" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" formControlName="sendTolist" (keyup)="onKey($event.target.value);" [matAutocomplete]="auto">
+                            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                               <mat-option *ngFor="let data of coasterListNew" value="{{data.serialNumber}}">
+                                    <div class="frm-wid">{{data.serialNumber}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+
+                            <mat-hint *ngIf="blankField == true">
+                                <span style="color:red;">{{"Please choose the option from list"|translate}}</span>
+                            </mat-hint>
+
+                            <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'To'|translate" *ngIf="select" formControlName="sendTolist">
+                                <mat-option>
+                                    Select
+                                </mat-option>
+                            </mat-select>
+
+                            <input matInput *ngIf="patient" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" formControlName="sendTolist" (keyup)="onKeyPatient($event.target.value);" [matAutocomplete]="auto1">
+                            <mat-autocomplete autoActiveFirstOption #auto1="matAutocomplete">
+                                <mat-option *ngFor="let data of newList" value="{{data.serialNumber}}">
+                                    {{data.tagAssociationName}} - {{data.serialNumber}}
+                               </mat-option>
+                            </mat-autocomplete>
+
+                            <input matInput *ngIf="staff" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" formControlName="sendTolist" (keyup)="onKeyStaff($event.target.value);" [matAutocomplete]="auto2">
+                            <mat-autocomplete autoActiveFirstOption #auto2="matAutocomplete">
+                               <mat-option *ngFor="let data of newList" value="{{data.serialNumber}}">
+                                {{data.tagAssociationName}} - {{data.serialNumber}}
+                               </mat-option>
+                            </mat-autocomplete>
+
+
+                            <input matInput *ngIf="role_group && emp" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" formControlName="sendTolist" (keyup)="onKeyEmpRole($event.target.value);" [matAutocomplete]="auto3">
+                            <mat-autocomplete autoActiveFirstOption #auto3="matAutocomplete">
+                               <mat-option *ngFor="let data of newEmpRoleList" [value]="data">
+                                {{data}}
+                               </mat-option>
+                            </mat-autocomplete>
+
+                            <input matInput *ngIf="role_group && !emp" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" formControlName="sendTolist" (keyup)="onKeyAllRole($event.target.value);" [matAutocomplete]="auto4">
+                            <mat-autocomplete autoActiveFirstOption #auto4="matAutocomplete">
+                               <mat-option *ngFor="let data of newAllRoleList" [value]="data.name">
+                                {{data.name}}
+                               </mat-option>
+                            </mat-autocomplete>
+
+                            <input matInput *ngIf="location_group" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" formControlName="sendTolist" (keyup)="onKeyLocation($event.target.value);" [matAutocomplete]="auto5">
+                            <mat-autocomplete autoActiveFirstOption #auto5="matAutocomplete">
+                               <mat-option *ngFor="let data of newLocList" [value]="data.locationName">
+                                {{data.locationName}}
+                               </mat-option>
+                            </mat-autocomplete>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="form-row-2">
+                    <div class="row-field-7 custom-name">
+                        <mat-label class="ovi-lbl-text-size">{{'Subject'|translate}}  <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Subject'|translate" maxlength="40" formControlName="subject">
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="form-row-2" style="height: 50%;">
+                    <div class="row-field-7">
+                        <mat-form-field class="example-full-width form-field" appearance="outline">
+                            <textarea matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type your message here *'|translate" maxlength="64"
+                                style="height:100px;" formControlName="message"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+                <mat-checkbox class ="ovi-lbl-text-size" style="margin: 8px 32px;" *ngFor="let data of check_response"
+                    [checked]="data_code == data.value" (change)="responseSelection($event,data.value)"
+                    formControlName="response">{{data.value |translate }}</mat-checkbox>
+            </div>
+        </div>
+        <div class="input-footer">
+            <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+            <button mat-button class="active-btn m-r-1" [disabled]="tagForm.invalid || isDisabled"
+              appDebounceClick (debounceClick)="saveMessage()" [debounceTime]="300" cdkFocusInitial>{{"Send"|translate}}</button>
+        </div>
+    </div>

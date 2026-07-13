@@ -1,0 +1,39 @@
+<div class="patient-banner-info-widget ovi-font-family" style="display: flex;">
+    <div mat-line class="patient-banner-info-widget-left row-field-5" style="display: flex; background: #EEEFF1; border: 1px solid #D1D1D1;">
+        <div class="patient-banner-general-info">
+            <span *ngIf="detail.patientName" class="patient-banner-name" matTooltip="{{detail.patientName | titlecase}}">{{detail.patientName | titlecase}}</span>
+            <span *ngIf="detail.userName" class="patient-banner-name" matTooltip="{{detail.userName | titlecase}}">{{detail.userName | titlecase}}</span>
+            <span *ngIf="detail.patientName != null && detail.tokenNo != null">&nbsp;</span>
+            <span class="patient-banner-token-no" *ngIf="detail.tokenNo != null">[ {{detail.tokenNo}} ]</span>
+            <span class="patient-banner-age" *ngIf="detail.age != null">{{detail.age}} yrs</span>
+            <span class="patient-banner-gender" *ngIf="detail.gender != null"
+            [ngClass]="{'male': detail.gender == 'Male', 'female': detail.gender == 'Female'}">&nbsp;( {{detail.gender | slice:0:1}} )</span>
+
+            <span *ngIf="detail.vipTypeId != null && detail.vipTypeId != 'General'">
+                <img style="float: right;padding-right: 10px;" src="/assets/Alert/common_icons/vip.svg" alt="vip" height="17px"
+                    width="18px">
+            </span>
+        </div>
+            <div class="patient-banner-uhid">
+            <span>{{detail.uhid}}</span>
+            <span *ngIf="detail.uhid != null && detail.visitTypeId != null">,
+            </span>
+            <span *ngIf="detail.visitTypeId != null" class="ovi-fnt-sze13" style="font-weight: 600;color: orange;">{{detail.visitTypeId === 'VT-OP' ? 'OP' : detail.visitTypeId === 'VT-IP' ? 'IP' : detail.visitTypeId === 'VT-DC' ? 'Day Care' : 'HC'}}</span>
+            <span *ngIf="detail.visitIdentifier != null || detail.visitDate != null">&nbsp;(</span>
+            <span *ngIf="detail.visitIdentifier != null">{{detail.visitIdentifier}}</span>
+            <span *ngIf="detail.visitIdentifier != null && detail.visitDate != null">,&nbsp;</span>
+            <span *ngIf="detail.visitDate != null">{{detail.visitDate | date : 'dd/MM/yyyy'}}</span>
+            <span *ngIf="detail.visitIdentifier != null || detail.visitDate != null">)</span>
+        </div>
+            <div mat-line class="patient-banner-device">
+            <span *ngIf="detail.visitTypeId === 'VT-IP' && detail.visitEventTypeId !== 'VE-OT'" style="font-weight: 600;">{{detail.tagId}}</span>
+            <span *ngIf="detail.visitTypeId === 'VT-HC' || detail.visitTypeId === 'VT-OP' || detail.visitEventTypeId === 'VE-OT'" style="font-weight: 600;">{{detail.patientVisitTagId}}</span>
+            <span *ngIf="(detail.visitTypeId === 'VT-HC' || detail.visitTypeId === 'VT-OP' || detail.visitEventTypeId === 'VE-OT' || detail.visitTypeId === 'VT-IP') && (detail.tagTypeId === 'TT-CO' || detail.tagTypeId === 'TT-PA')"
+                class="patient-banner-uhid font-weight">( <img [src] = "detail.tagId ? '/assets/Alert/common_icons/coaster.svg' : '/assets/Alert/common_icons/coaster-g.svg'" alt="coaster"
+                width="18px" height="12px"> )</span>
+            <span *ngIf="detail.visitTypeId === 'VT-HC' && detail.tagTypeId === 'TT-MB'"
+                class="patient-banner-uhid font-weight">(<img src="/assets/Alert/common_icons/mobile_phone.svg"  alt="mobile" width="18px"
+                    height="15px">)</span>
+        </div>
+    </div>
+</div>

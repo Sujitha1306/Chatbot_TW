@@ -1,0 +1,557 @@
+<div *ngIf="actionType !== 'Ambulance' && actionType != 'asset-track' && actionType != 'linen-track'"  class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+        <div class="ovi-pop-hdr">
+        <div >{{'Device' | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div class="loading-spinner" *ngIf="isLoading">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: hidden; height: calc(100% - 85px);">
+        <mat-tab-group [formGroup]="coasterForm" style="height: 100%;"  [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabClick($event)">
+            <mat-tab label="{{'Summary'|translate}}">  
+            <div  style="overflow: hidden;">
+            <div style="padding: 0px 10px 10px 0px;" class="ovi-row-gap">
+                <div style="width: 30%;">
+                        <mat-label class="ovi-lbl-text-size">{{'Mainidentifier'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.uhid }}</span>
+                </div>
+                <div style="width: 30%;">
+                        <mat-label class="ovi-lbl-text-size">{{'Name'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.name}}</span>
+                </div>
+                <div style="width: 30%;">
+                        <mat-label class="ovi-lbl-text-size">{{'Current Location'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600; color: blue; cursor: pointer;">{{data.locationName}}</span>
+                </div>
+
+                <div style="width: 30%;" *ngIf="data.associationTypeId === 'TAT-PA'">
+                        <mat-label class="ovi-lbl-text-size">{{'Gender'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.gender | translate}}</span>
+                </div>
+                <div style="width: 30%;" *ngIf="data.associationTypeId === 'TAT-PA'">
+                        <mat-label class="ovi-lbl-text-size">{{'Age'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.age}}</span>
+                </div>
+                <div style="width: 30%;" *ngIf="data.associationTypeId === 'TAT-PA'">
+                        <mat-label class="ovi-lbl-text-size">{{'Token No'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.token_no}}</span>
+                </div>
+                <div style="width: 30%;" *ngIf="data.workflowTypeId === 'AT-MR'">
+                        <mat-label class="ovi-lbl-text-size">{{'Last Tag ID'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;"></span>
+                </div>
+
+                <div style="width: 30%;" *ngIf="data.workflowTypeId === 'AT-MR'">
+                        <mat-label class="ovi-lbl-text-size">{{'Last Tag Location'| translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600; color: blue; cursor: pointer;"></span>
+                </div>
+            </div>
+            <div *ngIf="this.coasterForm.controls['deviceId'].value !== null">
+                <div>
+                    <div class="ovi-popup-title-text-size">{{'DEVICE DETAILS' | translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+
+                <div *ngIf="this.workflowTypeId !== 'WF-AST'" class="ovi-row-gap">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Device Type' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device Type'|translate" formControlName="deviceType"
+                                    autocomplete="off" readonly>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Device ID' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device ID'|translate" formControlName="deviceId"
+                                    autocomplete="off" readonly>
+                            </mat-form-field>
+                        <div class="ovi-fnt-sze10" style="position: relative; bottom: 8px; left: 5px;font-weight: 600;" *ngIf="batteryPercentage !== null">{{'Battery Level :' | translate}} {{batteryPercentage}}%</div>
+                    </div>
+                    <div style="display: flex;align-items: center;top:8px" [ngStyle]="{'position': (batteryPercentage !== null) ? '' : 'relative'}">
+                            <button mat-button class="active-btn" [disabled] = "isTagId"
+                                (click)="disAssociateCoaster()" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                    </div>
+                </div>
+                <div formArrayName="deviceList" *ngIf="this.workflowTypeId === 'WF-AST'">
+                    <div *ngFor="let obj of coasterForm.controls.deviceList.controls; let i=index">
+                        <div class="ovi-row-gap" [formGroupName]="i" style="width: 100%;" 
+                            *ngIf = "i == 0 || (i > 0 && this.coasterForm.controls['deviceList'].value[i].deviceId != this.coasterForm.controls['deviceList'].value[i-1].deviceId)">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Device Type' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device Type'|translate" formControlName="deviceType"
+                                            autocomplete="off" readonly>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Device ID' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device ID'|translate" formControlName="deviceId"
+                                            autocomplete="off" readonly>
+                                    </mat-form-field>
+                                <div class="ovi-fnt-sze10" style="position: relative; bottom: 8px; left: 5px; font-weight: 600;" *ngIf="batteryPercentage !== null">{{'Battery Level' | translate}} : {{batteryPercentage}}%</div>
+                            </div>
+                            <div style="display: flex;align-items: center;top:8px" [ngStyle]="{'position': (batteryPercentage !== null) ? '' : 'relative'}">
+                                    <button mat-button class="active-btn"
+                                    [disabled] = "this.coasterForm.controls['deviceList'].value[i].deviceId === null"
+                                        (click)="disAssociateCoaster()" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div  *ngIf ="isDisplayUserLocation && data?.userId">
+                    <div class="ovi-popup-title-text-size">{{'USER LOCATION DETAILS' | translate}}</div>
+                    <mat-divider class="divider"></mat-divider>
+                <app-user-location [entityData]="data.userId" [type]="'location'"></app-user-location>
+                </div>
+            </div>
+            <div *ngIf="data.status_code != 'QS-CO' && this.coasterForm.controls['deviceId'].value === null">
+                <div>
+                    <div class="ovi-popup-title-text-size">{{'ASSOCIATE DEVICE' | translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+                <div *ngIf="this.workflowTypeId === 'WF-AST'">
+                    <button mat-mini-fab style="float:right;margin-top: -30px;margin-right: 25px;"
+                        (click)="addDevice(i)">+</button>
+                </div>
+                <div *ngIf="this.data.workflowTypeId !== 'WF-AST'" class="ovi-row-gap" style="padding: 0px 0px 10px 0px;">
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Device ID' | translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device'|translate" id="device" #device appTypeHit (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom" formControlName="tagSerialNumber">
+                                <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                                    <mat-option *ngFor="let option of searchCosterlist" [value]="option.tagId">
+                                    <div class="tot-wid-styl" (keydown.enter)="fixClick()" (click)="getTagTypeId(this.data.workflowTypeId !== 'AT-MR' ? option.tagTypeId : option.assetId);getBatteryPercentage(option)">{{option.tagId}} {{option.batteryPercentage ? '('+option.batteryPercentage + '%)' : ''}}</div>
+
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="coasterForm.controls.tagSerialNumber.invalid">
+                                    <span 
+                                        [hidden]="!coasterForm.controls['tagSerialNumber'].errors.required">{{'Device is
+                                        required' | translate}}.</span>
+                                    <span [hidden]="!coasterForm.controls['tagSerialNumber'].errors.requireMatch">{{'Please select value
+                                        from the option' | translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        <div class="ovi-fnt-sze10" style="position: relative; bottom: 8px; left: 5px;font-weight: 600;" *ngIf="batteryPercentage !== null">{{'Battery Level' | translate}} : {{batteryPercentage}}%</div>
+                    </div>
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{'Comments' | translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <textarea matInput  rows = 1 formControlName="comments"></textarea>
+                                <mat-error *ngIf="coasterForm.controls.comments.invalid">
+                                    <span 
+                                        [hidden]="!coasterForm.controls['comments'].errors.required">{{'Comments is
+                                        required' | translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                </div>
+                 <div  *ngIf ="isDisplayUserLocation && data?.userId">
+                    <div class="ovi-popup-title-text-size ">{{'USER LOCATION DETAILS' | translate}}</div>
+                    <mat-divider class="divider"></mat-divider>
+                <app-user-location [entityData]="data.userId" [type]="'location'"></app-user-location>
+                </div>
+
+                <div formArrayName="deviceList" *ngIf="this.workflowTypeId === 'WF-AST'">
+                    <div *ngFor="let obj of coasterForm.controls.deviceList.controls; let i=index">
+                        <mat-divider *ngIf="coasterForm.controls.deviceList.controls.length> 1 && i > 0">
+                        </mat-divider>
+                        <div class="ovi-row-gap" [formGroupName]="i" style="width: 100%;padding: 0px 0px 10px 0px;">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label *ngIf="i === 0" class="ovi-lbl-text-size">{{'Device ID' | translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Device'|translate" id="device" appTypeHit (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom" formControlName="tagSerialNumber">
+                                        <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                                            <mat-option *ngFor="let option of searchCosterlist" [value]="option.tagId"
+                                            (keydown.enter)="fixClick()" (click)="filterDeviceOptions(option.tagId);"
+                                            [ngStyle]="{display: deviceTypeOption.indexOf(option.tagId) > -1 ? 'none' : 'block'}">
+                                            <div class="tot-wid-styl">{{option.tagId | translate}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error>
+                                            <span *ngIf="coasterForm.controls['deviceList'].value[i]?.tagSerialNumber === null ||
+                                            coasterForm.controls['deviceList'].value[i]?.tagSerialNumber === ''">{{'Device is required' | translate}}.</span>
+                                            <span *ngIf="coasterForm.controls['deviceList'].value[i]?.tagSerialNumber !== null &&
+                                            coasterForm.controls['deviceList'].value[i]?.tagSerialNumber !== ''">{{'Please select value from the option' | translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                                    <mat-label *ngIf="i === 0" class="ovi-lbl-text-size">{{'Comments' | translate}} </mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <textarea matInput  rows = 1 formControlName="comments"></textarea>
+                                        <mat-error *ngIf="coasterForm.controls.comments.invalid">
+                                            <span 
+                                                [hidden]="!coasterForm.controls['comments'].errors.required">{{'Comments is
+                                                required' | translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div>
+                                <span>
+                                    <button mat-icon-button close-button class="ie-close-icon"
+                                        (click)="removeDevice(i, 'clear')"[ngStyle]="{'margin-top': i === 0 ? '7px':'-5px'}">
+                                        <mat-icon class="icon-style ovi-fnt-sze30" style="color: red;height: 27px;width: 30px;padding-top: 10px">highlight_off</mat-icon>
+                                    </button>
+                                </span>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </mat-tab> 
+            <mat-tab label="{{'Message Center'|translate}}" *ngIf="activate_btn && activate_btn.includes('TB_WFTGMC')  && (this.data.hasOwnProperty('workflowTypeId') && this.data['workflowTypeId'] == 'WF-STF' && this.data.hasOwnProperty('id'))">
+            <ng-template mat-tab-label >{{"Message Center"|translate}}</ng-template>
+                <div class="popup-margin">
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                                <mat-label class="ovi-lbl-text-size">{{'Comments' | translate}} </mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <textarea matInput  formControlName="message" rows="2"  (keydown.enter)="preventEnter($event)" ></textarea> 
+                                      <mat-error *ngIf="coasterForm.controls.message.invalid" class="error-txt">
+                                        <span [hidden]="!coasterForm.controls['message'].errors.maxlength">{{'Maximmum
+                                            allowed characters are 240' | translate}}</span>
+                                            <span [hidden]="!coasterForm.controls['message'].errors.pattern">{{'please enter Text & Numbers only' | translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                        </div>
+                        <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" (click)="sendMsg()"  [disabled] = "!coasterForm.controls.message.valid" cdkFocusInitial>{{'Send' | translate}}</button>
+                        </div>
+                        <div class="tw-refresh-icon" style="display: flex ; align-items: center; position: relative; top: 8px;">
+                            <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
+                                (keydown.enter)="fixClick()" (click)="eventTrigger()"
+                                style="cursor: pointer; float: right;">autorenew</i>
+                            </span>
+                        </div>
+                    </div>
+                    <div style="width: calc(100% - 13px);">
+                        <tw-table-component [component]="'messageCenteroaster'" [columns]="displayedColumn" [tableData]="tableData" [iconHeader]="[]" [iconColumn]="[]" [sortColumn]="sortColumn"
+                        [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [permissionControl]="[]" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" ></tw-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Association History'|translate}}">
+                <ng-template mat-tab-label >{{"Association History"|translate}}</ng-template>
+                <input class="tw-filter-new search-box" [formControl]="filter" (keyup)="applyFilter($event.target.value)" autocomplete="off"
+                  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" style="margin: 10px;height: 30px;">
+                <div>
+                    <tw-table-component [component]="'coaster'" [columns]="displayedColumns" [tableData]="tagHistory" [iconHeader]="[]" [iconColumn]="['Associated Time','Disassociated Time']" [sortColumn]="[]"
+                    [eventColumn]="[]" [permissionControl]="[]" [applyFilter]="applyFilterValue" [pagination]="[{length: lengthAH, pageSize: pageSizeAH}]"></tw-table-component>
+                </div>
+            </mat-tab>
+            </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{'Cancel' | translate}}</button>
+        <button mat-button *ngIf="selectedTab === 'Summary'" class="active-btn " appDebounceClick
+        [disabled]="!coasterForm.controls.tagSerialNumber.valid || (this.workflowTypeId === 'WF-AST' && this.coasterForm.controls['deviceList'].invalid)"
+        (debounceClick)="saveCoaster()" [debounceTime]="300" cdkFocusInitial>{{'Save' | translate}}</button>
+    </div>
+</div>
+
+<div *ngIf="actionType == 'Ambulance' || actionType == 'asset-track'|| actionType == 'linen-track'" class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="actionType == 'Ambulance'">{{'Manage Ambulance' | translate}}</div>
+        <div *ngIf="actionType == 'asset-track'">{{'Manage Bus' | translate}}</div>
+        <div *ngIf="actionType == 'linen-track'">{{'Manage linen' | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="coasterForm" style="height: calc(100% - 135px);overflow: auto;">
+        <div style="height: 100%; width: 100%;">
+            <div>
+                <div class="ovi-popup-title-text-size ">{{'SUMMARY' | translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+
+            <div style="padding: 0px 10px 10px 0px;" class="ovi-row-gap">
+                <div style="width: 30%;">
+                        <mat-label class="ovi-lbl-text-size">{{'Name' | translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.name | translate}}</span>
+                </div>
+                <div style="width: 30%;">
+                        <mat-label class="ovi-lbl-text-size">{{'Current Location' | translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600; color: blue; cursor: pointer;">{{data.locationName | translate}}</span>
+                </div>
+
+                <div style="width: 30%;" *ngIf="data.associationTypeId === 'TAT-PA'">
+                        <mat-label class="ovi-lbl-text-size">{{'Gender' | translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.gender | translate}}</span>
+                </div>
+                <div style="width: 30%;" *ngIf="data.associationTypeId === 'TAT-PA'">
+                        <mat-label class="ovi-lbl-text-size">{{'Age' | translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;">{{data.age | translate}}</span>
+                </div>
+                <div style="width: 30%;" *ngIf="data.workflowTypeId === 'AT-MR'">
+                        <mat-label class="ovi-lbl-text-size">{{'Last Tag ID' | translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600;"></span>
+                </div>
+
+                <div style="width: 30%;" *ngIf="data.workflowTypeId === 'AT-MR'">
+                        <mat-label class="ovi-lbl-text-size">{{'Last Tag Location' | translate}} :&nbsp;</mat-label>
+                        <span class="ovi-fnt-sze11" style="font-weight: 600; color: blue; cursor: pointer;"></span>
+                </div>
+            </div>
+            <div style="height: calc(100% - 100px); padding: 0 1%;">
+                <mat-tab-group class="amb-tab" [selectedIndex]="selectedTabIndex"  (selectedTabChange)="tabChanged($event)">
+                    <mat-tab label="{{'User Detail'|translate}}">
+                        <ng-template mat-tab-label >{{"User Detail"|translate}}</ng-template>
+                    <div style="padding-top: 10px;overflow: hidden;">
+                    <div class="ovi-row-gap" *ngIf="!this.isDriverDisable">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'Driver Name' | translate}}  <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Driver Name'|translate" id="incharge"
+                                        formControlName="pilotId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                        [matAutocomplete]="incharge" autocomplete="off">
+                                        <mat-autocomplete autoActiveFirstOption
+                                            [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                            #incharge="matAutocomplete">
+                                            <mat-option *ngFor="let option of inchargeList"
+                                                [value]="option.id">
+                                                <div class="act-wid-styl" (keydown.enter)="fixClick()" (click)="setUserName(option, 'Driver')">{{option.name | translate}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error *ngIf="coasterForm.controls.pilotId.invalid">
+                                            <span 
+                                            [hidden]="!coasterForm.controls['pilotId'].errors.required">{{'Driver Name is
+                                            required' | translate}}.</span>
+                                            <span [hidden]="!coasterForm.controls['pilotId'].errors.requireMatch">{{'Please select
+                                                value from the option' | translate}}</span>
+                                        </mat-error>
+                                </mat-form-field>
+                        </div>
+                            <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" appDebounceClick  [disabled] = "!coasterForm.controls.pilotId.valid"
+                                (debounceClick)="associateDriver('Driver')" [debounceTime]="300" cdkFocusInitial>{{'Associate' | translate}}</button>
+                            </div>
+                    </div>
+                    <div class="ovi-row-gap" *ngIf="this.isDriverDisable">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'Driver Name' | translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Driver Name'|translate" formControlName="pilotId"
+                                        autocomplete="off" readonly>
+                                </mat-form-field>
+                        </div>
+                            <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" [disabled] = "!this.data.pilotId"
+                                    (click)="disAssociateUser('Driver')" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                            </div>
+                    </div>
+                    <div *ngIf = "actionType != 'asset-track' && actionType != 'linen-track'">
+                    <div class="ovi-row-gap" *ngIf="!this.isDoctorDisable">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'Doctor Name' | translate}}  <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Doctor Name'|translate" id="doctor"
+                                        formControlName="doctorId" appTypeHit (typeHit)="searchDoctorNamelist($event)"
+                                        [matAutocomplete]="doctor" autocomplete="off">
+                                        <mat-autocomplete autoActiveFirstOption
+                                            [displayWith]="this.doctorEnabled === true ? getInchargeList.bind(doctorList) : ''"
+                                            #doctor="matAutocomplete">
+                                            <mat-option *ngFor="let option of doctorList"
+                                                [value]="option.id">
+                                                <div class="act-wid-styl" (keydown.enter)="fixClick()" (click)="setUserName(option, 'Doctor')">{{option.name | translate}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error *ngIf="coasterForm.controls.doctorId.invalid">
+                                            <span 
+                                            [hidden]="!coasterForm.controls['doctorId'].errors.required">{{'Doctor Name is
+                                            required' | translate}}.</span>
+                                            <span [hidden]="!coasterForm.controls['doctorId'].errors.requireMatch">{{'Please select
+                                                value from the option' | translate}}</span>
+                                        </mat-error>
+                                </mat-form-field>
+                        </div>
+                            <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" appDebounceClick  [disabled] = "!coasterForm.controls.doctorId.valid"
+                                (debounceClick)="associateDriver('Doctor')" [debounceTime]="300" cdkFocusInitial>{{'Associate' | translate}}</button>
+                            </div>
+                    </div>
+                    <div class="ovi-row-gap" *ngIf="this.isDoctorDisable">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'Doctor Name' | translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Doctor Name'|translate" formControlName="doctorId"
+                                        autocomplete="off" readonly> 
+                                </mat-form-field>
+                        </div>
+                            <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" [disabled] = "!this.data.doctorId"
+                                    (click)="disAssociateUser('Doctor')" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                            </div>
+                    </div>
+
+                    <div class="ovi-row-gap" *ngIf="!this.isEMTDisable">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'EMT Name' | translate}}  <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'EMT Name'|translate" id="emt"
+                                        formControlName="emtId" appTypeHit (typeHit)="searchEMTNamelist($event)"
+                                        [matAutocomplete]="emt" autocomplete="off">
+                                        <mat-autocomplete autoActiveFirstOption
+                                            [displayWith]="this.emtEnabled === true ? getInchargeList.bind(emtList) : ''"
+                                            #emt="matAutocomplete">
+                                            <mat-option *ngFor="let option of emtList"
+                                                [value]="option.id">
+                                                <div class="act-wid-styl" (click)="setUserName(option, 'EMT')" (keydown.enter)="fixClick()">{{option.name | translate}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error *ngIf="coasterForm.controls.emtId.invalid">
+                                            <span 
+                                            [hidden]="!coasterForm.controls['emtId'].errors.required">{{'EMT Name is
+                                            required' | translate}}.</span>
+                                            <span [hidden]="!coasterForm.controls['emtId'].errors.requireMatch">{{'Please select
+                                                value from the option' | translate}}</span>
+                                        </mat-error>
+                                </mat-form-field>
+                        </div>
+                            <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" appDebounceClick  [disabled] = "!coasterForm.controls.emtId.valid"
+                                (debounceClick)="associateDriver('EMT')" [debounceTime]="300" cdkFocusInitial>{{'Associate' | translate}}</button>
+                            </div>
+                    </div>
+                    <div class="ovi-row-gap" *ngIf="this.isEMTDisable">
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{'EMT Name' | translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'User Name'|translate" formControlName="emtId"
+                                        autocomplete="off" readonly>
+                                </mat-form-field>
+                        </div>
+                            <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                <button mat-button class="active-btn" [disabled] = "!this.data.emtId"
+                                    (click)="disAssociateUser('EMT')" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                            </div>
+                    </div>
+                    </div>
+                    <div *ngIf = "actionType == 'asset-track' && actionType != 'linen-track'">
+                        <div class="ovi-row-gap" *ngIf="!this.isEMTDisable">
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Attender Name' | translate}}  <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Incharge Name'|translate" id="emt"
+                                            formControlName="emtId" appTypeHit (typeHit)="searchEMTNamelist($event)"
+                                            [matAutocomplete]="emt" autocomplete="off">
+                                            <mat-autocomplete autoActiveFirstOption
+                                                [displayWith]="this.emtEnabled === true ? getInchargeList.bind(emtList) : ''"
+                                                #emt="matAutocomplete">
+                                                <mat-option *ngFor="let option of emtList"
+                                                    [value]="option.id">
+                                                    <div class="act-wid-styl" (click)="setUserName(option, 'EMT')" (keydown.enter)="fixClick()">{{option.name | translate}}</div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                            <mat-error *ngIf="coasterForm.controls.emtId.invalid">
+                                                <span 
+                                                [hidden]="!coasterForm.controls['emtId'].errors.required">{{'EMT Name is
+                                                required' | translate}}.</span>
+                                                <span [hidden]="!coasterForm.controls['emtId'].errors.requireMatch">{{'Please select
+                                                    value from the option' | translate}}</span>
+                                            </mat-error>
+                                    </mat-form-field>
+                            </div>
+                                <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                    <button mat-button class="active-btn" appDebounceClick  [disabled] = "!coasterForm.controls.emtId.valid"
+                                    (debounceClick)="associateDriver('EMT')" [debounceTime]="300" cdkFocusInitial>{{'Associate' | translate}}</button>
+                                </div>
+                        </div>
+                        <div class="ovi-row-gap" *ngIf="this.isEMTDisable">
+                            <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Attender Name' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Incharge Name'|translate" formControlName="emtId"
+                                            autocomplete="off" readonly>
+                                    </mat-form-field>
+                            </div>
+                                <div style="display: flex;align-items: center;position: relative;top: 8px;">
+                                    <button mat-button class="active-btn" [disabled] = "!this.data.emtId"
+                                        (click)="disAssociateUser('EMT')" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                                </div>
+                        </div>
+                    </div>
+                    </div>
+                    </mat-tab>
+                    <mat-tab label="{{'Asset'|translate}}">
+                        <ng-template mat-tab-label >{{'Asset'|translate}}</ng-template>
+                        <div fxLayout="column" class="mat-elevation-z4 manage-component" [ngClass.xs]="'components-container-xs'"  fxLayoutGap="5px" style="height : calc(100% - 20px);width: calc(100% - 20px);margin : 10px">
+                            <div class="mat-table-overflow" style="height: 100%;width: 100%;">
+                            <mat-table #table [dataSource]="assetDataSource" matSort>
+                                <ng-container *ngFor = "let col of assetDisplayedData"  matColumnDef="{{col.colName}}" >
+                                <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header" style="justify-content: flex-start;"> {{col.title | translate}} </mat-header-cell>
+                                <mat-cell *matCellDef="let element">
+                                    <span *ngIf="col.colName != 'alerts'">{{element[col.dataName] | translate}}</span>
+                                    <span *ngIf="col.colName == 'alerts'">
+                                        <span *ngFor="let alerts of element['alerts']">
+                                            <span *ngIf="!alerts.eventCode">
+                                                <img *ngIf="alerts.alertCode === 'RU-MO'" appTooltip [tooltipText]="alerts.message | translate" placement="top"
+                                                    style="width:18px;margin-right:5px" src="./../../../../../assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
+                                                <img *ngIf="alerts.alertCode === 'RU-FA'" alt="fall-risk" appTooltip [tooltipText]="alerts.message | translate" placement="top"
+                                                    style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
+                                                <img *ngIf="alerts.alertCode === 'RU-MI'" appTooltip [tooltipText]="alerts.message | translate" placement="top"
+                                                    style="width:18px;margin-right:5px" src="./../../../../../assets/Alert/IP/patient-missing.svg" alt="patient-missing">
+                                                <img *ngIf="alerts.alertCode === 'RU-GO'" appTooltip [tooltipText]="alerts.message | translate" placement="top"
+                                                    style="width:18px;margin-right:5px" src="./../../../../../assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                                            </span>
+                                            <span *ngIf="alerts.eventCode" style="cursor: pointer;">
+                                                <img *ngIf="events.eventCode === 'CE-TAM'" style="width:18px;margin-right:5px;cursor: pointer;" alt="CE-TAM"
+                                                    appTooltip [tooltipText]="events.message | translate" placement="top"  src="./../../../../../assets/Alert/CE-TAM.svg">
+                                            </span>
+                                        </span>
+                                    </span>
+                                </mat-cell>
+                                </ng-container>
+                                <mat-header-row *matHeaderRowDef="assetDisplayedColumns" class="manage-table-header-row" style="min-height: 40px;height: 40px !important;"></mat-header-row>
+                                <mat-row *matRowDef="let row; columns: assetDisplayedColumns;" class="element-row" style="min-height: 40px;height: 40px !important;">
+                                </mat-row>
+                            </mat-table>
+                            <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons></mat-paginator>
+                            </div>
+                        </div>
+                    </mat-tab>
+                    <mat-tab label="{{'Reader'|translate}}">
+                        <ng-template mat-tab-label >{{'Reader'|translate}}</ng-template>
+                        <div fxLayout="column" class="mat-elevation-z4 manage-component" [ngClass.xs]="'components-container-xs'"  fxLayoutGap="5px" style="height: calc(100% - 20px);width: calc(100% - 20px);margin : 10px">
+                            <div class="mat-table-overflow" style="height: 100%;width: 100%;">
+                                <mat-table #table [dataSource]="readerDataSource" matSort>
+                                    <ng-container *ngFor = "let col of readerDisplayedData"  matColumnDef="{{col.colName}}" >
+                                        <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header" style="justify-content: flex-start;"> {{col.title | translate}} </mat-header-cell>
+                                        <mat-cell *matCellDef="let element">
+                                            <span *ngIf="col.colName != 'alerts'">{{element[col.dataName] | translate}}</span>
+                                            <span *ngIf="col.colName == 'alerts'">
+                                                <span *ngFor="let alerts of element['alerts']">
+                                                    <span *ngIf="alerts.eventCode" style="cursor: pointer;">
+                                                        <img *ngIf="events.eventCode === 'CE-TAM'" style="width:18px;margin-right:5px;cursor: pointer;" alt="CE-TAM"
+                                                            appTooltip [tooltipText]="events.message | translate" placement="top"  src="./../../../../../assets/Alert/CE-TAM.svg">
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </mat-cell>
+                                    </ng-container>
+                                    <mat-header-row *matHeaderRowDef="readerDisplayedColumns" class="manage-table-header-row" style="min-height: 40px;height: 40px !important;"></mat-header-row>
+                                    <mat-row *matRowDef="let row; columns: readerDisplayedColumns;" class="element-row" style="min-height: 40px;height: 40px !important;">
+                                    </mat-row>
+                                </mat-table>
+                                <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons></mat-paginator>
+                            </div>
+                        </div>
+                    </mat-tab>
+                </mat-tab-group>
+            </div>
+
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+            <button mat-button class="cancle-btn" mat-dialog-close>{{'Cancel' | translate}}</button>
+    </div>
+</div>

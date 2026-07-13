@@ -1,0 +1,439 @@
+<div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="ovi-font-family dynamic-form" [formGroup]="formTemplate" *ngIf="formTemplateObject.length" style="height: 100%;" [ngStyle]="">
+    <div class="dialog-header" *ngIf="formTemplateDetail['header'] && isFormBind && !enableDrag" [ngStyle]="formTemplateDetail['css']['header']">
+        <span>{{formTemplateDetail['name']}}</span>
+        <span>
+            <button mat-icon-button (click)="closeForm()" style="width: 30px !important;height: 30px !important;">
+                <mat-icon style="line-height: 20px !important; vertical-align: unset;">highlight_off</mat-icon>
+            </button>
+        </span>
+    </div>
+    <div [ngStyle]="formTemplateDetail['css']['content']" class="form-temp-content mat-custom-form-template-field-box">
+    <mat-drawer-container #container class="drawer-container">
+        <mat-drawer #menu *ngIf="sideBarEnable && isExpanded" mode="side" opened="true" style = "width: 260px; background-color: white;">
+            <div style="height : calc(100% - 2px);border-right: 2px solid gray;">
+                <mat-list>
+                    <mat-list-item style="border-bottom: 1.5px solid black;font-weight: 600;display: flex;flex-direction: column;align-items: center;background: #dcdfe4;"> Revision History</mat-list-item>
+                    <mat-list-item style="border-bottom: 1.5px solid #e8e8e8;"
+                    [ngClass]="{'ovi-prmry-bg-clr ovi-prmry-wht-clr': entityFormHistId == history['id'],'history-unselected': entityFormHistId != history['id']}"
+                        *ngFor="let history of formHistDetails;" (click) = "entityFormHistId = history['id'];formEntityBinding(history)"  (keydown.enter)="fixClick()">
+                        <div style="width: 100%;display: flex;justify-content: space-between;">
+                            <div class="ovi-fnt-sze11" style="min-width: 100px; font-weight: 400; padding-top: 10px;">
+                                <span>{{history['entityFormStatusName'] ? history['entityFormStatusName'] : history['entityFormStatusId']}}</span>
+                            </div>
+                            <div style="display: flex;">
+                                <div>
+                                    <div style="height: 20px;" class="ovi-fnt-sze10" ><mat-icon class="ovi-fnt-sze14">person</mat-icon><span style="position: relative;bottom: 13px;">{{history['modifiedBy']}}</span></div>
+                                    <div style="height: 20px;"class="ovi-fnt-sze10" ><mat-icon class="ovi-fnt-sze14">av_timer</mat-icon><span style="position: relative;bottom: 15px;">{{history['modifiedOn'] | date: "hh:mm a, d MMM"}}</span></div>
+                                </div>
+                                <div *ngIf="entityFormHistId == history['id'] && enablePdf">
+                                    <img src="/assets/Alert/common_icons/pdf-file.png"  alt="pdf-file" (click) = "downloadPDF()" (keydown.enter)="fixClick()" appTooltip tooltipText="{{'Pdf Download'|translate}}" placement="bottom" style="cursor: pointer;height: 20px;width: 22px;">
+                                </div>
+                                <div *ngIf="entityFormHistId == history['id'] && enableExcel">
+                                    <img src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click) = "downloadExcel()" (keydown.enter)="fixClick()" appTooltip tooltipText="{{'Excel Download'|translate}}" placement="bottom" style="cursor: pointer;height: 20px;width: 22px;">
+                                </div>
+                            </div>
+                        </div>
+                    </mat-list-item>
+                </mat-list>
+            </div>
+        </mat-drawer>
+        <mat-divider vertical style="border-right-width: 3px;"></mat-divider> 
+        <mat-drawer-content [ngClass]="sideBarEnable?'drawer-right-content':'drawer-main-content'">
+            <div class="ovi-prmry-bg-clr" style="float: left;height: 30px; width: 40px; border-radius: 0px 20px 20px 0px; padding-bottom: 12px;" *ngIf="sideBarEnable">
+                <button mat-icon-button (click)="toggleDrawer()">
+                    <mat-icon class="ovi-fnt-sze26" style="color: white;font-weight: 600; margin-right: 8px;margin-top: -7px;">{{ isExpanded ? 'keyboard_double_arrow_left' : 'keyboard_double_arrow_right' }}</mat-icon>
+                </button>
+            </div>
+            <div id="form-container" [ngStyle]="formTemplateDetail.css?.contentLayout ? formTemplateDetail.css.contentLayout : { 'height': 'calc(100% - 16px)', 'overflow-x' : 'hidden', 'padding' : '15px 5px 0px 10px'}" [class.collapsed]="!isExpanded">
+                <app-banner [type]="bannerType" *ngIf="bannerType && formInput?.addBanner" [bannerData]="formInput?.bannerData"></app-banner>
+                <ng-template #fieldBlock let-field="field" let-indexi="indexi" let-indexj="indexj"let-isAccordionField="isAccordionField" let-accordionIndexi="accordionIndexi" let-accRowI="accRowI">
+                    <ng-container >
+                                        <div *ngIf="field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-LBL':field.type == 'DI-LBL'" style="width: calc(100% - 10px);">
+                                            <div [ngStyle]="field?.tempCustomCss?.di">
+                                                <mat-label> {{field.labelName}}</mat-label>
+                                                <div style="float: right;">
+                                                    <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;display: inline-flex;"
+                                                    appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                    <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                    <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;display: inline-flex;"
+                                                        appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                                </div>
+                                                <div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="field?.isTableField && type !== 'create' ? enableTabFields && ['DI-DTE','DI-DTM','DI-TXT','DI-NUM','DI-TIM','DI-SRC','DI-TXA','DI-DRD'].indexOf(field.type) > -1 : ['DI-DTE','DI-DTM','DI-TXT','DI-NUM','DI-TIM','DI-SRC','DI-TXA','DI-DRD'].indexOf(field.type) > -1">
+                                            <mat-label *ngIf="field?.validator?.outline" class="ovi-lbl-text-size"> {{field.labelName}}</mat-label>
+                                            <mat-form-field style="width: calc(100% - 10px);" [ngStyle]="field?.tempCustomCss?.di" [appearance]="field?.validator?.outline ? 'outline':''" *ngIf="field?.isTableField && type !== 'create' ? enableTabFields && ['DI-DTE','DI-DTM','DI-TXT','DI-NUM'].indexOf(field.type) > -1 : ['DI-DTE','DI-DTM','DI-TXT','DI-NUM'].indexOf(field.type) > -1">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [type]="field.typeName" [readonly]="field?.validator?.disabled"
+                                                    [formControlName]="field.key" appTooltip [tooltipText]="field.tooltip" [required] = "field.validator.required">
+                                                
+                                                <mat-icon class="dy-input-action" matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action" matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action" matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                                    <mat-hint *ngIf="field?.validator?.hint" style="margin-top: 2px;"> {{ field?.validator?.hint }} </mat-hint>
+                                                <mat-error *ngIf="formTemplate.controls[field.key]?.invalid" class="error-txt-1">
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.required"> {{field.labelName}} is required</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.minlength">Minimum {{field.validator.minLength}} characters</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.maxlength">Max character length {{field.validator.maxLength}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            <mat-form-field style="width: calc(100% - 10px);" [ngStyle]="field?.tempCustomCss?.di" [appearance]="field?.validator?.outline ? 'outline':''" *ngIf = "field?.isTableField && type !== 'create' ? enableTabFields && ['DI-TIM'].indexOf(field.type) > -1:['DI-TIM'].indexOf(field.type) > -1">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [type]="field.typeName" [readonly]="field?.validator?.disabled"
+                                                    [formControlName]="field.key" appTooltip [tooltipText]="field.tooltip" [required] = "field.validator.required">
+                                                
+                                                <mat-icon class="dy-input-action" matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action" matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action" matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                                <mat-hint *ngIf="field?.validator?.hint" style="margin-top: 2px;"> {{ field?.validator?.hint }} </mat-hint>
+                                                <mat-error *ngIf="formTemplate.controls[field.key]?.invalid" class="error-txt-1">
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.required"> {{field.labelName}} is required</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.minlength">Minimum {{field.validator.minLength}} characters</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.maxlength">Max character length {{field.validator.maxLength}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            <mat-form-field style="width: calc(100% - 10px);" [ngStyle]="field?.tempCustomCss?.di" [appearance]="field?.validator?.outline ? 'outline':''" *ngIf = "field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-SRC':field.type == 'DI-SRC'">
+                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [type]="field.typeName" [readonly]="field?.validator?.disabled"
+                                                    [formControlName]="field.key" appTooltip [tooltipText]="field.tooltip" [required] = "field.validator.required" (keyup)="getSearchlist($event,indexi,indexj)" [matAutocomplete]="auto">
+
+                                                <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn.bind(this, field)">
+                                                    <mat-option *ngFor="let searchData of field.outputResponse" [value]="searchData[field.dataBind.key]" (click)="getSearchText(searchData,indexi,indexj)" (keydown.enter)="fixClick()">
+                                                    {{searchData[field.dataBind.value]}}
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                                    <mat-hint *ngIf="field?.validator?.hint" style="margin-top: 2px;"> {{ field?.validator?.hint }} </mat-hint>
+                                                <mat-error *ngIf="formTemplate.controls[field.key]?.invalid" class="error-txt-1">
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.required"> {{field.labelName}} is required</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.minlength">Minimum {{field.validator.minLength}} characters</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.maxlength">Max character length {{field.validator.maxLength}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            <mat-form-field style="width: calc(100% - 10px);" [ngStyle]="field?.tempCustomCss?.di" [appearance]="field?.validator?.outline ? 'outline':''" *ngIf = "field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-TXA':field.type == 'DI-TXA'">
+                                                <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [rows] ="field.validator.row" [formControlName]="field.key"
+                                                    appTooltip [tooltipText]="field.tooltip" placement="bottom" [required] = "field.validator.required" [readonly]="field?.validator?.disabled"></textarea>
+                                                
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                                    <mat-hint *ngIf="field?.validator?.hint" style="margin-top: 2px;"> {{ field?.validator?.hint }} </mat-hint>
+                                                <mat-error *ngIf="formTemplate.controls[field.key]?.invalid" class="error-txt-1">
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.required"> {{field.labelName}} is required</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.minlength">Minimum {{field.validator.minLength}} characters</span>
+                                                    <span  [hidden]="!formTemplate.controls[field.key].errors.maxlength">Max character length {{field.validator.maxLength}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                            <mat-form-field style="width: calc(100% - 10px);" [ngStyle]="field?.tempCustomCss?.di" *ngIf = "field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-DRD':field.type == 'DI-DRD'" [appearance]="field?.validator?.outline ? 'outline':''">
+                                                <mat-select [formControlName]="field.key" appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [multiple]="field.multiSelect ? true : false" [disabled]="field?.validator?.disabled">
+                                                    <mat-option *ngFor="let option of field.outputResponse" [value]="option[field.dataBind.key]">
+                                                    {{option[field.dataBind.value]}}
+                                                    </mat-option>
+                                                </mat-select>
+                                                
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue();$event.stopPropagation()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj);$event.stopPropagation()" (keydown.enter)="fixClick()">delete</mat-icon>
+                                                    <mat-hint *ngIf="field?.validator?.hint" style="margin-top: 2px;"> {{ field?.validator?.hint }} </mat-hint>
+                                            </mat-form-field>
+                                        </div>
+                                        <span style="width: calc(100% - 10px);" [ngStyle]="field?.tempCustomCss?.di" *ngIf = "field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-CB':field.type == 'DI-CB'">
+                                            <!-- <div *ngIf="field?.labelName">
+                                                <mat-label class="ovi-lbl-text-size"> {{field.labelName}}</mat-label>
+                                            </div> -->
+                                            <mat-checkbox class = "form-checkbox" appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [formControlName]="field.key"
+                                            appTooltip [tooltipText]="field.tooltip" placement="bottom" [required] = "field.validator.required">{{field.labelName}}</mat-checkbox>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                            appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                            <mat-error *ngIf="formTemplate.controls[field.key]?.invalid" class="error-txt-1">
+                                                <span  [hidden]="!formTemplate.controls[field.key]?.errors?.required"> {{field.labelName}} is required</span>
+                                                <span  [hidden]="!formTemplate.controls[field.key]?.errors?.minlength">Minimum {{field.validator.minLength}} characters</span>
+                                                <span  [hidden]="!formTemplate.controls[field.key]?.errors?.maxlength">Max character length {{field.validator.maxLength}}</span>
+                                            </mat-error>
+                                        </span>                                        
+                                        <span style="width: calc(100% - 10px);" *ngIf = "field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-RB':field.type == 'DI-RB'">
+                                            <span *ngIf="!field?.outputResponse?.length" [ngStyle]="field?.tempCustomCss?.di">
+                                                <div *ngIf="field?.labelName">
+                                                    <mat-label class="ovi-lbl-text-size"> {{field.labelName}}</mat-label>
+                                                </div>
+                                                <mat-radio-group appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [formControlName]="field.key"
+                                                        appTooltip [tooltipText]="field.tooltip" placement="bottom" [required] = "field.validator.required">
+                                                    <mat-radio-button [value]='true'>Yes</mat-radio-button>
+                                                    <mat-radio-button  [value]='false'>No</mat-radio-button>
+                                                </mat-radio-group>
+                                            </span>
+                                            <span *ngIf="field.outputResponse?.length" [ngStyle]="field?.tempCustomCss?.di">
+                                                <div *ngIf="field?.labelName">
+                                                    <mat-label class="ovi-lbl-text-size"> {{field.labelName}}</mat-label>
+                                                </div>
+                                                <mat-radio-group appPlaceholder [showPlaceholder]="false" [placeholderText]="'field.labelName'|translate" [formControlName]="field.key"
+                                                appTooltip [tooltipText]="field.tooltip" placement="bottom" [required] = "field.validator.required">
+                                                    <mat-radio-button *ngFor="let option of field.outputResponse" [value]="option[field.dataBind.key]">
+                                                        {{option[field.dataBind.value]}}
+                                                    </mat-radio-button>
+                                                </mat-radio-group>
+                                            </span>
+                                            
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                            appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                            <mat-error *ngIf="formTemplate.controls[field.key]?.invalid" class="error-txt-1">
+                                                <span  [hidden]="!formTemplate.controls[field.key].errors.required"> {{field.labelName}} is required</span>
+                                                <span  [hidden]="!formTemplate.controls[field.key].errors.minlength">Minimum {{field.validator.minLength}} characters</span>
+                                                <span  [hidden]="!formTemplate.controls[field.key].errors.maxlength">Max character length {{field.validator.maxLength}}</span>
+                                            </mat-error>
+                                        </span>                                        
+                                        <span style="width: calc(100% - 10px);" *ngIf = "field.type == 'DI-BTN'">
+                                            <button mat-button *ngIf="field.key!='pdf' && field.key!='excel'" class="active-btn margin-r-1" (click)="field.key=='gis' && type=='gridster'?getWidgetData(field):''"
+                                            [ngStyle]="field?.tempCustomCss?.di">{{field.labelName}}</button>
+
+                                            <span *ngIf="field.key=='pdf'">
+                                                <img src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon"  width=40px  style="cursor: pointer;" (click)="getWidgetData('pdf')" (keydown.enter)="fixClick()"
+                                                [ngStyle]="field?.tempCustomCss?.di">
+                                            </span>
+                                            <span *ngIf="field.key=='excel'">
+                                                <img src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" width=40px  style="cursor: pointer;" (click)="getWidgetData('excel')" (keydown.enter)="fixClick()"
+                                                [ngStyle]="field?.tempCustomCss?.di">
+                                            </span>
+
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                            appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                        </span>
+                                        <span style="width: calc(100% - 10px);" *ngIf = "field.type == 'DI-FILE'">
+                                            <input type='file' (change)="uploadFile($event,indexi,indexj)" [ngStyle]="field?.tempCustomCss?.di">
+
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                            appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                        </span>
+                                        <span style="width: calc(100% - 10px);" *ngIf = "field.type == 'DI-IMG'">
+                                            <img src="{{field?.outputResponse?.url}}" [ngStyle]="field?.tempCustomCss?.di" alt="field" >
+
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                            appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                            <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                        </span>
+                                        <div *ngIf="field?.isTableField && type !== 'create' ? enableTabFields && field.type == 'DI-HZL':field.type == 'DI-HZL'" style="width: calc(100% - 10px);">
+                                            <mat-divider [ngStyle]="field?.tempCustomCss?.di"></mat-divider>
+                                            <span style="float: right;">
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                            </span>
+                                        </div>
+                                        <div fxLayout="row" fxLayout.lt-sm="column">
+                                            <div *ngIf="field.type == 'DI-TABLE'" style="width: calc(100% - 10px);">
+                                            <div style="height: 22%;float: right;">
+                                                <button  mat-button class="active-btn" style="margin: 5px;opacity: 10;display: inline-flex;" *ngIf="type!='create' && !enableEdit && !enableTabFields" (click)="enableTabFields=!enableTabFields">Click To Add</button>
+                                                <button  mat-button class="active-btn" style="margin: 5px;opacity: 10;display: inline-flex;" *ngIf="type!='create' && !enableEdit && enableTabFields && !maxRowReached && ((roundTrip === true && (formTemplateDetail['footerButton'] != null && ['EFS-DR', 'EFS-CR'].indexOf(formTemplateDetail['footerButton']['code']) != -1 && !sideBarEnable)) || roundTrip === false)" appDebounceClick (debounceClick)="bindDataToTable(indexi,indexj,'add')" [debounceTime]="300" cdkFocusInitial>Add</button>
+                                                <button  mat-button class="active-btn" style="margin: 5px;opacity: 10;display: inline-flex;" *ngIf="type!='create' && enableEdit && enableTabFields" (click)="bindDataToTable(indexi,indexj,'edit');enableEdit=!enableEdit">Update</button>
+                                                <span style="padding-top: 5px;padding-left: 5px;" *ngIf="!formInput['entityId'] && false">
+                                                    <mat-icon class="dy-input-action"matSuffix  mat-mini-fab  style="color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                        appTooltip tooltipText="Edit Css">edit</mat-icon>
+                                                </span>
+                                                <span style="padding-left: 20px;" *ngIf="!formInput['entityId'] && false">
+                                                    <mat-form-field style="width: 20%;">
+                                                        <mat-label> CustomCss</mat-label>
+                                                        <input matInput appTooltip [tooltipText]="'edit customCss'" [matAutocomplete]="auto">
+                                                    </mat-form-field>
+                                                </span>
+                                            </div>
+                                            <div style="float: right;margin: 5px;" *ngIf="!isFormBind">
+                                                <mat-icon class="dy-input-action"style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;" appTooltip tooltipText="Update Columns" (click)="updateTableCols(indexi,indexj)" (keydown.enter)="fixClick()">add_to_photos</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen"  mat-mini-fab  style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;"
+                                                appTooltip tooltipText="{{'Edit'|translate}}" (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && isOpen && indexi == updateIndexi && indexj == updateIndexj"  mat-mini-fab >more_horiz</mat-icon>
+                                                <mat-icon class="dy-input-action"matSuffix *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;"
+                                                    appTooltip tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                            </div>
+                                            <div style="margin-bottom: 10px;margin-top: 50px;">
+                                                <app-form-table [columns]="field?.contextValueTable?.column" [tableData]="isFormBind?formTemplate.controls[field.key].value:field?.contextValueTable?.data" [action]="field?.contextValueTable?.action" (triggerAction)="updateTable($event,indexi,indexj)"></app-form-table>
+                                            </div>
+                                            
+                                        </div>
+                                        </div>
+                                        <div *ngIf="field.type == 'DI-CARD' && field?.template" style="padding-right: 20px;">
+                                            <div style="width: 100%; height: 100%;" [innerHTML]="sanitizer.bypassSecurityTrustHtml(field?.template?.content || '')"></div>
+                                            <div>
+                                                <mat-icon class="dy-input-action" *ngIf="!isFormBind && !isOpen" style="margin-top: 2%;color: #4E88FF !important;opacity: 10;display: inline-flex;font-size: 18px;" appTooltip tooltipText="Edit"
+                                                    (click)="isAccordionField ? editAccordionField(accordionIndexi, accRowI, indexj) : editDataItem(indexi,indexj);exitValue()" (keydown.enter)="fixClick()">edit</mat-icon>
+                                                <mat-icon class="dy-input-action" *ngIf="!isFormBind && !isOpen"
+                                                    style="margin-top: 2%;color: #E65100 !important;opacity: 10;display: inline-flex;font-size: 18px" appTooltip
+                                                    tooltipText="Delete" (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj)" (keydown.enter)="fixClick()">delete</mat-icon>
+                                            </div>
+                                        </div>
+                                    </ng-container>
+                         </ng-template>
+                <div cdkDropList [id]="'main-drop-list'" [cdkDropListData]="formTemplateObject"
+                    [cdkDropListConnectedTo]="cdkConnectedLists" (cdkDropListDropped)="onMainDrop($event)"
+                    cdkDropListOrientation="vertical">
+                    <div *ngFor="let fields of formTemplateObject; let indexi=index ;  trackBy: trackByField">
+                        <div cdkDropList *ngIf="enableDrag" class="drop-gap" [id]="'gap-' + indexi"
+                            (cdkDropListDropped)="onDropInGap($event, indexi)" (cdkDropListEntered)="onGapEnter(indexi, $event)"
+                            (cdkDropListExited)="onGapExit(indexi, $event)" [cdkDropListConnectedTo]="cdkConnectedLists"
+                            [class.active-gap]="activeGap === indexi" cdkDropListOrientation="vertical"></div>
+                        <ng-container *ngIf="fields[0]?.type === 'DI-ACD'; else normalRow">
+                            <div *ngIf="fields[0]?.status !== false">
+                                <div fxLayout="row" class="form-template-inputs" cdkDropList cdkDropListOrientation="horizontal"
+                                    [cdkDropListData]="fields" [cdkDropListConnectedTo]="cdkConnectedLists" [id]="'list' + indexi"
+                                    (cdkDropListDropped)="onDrop($event, indexi)" [cdkDragDisabled]="!enableDrag">
+                                    <div cdkDrag [cdkDragData]="fields[0]" [cdkDragDisabled]="!enableDrag" style="width:100%;">
+                                        <div *cdkDragPlaceholder style="height:48px; background:#e3f2fd; border:2px dashed #90caf9; 
+                                                                border-radius:4px; margin-bottom:8px;">
+                                        </div>
+                                        <mat-accordion style="display:block; margin-bottom:10px; width:100%;">
+                                            <mat-expansion-panel [expanded]="fields[0]?.accordionExpanded !== false"
+                                                style="box-shadow: 0 1px 4px rgba(0,0,0,0.12);">
+                
+                                                <mat-expansion-panel-header style="height:42px; background:#EEEFF1;">
+                                                    <mat-panel-title
+                                                        style="font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; max-width:40%;">
+                                                        {{ fields[0]?.accordionTitle || fields[0]?.labelName }}
+                                                    </mat-panel-title>
+                                                    <mat-panel-description *ngIf="!isFormBind && !enableDrag"
+                                                        style="justify-content:flex-end; align-items:center; gap:6px; margin:10px; flex:1; display:flex !important;">
+                
+                                                        <span (click)="setAccordionTarget(indexi); $event.stopPropagation()" (keydown.enter)="fixClick()"
+                                                            [class]="fields[0]._isActiveTarget ? 'target-btn-pill active' : 'target-btn-pill'" tabindex="0">
+                                                            {{ fields[0]._isActiveTarget ? '✓ Active' : '+ Add here' }}
+                                                        </span>
+                
+                                                        <mat-icon class="dy-input-action"
+                                                            style="color:#4E88FF !important; display:inline-flex !important; font-size:18px; cursor:pointer;"
+                                                            appTooltip tooltipText="{{'Edit Title'|translate}}"
+                                                            (click)="editAccordionTitle(indexi); $event.stopPropagation()"
+                                                            (keydown.enter)="fixClick()">edit</mat-icon>
+                
+                                                        <mat-icon class="dy-input-action"
+                                                            style="color:#E65100 !important; display:inline-flex !important; font-size:18px; cursor:pointer;"
+                                                            appTooltip tooltipText="Delete"
+                                                            (click)="isAccordionField ? confirmDeleteAccordionField(accordionIndexi, accRowI, indexj) : confirmDelete(indexi,indexj);$event.stopPropagation()"
+                                                            (keydown.enter)="fixClick()">delete</mat-icon>
+                
+                                                    </mat-panel-description>
+                                                </mat-expansion-panel-header>
+                                                <div style="padding: 8px 4px;" >
+                
+                                                    <div *ngIf="!fields[0]?.accordionRows?.length && !isFormBind"
+                                                        style="padding:16px; text-align:center; color:#aaa; font-size:12px;
+                                                                                                        border:1.5px dashed #ccc; border-radius:4px;">
+                                                        Click "+ Add here" above, then select a data item from the left panel
+                                                    </div>
+                                                    <div *ngFor="let accRow of fields[0].accordionRows; let accRowI=index; trackBy: trackByField">
+                                                        <div *ngIf="enableDrag" cdkDropList cdkDropListSortingDisabled class="drop-gap acc-drop-gap"
+                                                            [id]="'acc-gap-' + indexi + '-' + accRowI" [cdkDropListConnectedTo]="cdkConnectedLists"
+                                                            (cdkDropListDropped)="onAccordionGapDrop($event, indexi, accRowI)"
+                                                            (cdkDropListEntered)="onAccordionGapEnter(indexi, accRowI)"
+                                                            (cdkDropListExited)="onAccordionGapExit(indexi, accRowI)"
+                                                            [class.active-gap]="activeAccordionGap?.accordionIndexi === indexi && activeAccordionGap?.gapIndex === accRowI">
+                                                        </div>
+                                                        <div fxLayout="row" fxLayout.lt-sm="column" class="form-template-inputs"
+                                                            cdkDropList cdkDropListOrientation="horizontal" [cdkDropListData]="accRow"
+                                                            [id]="'acc-list-' + indexi + '-' + accRowI"
+                                                            [cdkDropListConnectedTo]="getAccordionRowConnectedLists(indexi)"
+                                                            (cdkDropListDropped)="onAccordionDrop($event, indexi, accRowI)"
+                                                            [cdkDragDisabled]="!enableDrag">
+                                                            <div *ngFor="let field of accRow; let indexj=index; trackBy: trackByField">
+                                                                <div *ngIf="field?.validator?.show && field?.status !== false"
+                                                                    [ngStyle]="field?.tempCustomCss?.content ? field?.tempCustomCss?.content : {'width': 'calc(' + (100/accRow.length) + '% - 8px)', 'min-width': 0, 'box-sizing': 'border-box'}"
+                                                                    cdkDrag [cdkDragData]="field" class="draggable-field"
+                                                                    [cdkDragDisabled]="!enableDrag">
+                                                                    <div class="form-template-input">   
+                                                                        <div *ngIf="true" class="form-template-input">
+                                                                            <div class="dy-input-container">
+                                                                                <ng-container
+                                                                                    *ngTemplateOutlet="fieldBlock; context:{field: field, indexi: indexi,indexj: indexj, isAccordionField: true,accordionIndexi: indexi,accRowI: accRowI}"></ng-container>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                           </div>
+                                                        <div *ngIf="enableDrag" cdkDropList cdkDropListSortingDisabled class="drop-gap acc-drop-gap"
+                                                            [id]="'acc-gap-' + indexi + '-' + fields[0].accordionRows.length" [cdkDropListConnectedTo]="cdkConnectedLists"
+                                                            (cdkDropListDropped)="onAccordionGapDrop($event, indexi, fields[0].accordionRows.length)"
+                                                            (cdkDropListEntered)="onAccordionGapEnter(indexi, fields[0].accordionRows.length)"
+                                                            (cdkDropListExited)="onAccordionGapExit(indexi, fields[0].accordionRows.length)"
+                                                            [class.active-gap]="activeAccordionGap?.accordionIndexi === indexi && activeAccordionGap?.gapIndex === fields[0].accordionRows.length">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </mat-expansion-panel>
+                                        </mat-accordion>
+                                    </div>
+                                </div>
+                            </div>
+                        </ng-container>
+                        <ng-template #normalRow>
+                            <div>
+                                <div fxLayout="row" fxLayout.lt-sm="column" class="form-template-inputs" cdkDropList
+                                    cdkDropListOrientation="horizontal" [cdkDropListData]="fields"
+                                    [cdkDropListConnectedTo]="cdkConnectedLists" [id]="'list'+ indexi"
+                                    (cdkDropListDropped)="onDrop($event, i)" [cdkDragDisabled]=" !enableDrag ">
+                                    <div *ngFor="let field of fields; let indexj=index ;  trackBy: trackByField">
+                                        <div *ngIf="field?.validator.show"
+                                            [ngStyle]="field?.tempCustomCss?.content ? field?.tempCustomCss?.content : {'width': 100/fields.length+'%'}"
+                                            cdkDrag [cdkDragData]="field" class="draggable-field" [cdkDragDisabled]=" !enableDrag">
+                                            <div class="form-template-input draggable-field">
+                                                <div *ngIf="true" class="form-template-input">
+                                                    <div class="dy-input-container">
+                                                        <ng-container *ngTemplateOutlet="fieldBlock; context:{field:field, indexi:indexi, indexj:indexj}"></ng-container>
+                                                      </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>                
+                </div> 
+                </ng-template>
+                </div>   
+                <div *ngIf="enableDrag" cdkDropList class="drop-gap last-gap" [id]="'gap-end'" (cdkDropListDropped)="onDropInGap($event, formTemplateObject.length)"
+                    [cdkDropListConnectedTo]="cdkConnectedLists" [class.active-gap]="activeGap === formTemplateObject.length"></div>
+                    </div>
+            </div>
+        </mat-drawer-content>
+    </mat-drawer-container>
+    </div>
+    <div #footer *ngIf="isFormBind&& !enableDrag && type!='gridster'" style="height: 49px;" [ngStyle]="formTemplateDetail['css']['footer']">
+        <span *ngIf="nextWorkflowUser" style="float: left;padding-left: 5px;color: grey;">{{nextWorkflowUser}}</span>
+        <button  *ngIf="formTemplateDetail['footer'] && formTemplateDetail['footerButton']!= null && ['EFS-DR', 'EFS-CR'].indexOf(formTemplateDetail['footerButton']['code']) == -1" mat-button class="active-btn" style="margin: 5px;float: right;" appDebounceClick [debounceTime]="500" (debounceClick)="saveFormData()" [disabled]="formTemplate?.invalid">
+            {{"Submit"|translate}}
+        </button>
+        <button  *ngIf="saveEnable || authorizedUser || (formTemplateDetail['footer'] && formTemplateDetail['footerButton']!= null && ['EFS-CR', 'EFS-DR'].indexOf(formTemplateDetail['footerButton']['code']) != -1) || (formTemplateDetail['footerButton']== null && currentStatusEditEnable)" mat-button class="active-btn" style="margin: 5px;float: right;" appDebounceClick [debounceTime]="500" (debounceClick)="saveFormData(entityFormStatusId)">{{"Save"|translate}}</button>
+        <button  mat-button class="cancle-btn" style="margin: 5px;float: right;" appDebounceClick [debounceTime]="500" (debounceClick)="closeForm()" >{{"Cancel"|translate}}</button>
+        <button  mat-button *ngIf="formTemplateDetail['footerButton']!= null && ['EFS-DR', 'EFS-CR'].indexOf(formTemplateDetail['footerButton']['code']) == -1 && currentStatusReturnEnable" class="return-btn" style="margin: 5px;float: right;" appDebounceClick [debounceTime]="500" (debounceClick)="returnStatus()">{{"Return"|translate}}</button>
+    </div>
+</div>

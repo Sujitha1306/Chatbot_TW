@@ -1,0 +1,124 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div class="manage-body">
+
+  <tw-header-new-component [component]="'hazmat-training-list'" [permission]="null" [dateFilter]="selectedDate" [rowFilter]="null" [selectFilter]="selectedTabIndex === 0 ? selectFilter : null" 
+   [rowFilter]="selectedTabIndex === 0 ? rowFilter : null" [optAll]="false" [manageAction]="showActions" [selectDropdown]="null" [selectedName]="selectedName !== null ? selectedName : true"
+   [locationId]="'TFT-BO'" [selectedView]="selectedView" [multiView]="false" (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+
+  <div class="tw-content1 table-align">
+  <div fxLayout="column" class="mat-elevation-z4 tw-manage-component" [ngClass.xs]="'components-container-xs'"
+    style="height: calc(100vh - 125px);background-color: transparent;">
+    <div class="table-container tw-mat-table-overflow">
+      <table mat-table #table class="tw-table" [dataSource]="dataSource" matSort>
+        <ng-container *ngFor="let col of dataColumns; let colIndex = index;"
+          matColumnDef="{{displayedColumns[colIndex]}}">
+          <mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header tw-table-content"
+            [ngStyle]="{'min-width': displayedColumns[colIndex] === 'Location'? '160px' : displayedColumns[colIndex] === 'Activity Name'? '130px' : '',
+            'padding-left': displayedColumns[colIndex] === 'Action'? '12px' : '20px', 'max-width': displayedColumns[colIndex] === 'ID' ? '15px' :
+            displayedColumns[colIndex] === 'Expand' || displayedColumns[colIndex] === 'select' ? '20px' : ''}"
+            [disabled]="sortColumn?.indexOf(displayedColumns[colIndex]) > -1" style="padding-right: 20px;">
+
+            <span *ngIf="!(iconHeader?.indexOf(displayedColumns[colIndex]) > -1)">{{displayedColumns[colIndex]}}</span>
+
+            <span *ngIf="displayedColumns[colIndex] === 'select'">                          
+              <mat-checkbox (change)="$event ? masterToggle() : null"
+                  [checked]="selection.hasValue() && isAllSelected()"
+                  [indeterminate]="selection.hasValue() && !isAllSelected()" [aria-label]="checkboxLabel()">
+              </mat-checkbox>                                         
+            </span>
+            
+          </mat-header-cell>
+
+          <mat-cell *matCellDef="let element;let i = index;" style="padding-left: 20px; "
+            [ngStyle]="{'padding-right': displayedColumns[colIndex] === 'ID' ? '16px' : '20px',
+            'min-width': displayedColumns[colIndex] === 'Location'? '160px' : displayedColumns[colIndex] === 'Activity Name'? '130px' : '',
+            'cursor': eventColumn?.indexOf(displayedColumns[colIndex]) > -1 ? 'pointer' : '', 
+            'color': eventColumn?.indexOf(displayedColumns[colIndex]) > -1 ? 'blue' : '',
+            'max-width': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Expand' || 
+            displayedColumns[colIndex] === 'select' ? '20px' : ''}" (click)="cdkRowData($event, element, displayedColumns[colIndex])" (keydown.enter)="fixClick()">
+            <span *ngIf="!(iconColumn?.indexOf(displayedColumns[colIndex]) > -1)" 
+              (click)="displayedColumns[colIndex] === 'Activity Name' ? getCondunctTraining(element) : ''" (keydown.enter)="fixClick()">{{element[col]}}</span>
+
+            <span *ngIf="displayedColumns[colIndex] === 'Action'">
+              <button mat-icon-button [matMenuTriggerFor]="menu" *ngIf="element.requestStatus != 'Cancelled' && (
+                element.assignedToId == userId  || activate_btn.includes('BT_ALLTSKCO') || activate_btn.includes('BT_ALLTSKCA')
+                || (element.createdUserId == userId && activate_btn.includes('BT_TSKCRUSR')))">
+                <mat-icon class="action-edit1">more_horiz</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu" (closed)="close($event)">
+                <button *ngIf="element.requestStatus !== 'Completed' && (
+                    element.assignedToId == userId  || activate_btn.includes('BT_ALLTSKCO')
+                    || (element.createdUserId == userId && activate_btn.includes('BT_TSKCRUSR')))" mat-menu-item (click)="eventAction({key:'Complete',data:element})">
+                    <span class="action-edit">Complete</span>
+                </button>
+                <mat-divider></mat-divider>
+                <button mat-menu-item (click)="eventAction({key:'Cancel',data:element})"
+                *ngIf="(element.assignedToId == userId || activate_btn.includes('BT_ALLTSKCA'))
+                    || (element.createdUserId == userId && activate_btn.includes('BT_TSKCRUSR'))">
+                    <span class="action-edit">Cancel</span>
+                </button>
+            </mat-menu>
+            </span>
+            <span *ngIf="col === 'Navigation'" style="color: blue; cursor: pointer;">
+              <span (click)="eventTrigger(element)"  (keydown.enter)="fixClick()">
+                  <img style="width:15px;margin-right:5px" src="/assets/Alert/common_icons/map_marker.svg" alt="navigation">
+              </span>
+            </span>
+            <span *ngIf="displayedColumns[colIndex] === 'select'">                                
+              <mat-checkbox (click)="$event.stopPropagation()"
+              (change)="$event ? selection.toggle(element) : null;"
+              [checked]="selection.isSelected(element)" [aria-label]="checkboxLabel(element)" (keydown.enter)="fixClick()">
+              </mat-checkbox>
+            </span>
+
+            <span *ngIf="displayedColumns[colIndex] === 'Event Time'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+            
+            <span *ngIf="displayedColumns[colIndex] === 'ID'">
+              <mat-icon [ngStyle]="{'color': this.rowId === element.id ? '#808080' : '#D3D3D3'}" class="ovi-fnt-sze17"
+                style="cursor: pointer;" (click)=rowClick(element) (keydown.enter)="fixClick()">play_arrow</mat-icon>
+            </span>
+
+            <span *ngIf="displayedColumns[colIndex] === 'Expand' && element.isHazardAvailable">
+              <mat-icon *ngIf="!element.close  || element.close === undefined" id="expand_less"  #expand_less class="exp-colp-style">add_box</mat-icon> 
+              <mat-icon *ngIf="element.close" id="expand_more"  #expand_more class="exp-colp-style">remove</mat-icon>
+            </span>
+
+            <span *ngIf="displayedColumns[colIndex] === 'Checklist'">
+              <mat-icon class="ovi-fnt-sze30" style="cursor: pointer;padding-top: 5px;color: #66FFCC;height: 27px;width: 30px" (click)="formBuilder(element,'form')" (keydown.enter)="fixClick()">list_alt</mat-icon>
+            </span>
+
+            <span *ngIf="displayedColumns[colIndex] === 'pdf' && element.requestStatus === 'Completed' && false">
+              <img height="20" width="20" src="/assets/Alert/common_icons/pdf-file.png" alt="pdf-file" (click)="formBuilder(element,'pdf');" style="cursor: pointer;height: 28px;width: 28px;" (keydown.enter)="fixClick()">
+            </span>
+          </mat-cell>
+        </ng-container>
+        <mat-header-row *matHeaderRowDef="displayedColumns;sticky: true;" class="tw-manage-table-header-row"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;" 
+        class="element-row" [ngClass]="{'highlight' : row.identifyingId === this.rowId, 'engage': row.isAuthorize}"
+        [cdkDetailRowTpl]="tpl" [cdkDetailRow]="cdkData">
+        </mat-row>
+      </table>
+      <ng-template #tpl let-element>
+        <div class="mat-row detail-row oflw-style" [@detailExpand] *ngIf="element?.isHazardAvailable">
+          <table mat-table #table [dataSource]="element?.hazards" style="padding-left: 25px;padding-top: 1px;">   
+            <ng-container *ngFor="let col of URdisplayedColumns" matColumnDef="{{col}}">
+              <mat-header-cell *matHeaderCellDef class="manage-table-header" style="color: black;"> {{col === "Reader_coordinates" ? "Reader coordinates" : col}}
+              </mat-header-cell>
+                <mat-cell *matCellDef="let element">
+                    <span *ngIf="col !== 'raye' && col !== 'Hazard Near'" [ngStyle]="{'white-space': col === 'coordinates' ? 'break-spaces' : '' }">{{element[col]}}</span>
+                    <span *ngIf="col === 'raye'" class="raye-font">{{element[col]}}</span>
+                    <span *ngIf="col === 'Hazard Near'">{{element[col] ? 'Yes' : 'No'}}</span>
+                </mat-cell>
+            </ng-container>
+            <mat-header-row *matHeaderRowDef="URdisplayedColumns;sticky: true;" class="manage-table-header-row" style="height: 25px;background-color: #aec4d3;"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: URdisplayedColumns;" class="element-row bg-colr" 
+            [ngStyle]="{'background-color': row['raye'] === 'R' ? '#f54242' : row['raye'] === 'A' ? '#FFBF00' : row['raye'] === 'Y' ? '#fff200' : row['raye'] === 'E' ? '#4949fd' :'white-space'}" [cdkDetailRow]="row" [cdkDetailRowTpl]="tpl">
+            </mat-row>
+        </table>
+        </div>
+      </ng-template>
+    </div>
+    <mat-paginator #paginator [length]="this.length" [pageSize]="pageSize" [pageSizeOptions]="[50, 100, 150, 200]" showFirstLastButtons class="tw-paginator-sticky"></mat-paginator>
+</div>
+</div>
+</div>

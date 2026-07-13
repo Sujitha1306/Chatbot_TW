@@ -1,0 +1,184 @@
+
+<div class="loading-spinner" *ngIf="loading">
+  <div class="spinnerload">
+    <div class="spin1"></div>
+    <div class="spin2"></div>
+    <div class="spin3"></div>
+  </div>
+</div>
+
+<div class="dm-page ovi-font-family" appWindowResize (resized)="onWindowResized($event)">
+
+  <!-- Summary stat cards -->
+  <div class="dm-stats">
+    <div class="dm-stat-card">
+      <div class="dm-stat-icon-wrap dm-stat-icon-teal"><mat-icon>location_city</mat-icon></div>
+      <div class="dm-stat-info">
+        <span class="dm-stat-num">{{totalLocations}}</span>
+        <span class="dm-stat-lbl ovi-fnt-sze11">Total Locations</span>
+      </div>
+    </div>
+    <div class="dm-stat-card">
+      <div class="dm-stat-icon-wrap dm-stat-icon-green"><mat-icon>check_circle</mat-icon></div>
+      <div class="dm-stat-info">
+        <span class="dm-stat-num">{{activeCount}}</span>
+        <span class="dm-stat-lbl ovi-fnt-sze11">Active</span>
+      </div>
+    </div>
+    <div class="dm-stat-card">
+      <div class="dm-stat-icon-wrap dm-stat-icon-red"><mat-icon>cancel</mat-icon></div>
+      <div class="dm-stat-info">
+        <span class="dm-stat-num">{{inactiveCount}}</span>
+        <span class="dm-stat-lbl ovi-fnt-sze11">Inactive</span>
+      </div>
+    </div>
+    <div class="dm-stat-card">
+      <div class="dm-stat-icon-wrap dm-stat-icon-orange"><mat-icon>person</mat-icon></div>
+      <div class="dm-stat-info">
+        <span class="dm-stat-num">{{consultingDoctorsCount}}</span>
+        <span class="dm-stat-lbl ovi-fnt-sze11">Consulting Doctors</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body: block/floor nav (left) + content (right) -->
+  <div class="dm-body">
+
+    <!-- Left: grouped nav -->
+    <div class="dm-floor-nav">
+      <ng-container *ngFor="let group of navGroups; trackBy: trackByGroup">
+
+        <!-- Block header -->
+        <div class="dm-block-header ovi-fnt-sze11">{{group.blockName}}</div>
+
+        <!-- Floors under this block -->
+        <div class="dm-floor-item ovi-fnt-sze12"
+          *ngFor="let floor of group.floors; trackBy: trackByFloor"
+          [class.dm-floor-item-active]="selectedFloorId === floor.floorId"
+          (click)="selectFloor(floor)">
+          <span class="dm-floor-name">{{floor.floorName}}</span>
+          <span class="dm-floor-badge"
+            [class.dm-badge-has-active]="getFloorActiveCount(floor) > 0">
+            {{getFloorActiveCount(floor)}}/{{floor.testLocations?.length}}
+          </span>
+        </div>
+
+      </ng-container>
+    </div>
+
+    <!-- Right: content -->
+    <div class="dm-content-area">
+
+      <!-- Floor header + filters -->
+      <div class="dm-content-topbar">
+        <div>
+          <div class="dm-floor-heading ovi-fnt-sze14">{{selectedFloorObj?.floorName}}</div>
+          <div class="dm-floor-sub ovi-fnt-sze11">{{selectedFloorObj?.testLocations?.length}} rooms</div>
+        </div>
+        <div class="dm-topbar-right">
+          <span class="dm-active-lbl ovi-fnt-sze12">
+            {{getFloorActiveCount(selectedFloorObj)}} / {{selectedFloorObj?.testLocations?.length}} active
+          </span>
+          <div class="dm-search-wrap">
+            <mat-icon class="dm-search-icon">search</mat-icon>
+            <input #searchInput class="dm-search-input ovi-fnt-sze12"
+              [value]="searchText"
+              (input)="onSearchChange(searchInput.value)"
+              placeholder="Search location..." />
+          </div>
+          <select class="dm-select ovi-fnt-sze12"
+            [value]="selectedStatus"
+            (change)="onStatusChange(sSel.value)" #sSel>
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <button class="dm-clear-btn ovi-fnt-sze12" (click)="clearFilters()">
+            <mat-icon style="font-size:13px;height:13px;width:13px;">refresh</mat-icon> Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Inline editable table -->
+      <div class="dm-table-wrap">
+        <table class="dm-table" *ngIf="displayedLocations.length > 0">
+          <thead>
+            <tr>
+              <th class="col-room ovi-fnt-sze11">ROOM</th>
+              <th class="col-status ovi-fnt-sze11">STATUS</th>
+              <th class="col-cap ovi-fnt-sze11">CAPACITY</th>
+              <th class="col-queue ovi-fnt-sze11">QUEUE</th>
+              <th class="col-gender ovi-fnt-sze11">GENDER</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of displayedLocations; trackBy: trackByRow">
+
+              <!-- Room name -->
+              <td class="col-room">
+                <span class="dm-room-name ovi-fnt-sze12">{{row.locationName | titlecase}}</span>
+              </td>
+
+              <!-- Status toggle -->
+              <td class="col-status">
+                <div class="dm-status-toggle">
+                  <button class="dm-toggle-btn"
+                    [class.dm-toggle-active]="row._isAvailable === true"
+                    (click)="setStatus(row, true)">Active</button>
+                  <button class="dm-toggle-btn"
+                    [class.dm-toggle-inactive]="row._isAvailable === false"
+                    (click)="setStatus(row, false)">Inactive</button>
+                </div>
+              </td>
+
+              <!-- Capacity -->
+              <td class="col-cap">
+                <input class="dm-cell-input ovi-fnt-sze12"
+                  type="number" min="0"
+                  [value]="row._capacity"
+                  (input)="row._capacity = +$any($event.target).value"
+                  placeholder="—" />
+              </td>
+
+              <!-- Queue -->
+              <td class="col-queue">
+                <input class="dm-cell-input ovi-fnt-sze12"
+                  type="number" min="0"
+                  [value]="row._queueLength"
+                  (input)="row._queueLength = +$any($event.target).value"
+                  placeholder="—" />
+              </td>
+
+              <!-- Gender -->
+              <td class="col-gender">
+                <select class="dm-cell-select ovi-fnt-sze12"
+                  [value]="row._genderId"
+                  (change)="row._genderId = $any($event.target).value; cdr.markForCheck()">
+                  <option value="">—</option>
+                  <option *ngFor="let g of genderList" [value]="g.code">{{g.value}}</option>
+                </select>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="dm-no-data ovi-fnt-sze13"
+          *ngIf="displayedLocations.length === 0 && !loading">
+          No locations found.
+        </div>
+      </div>
+
+      <!-- Single Save button at bottom -->
+      <div class="dm-footer" *ngIf="displayedLocations.length > 0">
+        <button class="dm-save-all-btn ovi-fnt-sze13"
+          [disabled]="saving"
+          (click)="saveAll()">
+          <mat-icon style="font-size:15px;height:15px;width:15px;vertical-align:middle;">save</mat-icon>
+          {{saving ? 'Saving...' : 'Save'}}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

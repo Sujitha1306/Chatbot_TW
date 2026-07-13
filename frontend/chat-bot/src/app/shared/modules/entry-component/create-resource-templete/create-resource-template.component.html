@@ -1,0 +1,354 @@
+<div class="loading-spinner" *ngIf="spinLoader">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.resource">{{"Create OT template"| translate}}</div>
+        <div *ngIf="data.resource">{{"Modify OT template" | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: hidden;height:calc(100vh - 150px);" [formGroup]="resourceTamplateForm">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" autocomplete="off">
+                    <mat-error *ngIf="resourceTamplateForm.controls.name.invalid" class="error-txt-1">
+                        <span [hidden]="!resourceTamplateForm.controls['name'].errors.required">
+                            {{"First name is required. (Limit 1 - 20 chars.)"|translate}}</span>
+                        <span [hidden]="!resourceTamplateForm.controls['name'].errors.minlength">{{"Min.
+                            3 chars required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Function"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Function'|translate" formControlName="pageId"
+                        (selectionChange)="OnPageChange($event.value)">
+                        <mat-option *ngFor="let option of PageListData" [value]="option.code">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="resourceTamplateForm.controls.pageId.invalid" class="error-txt-1">
+                        <span [hidden]="!resourceTamplateForm.controls['pageId'].errors.required">{{"Page
+                            is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="identifyType">
+                        <mat-option *ngFor="let option of identifyListData" [value]="option.code">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="resourceTamplateForm.controls.identifyType.invalid" class="error-txt-1">
+                        <span
+                            [hidden]="!resourceTamplateForm.controls['identifyType'].errors.required">{{"Associate type
+                            is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label *ngIf="true"
+                    class="ovi-lbl-text-size">{{"Procedure name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-label *ngIf="false"
+                    class="ovi-lbl-text-size">{{"Associate name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search type surgery'|translate" appkeyupHit
+                        (keyupHit)="surgerylist($event)" formControlName="identifyValue" [matAutocomplete]="surgery" (blur)="validateEntitySelection()">
+                    <mat-autocomplete autoActiveFirstOption
+                        [displayWith]="surgeryEnabled === true ? getsurgeryList.bind(surgeryList) : ''"
+                        #surgery="matAutocomplete">
+                        <mat-option *ngFor="let option of surgeryList" [value]="option.id">
+                            <div class="tot-wid-styl">{{option.name}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="resourceTamplateForm.controls.identifyValue.invalid" class="error-txt-1">
+                        <span [hidden]="!resourceTamplateForm.controls['identifyValue'].errors.required">{{"Name
+                            is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="ovi-fnt-sze14" style="display: flex;font-weight: 600;margin-top: 5px;">{{'Resources Template' | translate}}</div>
+        <mat-divider></mat-divider>
+        <mat-tab-group class="ovi-patient-tab" #tabGroupRes (selectedTabChange)="onTabChange($event)">
+            <mat-tab label="{{ 'User / Asset' | translate}}">
+                <div style="height: calc(100vh - 345px);overflow: auto;">
+                    <div class="ovi-row-gap-four-fld" style="align-items: center;padding-bottom: 5px;justify-content: unset;height: 80px;">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Type' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="entityType"
+                                    (selectionChange)="OnResourceTypeChange($event.value)">
+                                    <mat-option *ngFor="let option of resourcesStaffList" [value]="option.code">
+                                        <div class="tot-wid-styl">{{ option.name }}</div>
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="!['SE-UR'].includes(resourceTamplateForm.controls['entityType'].value)"
+                            class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Category' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" formControlName="entityAssetId"
+                                    (selectionChange)="onSubAssetTypeChange($event.value)">
+                                    <mat-option *ngFor="let list of catagoryList" [value]="list.code">
+                                        <div class="tot-wid-styl">{{list.name}}</div>
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="!['SE-UR'].includes(resourceTamplateForm.controls['entityType'].value)"
+                            class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Asset Name' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Name'|translate"
+                                    formControlName="entityAssetName" appkeyupHit (keyupHit)="searchAsset($event,catagoryData)"
+                                    [matAutocomplete]="catagory">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.assetCatagoryEnabled === true ? getAssetList.bind(assetCatagoryData, 'catagory') : ''"
+                                    #catagory="matAutocomplete">
+                                    <mat-option *ngFor="let option of assetCatagoryData" [value]="option.id">
+                                        <div class="tot-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['SE-UR'].includes(resourceTamplateForm.controls['entityType'].value)" class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Role' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Role'|translate" formControlName="entityId"
+                                    (selectionChange)="onSubTypeChange($event.value)">
+                                    <mat-option *ngFor="let list of departmentList" [value]="list.code">
+                                        <div class="tot-wid-styl">{{list.name}}</div>
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['SE-UR'].includes(resourceTamplateForm.controls['entityType'].value)" class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Staff Name' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Staff Name'|translate" appkeyupHit
+                                    (keyupHit)="staffListInfo($event, staffTypeData)" formControlName="entityName"
+                                    [matAutocomplete]="doctor">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.staffListEnable === true ? getStaffList.bind(staffListData, 'doctor') : ''"
+                                    #doctor="matAutocomplete">
+                                    <mat-option *ngFor="let option of staffListData" [value]="option.id">
+                                        <div class="tot-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn" style="margin-top: 10px;">
+                            <button [disabled]="!resourceTamplateForm?.controls['entityId']?.value && !resourceTamplateForm?.controls['entityAssetId']?.value" mat-button
+                                class="active-btn" appDebounceClick [debounceTime]="300" (debounceClick)="addResource()">{{'ADD' |
+                                translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div *ngIf="isActiveTable && dataSource?.length > 0 " style="width: calc(100% - 10px);">
+                        <angular-table-component [id]="'resourceTamplate'" [type]="'ng-table'" [tableData]="dataSource"
+                            [columns]="DisplayColumn" [columnData]="DataColumns" (triggerAction)="eventAction($event)">
+                        </angular-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{ 'Consumable' | translate}}">
+                <div style="height: calc(100vh - 345px);overflow: auto;">
+                    <div class="ovi-row-gap" style="padding-top: 10px;">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Type' | translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="entityConType"
+                                    (selectionChange)="OnConTypeChange($event.value)">
+                                    <mat-option *ngFor="let option of resourcesConList" [value]="option.code">
+                                        <div class="tot-wid-styl">{{ option.name }}</div>
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="resourceTamplateForm.controls.entityConType.invalid" class="error-txt-1">
+                                    <span [hidden]="!resourceTamplateForm.controls['entityConType'].errors.required">{{"Type
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{"Consumable Category"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Consumable Category'|translate" (selectionChange)="onConCategoryChange($event)"
+                                 formControlName="conCategory">
+                                    <mat-option *ngFor="let dep of conCategory" [value]="dep.code">
+                                        {{dep.value}}
+                                    </mat-option>
+                                </mat-select>
+                                 <mat-error *ngIf="resourceTamplateForm.controls.conCategory.invalid" class="error-txt-1">
+                                    <span [hidden]="!resourceTamplateForm.controls['conCategory'].errors.required">{{"Category
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Consumable Name' | translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Consumable Name'|translate" formControlName="conMasterId">
+                                    <mat-option *ngFor="let option of conMasterData" [value]="option.id">
+                                        <div class="tot-wid-styl">{{ option.name }}</div>
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="resourceTamplateForm.controls.conMasterId.invalid" class="error-txt-1">
+                                    <span [hidden]="!resourceTamplateForm.controls['conMasterId'].errors.required">{{"Consumable Name
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{"Requested Quantity"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Requested Quantity'|translate" type="number" class="no-spinner"
+                                    formControlName="requestedConQuantity">
+                                <div matSuffix class="ovi-schl-custom-select">
+                                    <span (click)="updateConQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                    <span (click)="updateConQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                </div>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn" style="margin-top: 16px;">
+                            <button [disabled]="resourceTamplateForm.get('conMasterId')?.invalid || resourceTamplateForm.get('conCategory')?.invalid 
+                            || resourceTamplateForm.get('entityConType')?.invalid" 
+                            mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                (debounceClick)="addConTamplate()">
+                                {{'ADD' | translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div *ngIf="conTableSource.length" style="width: calc(100% - 10px);">
+                        <angular-table-component [id]="'con-resourceTamplate'" [type]="'ng-table'" [tableData]="conTableSource"
+                            [columns]="ConDisplayColumn" [columnData]="ConDataColumns"
+                            (triggerAction)="conEventAction($event)">
+                        </angular-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+             <mat-tab label="{{ 'Implant' | translate}}">
+                <div style="height: calc(100vh - 345px);overflow: auto;">
+                    <div class="ovi-row-gap" style="padding-top: 10px;">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Type' | translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="entityImpType"
+                                    (selectionChange)="OnImpTypeChange($event.value)">
+                                    <mat-option *ngFor="let option of resourcesImpList" [value]="option.code">
+                                        <div class="tot-wid-styl">{{ option.name }}</div>
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="resourceTamplateForm.controls.entityImpType.invalid" class="error-txt-1">
+                                    <span [hidden]="!resourceTamplateForm.controls['entityImpType'].errors.required">{{"Type
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{"Implant Category"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Implant Category'|translate" (selectionChange)="onImpCategoryChange($event)"
+                                 formControlName="impCategory">
+                                    <mat-option *ngFor="let dep of impCategory" [value]="dep.code">
+                                        {{dep.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="resourceTamplateForm.controls.impCategory.invalid" class="error-txt-1">
+                                    <span [hidden]="!resourceTamplateForm.controls['impCategory'].errors.required">{{"Implant Category
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Implant Name' | translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Implant Name'|translate" formControlName="impMasterId">
+                                    <mat-option *ngFor="let option of impMasterData" [value]="option.id">
+                                        <div class="tot-wid-styl">{{ option.name }}</div>
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="resourceTamplateForm.controls.impMasterId.invalid" class="error-txt-1">
+                                    <span [hidden]="!resourceTamplateForm.controls['impMasterId'].errors.required">{{"Implant Name
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{"Requested Quantity"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                <input matInput  formControlName="requestedImpQuantity" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Requested Quantity'|translate"
+                                   type="number" class="no-spinner">
+                                <div matSuffix class="ovi-schl-custom-select">
+                                    <span (click)="updateImpQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                    <span (click)="updateImpQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                </div>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn" style="margin-top: 16px;">
+                            <button [disabled]="resourceTamplateForm.get('entityImpType')?.invalid || resourceTamplateForm.get('impCategory')?.invalid 
+                            || resourceTamplateForm.get('impMasterId')?.invalid" 
+                            mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                (debounceClick)="addImpTamplate()">
+                                {{'ADD' | translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div *ngIf="impTableSource.length" style="width: calc(100% - 10px);">
+                        <angular-table-component [id]="'imp-resourceTamplate'" [type]="'ng-table'" [tableData]="impTableSource"
+                            [columns]="ImpDisplayColumn" [columnData]="ImpDataColumns"
+                            (triggerAction)="impEventAction($event)">
+                        </angular-table-component>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{ 'Surgical Sets' | translate}}">
+                <div style="height: calc(100vh - 345px);overflow: auto;">
+                    <div class="ovi-row-gap" style="height: 65px;padding-top: 10px;">
+                        <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                            <mat-label class="ovi-lbl-text-size">{{'Surgical Set' | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Surgical Set'|translate" formControlName="surgicalsetId" (selectionChange)="onSelectedChange($event)">
+                                    <mat-option *ngFor="let option of sterlieSetList" [value]="option.id">
+                                        <div class="tot-wid-styl">{{ option.name }}</div>
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div style="margin-top: 14px;position: relative;right: 10px;">
+                            <button [disabled]="!resourceTamplateForm.controls['surgicalsetId'].value" mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                (debounceClick)="addSetTamplate()">
+                                {{'ADD' | translate}}
+                            </button>
+                        </div>
+                        <div *ngIf="setTableSource.length" style="width: calc(100% - 10px);">
+                            <angular-table-component [id]="'set-Tamplate'" [type]="'ng-table'" [tableData]="setTableSource"
+                                [columns]="setDisplayColumn" [columnData]="setDataColumns" (triggerAction)="setEventAction($event)">
+                            </angular-table-component>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn " appDebounceClick (debounceClick)="saveResourceTamplate()"
+            cdkFocusInitial [debounceTime]="1000" [disabled]="resourceTamplateForm.get('name')?.invalid || resourceTamplateForm.get('pageId')?.invalid 
+            || resourceTamplateForm.get('identifyType')?.invalid || resourceTamplateForm.get('identifyValue')?.invalid">{{"Save"|translate}}</button>
+    </div>
+</div>

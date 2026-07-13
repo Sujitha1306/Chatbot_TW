@@ -1,0 +1,60 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="data.tabType !== 'Asset'"> {{"Routine Events" |translate}}</div>
+        <div *ngIf="data.tabType === 'Asset'"> {{"Maintenance Schedule" |translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div>
+        <mat-drawer-container class="example-container" style="height: calc(100vh - 90px);">
+            <mat-drawer #drawer mode="side" class="side-draw-option" opened>
+                <div style="display: flex; flex-direction: column;gap: 3px; padding: 5px 8px;">
+                    <div class="heading">
+                        <img *ngIf="data.tabType === 'Patient'" class="svg-icon" width="16px" height="16px" src="../../../../../assets/Menus/task-patient.svg" alt="entity"/>
+                        <img *ngIf="data.tabType === 'Asset'" class="svg-icon" width="16px" height="16px" src="../../../../../assets/Menus/task-asset.svg" alt="entity"/>
+                        <img *ngIf="data.tabType === 'Location'" class="svg-icon" width="16px" height="16px" src="../../../../../assets/Menus/task-location.svg" alt="entity"/>
+                        <img *ngIf="data.tanType === 'Staff'" class="svg-icon" width="16px" height="16px" src="../../../../../assets/icons/user 1.svg" alt="entity" />
+                        <span class="long-text">{{data.entityName}}
+                            <span class="ovi-fnt-sze11"  *ngIf="data.identifier !== null">({{data.identifier}})</span>
+                        </span>
+                    </div>
+                    <div class="ovi-fnt-sze12" style="font-weight: 600;">
+                        <span class="title">{{ data.pfRoutineName }}</span>
+                        <span class="ovi-fnt-sze10" style="color: #888888;">
+                            {{ data.routineTypeName }} ({{ data.scheduleTypeName }}) -
+                            <span class="ovi-prmry-clr">{{ data.routineEventStatusName }}</span>
+                        </span>
+                    </div>
+                </div>
+                <mat-list class="list-container">
+                    <mat-list-item *ngFor="let data of routineEventList" (click)="selectedRoutine(data)" class="routine-list"  (keydown.enter)="fixClick()"
+                        [class.active]="data.id === routineId">
+                        <div class="mat-list-column">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="ovi-fnt-sze10" style="display: flex; align-items: center; gap: 3px;">
+                                    <mat-icon class="ovi-fnt-sze13" style="padding: 0; height: fit-content; width: fit-content;">calendar_today</mat-icon>
+                                    <span style="white-space: nowrap;">
+                                        {{ data.startTime | date: 'dd MMM yyyy' }}
+                                        <span *ngIf="data.endTime">- {{ data.endTime | date: 'dd MMM yyyy' }}</span>
+                                        {{ data.endTime ? (data.endTime | date: 'hh:mm a') : (data.startTime | date: 'hh:mm a') }}
+                                    </span>
+                                </div>
+                                <div class="ovi-fnt-sze10" style="font-weight: 500; display: flex; align-items: center; gap: 3px">
+                                    {{ data.routineEventStatusName }}
+                                </div>
+                            </div>
+                        </div>
+                    </mat-list-item>
+                </mat-list>
+            </mat-drawer>
+            <mat-drawer-content>
+                <div style="padding: 10px">
+                    <div class="heading" style="padding: 0 0 5px 0;">Task List</div>
+                <tw-table-component [component]="'eventRoutine'" [columns]="displayedColumns" [tableData]="entityActivityData"
+                [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn"
+                (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue"
+                 [permissionControl]="permissionControl" [pagination]="null"></tw-table-component>
+                </div>
+            </mat-drawer-content>
+        </mat-drawer-container>
+    </div>
+</div>

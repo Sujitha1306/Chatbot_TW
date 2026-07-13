@@ -1,0 +1,743 @@
+<div class="loading-spinner" *ngIf="onLoading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;overflow: hidden;">
+    <div *ngIf="!['TW-AOT'].includes(scheduleInputData.statusKey)" class="ovi-pop-hdr">
+        <div *ngIf="!data.id && !data?.otDelayTime">{{"Enroll Patient"| translate}}</div>
+        <div *ngIf="data.id && !data?.otDelayTime">{{"Manage Patient"| translate}}</div>
+        <div *ngIf="data?.otDelayTime && data?.otDelayTime !== null">{{"OT Time Delay Record"| translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: hidden;padding-bottom: 3px;" [formGroup]="managePatientForm"
+            [ngStyle]="{'height' : !['TW-AOT'].includes(scheduleInputData.statusKey) ? 'calc(100vh - 150px)' : ' calc(100vh - 255px)' }">
+        <mat-tab-group *ngIf="!data?.otDelayTime" [ngClass]="!['TW-AOT'].includes(scheduleInputData.statusKey) ? (selectedTabIndex === 0 ? 'ovi-patient-tab-1 show-tab-header' : 'ovi-patient-tab show-tab-header'): 'hide-tab-header'" #tabGroup (selectedTabChange)="onMainTabChange($event)">
+            <mat-tab *ngIf="!['TW-AOT'].includes(scheduleInputData.statusKey)" label="{{ 'Patient Details' | translate}}">
+                <div style="height: calc(100vh - 200px);">
+                     <div *ngIf="isEnabledTable === true" fxLayout="column" class="mat-elevation-z4 manage-component"
+                        [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px" style="overflow-x: auto;overflow-y: hidden;width: 99%; padding-top: 10px;">
+                        <div class="mat-table-overflow">
+                            <table mat-table #table [dataSource]="MPDataSource" matSort>
+                                <ng-container matColumnDef="select">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-width-check-box" style="width: 3%;">
+                                    </th>
+                                    <td mat-cell *matCellDef="let data">
+                                        <mat-checkbox [checked]="data === checkedData" (change)="onChange($event, data)"></mat-checkbox>
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="gender">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width" style="width: 3%;">
+                                        <img style="width:16px" src="/assets/Alert/common_icons/gender_male_female.svg" alt="gender_img" appTooltip [tooltipText]=col|translate  placement="top">
+                                    </th>
+                                    <td mat-cell *matCellDef="let data" class="custom-mat-column-width"> 
+                                        <span *ngIf="data.gender != null" [ngClass]="{'male': data.gender == 'Male', 'female': data.gender == 'Female'}">{{ data.gender | slice:0:1}}</span>
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="firstName">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'Name' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data" class="custom-mat-column-width"> {{data.firstName | translate}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="mainidentifier">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'UHID' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data" class="custom-mat-column-width"> {{data.mainidentifier | translate}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="scheduleStartTime">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'Schedule Time' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data">{{data.scheduleStartTime | date : "hh:mm a"}}</td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="otLocationName">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'OT Location' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data" style="text-align:left;"> {{data.otLocationName | translate}} </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="doctorName">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'Doctor' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data" style="text-align:left;"> {{data.doctorName | translate}} </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="otProcedureNames">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'Surgery Name' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data" class="custom-mat-column-width"> {{data.otProcedureNames | translate}}</td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="birthDate">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width"> {{'DOB' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data"> {{data.birthDate | date: 'dd/MM/yyyy'}} </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="mobileNumber">
+                                    <th mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="manage-table-header custom-mat-column-header-width">
+                                        {{'Mobile' | translate}}
+                                    </th>
+                                    <td mat-cell *matCellDef="let data"> {{data.mobileNumber | translate}}</td>
+                                </ng-container>
+
+                                <tr mat-header-row *matHeaderRowDef="MPDisplayColumn; sticky: true;"
+                                    class="manage-table-header-row">
+                                </tr>
+                                <tr mat-row *matRowDef="let data; columns: MPDisplayColumn;"></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="ovi-row-gap" style="padding-top: 15px;">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" [ngClass]="isSearch ? 'ovi-matfrmfld-brdrds-left' : ''">
+                            <mat-label class="ovi-lbl-text-size">{{"Patient ID"|translate}} </mat-label>
+                            <div style="display: flex;">
+                                <mat-form-field [ngClass]="isSearch ? 'ovi-row-patient-wdh' : 'ovi-row-frmfld-wdh'" appearance="outline"
+                                    appkeyupHit (keyup.enter)="getUHID($event.target.value)">
+                                    <input matInput #uhid appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient ID'|translate"
+                                        formControlName="patientTWID" [readonly]="this.data?.id">
+                                </mat-form-field>
+                                <div *ngIf="isSearch">
+                                    <button i018n mat-button class="active-btn" style="border-radius: 0px 5px 5px 0px; line-height: 33px; position: relative; top: 2px;min-width: 42px;" appDebounceClick cdkFocusInitial [debounceTime]="300"
+                                        [disabled]="!uhid.value" (click)="getUHID(uhid.value)"><span class="material-icons" style="position: relative; bottom: 2px;">{{"search"| translate}}</span></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Status" | translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="patientStatusId" (selectionChange)="onStatusChange($event.value)">
+                                    <mat-option *ngFor="let option of statusListData" [value]="option.code">
+                                        <div class="tot-wid-styl">{{ option.value }}</div>
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="ovi-row-gap">
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"First Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'First Name'|translate" formControlName="firstName" autocomplete="off">
+                                    <mat-error *ngIf="managePatientForm.controls.firstName.invalid" class="error-txt-1">
+                                        <span [hidden]="!managePatientForm.controls['firstName'].errors.required">
+                                            {{"First name is required. (Limit 1 - 50 chars)"| translate}}</span>
+                                        <span [hidden]="!managePatientForm.controls['firstName'].errors.pattern">
+                                            {{"Number,spaces and special characters are not allowed"| translate}}.
+                                        </span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">  
+                            <mat-label class="ovi-lbl-text-size">{{"Middle Name"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Middle Name'|translate" formControlName="middleName" autocomplete="off">
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Last Name"|translate}}  </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" formControlName="lastName" autocomplete="off">
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: start;">
+                            <div>
+                                <mat-label class="ovi-lbl-text-size">{{'Code' | translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate"
+                                        formControlName="countryCode" [matAutocomplete]="countryCode">
+                                    <mat-autocomplete #countryCode="matAutocomplete" panelWidth="250px">
+                                        <mat-option *ngFor="let country of countryOptions | async" value={{country.code}} appTooltip [tooltipText]="country.value" placement="bottom"
+                                            matTooltip="{{country.value}}" (click)="getPhoneValidate(country.code, 'code')">
+                                            {{country.code}} ({{country.value}})
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="managePatientForm.controls.countryCode.invalid" class="error-txt-1">
+                                        <span [hidden]="!managePatientForm.controls['countryCode'].errors.pattern">code (eg. +91)</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                            <div>
+                                <mat-label class="ovi-lbl-text-size"> {{'Mobile' | translate}} </mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile'|translate" formControlName="mobileNo" autocomplete="off" (input)="onMobileInput()">
+                                          <mat-error *ngIf="managePatientForm.controls.mobileNo.invalid" class="error-txt-1">
+                                        <span [hidden]="!managePatientForm.controls['mobileNo'].errors.pattern">{{"Invalid Mobile number"| translate}}.</span>
+                                        <span [hidden]="!managePatientForm.controls['mobileNo'].errors.invalidPhone"> {{phoneMessage|translate}} </span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label  class="ovi-lbl-text-size">{{"DOB"|translate}}  </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput  [matDatepicker]="picker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'DOB'|translate" formControlName="birthDate" autocomplete="off"  [max]="today">
+                                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                <mat-datepicker #picker></mat-datepicker>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn">
+                            <mat-label  class="ovi-lbl-text-size">{{"Gender"|translate}} </mat-label>
+                            <div class="radio-button">
+                                <mat-radio-group formControlName="gender" (change)="getGenderType($event.value)">
+                                    <mat-radio-button  style="padding-right: 10px;" *ngFor="let o of genderList; let i = index" [checked]="managePatientForm.controls.gender.value === o.code" [value]="o">
+                                        {{o.value|translate}}</mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
+                                <mat-label  class="ovi-lbl-text-size">{{"Schedule"|translate}}<span *ngIf="otScheduleConfig && activate_btn.includes('BT_OTS')" class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule'|translate" type="datetime-local"
+                                    formControlName="scheduleDate" (change)="onScheduleChange($event)" [min]="minDateTime" [max]="this.managePatientForm.controls['patientStatusId']?.value !== 'VS-PL' &&
+                                    this.managePatientForm.controls['patientStatusId']?.value !== 'VS-SH' ? minDateTime : ''">
+                                     <mat-error *ngIf="managePatientForm.controls.scheduleDate.invalid" class="error-txt-1">
+                                        <span [hidden]="!managePatientForm.controls['scheduleDate'].errors.required">
+                                            {{"Schedule date is required"| translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>   
+                        </div>
+
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Surgery"|translate}}<span *ngIf="otScheduleConfig && activate_btn.includes('BT_OTS')" class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here for Surgery Name'|translate" appkeyupHit (keyupHit)="searchSurgeryList($event)" 
+                                formControlName="surgeryId" [matAutocomplete]="surgery" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.surgeryEnabled === true ? getSurgeryList.bind(surgeryList, 'surgery') : ''"
+                                #surgery="matAutocomplete" (optionSelected)="selectOnChangeSurgery($event.option.value)">
+                                    <mat-option *ngFor="let data of surgeryList" [value]="data.id" (click)="otScheduleConfig && activate_btn.includes('BT_OTS') ? setEndTime(data) : '' " (keydown.enter)="fixClick()">
+                                                <div class="alrt-wid-styl">{{data.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="managePatientForm.controls.surgeryId.invalid" class="error-txt-1">
+                                    <span [hidden]="!managePatientForm.controls['surgeryId'].errors.required">
+                                        {{"Surgery is required"| translate}}.</span>
+                                    <span [hidden]="!managePatientForm.get('surgeryId').hasError('invalidSurgery')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ovi-ptntdtls-ot-loc">
+                            <mat-label class="ovi-lbl-text-size">{{"OT Location"|translate}}<span *ngIf="otScheduleConfig && activate_btn.includes('BT_OTS')" class="mandatory-field">*</span></mat-label>
+                            <mat-form-field  class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input #locAutoComplete  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here for Parent Location'|translate" formControlName="locationId" 
+                                [matAutocomplete]="location" appkeyupHit (keyupHit)="searchLocationList($event)" (blur)="validateEntitySelection('location')">
+                                <button (click)="$event.stopPropagation()" *ngIf="!managePatientForm.controls.locationId.invalid && this.locEntityBookingId !== null && otScheduleConfig && activate_btn.includes('BT_OTS')" type="button" mat-button matSuffix
+                                    #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu" mat-icon-button style="height: 0px;">
+                                    <mat-icon class="ovi-fnt-sze15" [ngStyle]="{'color': !this.locEntityBooking ? 'red' : locChangeColor ?  '#ffa500' : '#008000'}" style="color: red;cursor: pointer;padding-top: 0px;">event</mat-icon>
+                                </button>
+                                <mat-autocomplete autoActiveFirstOption [displayWith]="displayLocationName"
+                                #location="matAutocomplete" (optionSelected)="selectOnChangeLocation($event.option.value)">
+                                    <mat-option *ngFor="let data of locationList" [value]="data.id">
+                                        <div class="tot-wid-styl" (click)="checkLoctionEntityBooking(data)" (keydown.enter)="fixClick()">{{data.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="managePatientForm.controls.locationId.invalid" class="error-txt-1">
+                                    <span [hidden]="!managePatientForm.controls['locationId'].errors.required">{{"Location
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                                <mat-hint *ngIf="!this.locEntityBooking">
+                                    <span style="color:red;">{{'Location not available' | translate}}</span>&nbsp;&nbsp;&nbsp;
+                                </mat-hint>
+                                 <mat-menu #menu="matMenu">
+                                        <button *ngIf="!this.locEntityBooking" mat-menu-item appDebounceClick [debounceTime]="300" (debounceClick)="menuTrigger.closeMenu(); getOverLapLoc($event)">Allow
+                                            overlap</button>
+                                        <button mat-menu-item appDebounceClick [debounceTime]="300" (debounceClick)="menuTrigger.closeMenu(); getCalendar('', 'location', $event)">Calendar</button>
+                                    </mat-menu>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Doctor"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here for Doctor Name'|translate" appkeyupHit (keyupHit)="searchDoctor($event)" (blur)="validateEntitySelection('doctor')"
+                                    formControlName="doctorId"    [matAutocomplete]="doctor">
+                                    <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="displayDoctorName"
+                                    #doctor="matAutocomplete">
+                                    <mat-option *ngFor="let option of doctorList" [value]="option.id">
+                                        <div class="tot-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                    </mat-autocomplete>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Associate Tag"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag ID'|translate" appkeyupHit (keyupHit)="searchTagList($event)"
+                                formControlName="tagID"   [matAutocomplete]="tag" [readonly]="this.patientdata?.tagId" (blur)="validateEntitySelection('tag')">
+                                <mat-autocomplete autoActiveFirstOption [displayWith]="this.tagEnabled === true ? gettagList.bind(tagList, 'tag') : ''"
+                                #tag="matAutocomplete">
+                                <mat-option *ngFor="let data of tagList" [value]="data.tagId">
+                                <div class="tot-wid-styl" (click)="getTagTypeId(data.tagTypeId)" (keydown.enter)="fixClick()">{{data.tagId}}</div>
+                            </mat-option>
+                            </mat-autocomplete>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-three-clmn" style="display: flex;align-items: center;padding: 10px 0px 0px 0px;">
+                            <span class="ovi-lbl-text-size">
+                                <mat-checkbox (change)="updateEmergency($event.checked)"    formControlName="emergencyType"> {{"Emergency"|translate}}</mat-checkbox>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab *ngIf="activate_btn.includes('BT_OTS') && otScheduleConfig" label="{{'Schedule' | translate}}">
+                <div [ngStyle]="{'height': isActiveTable && selectedSubTab === tabExist ? '100%' : ''}">
+                    <div *ngIf="!['TW-AOT'].includes(scheduleInputData.statusKey)" class="ovi-row-gap" style="padding-top: 5px;">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{'Procedure' | translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Procedure'|translate" appkeyupHit (keyupHit)="searchSurgeryList($event)" 
+                                formControlName="surgeryId" [matAutocomplete]="surgery2" autocomplete="off" >
+                                <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.surgeryEnabled === true ? getSurgeryList.bind(surgeryList, 'surgery2') : ''"
+                                #surgery2="matAutocomplete" (optionSelected)="selectOnChangeSurgery($event.option.value)">
+                                    <mat-option *ngFor="let data of surgeryList" [value]="data.id" (click)="otScheduleConfig && activate_btn.includes('BT_OTS') ? setEndTime(data) : ''" (keydown.enter)="fixClick()">
+                                                <div class="alrt-wid-styl">{{data.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="managePatientForm.controls.surgeryId.invalid" class="error-txt-1">
+                                    <span [hidden]="!managePatientForm.controls['surgeryId'].errors.required">
+                                        {{"Procedure is required"| translate}}.</span>
+                                    <span [hidden]="!managePatientForm.get('surgeryId').hasError('invalidSurgery')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-type-datetime-local">
+                            <mat-label class="ovi-lbl-text-size">{{"Start time"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Time'|translate" type="datetime-local"
+                                    formControlName="scheduleDate" (change)="onScheduleChange($event)" [min]="minDateTime">
+                                    <mat-error *ngIf="managePatientForm.controls.scheduleDate.invalid" class="error-txt-1">
+                                        <span [hidden]="!managePatientForm.controls['scheduleDate'].errors.required">
+                                            {{"Start Time is required"| translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-type-datetime-local">
+                            <mat-label class="ovi-lbl-text-size">{{"End Time"|translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Time'|translate" type="datetime-local"
+                                    formControlName="endTime" (change)="onChangeEndDate($event)" [min]="managePatientForm.controls['scheduleDate'].value | date:'yyyy-MM-ddTHH:mm'">
+                                    <mat-error *ngIf="managePatientForm.controls['endTime'].hasError('endBeforeStart')">
+                                        {{"Please select an end time greater than the start time"| translate}}.
+                                      </mat-error>
+                                      <mat-error *ngIf="managePatientForm.controls['endTime'].hasError('required')">
+                                        {{"End Time is required"| translate}}.
+                                      </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg ovi-ptntdtls-ot-loc">
+                            <mat-label class="ovi-lbl-text-size">{{'Location' | translate}}<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <input #locAutoComplete  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" formControlName="locationId"
+                                    [matAutocomplete]="location" appkeyupHit (keyupHit)="searchLocationList($event)" (blur)="validateEntitySelection('location')">
+                                    <button (click)="$event.stopPropagation()" *ngIf="!managePatientForm.controls.locationId.invalid && this.locEntityBookingId !== null" type="button" mat-button matSuffix
+                                       #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="menu"  mat-icon-button style="height: 0px;">
+                                        <mat-icon class="ovi-fnt-sze15" [ngStyle]="{'color': !this.locEntityBooking ? 'red' :  locChangeColor ?  '#ffa500' : '#008000'}" style="color: red;cursor: pointer;padding-top: 0px;">event</mat-icon>
+                                    </button>
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="displayLocationName"
+                                    #location="matAutocomplete" (optionSelected)="selectOnChangeLocation($event.option.value)">
+                                    <mat-option *ngFor="let data of locationList" [value]="data.id">
+                                        <div class="tot-wid-styl" (click)="checkLoctionEntityBooking(data)" (keydown.enter)="fixClick()">{{data.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="managePatientForm.controls.locationId.invalid" class="error-txt-1">
+                                    <span [hidden]="!managePatientForm.controls['locationId'].errors.required">{{"Location
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                                <mat-hint *ngIf="!this.locEntityBooking">
+                                    <span style="color:red;">{{'Location not available' | translate}}</span>&nbsp;&nbsp;&nbsp;
+                                </mat-hint>
+                                 <mat-menu #menu="matMenu">
+                                        <button *ngIf="!this.locEntityBooking" mat-menu-item appDebounceClick [debounceTime]="300" (debounceClick)="menuTrigger.closeMenu(); getOverLapLoc($event)">{{"Allow
+                                            overlap"| translate}}</button>
+                                        <button mat-menu-item appDebounceClick [debounceTime]="300" (debounceClick)="menuTrigger.closeMenu(); getCalendar('', 'location', $event)">{{"Calendar"| translate}}</button>
+                                    </mat-menu>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf=" !['TW-AOT'].includes(scheduleInputData.statusKey)" class="ovi-fnt-sze14" style="display: flex;font-weight: 600;margin-top: 5px;">{{'Select Resources' | translate}}</div>
+                    <mat-divider *ngIf=" !['TW-AOT'].includes(scheduleInputData.statusKey)"></mat-divider>
+                    <mat-tab-group [ngClass]="!['TW-AOT'].includes(scheduleInputData.statusKey) ? 'hide-tab-header' : 'show-tab-header'" class="ovi-patient-tab" #tabGroupRes (selectedTabChange)="onTabChange($event)">
+                        <mat-tab *ngIf=" !['TW-AOT'].includes(scheduleInputData.statusKey)" label="{{ 'User/Asset' | translate}}">
+                            <div style="align-items: center;height: calc(100vh - 345px);padding-top: 10px;overflow: auto;">
+                                <div class="ovi-row-gap-four-fld" style="align-items: center;">
+                                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{'Type' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="entityType"
+                                                (selectionChange)="OnResourceTypeChange($event.value)">
+                                                <mat-option *ngFor="let option of resourcesList" [value]="option.code">
+                                                    <div class="tot-wid-styl">{{ option.name }}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div class="ovi-matfrmfld-box-top-btm-pdg ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                                        <mat-label *ngIf="this.managePatientForm.controls['entityType'].value == 'SE-UR'"
+                                            class="ovi-lbl-text-size">{{'Role' | translate}}</mat-label>
+                                        <mat-label *ngIf="this.managePatientForm.controls['entityType'].value != 'SE-UR'"
+                                            class="ovi-lbl-text-size">{{'Category' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="this.managePatientForm.controls['entityType'].value == 'SE-UR' ? 'Role' : 'Category'" 
+                                                formControlName="entityId" (selectionChange)="onSubTypeChange($event.value)">
+                                                <mat-option *ngFor="let list of departmentList" [value]="list.code">
+                                                    <div class="tot-wid-styl">{{list.name}}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div *ngIf="this.managePatientForm.controls['entityType'].value != 'SE-UR'"
+                                        class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{'Asset Name' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Name'|translate" formControlName="entityName"
+                                                appkeyupHit (keyupHit)="searchAsset($event,catagoryData)" [matAutocomplete]="catagory">
+                                            <mat-autocomplete autoActiveFirstOption
+                                                [displayWith]="this.assetCatagoryEnabled === true ? getAssetList.bind(assetCatagoryData, 'catagory') : ''"
+                                                #catagory="matAutocomplete">
+                                                <mat-option *ngFor="let option of assetCatagoryData" [value]="option.id">
+                                                    <div class="tot-wid-styl" (click)="checkEntityBooking(option)" (keydown.enter)="fixClick()">{{option.name}}</div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                            <mat-hint *ngIf="!this.entityBooking">
+                                                <span [ngStyle]="{'color': colorChangeData ? '#ffa500' : 'red' }">{{'Asset not available' | translate}}</span>&nbsp;&nbsp;&nbsp;
+                                            </mat-hint>
+                                            <mat-hint *ngIf="!this.entityBooking">
+                                                <span><mat-icon [matMenuTriggerFor]="menu" class="ovi-fnt-sze15" [ngStyle]="{'color': colorChangeData ? '#ffa500' : 'red' }" style="cursor: pointer;padding-top: 0px;">event</mat-icon></span>
+                                            </mat-hint>
+                                        </mat-form-field>
+                                    </div>
+                                    <div *ngIf="this.managePatientForm.controls['entityType'].value == 'SE-UR'"
+                                        class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{'Staff Name' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Staff Name'|translate" appkeyupHit
+                                                (keyupHit)="staffListInfo($event, staffTypeData)" formControlName="entityName" [matAutocomplete]="doctor">
+                                            <mat-autocomplete autoActiveFirstOption
+                                                [displayWith]="this.staffListEnable === true ? getStaffList.bind(staffListData, 'doctor') : ''"
+                                                #doctor="matAutocomplete">
+                                                <mat-option *ngFor="let option of staffListData" [value]="option.id">
+                                                    <div class="tot-wid-styl" (click)="checkEntityBooking(option)" (keydown.enter)="fixClick()">{{option.name}}</div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                            <mat-hint *ngIf="!this.entityBooking">
+                                                <span [ngStyle]="{'color': colorChangeData ? '#ffa500' : 'red' }">{{'Staff not available' | translate}}</span>&nbsp;&nbsp;&nbsp;
+                                            </mat-hint>
+                                            <mat-hint *ngIf="!this.entityBooking">
+                                                <span><mat-icon [matMenuTriggerFor]="menu" class="ovi-fnt-sze15" [ngStyle]="{'color': colorChangeData ? '#ffa500' : 'red' }" style="cursor: pointer;padding-top: 0px;">event</mat-icon></span>
+                                            </mat-hint>
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="margin-top: 16px;">
+                                        <button [disabled]="entityBookingId == null || !managePatientForm.get('entityId').value || !this.entityBooking ? !colorChangeData : !this.entityBooking"
+                                            mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                            (debounceClick)="addResource()">{{editDataInfo != null &&  editDataInfo != undefined ? 'Update' : 'ADD' | translate}}
+                                        </button>
+                                    </div>
+                                    <mat-menu #menu="matMenu">
+                                        <button mat-menu-item appDebounceClick [debounceTime]="300" (debounceClick)="getOverLapData()">{{"Allow
+                                            overlap"| translate}}</button>
+                                        <button mat-menu-item appDebounceClick [debounceTime]="300" (debounceClick)="getCalendar()">{{"Calendar"| translate}}</button>
+                                    </mat-menu>
+                                </div>
+                                <div *ngIf="isActiveTable && dataSource?.length > 0" style="width: calc(100% - 10px);padding-top: 10px;">
+                                    <angular-table-component [id]="'schedule'" [type]="'ng-table'" [tableData]="dataSource"
+                                        [columns]="DisplayColumn" [columnData]="DataColumns" [menuButton]="menuOption" (triggerAction)="eventAction($event)">
+                                    </angular-table-component>
+                                </div>
+                            </div>
+                        </mat-tab>
+                        <mat-tab label="{{ 'Consumables' | translate}}">
+                            <div style="align-items: center;height: calc(100vh - 345px);padding-top: 10px;overflow: auto;">
+                                <div class="ovi-row-gap" style="align-items: center;">
+                                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{'Consumables Name' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Consumables Name'|translate" formControlName="consumableId">
+                                                <mat-option *ngFor="let option of consumableData" [value]="option.id" (click)="getItemName(option, 'consumable')" (keydown.enter)="fixClick()">
+                                                    <div class="tot-wid-styl">{{ option.name }}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"Requested Quantity"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                            <input matInput  formControlName="consumableQuantity" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Requested Quantity'|translate"
+                                                type="number"  class="no-spinner" (input)="conQuantityValidation()">
+                                                 <div matSuffix class="ovi-schl-custom-select">
+                                                    <span (click)="updateConQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                                     <span (click)="updateConQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                                 </div>
+                                                <mat-error *ngIf="managePatientForm.controls.consumableQuantity.invalid" class="error-schedule-text">
+                                                    <span *ngIf="managePatientForm.get('consumableQuantity')?.hasError">{{"Zero and minus values are not allowed"| translate}}.</span>
+                                                </mat-error>
+                                                <mat-hint *ngIf="isConQuentError && totalQuantity != null"class="error-txt-1" style="padding-top: 5px;">
+                                                    <span class="ovi-fnt-sze11" style="color: red;"> {{"The entered quantity exceeds the available stock"| translate}}.</span>&nbsp;&nbsp;&nbsp;
+                                                </mat-hint>
+                                                <mat-hint *ngIf="this.isConQuentity && !isConQuentError" class="error-txt-1" style="padding-top: 5px;">
+                                                    <span class="ovi-fnt-sze11" style="color: green;"> Available Stock: {{totalQuantity}}</span>&nbsp;&nbsp;&nbsp;
+                                                </mat-hint>
+                                                <mat-hint *ngIf="!this.isConQuentity && totalQuantity != null && !isConQuentError" class="error-txt-1" style="padding-top: 5px;">
+                                                    <span class="ovi-fnt-sze11" style="color: red;"> Available Stock: {{totalQuantity}}</span>&nbsp;&nbsp;&nbsp;
+                                                </mat-hint> 
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="margin-top: 16px;">
+                                        <button [disabled]="(!managePatientForm.controls['consumableId'].value || !managePatientForm.controls['consumableQuantity'].value) || isConQuentError"
+                                            mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                            (debounceClick)="addConsumables()">{{editDataInfo != null &&  editDataInfo != undefined ? 'Update' : 'ADD' | translate}}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div *ngIf="isActiveTable && conDataSource?.length > 0" style="width: calc(100% - 10px);padding-top: 18px;">
+                                    <angular-table-component [id]="'schedule'" [type]="'ng-table'" [tableData]="conDataSource"
+                                        [columns]="conDisplayColumn" [columnData]="conDataColumns" (triggerAction)="eventAction($event)">
+                                    </angular-table-component>
+                                </div>
+                            </div>       
+                        </mat-tab>
+                        <mat-tab label="{{ 'Implants' | translate}}">
+                            <div style="align-items: center;height: calc(100vh - 345px);padding-top: 10px;overflow: auto;">
+                                <div class="ovi-row-gap" style="align-items: center;">
+                                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{'Implant Name' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Implant Name'|translate" formControlName="implantId">
+                                                <mat-option *ngFor="let option of implantData" [value]="option.id" (click)="getItemName(option, 'implant')" (keydown.enter)="fixClick()">
+                                                    <div class="tot-wid-styl">{{ option.name }}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"Requested Quantity"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                            <input matInput  formControlName="implantQuantity" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Requested Quantity'|translate"
+                                                 type="number"  class="no-spinner"  (input)="impQuantityValidation()">
+                                                <div matSuffix class="ovi-schl-custom-select">
+                                                    <span (click)="updateImpQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                                     <span (click)="updateImpQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                                 </div>
+                                                <mat-error *ngIf="managePatientForm.controls.implantQuantity.invalid" class="error-schedule-text">
+                                                    <span *ngIf="managePatientForm.get('implantQuantity')?.hasError">Zero and minus values are not allowed.</span>
+                                                </mat-error>
+                                                 <mat-hint *ngIf="isImpQuentError && totalImpQuantity != null"class="error-txt-1" style="padding-top: 5px;">
+                                                    <span class="ovi-fnt-sze11" style="color: red;"> {{"The entered quantity exceeds the available stock"| translate}}.</span>&nbsp;&nbsp;&nbsp;
+                                                </mat-hint>
+                                                <mat-hint *ngIf="this.isImpQuentity && !isImpQuentError" class="error-txt-1" style="padding-top: 5px;">
+                                                    <span class="ovi-fnt-sze11" style="color: green;"> Available Stock: {{totalImpQuantity}}</span>&nbsp;&nbsp;&nbsp;
+                                                </mat-hint>
+                                                <mat-hint *ngIf="!this.isImpQuentity && totalImpQuantity != null && !isImpQuentError" class="error-txt-1" style="padding-top: 5px;">
+                                                    <span class="ovi-fnt-sze11" style="color: red;"> Available Stock: {{totalImpQuantity}}</span>&nbsp;&nbsp;&nbsp;
+                                                </mat-hint> 
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="margin-top: 16px;">
+                                        <button [disabled]="(!managePatientForm.controls['implantId'].value || !managePatientForm.controls['implantQuantity'].value) || isImpQuentError"
+                                            mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                            (debounceClick)="addImplants()">{{editDataInfo != null &&  editDataInfo != undefined ? 'Update' : 'ADD' | translate}}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div *ngIf="isActiveTable && impDataSource?.length > 0" style="width: calc(100% - 10px);padding-top: 18px;">
+                                    <angular-table-component [id]="'schedule'" [type]="'ng-table'" [tableData]="impDataSource"
+                                        [columns]="impDisplayColumn" [columnData]="impDataColumns" (triggerAction)="eventAction($event)">
+                                    </angular-table-component>
+                                </div>
+                            </div>
+                        </mat-tab>
+                        <mat-tab label="{{ 'Surgical Sets' | translate}}">
+                            <div style="align-items: center;height: calc(100vh - 345px);padding-top: 10px;overflow: auto;">
+                                <div [ngClass]="{'ovi-row-gap-four-fld': data?.id,'ovi-row-gap': !data?.id}" style="align-items: center;">
+                                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{'Surgical Set' | translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Surgicalset'|translate" formControlName="surgicalSetId">
+                                                <mat-option *ngFor="let option of sterlieSetList" [value]="option.code" (click)="getItemName(option, 'set')" (keydown.enter)="fixClick()">
+                                                    <div class="tot-wid-styl">{{ option.value }}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div *ngIf="data.id" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"Identifier"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Identifier'|translate"  formControlName="identifier">
+                                                <mat-option *ngFor="let option of identifierIdList" [value]="option.id">
+                                                    <div class="tot-wid-styl">{{ option.identifier }}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div *ngIf="data.id" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="statusIds">
+                                                <mat-option *ngFor="let option of surgerycalSetList" [value]="option.code">
+                                                    <div class="tot-wid-styl">{{ option.value }}</div>
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div *ngIf="!data.id"  class="ovi-row-three-clmn  ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"Quantitys"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-mat-field-qut" appearance="outline">
+                                            <input matInput  formControlName="setQuantity" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Quantitys'|translate"
+                                                type="number" class="no-spinner">
+                                            <div matSuffix class="ovi-schl-custom-select">
+                                                <span (click)="updateSetQuantity(-1)" class="ovi-schl-custom-dec" (keydown.enter)="fixClick()">-</span>
+                                                <span (click)="updateSetQuantity(1)" class="ovi-schl-custom-incre" (keydown.enter)="fixClick()">+</span>
+                                            </div>
+                                            <mat-error *ngIf="managePatientForm.controls.setQuantity.invalid" class="error-schedule-text">
+                                                <span *ngIf="managePatientForm.get('setQuantity')?.hasError">{{"Zero and minus values are not allowed"| translate}}.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="margin-top: 14px;">
+                                        <button [disabled]="!managePatientForm.controls['surgicalSetId'].value"
+                                            mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                            (debounceClick)="addSurgicalSet()">{{editDataInfo != null &&  editDataInfo != undefined ? 'Update' : 'ADD' | translate}}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div *ngIf="isActiveTable && setDataSource?.length > 0" style="width: calc(100% - 10px);padding-top: 10px;">
+                                    <angular-table-component [id]="'set-schedule'" [component] = "'setSchedule'"  [type]="'ng-table'" [tableData]="setDataSource"
+                                        [columns]="setDisplayColumn" [columnData]="setDataColumns" (triggerAction)="eventAction($event)" [menuButton]="setStatusData">
+                                    </angular-table-component>
+                                </div>
+                            </div>
+                        </mat-tab>
+                    </mat-tab-group>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+        <div *ngIf="data?.otDelayTime">
+            <div>
+                <div class="ovi-row-gap" style="padding-top: 5px;">
+                    <div *ngIf="data?.otDelayTime === 'otStartDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size" style="display:flex">{{"Delay To Start Surgery (In HH:MM)"|translate}}<span class="mandatory-field">*</span></mat-label> 
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Delay To Start Surgery (In HH:MM)'|translate" maxlength="5"
+                                formControlName="delayStartTime" autocomplete="off"  required appkeyupHit (keyupHit)="getDelayDuration('startDuration')">
+                            <mat-error *ngIf="managePatientForm.controls.delayStartTime.invalid">
+                                <span [hidden]="!managePatientForm.controls['delayStartTime'].errors.required">
+                                    {{"Start Delay Duration is required"|translate}}.</span>
+                                <span [hidden]="!managePatientForm.controls['delayStartTime'].errors.maxlength">
+                                    {{"Please Enter Delay Duration Upto 5 digits (HH:MM)"|translate}}</span>
+                                <span *ngIf="managePatientForm.controls['delayStartTime'].errors?.pattern">
+                                    {{"Please enter time in HH:MM format (e.g., 01:30)" | translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otStartDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-type-datetime-local">
+                        <mat-label class="ovi-lbl-text-size" style="display:flex;visibility: hidden;">{{'Delay Start Time'|translate}}</mat-label> 
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Delay Start Time'|translate" type="datetime-local"
+                                formControlName="delayScheduleStartTime" (change)="getDelayDuration('startTime')" [min]="managePatientForm.controls['scheduleDate'].value">
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otEndDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size" style="display:flex">{{"Delay To End Surgery (In HH:MM)"|translate}}<span class="mandatory-field">*</span></mat-label> 
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Delay To End Surgery (In HH:MM)'|translate"
+                                formControlName="delayEndTime" autocomplete="off"  maxlength="5" required appkeyupHit (keyupHit)="getDelayDuration('endDuration')">
+                            <mat-error *ngIf="managePatientForm.controls.delayEndTime.invalid">
+                                <span [hidden]="!managePatientForm.controls['delayEndTime'].errors.required">
+                                    {{"End Delay Duration is required"|translate}}.</span>
+                                <span [hidden]="!managePatientForm.controls['delayEndTime'].errors.maxlength">
+                                    {{"Please Enter Delay Duration Upto 5 digits (HH:MM)"|translate}}</span>
+                                <span *ngIf="managePatientForm.controls['delayEndTime'].errors?.pattern">
+                                    {{"Please enter time in HH:MM format (e.g., 01:30)" | translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otEndDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-type-datetime-local">
+                        <mat-label class="ovi-lbl-text-size" style="display:flex;visibility: hidden;">{{'Delay End Time'|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Delay End Time'|translate" type="datetime-local"
+                                formControlName="delayScheduleEndTime" (change)="getDelayDuration('endTime')" [min]="managePatientForm.controls['endTime'].value">
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otStartDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Reason' | translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reason'|translate" formControlName="delayStartReasonId" required>
+                                <mat-option *ngFor="let option of otReasonList" [value]="option.code">
+                                    <div class="tot-wid-styl">{{ option.value }}</div>
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otEndDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Reason' | translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reason'|translate" formControlName="delayEndReasonId" required>
+                                <mat-option *ngFor="let option of otReasonList" [value]="option.code">
+                                    <div class="tot-wid-styl">{{ option.value }}</div>
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otStartDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label> 
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate"
+                                formControlName="delayStartRemarks"></textarea>
+                        </mat-form-field>
+                    </div>
+                    <div *ngIf="data?.otDelayTime === 'otEndDelayTime'" class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label> 
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate"
+                                formControlName="delayEndRemarks"></textarea>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!this.data?.id || ispastDatainfo && !data?.otDelayTime" mat-button class="active-btn " appDebounceClick (debounceClick)="savePatient()"
+         cdkFocusInitial [debounceTime]="1000"  [disabled]="managePatientForm.invalid || !locEntityBooking || isCanbeDisabled">{{"Save"|translate}}</button>
+        <button *ngIf="this.data.id && !ispastDatainfo && !data?.otDelayTime" mat-button class="active-btn " appDebounceClick  (debounceClick)="updatePatient()"
+         cdkFocusInitial [debounceTime]="1000" [disabled]="managePatientForm.invalid || !locEntityBooking || isCanbeDisabled">{{'Update' | translate}}</button>
+         <button *ngIf="data?.otDelayTime" mat-button class="active-btn " appDebounceClick  (debounceClick)="updatePatient('timeDelay')"
+         cdkFocusInitial [debounceTime]="1000" [disabled]="managePatientForm.invalid">{{'Save' | translate}}</button>
+    </div>
+</div>
+

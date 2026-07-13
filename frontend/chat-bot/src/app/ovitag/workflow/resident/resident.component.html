@@ -1,0 +1,114 @@
+<div class="manage-body">
+
+  <tw-header-new-component [component]="'inpatient'" [permission]="null" [dateFilter]="null" [selectFilter]="selectFilter" [rowFilter]="rowFilter" [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="selectedName !== null ? selectedName : true"
+    [locationId]="locationId" [selectedView]="selectedView" [multiView]="true" (selectedViewAction)="selectedViewAction($event)" (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+
+  <app-card-view [component]="'inpatient'" *ngIf="selectedView == 'new card'" [cardPatientInfo]="inPatientInfo"></app-card-view>
+
+  <div [style.max-height.px]="this.height" *ngIf="selectedView == 'card'" style="overflow: auto;">
+    <div>
+      <mat-grid-list [cols]="cols" rowHeight="250px" appWindowResize (resized)="onWindowResized($event)" (resizedCol)="onWindowResizedCol($event)" [component]="'resident'">
+        <div *ngFor="let patient of inPatientInfo">
+          <mat-grid-tile colspan="1" rowspan="1" class="cur-ptr" (click)="onCheck(patient)"  (keydown.enter)="fixClick()">
+            <div
+              [ngStyle]="{'border':isCheck == true && patient.patientVisitId === checkPatientId ? '8px solid #C6C6C6' : ''}"
+              id="ip" class="widget-class ip-grid-cl-r-2-2">
+              <div class="ip-patient-basic">
+                <span class="ip-basic-details">
+                  <span class="ip-circle" *ngIf="patient.age != null"  appTooltip tooltipText="{{'Age'|translate}}" placement="bottom">{{patient.age}}<span class="ovi-fnt-sze7" 
+                      style="padding: 2px;">yrs</span></span>
+                  <span class="ip-circle" *ngIf="patient.gender == 'Others'" appTooltip [tooltipText]="patient.gender" placement="bottom"><img class="ip-other-gender" matListIcon
+                      iconsmall src="/assets/Alert/IP/other.png"  alt="others" ></span>
+                  <span class="ip-circle" *ngIf="patient.gender == 'Male'" appTooltip [tooltipText]="patient.gender" placement="bottom"><img class="ip-gender" matListIcon iconsmall
+                      src="/assets/Alert/IP/man.png" alt="man" ></span><br>
+                  <span class="ip-circle" *ngIf="patient.gender == 'Female'" appTooltip [tooltipText]="patient.gender" placement="bottom"><img class="ip-woman-gender" matListIcon
+                      iconsmall src="/assets/Alert/IP/woman.png"  alt="woman" ></span>
+                      <span class="ip-circle" *ngIf="patient.lengthOfStay != null" appTooltip tooltipText="{{'Length Of Stay'|translate}}"  placement="bottom">{{patient.lengthOfStay}}<span
+                       class="ovi-fnt-sze8" style="padding: 2px;">{{"los"|translate}}</span></span>
+                </span>
+              </div>
+              <div style="width: 83%;flex-direction: row;box-sizing: border-box;display: flex;">
+                <div class="row-field" style="flex: 1 1 100%;box-sizing: border-box;max-width: 90%;">
+                  <div class="ip-patient-header">
+                    <span (click)="patientInfo(patient)" class="ip-patient-name"
+                    appTooltip [tooltipText]="patient.patientName" placement="bottom"  (keydown.enter)="fixClick()">{{patient.patientName}}</span>
+                  </div>
+                </div>
+                <div class="row-field">
+                  <div class="ip-patient-header">
+                    <span *ngIf="patient.bedNo != null" class="ip-patient-stay">{{patient.bedNo}}</span>
+                  </div>
+                </div>
+              </div>
+              <div style="width: 83%;flex-direction: row;box-sizing: border-box;display: flex;">
+                <div class="row-field" style="flex: 1 1 100%;box-sizing: border-box;max-width: 90%;">
+                  <div class="ip-patient-header">
+                    <span class="ip-tagid">{{patient.uhid}}
+                    </span>&nbsp;
+                  </div>
+                </div>
+              </div>
+            <div class="ip-vital">
+              <div *ngIf="patient.vitals !== null">
+              <div class="vital-view">
+                <span class="ovi-fnt-sze12" appTooltip tooltipText="SpO2" placement="bottom">SpO2</span><br>
+                <span>{{patient.vitals.spo2}}</span>
+              </div>
+              <div class="vital-view">
+                <span class="ovi-fnt-sze12" appTooltip tooltipText="Heart Rate" placement="bottom">HR</span><br>
+                <span>{{patient.vitals.hr}}</span>
+              </div>
+              <div class="vital-view">
+                <span class="ovi-fnt-sze12" appTooltip tooltipText="Temperature" placement="bottom">Temp</span><br>
+                <span>{{patient.vitals.temperature}}</span>
+              </div>
+              </div>
+            </div>
+              <div class="ip-patient-alert">
+                <span *ngFor="let alert of patient.alerts">
+                  <span ngIf="alert.eventCode">
+                    <img *ngIf="alert.eventCode === 'CE-CL'" style="width:25px;cursor: pointer;" (click)="cancelAlert(alert, 'nurse-call')" alt="nurse-call"
+                              src="/assets/Alert/IP/nurse-call.svg"  (keydown.enter)="fixClick()">
+                    <img *ngIf="alert.eventCode === 'CE-AD'" style="width:25px;cursor: pointer;" (click)="cancelAlert(alert, 'nurse-call')" alt="nurse-call"
+                              src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
+                    <img *ngIf="alert.eventCode === 'CE-FD'" style="width:25px;cursor: pointer;" (click)="cancelAlert(alert, 'nurse-call')" alt="nurse-call"
+                              src="/assets/Alert/IP/food.svg"  (keydown.enter)="fixClick()"> 
+                    <img *ngIf="alert.eventCode === 'CE-HK'" style="width:25px;cursor: pointer;" (click)="cancelAlert(alert, 'nurse-call')" alt="nurse-call"
+                              src="/assets/Alert/IP/housekeeping.svg" (keydown.enter)="fixClick()"> 
+                    <img *ngIf="alert.eventCode === 'CE-SO'" style="width:25px;cursor: pointer;" (click)="cancelAlert(alert, 'nurse-call')" alt="nurse-call"
+                          src="/assets/Alert/IP/sos.svg"  (keydown.enter)="fixClick()"> 
+                    <img *ngIf="alert.eventCode === 'CE-MD'" style="width:25px;cursor: pointer;" (click)="cancelAlert(alert, 'nurse-call')" alt="nurse-call"
+                          src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                    </span>
+                  <span ngIf="!alert.eventCode">
+                  <mat-icon class="icon-style" *ngIf="alert.alertCode === 'RU-MO'"
+                   appTooltip [tooltipText]="alert.message" class="patient-away"></mat-icon>
+                  <mat-icon class="icon-style" *ngIf="alert.alertCode === 'RU-FA'" 
+                   appTooltip [tooltipText]="alert.message" class="fall-risk" (click)="cancelAlert(alert, 'fall-risk')"  (keydown.enter)="fixClick()">
+                  </mat-icon>
+                  <mat-icon class="icon-style" *ngIf="alert.alertCode === 'RU-MI'"
+                   appTooltip [tooltipText]="alert.message" class="patient-missing"></mat-icon>
+                  <mat-icon class="icon-style" *ngIf="alert.alertCode === 'RU-GO'" 
+                   appTooltip [tooltipText]="alert.message" class="geofence">
+                  </mat-icon>
+                </span>
+                </span>
+              </div>
+              <div style="width: 83%;flex-direction: row;box-sizing: border-box;display: flex;">
+                <div class="row-field" style="flex: 1 1 100%;box-sizing: border-box;max-width: 90%;">
+                  <div class="ip-patient-doctor" appTooltip [tooltipText]="patient.doctor" placement="bottom">{{patient.doctor}}</div>
+                </div>
+              </div>
+            </div>
+          </mat-grid-tile>
+        </div>
+      </mat-grid-list>
+    </div>
+  </div>
+
+  <div *ngIf="selectedView == 'table'">
+    <tw-table-component [component]="'resident'" [columns]="displayedColumns" [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+      [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'patientVisitId'" (rowClickAction)="rowClick($event)"
+      [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null" [tableClass]="'table-icon-header'"></tw-table-component>
+  </div>
+</div>

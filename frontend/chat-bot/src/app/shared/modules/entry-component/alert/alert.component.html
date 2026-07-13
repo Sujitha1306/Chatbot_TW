@@ -1,0 +1,32 @@
+<div class="widHeaderClass">
+    <div class="cust-style ovi-font-family" [formGroup]="alertForm">
+        <mat-select class="custom-select"  formControlName="alertType" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Choose Alert'|translate" [disableOptionCentering]="true" (selectionChange)="alertfilter($event.value)">
+            <mat-option [value]="alertType">All</mat-option>
+            <mat-option *ngFor="let type of ruleType" [value]="type.code">
+                {{type.value}}
+            </mat-option>
+        </mat-select>
+    </div>
+
+</div>
+<div class="no-alert  ovi-font-family" *ngIf="!this.isAlert">No alerts found !</div>
+<div class="alert" *ngIf="this.isAlert">
+    <mat-list class="alert-list">
+        <mat-list-item [ngClass]="alert.alertTypeName" *ngFor="let alert of alertData">
+         
+            <div class="alert-body">
+                <div [ngClass]="alert.contextTypeId">
+                    <img class="img-style" height="20" width="20" src="/assets/Alert/notification/{{alert.ruleTypeId}}.svg" alt="alert" >
+                    <div mat-line class="alert-name">
+                        {{alert.pfAlertConfigName}}</div>
+                        <div mat-line class="alert-msg"  [matTooltip]="alert.message">
+                            {{alert.message}}</div>
+                </div>
+            </div>
+            <div class="alert-action ovi-fnt-sze10" style="font-weight: 600; color: #284255;"> 
+                {{alert.alertDatetime | date: 'shortTime'}}
+            </div>
+        </mat-list-item>
+    </mat-list>
+</div>
+<div class="alrt-style" *ngIf="viewMoreCount && viewMoreCount.length > 0"><a (click)="goMoreAlert()">{{"View more"|translate}}</a></div>

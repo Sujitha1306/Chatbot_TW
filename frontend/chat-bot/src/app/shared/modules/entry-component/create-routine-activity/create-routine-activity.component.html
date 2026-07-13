@@ -1,0 +1,367 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.activityData"> {{"Create Activity"|translate}} </div>
+        <div
+            *ngIf="data.activityData && (data.activityData.routineActivityId || data.activityData.entityRoutineActivityId || data.type === 'create')">
+            {{"Modify Activity"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="height: calc(100% - 135px); overflow: auto;" [formGroup]="activityForm">
+        <div class="ovi-row-gap" style="gap: 4px 8px; padding-bottom: 15px;">
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Activity Category"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity Category'|translate"
+                        (selectionChange)="getActivityType($event)" formControlName="activityCategory"
+                        [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of activityTypeList"
+                            [value]="data.code">{{data.value}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activityForm.controls.activityCategory.invalid">
+                        <span [hidden]="!activityForm.controls['activityCategory'].errors.required">{{"Activity
+                            Category is
+                            required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Activity"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Activity'|translate"
+                        (selectionChange)="getActivityDetails($event)" formControlName="activityId"
+                        [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of activityList" [value]="data.id">{{data.name}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Assign Type"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign Type'|translate" 
+                        (selectionChange)="getIncharge($event)" formControlName="assignTypeId"
+                        [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of inchargeTypeList"
+                            [value]="data.code">{{data.value}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Assign To"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="example-full-width form-field ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign To'|translate" id="inchargeSearch"
+                        formControlName="assignId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                        [matAutocomplete]="inch" autocomplete="off" #assignToInput>
+                    <mat-autocomplete autoActiveFirstOption
+                        [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                        #inch="matAutocomplete">
+                        <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                            <div class="act-wid-styl">{{option.name}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="activityForm.controls.assignId.invalid">
+                        <span [hidden]="!activityForm.controls['assignId'].errors.required">{{"Incharge is
+                            required"|translate}}</span>
+                        <span [hidden]="!activityForm.get('assignId').hasError('invalidAssign')">{{"Please
+                            select value from the option"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Duration"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'" class="time-input"
+                        formControlName="duration" [format]="24" [value]="'00:30'" [ngxTimepicker]="timepicker1"
+                        [disableClick]="true">
+                    <ngx-material-timepicker-toggle matSuffix [for]="timepicker1">
+                    </ngx-material-timepicker-toggle>
+                    <ngx-material-timepicker #timepicker1></ngx-material-timepicker>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Location"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" id="locationSearch"
+                        formControlName="locationId" appTypeHit (typeHit)="searchLocationList($event)"
+                        [matAutocomplete]="loc" autocomplete="off">
+                    <mat-autocomplete autoActiveFirstOption
+                        [displayWith]="locationEnabled === true ? getLocationList.bind(locationList) : ''"
+                        #loc="matAutocomplete">
+                        <mat-option *ngFor="let option of locationList" [value]="option.id">
+                            <div class="act-wid-styl">{{option.fullName}}</div>
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="activityForm.controls['locationId'].invalid">
+                        <span *ngIf="activityForm.get('locationId')?.hasError('invalidLocation')">
+                            {{"Please select a value from the options."|translate}}
+                        </span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Priority Level"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Priority Level'|translate"
+                        formControlName="priorityLevel" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of priorityLevel" [value]="data.code">
+                            {{data.value}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Weightage"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Weightage'|translate" autocomplete="off" formControlName="weightage">
+                </mat-form-field>
+            </div>
+            <div *ngIf="selectedSchedule !== 'SCT-ALW'" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Schedule Type"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate"
+                        formControlName="scheduleType" [disableOptionCentering]="true">
+                        <mat-option *ngFor="let data of scheduleType" (click)="selectedActivitySchedule(data.code)" (keydown.enter)="fixClick()"
+                            [value]="data.code">{{data.value}}</mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activityForm.controls.scheduleType.invalid">
+                        <span [hidden]="!activityForm.controls['scheduleType'].errors.required">{{"Schedule Type
+                            is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="activityScheduleId === 'SAT-BTM' || activityScheduleId === 'SAT-RGBT' || activityScheduleId === 'SAT-DBT' || activityScheduleId === 'SAT-ODB'"
+                class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Schedule Time"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input matInput  #date appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule'|translate" class="time-input"
+                        [value]="defaultscheduleTime" [ngxTimepicker]="timepicker1" [disableClick]="true"
+                        formControlName="scheduleTime">
+                    <ngx-material-timepicker-toggle matSuffix [for]="timepicker1">
+                    </ngx-material-timepicker-toggle>
+                    <ngx-material-timepicker #timepicker1></ngx-material-timepicker>
+                    <mat-error *ngIf="activityForm.controls.scheduleTime.invalid">
+                        <span [hidden]="!activityForm.controls['scheduleTime'].errors.required">{{"Schedule Time
+                            is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="activityScheduleId === 'SAT-RGAT' || activityScheduleId === 'SAT-RGBT'"
+                class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Day Count"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="example-full-width form-field ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Day Count'|translate" autocomplete="off" formControlName="dayCount">
+                    <mat-error *ngIf="activityForm.controls.dayCount.invalid">
+                        <span [hidden]="!activityForm.controls['dayCount'].errors.min">{{"Day Count
+                            is required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="activityScheduleId === 'SAT-DAT' || activityScheduleId === 'SAT-DBT'"
+                class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"On Date"|translate}}<span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'On Date'|translate" formControlName="onDate" multiple>
+                        <mat-option *ngFor="let data of weekDaysList" [value]="data.code">
+                            {{data.value}}
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="activityForm.controls.onDate.invalid">
+                        <span [hidden]="!activityForm.controls['onDate'].errors.required">{{"On Date
+                            is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                *ngIf="activityScheduleId !== 'SAT-ODB' && activityScheduleId !== 'SAT-ODA' && rType !== 'template'">
+                <mat-label class="ovi-lbl-text-size">{{"Start Date"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh datepicker" style="border: none !important"
+                    appearance="outline">
+                    <input  matInput [matDatepicker]="frompicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Start Date'|translate"
+                        [min]="minStart" [max]="maxEnd" formControlName="fromDate">
+                    <mat-datepicker-toggle matSuffix [for]="frompicker"></mat-datepicker-toggle>
+                    <mat-datepicker #frompicker></mat-datepicker>
+                    <mat-error *ngIf="activityForm.controls.fromDate.invalid">
+                        <span [hidden]="!activityForm.controls['fromDate'].errors.required">{{"Start Date
+                            is required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"
+                *ngIf="activityScheduleId !== 'SAT-ODB' && activityScheduleId !== 'SAT-ODA' && rType !== 'template'">
+                <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh datepicker" style="border: none !important"
+                    appearance="outline">
+                    <input  matInput [matDatepicker]="topicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate"
+                        formControlName="toDate" [min]="activityForm.controls['fromDate'].value !== null ? activityForm.controls['fromDate'].value : minStart" [max]="maxEnd">
+                    <mat-datepicker-toggle matSuffix [for]="topicker"></mat-datepicker-toggle>
+                    <mat-datepicker #topicker></mat-datepicker>
+                    <mat-error *ngIf="activityForm.controls.toDate.invalid">
+                        <span [hidden]="!activityForm.controls['toDate'].errors.required">{{"End Date
+                            is required"|translate}}</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="activityScheduleId === 'SAT-ODB' || activityScheduleId === 'SAT-ODA'" class="row-field-8"
+                style="padding-bottom: 10px;">
+                <div class="example-form">
+                    <mat-label class="ovi-lbl-text-size">{{"Schedule Date(s)" | translate}}</mat-label>
+                    <div style="display: flex; align-items: center; padding-top: 3px;">
+                        <button mat-icon-button [matMenuTriggerFor]="menu" class="date-picker-btn">
+                            <span class="material-icons ovi-fnt-sze18" style="padding-top: 0; padding-bottom: 4px;">date_range</span>
+                        </button>
+                        <mat-menu #menu="matMenu">
+                            <div class="date-menu" (click)="stopEventPropagation($event)" (keydown.enter)="fixClick()">
+                                <mat-calendar #calendarRef [selected]="null" [dateClass]="dateClassFunction"
+                                    [minDate]="minStart" [maxDate]="maxEnd"
+                                    (selectedChange)="toggleDate($event)"></mat-calendar>
+                            </div>
+                        </mat-menu>
+                        <span style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <mat-chip class="chips-card" *ngFor="let value of selectedDates" (removed)="remove(value)">
+                                {{ value | date }}
+                                <mat-icon matChipRemove class="ovi-prmry-clr"  style="height: fit-content; width: fit-content; padding: 0; cursor: pointer;"
+                                    *ngIf="true">cancel</mat-icon>
+                            </mat-chip>
+                        </span>
+                        <span class="ovi-lbl-text-size" style="color: #aeaeae;"
+                            *ngIf="selectedDates.length === 0">Choose
+                            the schedule date(s)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+            <mat-tab label="{{'Configuration'|translate}}">
+                <div style="height: calc(100vh - 345px);overflow: hidden;">
+                    <div class="ovi-row-gap" style="gap: 4px 8px;">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"status"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate"
+                                    formControlName="isActive" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of statusList" [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="scopeType === 'AST-ROU'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Sequence"|translate}} <span
+                                    *ngIf="selectedSchedule === 'SCT-ALW' && data.routineType !== 'ROU-EMG'"
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate"
+                                    autocomplete="off" formControlName="sequence">
+                                <mat-error *ngIf="activityForm.controls.sequence.invalid">
+                                    <span [hidden]="!activityForm.controls['sequence'].errors.required">{{"Sequence is
+                                        required"|translate}}.</span>
+                                    <span *ngIf="activityForm.get('sequence')?.hasError('pattern')">
+                                        Format must be numbers separated by dots (e.g. 1.1.1)
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="scopeType === 'AST-ROU'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Level"|translate}} <span
+                                    *ngIf="selectedSchedule === 'SCT-ALW' && data.routineType !== 'ROU-EMG'"
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sequence'|translate"
+                                    autocomplete="off" formControlName="sequenceLevel">
+                                <mat-error *ngIf="activityForm.controls.sequenceLevel.invalid">
+                                    <span [hidden]="!activityForm.controls['sequenceLevel'].errors.required">{{"sequenceLevel is
+                                        required"|translate}}.</span>
+                                    <span *ngIf="activityForm.get('sequenceLevel')?.hasError('pattern')">
+                                        {{"Format must be numbers separated by dots (e.g. 1.1.1)"|translate}}
+                                    </span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="scopeType === 'AST-ROU'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Sequence Priority "|translate}} <span
+                                    *ngIf="selectedSchedule === 'SCT-ALW' && data.routineType !== 'ROU-EMG'"
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false"
+                                    [placeholderText]="'Sequence Priority'|translate" autocomplete="off" formControlName="priority">
+                                <mat-error *ngIf="activityForm.controls.priority.invalid">
+                                    <span [hidden]="!activityForm.controls['priority'].errors.required">{{"Priority is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}<span *ngIf="departmentIds && data.contextType === 'RC-PRD'"
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department'|translate"
+                                    formControlName="departmentId" [disableOptionCentering]="true">
+                                    <mat-option *ngFor="let data of departmentDataList" [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="activityForm.controls.departmentId.invalid">
+                                    <span [hidden]="!activityForm.controls['departmentId'].errors.required">{{"Department is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg check-align" style="gap: 8px;">
+                            <span *ngIf="activityScheduleId && activityScheduleId !== 'SAT-BTM' && activityScheduleId !== 'SAT-ATM'"
+                                class="act-mand">
+                                <mat-checkbox formControlName="isRepeat">{{"Repeat"|translate}}</mat-checkbox>
+                            </span>
+                            <span *ngIf="rType !== 'template'" class="act-mand">
+                                <mat-checkbox formControlName="isRecurring">{{"Recurring"|translate}}</mat-checkbox>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Notification'|translate}}" [disabled]="!activityForm.controls['activityId'].value">
+                <app-reminder-config [dialogType]="'tab'" [activityData]="reminderData" [type]="configType" [entityConfigType]="entityConfigType"
+                   (slaTempData)="slaNotifiData($event)" (validityChange)="checkNotifiValidityChange($event)"></app-reminder-config>
+            </mat-tab>
+            <mat-tab label="{{'Rule'|translate}}" [disabled]="!activityForm.controls['activityId'].value">
+                <div>
+                    <div style="text-align: end; padding: 5px 10px;">
+                        <button mat-button class="active-btn" appDebounceClick (debounceClick)="openActivityRule('')"
+                             [debounceTime]="300" cdkFocusInitial>{{"Add
+                            Rule"|translate}}</button>
+                    </div>
+                    <angular-table-component [id]="'activity-rule'" [type]="'ng-table'" [tableData]="activityRuleData"
+                        [columns]="['Scope', 'Activity Rule', 'Rule Group', 'Step Type', 'Duration', 'Status', 'Include', 'Edit']"
+                        [columnData]="['value', 'ruleActivityName', 'ruleGroupNo', 'stepType', 'duration', 'isActive', 'isInclude', 'Edit']"
+                        (triggerAction)="triggerAction($event)">
+                    </angular-table-component>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div *ngIf="rType !== 'template'" class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" style=" margin-right: 5px;"
+            (click)="cancel()">{{"Cancel"|translate}}</button>
+        <button *ngIf="!data.activityData" mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+            (debounceClick)="addActivity()" [disabled]="activityForm.invalid" cdkFocusInitial>{{"Add"|translate}}
+        </button>
+        <button *ngIf="(data.activityData && (data.activityData.routineActivityId || data.activityData.entityRoutineActivityId)) || (data.activityData && data.routineId === null)"
+            mat-button class="active-btn" appDebounceClick [debounceTime]="600" (debounceClick)="updateActivity()"
+            [disabled]="activityForm.invalid" cdkFocusInitial>{{"Update"|translate}}
+        </button>
+    </div>
+    <div *ngIf="rType === 'template'" class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" style=" margin-right: 5px;"
+            (click)="cancel()">{{"Cancel"|translate}}</button>
+        <button *ngIf="!data.activityData" mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+            (debounceClick)="addPfActivity()" [disabled]="activityForm.invalid" cdkFocusInitial>{{"save"|translate}}
+        </button>
+        <button *ngIf="(data.activityData && (data.activityData.routineActivityId || data.activityData.entityRoutineActivityId)) || (data.activityData && data.routineId === null)"
+            mat-button class="active-btn" appDebounceClick [debounceTime]="600" (debounceClick)="updatePfActivity()"
+            [disabled]="activityForm.invalid" cdkFocusInitial>{{"Update"|translate}}
+        </button>
+    </div>
+</div>

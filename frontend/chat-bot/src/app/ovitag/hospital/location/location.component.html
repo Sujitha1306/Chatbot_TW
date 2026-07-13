@@ -1,0 +1,70 @@
+<div style="height: 45px;">
+  <div class="tw-refresh-icon" style="margin-top: 0px;">
+  <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
+      (click)="getAllLocation();" (keydown.enter)="fixClick()"
+      style="cursor: pointer; float: right;">autorenew</i>
+  </span>
+  </div>
+  <span>
+    <button class="ovi-prmry-bg-clr ovi-prmry-wht-clr" style="float: right;margin-bottom: 5px;border-radius: 5px;" mat-button 
+    (click)="manageLocation()">{{"Manage Location"|translate}} </button>
+  </span>
+  <span>
+    <button [disabled] = "selectedRow == null || selectedRow?.locationTypeLevel != 2" style="float: right;margin-bottom: 5px;border-radius: 5px;margin-right: 7px;" mat-button 
+    [ngClass]="{ 'inactive-row': selectedRow == null || selectedRow?.locationTypeLevel != 2,
+                  'ovi-prmry-bg-clr ovi-prmry-wht-clr': selectedRow != null && selectedRow?.locationTypeLevel == 2
+                }"   (click)="nodePointsGenerator(selectedRow)">{{"Node Generate"|translate}} </button>
+  </span>
+  <span>
+    <button  class="ovi-prmry-bg-clr ovi-prmry-wht-clr" style="float: right;margin-bottom: 5px;border-radius: 5px;margin-right: 8px;" mat-button [disabled] = "selectedRow == null || selectedRow?.locationTypeLevel != 1 && selectedRow?.locationTypeLevel != 2"
+     [ngClass]="{'inactive-row': selectedRow == null || (selectedRow?.locationTypeLevel != 1 && selectedRow?.locationTypeLevel != 2),
+                  'ovi-prmry-bg-clr ovi-prmry-wht-clr': selectedRow != null && (selectedRow?.locationTypeLevel == 1 || selectedRow?.locationTypeLevel == 2)
+                }"(click)="barCodeComponent()">{{"Print"|translate}}</button>
+  </span>
+</div>
+
+<div style="height: calc(100% - 120px);overflow: auto;" class="tw-content1">
+  <mat-table #table [dataSource]="dataSource" matSort style="min-width : 900px;overflow:auto;">
+    <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+      <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header">
+        {col.title, select, Name {{{"Name"|translate}}} Type {{{"Type"|translate}}} Category {{{"Category"|translate}}} Care Setting {{{"Care Setting"|translate}}} Status {{{"Status"|translate}}}}
+      </mat-header-cell>
+      <mat-cell *matCellDef="let element" class="ovi-fnt-sze12">  
+        <span *ngIf="col.colName == 'locName'">
+          <span *ngIf="element.children.length == 0 " style="padding-left:15px;"></span>
+          <span class="material-icons ovi-prmry-clr ovi-fnt-sze13" [ngClass]="element.close ? 'tbl-collapse-icon1' : 'tbl-expand-icon1'" *ngIf="element.children.length">{{element.close ? 'remove_circle_outline' : 'add_circle_outline' }}</span>
+          {{element.name}}
+        </span>
+        <span *ngIf="col.colName != 'locName'"> {{element[col.dataName]}} </span>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;" class="tw-manage-table-header-row"
+      [ngStyle]="headercolor && {'background':headercolor}" ></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"
+      [ngClass]="{'highlight' : row === selectedRow}" [cdkDetailRow]="row" [ngStyle]="bgcolor && {'background':bgcolor}"
+      (toggleChange)="onToggleChange($event,row)" [cdkDetailRowTpl]="tpl"></mat-row>
+  </mat-table>
+
+  <ng-template id='child-data' #tpl let-element>
+    <div class="mat-row" [@detailExpand] *ngIf="element.children && element?.children[0]?.labelPoint !== 'false'">
+      <mat-table #table [dataSource]="element.children" matSort>
+        <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+          <mat-cell *matCellDef="let element">
+            <span *ngIf="col.colName == 'locName'" 
+            [ngStyle]="{'padding-left' : (element.locationTypeLevel * 20) + 'px'}">
+              <span *ngIf="element.children.length == 0 " style="padding-left:15px;"></span>
+              <span class="material-icons ovi-prmry-clr ovi-fnt-sze13" [ngClass]="element.close ? 'tbl-collapse-icon1' : 'tbl-expand-icon1'" *ngIf="element.children.length && element?.children[0]?.labelPoint !== 'false'">{{element.close ? 'remove_circle_outline' : 'add_circle_outline' }}</span>
+              {{element.name}} 
+            </span>
+            <span *ngIf="col.colName != 'locName'"> {{element[col.dataName]}}</span>
+          </mat-cell>
+        </ng-container>
+        <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"
+          [ngClass]="{'highlight' : row === selectedRow}" [ngStyle]="bgcolor && {'background':bgcolor}"
+          [cdkDetailRow]="row" (toggleChange)="onToggleChange($event,row)" [cdkDetailRowTpl]="tpl"></mat-row>
+      </mat-table>
+    </div>
+  </ng-template>
+
+</div>

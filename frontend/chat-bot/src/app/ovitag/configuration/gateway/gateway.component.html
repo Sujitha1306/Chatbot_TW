@@ -1,0 +1,47 @@
+<div class="manage-body">
+  <div class="align-header-2">
+    
+      <div class="row-field">
+        <div class="tw-view-full-width-flex">
+          <div class="row">
+            <div style="display: flex">
+              <span class="tw-filter-new">
+                <input matInput style="padding: 5px;" #searchInputClear (keyup)="applyFilter($event.target.value)"
+                  appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off" >
+                <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value"
+                  (click)="searchInputClear.value=''; applyFilter('');">
+                  <span class="tw-filter-close">x</span>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row-field" style="margin-left: 9px;">
+        <div class="tw-view-full-width-pad">
+          <div class="tw-btn" *ngIf="this.selectedRow != null">
+            <div class="tw-event-action-btn1">
+              <button mat-button class="action-btn"
+                (click)="upgradeCertificate(this.selectedRow)">{{"Upgrade Certificate"|translate}}</button>
+            </div>
+          </div>
+          <div class="tw-btn" *ngIf="activate_btn && (activate_btn.indexOf('BT_ALLC') > -1 || activate_btn.indexOf('BT_CFGWC') > -1)">
+            <div class="tw-event-action-btn">
+              <button mat-button class="action-btn" style="padding: 0 22px;" (click)="createGateway('')">{{"Create"|translate}}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+  </div>
+  <div *ngIf="tableVersion === 1">
+    <tw-table-component [component]="'gateway'" [columns]="displayedColumns" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+      [eventColumn]="[null]" [tableData]="tableData" [rowClick]="true" (rowClickAction)="rowClick($event)" [rowId]="'id'"
+      [rowDbClick]="true" (rowDbClickAction)="createGateway($event)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null" [tableClass]="'table-with-header'"></tw-table-component>
+  </div>
+  <div *ngIf="tableVersion === 2">
+    <tw-data-table [columns]="gatewayTwColumns" [data]="tableData" [pagination]="gatewayPaginationConfig"
+      [rowClickable]="true" [rowDblClickable]="true" (rowDblClick)="createGateway($event)" [rowId]="'gatewayId'" (rowClick)="rowClick($event)" (cellAction)="onCellAction($event)">
+    </tw-data-table>
+  </div>
+</div>

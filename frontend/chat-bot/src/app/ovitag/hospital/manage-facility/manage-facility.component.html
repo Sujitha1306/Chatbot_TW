@@ -1,0 +1,140 @@
+<div class="manage-body container-fluid">
+  <div class="tw-header bottom-margin" style="display: flex;border-bottom: 1px solid rgba(0, 0, 0, .12);height: 40px;">
+    <div  class="row-field">
+      <div class="tw-view-full-width" style="display:flex">
+        <div >
+          <div style="display: flex">
+          <span class="tw-filter-new">
+            <input matInput #searchInputClear style="padding: 5px;" 
+              (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off">
+            <button mat-icon-button matSuffix aria-label="clear" *ngIf="searchInputClear.value"
+              (click)="searchInputClear.value=''; applyFilter('');">
+              <span class="tw-filter-close">x</span>
+            </button>
+          </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row-field">
+      <div class="tw-view-full-width" style="float: right;position: relative; bottom: 1px;">
+        <div class="tw-btn"
+          *ngIf="activate_btn && (activate_btn.indexOf('BT_ALLC') > -1 || activate_btn.indexOf('BT_HPMFC') > -1)">
+          <div class="tw-event-action-btn">
+            <button *ngIf="(selectedRow && selectedRow.customerTypeId == 3)  || !selectedRow" mat-button
+              class="action-btn" style="padding: 0 22px;" (click)="modifyCustomer('create','')">{{"Create"|translate}}</button>
+          </div>
+          <div class="tw-event-action-btn">
+            <button *ngIf="(selectedRow && selectedRow.customerTypeId != 3)" mat-button class="action-btn"
+              (click)="modifyCustomer('create',selectedRow)">
+              {{"Create"|translate}} {selectedRow.customerTypeId, select, 1 {{{"Region"|translate}}} 2 {{{"Facility"|translate}}}}</button>
+          </div>
+          <div class="tw-event-action-btn">
+            <button *ngIf="false && selectedRow && activate_btn && (activate_btn.indexOf('BT_ALLD') > -1 || activate_btn.indexOf('BT_HPMFD') > -1)"
+              mat-button class="action-btn" (click)="deleteRow(selectedRow.id)">{{"Delete"|translate}}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div fxLayout="column" class="tw-mat-elevation manage-component table-h-50"
+    [ngClass.lt-md]="'components-container-xs'" fxLayoutGap="5px" style="max-height: calc(100vh - 107px);">
+    <div class="table-container mat-table-overflow">
+      <mat-table #table [dataSource]="dataSource" matSort>
+        <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+          <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header"
+            style="justify-content: left;margin-left: 10px;">
+            {col.title, select, Name {{{"Name"|translate}}} Bill Address {{{"Bill Address"|translate}}} GST No {GST No} License Pack {{{"License Pack"|translate}}}
+            Status {{{"Status"|translate}}}}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+
+            <mat-icon id="expand_more" #expand_more
+              *ngIf="col.colName == 'name' && element.children.length && !element.close" class="tree-list_1">
+              chevron_right
+            </mat-icon>
+            <mat-icon id="expand_less" #expand_less
+              *ngIf="col.colName == 'name' && element.children.length && element.close" class="tree-list_2">
+              chevron_right
+            </mat-icon>
+
+            <img src="/assets/Alert/common_icons/building-regular.svg" alt="building-regular" width="12px" *ngIf="col.colName == 'name'" />
+            &nbsp;
+            <span *ngIf="col.colName == 'name'" class="active-link" appTooltip tooltipText="{{tooltipOver}}" placement="bottom"
+              (dblclick)="activate_btn && (activate_btn.indexOf('BT_ALLE') > -1 || activate_btn.indexOf('BT_HPMFE') > -1) ? modifyCustomer('edit',element) :''">
+              {{element[col.dataName]}}
+            </span>
+            <span *ngIf="col.colName == 'status'">{{element[col.dataName] === true ? 'Active' : 'Inactive' }} </span>
+            <span *ngIf="col.colName != 'status' && col.colName != 'name'">{{element[col.dataName]}} </span>
+          </mat-cell>
+        </ng-container>
+        
+        <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="manage-table-header-row"
+          [ngStyle]="headercolor && {'background':headercolor}"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row" (keydown.enter)="fixClick()"
+          [ngStyle]="bgcolor && {'background':bgcolor}" [ngClass]="{'highlight' : row === selectedRow}"
+          [cdkDetailRow]="row" (click)=rowClick(row) [cdkDetailRowTpl]="tpl"
+          (toggleChange)="onToggleChange($event,row)">
+        </mat-row>
+      </mat-table>
+    </div>
+    <mat-paginator [length]="dataSource.data.length" [pageSize]="15" [pageSizeOptions]="[15, 30, 50, 100]">
+    </mat-paginator>
+
+    <ng-template #tpl let-element>
+      <div class="mat-row" [@detailExpand] *ngIf="element.children">
+        <mat-table #table [dataSource]="element.children" matSort>
+          <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+            <mat-cell *matCellDef="let element">
+              &nbsp;
+              <mat-icon id="expand_more" #expand_more
+                *ngIf="col.colName == 'name' && element.children.length && !element.close" class="tree-list_3">
+                chevron_right</mat-icon>
+              <mat-icon id="expand_less" #expand_less
+                *ngIf="col.colName == 'name' && element.children.length && element.close" class="tree-list_4">
+                chevron_right</mat-icon>
+              <img src="/assets/Alert/common_icons/map-point-pointer.svg" alt="map-point-pointer" width="12px" *ngIf="col.colName == 'name'" />
+              &nbsp;
+              <span *ngIf="col.colName == 'name'" class="active-link" appTooltip tooltipText="{{tooltipOver}}" placement="bottom"
+                (dblclick)="activate_btn && (activate_btn.indexOf('BT_ALLE') > -1 || activate_btn.indexOf('BT_HPMFE') > -1) ? modifyCustomer('edit',element) :''">
+                {{element[col.dataName]}}
+              </span>
+              <span *ngIf="col.colName == 'status'" style="margin-left: -6px;">{{element[col.dataName] === true ? 'Active' : 'Inactive' }} </span>
+              <span *ngIf="col.colName != 'status' && col.colName != 'name'" style="margin-left: -6px;">{{element[col.dataName]}} </span>
+            </mat-cell>
+          </ng-container>
+          <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row" (keydown.enter)="fixClick()"
+            [ngClass]="{'highlight' : row === selectedRow}" [ngStyle]="bgcolor && {'background':bgcolor}"
+            [cdkDetailRow]="row" (click)=rowClick(row) [cdkDetailRowTpl]="tpl"
+            (toggleChange)="onToggleChange($event,row)">
+          </mat-row>
+        </mat-table>
+        <ng-template #tpl let-element>
+          <div class="mat-row" [@detailExpand] *ngIf="element.children">
+            <mat-table #table [dataSource]="element.children" matSort>
+              <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                <mat-cell *matCellDef="let element">
+                  &nbsp;&nbsp;&nbsp;
+                  <img src="/assets/Alert/common_icons/hospital-regular.svg" class="fac-img-preview"
+                    *ngIf="col.colName == 'name'" alt="hospital-regular" />
+                  <span *ngIf="col.colName == 'name'" class="active-link" appTooltip tooltipText="{{tooltipOver}}" placement="bottom"
+                    (dblclick)="activate_btn && (activate_btn.indexOf('BT_ALLE') > -1 || activate_btn.indexOf('BT_HPMFE') > -1) ? modifyCustomer('edit',element) :''">
+                    {{element[col.dataName]}}
+                  </span>
+                  <span *ngIf="col.colName == 'status'" style="margin-left: -6px;">{{element[col.dataName] === true ? 'Active' : 'Inactive' }}
+                  </span>
+                  <span *ngIf="col.colName != 'status' && col.colName != 'name'" style="margin-left: -6px;">{{element[col.dataName]}} </span>
+                </mat-cell>
+              </ng-container>
+              <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row" (keydown.enter)="fixClick()"
+                [ngClass]="{'highlight' : row === selectedRow}" [ngStyle]="bgcolor && {'background':bgcolor}"
+                [cdkDetailRow]="row" (click)=rowClick(row) [cdkDetailRowTpl]="tpl"
+                (toggleChange)="onToggleChange($event,row)">
+              </mat-row>
+            </mat-table>
+          </div>
+        </ng-template>
+      </div>
+    </ng-template>
+  </div>
+  </div>

@@ -1,0 +1,132 @@
+<div class="sidebar-menu-wid ovi-font-family" *ngIf="(this.isOpen || this.open) && this.code !== 'MN_ALL'">
+    <div *ngIf="this.code !== 'MN_DB' && this.code !== 'MN_DQ' && this.code !== 'MN_FP' && this.code !== 'MN_TA' && this.code !== 'MN_HTG'" class="header-menu-name">{{menName}}</div>
+     <!-- <mat-divider></mat-divider> -->
+     <div style="overflow-y: auto;overflow-x: hidden; height: calc(100% - 33px)">
+        <div cdkDropList [cdkDropListDisabled]="!reorderable" (cdkDropListDropped)="onDrop($event)">
+         <mat-nav-list #drawer *ngFor="let menu of menus;" cdkDrag [cdkDragDisabled]="!reorderable" [ngClass]="customerName == 'kyn' ? 'kyn-select' : 'twselect'" class="sidemenu-divider-new">
+             <ng-container *ngIf="reorderable"><div *cdkDragPlaceholder class="v3-drag-placeholder"></div></ng-container>
+             <mat-list-item *ngIf="menu.subMenus?.length === 0"  [id]="menu.code"
+                 (click)="menu.open = !menu.open; toggleView(this.menu.parentId);subMenuExpand(menu.parentId);menuDetails(this.menu)" [routerLink]="[menu.link]"
+                 [routerLinkActive]="['active']" appTooltip [tooltipText]="menu.name|translate" tooltipType="sidebar" (keydown.enter)="fixClick()">
+                 <div class="menu-icon">
+                     <img  [ngClass]="menu.iconName ?  'svg-icon Logo' : 'wthoutsvg-icon' " matListIcon  alt="Menus" 
+                         src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+                 </div>
+                 <div class="menu-name">
+                     <h3 matLine class="menu-name-styl" *ngIf="!iconOnly"
+                      placement="bottom">{{ menu.name | translate}} </h3>
+                 </div>
+                 <!-- <mat-divider></mat-divider> -->
+                 <mat-icon *ngIf="menu.subMenus?.length !== 0" class="sidenav-dropdown-indicator rotate sidemenu"
+                     [ngStyle]="{'margin-top': menu.open ? '0px' : '0px'}" [ngClass]="{'indicateOpen':menu.open}">
+                     expand_more</mat-icon>
+                 <!-- <mat-icon *ngIf="showFavStar && menu.subMenus?.length === 0"
+                   class="v3-star-icon" style="position: relative;top: 6px;right: 10px;"
+                   [class.v3-star-filled]="isFavSub(menu.code)"
+                   [class.v3-star-outline]="!isFavSub(menu.code)"
+                   (click)="toggleSubFav(menu.code, code, $event)"
+                   matTooltip="{{ isFavSub(menu.code) ? 'Remove from favorites' : 'Add to favorites' }}">
+                   {{ isFavSub(menu.code) ? 'star' : 'star_border' }}
+                 </mat-icon> -->
+             </mat-list-item>
+             <mat-list-item [id]="menu.code" *ngIf="menu.subMenus?.length !== 0 && this.submenuId !== menu.id" (click)="menu.open = !menu.open;" appTooltip [tooltipText]="menu.name|translate"  tooltipType="sidebar" (keydown.enter)="fixClick()">
+                 <div class="menu-icon">
+                     <img [ngClass]="menu.iconName ?  'svg-icon Logo' : 'wthoutsvg-icon' " matListIcon  alt="Menus" 
+                         src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+                 </div>
+                 <div class="menu-name">
+                     <h3 matLine class="menu-name-styl" *ngIf="!iconOnly"
+                      placement="bottom">{{ menu.name | translate }} </h3>
+                 </div>
+                 <!-- <mat-divider></mat-divider> -->
+                 <mat-icon *ngIf="menu.subMenus?.length !== 0" class="sidenav-dropdown-indicator rotate sidemenu"
+                     [ngStyle]="{'margin-top': menu.open ? '0px' : '0px'}" [ngClass]="{'indicateOpen':menu.open}">
+                     expand_more</mat-icon>
+             </mat-list-item>
+             <mat-list-item [id]="menu.code" *ngIf="menu.subMenus?.length !== 0 && this.submenuId === menu.id" (click)="submenuOpen = !submenuOpen" appTooltip [tooltipText]="menu.name|translate"  tooltipType="sidebar" (keydown.enter)="fixClick()">
+                 <div class="menu-icon">
+                     <img  [ngClass]="menu.iconName ?  'svg-icon Logo' : 'wthoutsvg-icon' " matListIcon alt="Menus" 
+                         src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
+                 </div>
+                 <div class="menu-name">
+                     <h3 matLine class="menu-name-styl" *ngIf="!iconOnly" placement="bottom">{{ menu.name | translate }} </h3>
+                 </div>
+                 <!-- <mat-divider></mat-divider> -->
+                 <mat-icon *ngIf="menu.subMenus?.length !== 0" class="sidenav-dropdown-indicator rotate sidemenu"
+                     [ngStyle]="{'margin-top': menu.open ? '0px' : '0px'}" [ngClass]="{'indicateOpen':!submenuOpen}">
+                     expand_more</mat-icon>
+             </mat-list-item>
+             <mat-nav-list #drawer *ngFor="let submenu of menu.subMenus;" class="sidemenu-divider-new">
+                 <mat-list-item *ngIf="menu.subMenus?.length !== 0 && menu.open || !submenuOpen && this.submenuId == submenu.parentId"  [id]="menu.code"
+                     (click)="submenu.open = !submenu.open;toggleView(this.menu.parentId);subMenuExpand(submenu.parentId);menuDetails(this.menu)" [routerLink]="[submenu.link]"
+                     [routerLinkActive]="['active']" appTooltip [tooltipText]="submenu.name|translate "  tooltipType="sidebar" (keydown.enter)="fixClick()">
+                     <div class="menu-icon">
+                     </div>
+                     <div class="submenu-name">
+                         <img [ngClass]="submenu.iconName ?  'svg-icon Logo' : 'wthoutsvg-icon' " matListIcon  alt="Menus" 
+                             src="/assets/Menus/{{ submenu.iconName }}.svg" (error)="handleImgError($event)">
+                         <h3 matLine class="menu-name-styl" *ngIf="!iconOnly" placement="bottom">{{ submenu.name |translate }} </h3>
+                          <span *ngIf="showFavStar && submenu.subMenus?.length === 0">
+                            <mat-icon class="v3-star-icon"
+                                [class.v3-star-filled]="isFavSub(submenu.code)" style="padding: 10px 0px 0px 9px;"
+                                [class.v3-star-outline]="!isFavSub(submenu.code)" (click)="toggleSubFav(submenu.code, code, $event)">
+                                {{ isFavSub(submenu.code) ? 'star' : 'star_border' }}
+                            </mat-icon>
+                        </span>
+                     </div>
+                     <!-- <mat-divider></mat-divider> -->
+                     <mat-icon *ngIf="submenu.subMenus.length !== 0" class="sidenav-dropdown-indicator rotate sidemenu"
+                         [ngStyle]="{'margin-top': submenu.open ? '0px' : '0px'}"
+                         [ngClass]="{'indicateOpen':submenu.open}"> expand_more</mat-icon>
+                 </mat-list-item>
+             </mat-nav-list>
+         </mat-nav-list>
+       </div>
+     </div>
+ </div>
+ <div>
+ <div class="sidebar-menu-wid-all"  *ngIf="this.code === 'MN_ALL'"  style="overflow-y: auto;overflow-x: hidden;">
+     <!-- <div class="all-main-menu" > -->
+     <!-- <span *ngFor="let menu of menus" class="sidemenu-divider-new">
+         <div *ngIf="menu.subMenus?.length !== 0 || menu.link !== null" class="all-menu"
+             (click)="menu.open = !menu.open;toggleView(this.menu)" [routerLink]="[menu.link !== null ? menu.link :this.defaultRouterLink]" routerLinkActive="{'main-menu-select': menu.link,this.defaultRouterLink}">
+                 <img [ngStyle]="{'height': menu.iconName === 'Hazmat' ? '25px' : '18px','width': menu.iconName === 'Hazmat' ? '25px' : '18px'}" class="svg-icon" matListIcon
+                     src="/assets/Menus/B_{{ menu.iconName }}.svg">
+                 <div matLine class="menu-name-styl ovi-font-family" style="font-size: 12px;" *ngIf="!iconOnly" appTooltip [tooltipText]="menu.name | translate" placement="bottom">{{ menu.name|translate }} </div>
+         </div>
+     </span> -->
+ <!-- </div> -->
+ <!-- <div class="menu-line"></div> -->
+ <div  style="display: flex;">
+     <span class="sidemenu-divider-new">
+         <div class="user-icons" *ngIf = "activate_btn && activate_btn.includes('BT-HLP')">
+             <a matLine class="help-txt" [attr.href]="helpDocument" target="_blank">
+                 <mat-icon>help</mat-icon><br><span class="menu-name-styl ovi-font-family">{{"Help"|translate}}</span></a>
+         </div>
+         <!-- <mat-divider style="margin-left: 20px;margin-right: 20px;"  *ngIf = "activate_btn && activate_btn.includes('BT-HLP')"></mat-divider> -->
+         <div class="user-icons" (click)="addProfile()" (keydown.enter)="fixClick()">
+             <img class="ovi-img-size" src="../../../../../assets/Alert/user.svg" [ngStyle]="{filter: teams ? 'brightness(0) invert(1)' : ''}"  alt="user" /> <span  class="user-icons-txt"> {{"Profile"|translate}} </span> 
+             <!-- <div matLine class="menu-name-styl ovi-font-family" style="font-size: 12px;"></div> -->
+         </div>
+         <!-- <mat-divider style="margin-left: 20px;margin-right: 20px;"></mat-divider> -->
+         <div class="user-icons" *ngIf = "activate_btn && activate_btn.includes('BT-QRC')" (click)="openQRCodeDialog($event)" (keydown.enter)="fixClick()">
+             <img class="ovi-img-size"  src="../../../../../assets/Alert/ovi-mobile.svg" [ngStyle]="{filter: teams ? 'brightness(0) invert(1)' : ''}"   alt="mobile" /> <span class="user-icons-txt"> {{"Mobile Application"|translate}} </span> 
+             <!-- <mat-icon>qr_code</mat-icon><br> -->
+             <!-- <span class="menu-name-styl ovi-font-family" >{{"Mobile Application"|translate}}</span> -->
+         </div>
+         <!-- <mat-divider style="margin-left: 20px;margin-right: 20px;"  *ngIf = "activate_btn && activate_btn.includes('BT-QRC')"></mat-divider> -->
+         <div class="user-icons"  (click)="changePassword()" (keydown.enter)="fixClick()">
+             <img class="ovi-img-size" src="../../../../../assets/Alert/ovi-change_pssword.svg" [ngStyle]="{filter: teams ? 'brightness(0) invert(1)' : ''}"  alt="change_pssword" /> <span class="user-icons-txt"> {{"Change Password"|translate}} </span> 
+             <!-- <mat-icon>how_to_reg</mat-icon> -->
+             <!-- <div matLine class="menu-name-styl ovi-font-family" style="font-size: 12px;">{{"Change Password"|translate}}</div> -->
+         </div>
+         <!-- <mat-divider style="margin-left: 20px;margin-right: 20px;"></mat-divider> -->
+         <div class="user-icons" (click)="logout()" (keydown.enter)="fixClick()">
+             <img class="ovi-img-size" src="../../../../../assets/Alert/ovi-logout.svg" [ngStyle]="{filter: teams ? 'brightness(0) invert(1)' : ''}"   alt="logout" /> <span class="user-icons-txt"> {{"Log Out"|translate}} </span> 
+             <!-- <mat-icon>exit_to_app</mat-icon> -->
+             <!-- <div matLine class="menu-name-styl ovi-font-family" style="font-size: 12px;">{{"Log Out"|translate}}</div> -->
+         </div>
+     </span>
+ </div>
+ </div>
+ 

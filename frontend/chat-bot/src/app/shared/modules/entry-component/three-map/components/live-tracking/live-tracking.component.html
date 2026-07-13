@@ -1,0 +1,194 @@
+<div class="lt-wrapper">
+  <!-- Canvas -->
+  <div #canvasContainer class="lt-canvas"></div>
+
+  <!-- Loading -->
+  <div class="lt-loading" *ngIf="isLoading">
+    <div class="lt-spinner"></div>
+    <p>Loading map…</p>
+  </div>
+
+  <!-- Top Bar — live tracking header (hidden in mustering mode) -->
+  <div class="lt-topbar" *ngIf="!isLoading && requestType !== 'mustering'">
+    <div class="lt-title-wrap">
+      <div class="lt-pulse-dot" [class.connected]="isConnected"></div>
+      <span class="lt-title">Live Tracking</span>
+    </div>
+
+    <div class="lt-total-badge" *ngIf="getTotalCount() > 0">
+      {{ getTotalCount() }} active
+    </div>
+  </div>
+
+  <!-- Tag Type Filter Bar (hidden in mustering mode) -->
+  <div class="lt-filter-bar" *ngIf="!isLoading && requestType !== 'mustering' && availableTtps.length > 0">
+    <button
+      class="lt-filter-chip"
+      [class.active]="!hasActiveFilter()"
+      (click)="clearFilters()"
+    >
+      All <span class="lt-chip-count">{{ getTotalCount() }}</span>
+    </button>
+
+    <button
+      *ngFor="let ttp of availableTtps"
+      class="lt-filter-chip"
+      [class.active]="isFilterActive(ttp)"
+      [style.--chip-color]="getTtpColor(ttp)"
+      (click)="toggleFilter(ttp)"
+    >
+      <span class="lt-chip-dot" [style.background]="getTtpColor(ttp)"></span>
+      {{ getTtpLabel(ttp) }}
+      <span class="lt-chip-count">{{ getTagCount(ttp) }}</span>
+    </button>
+  </div>
+
+  <!-- Empty state (hidden in mustering mode) -->
+  <div class="lt-empty" *ngIf="!isLoading && requestType !== 'mustering' && getTotalCount() === 0">
+    <span class="lt-empty-dot" [class.connected]="isConnected"></span>
+    <span class="lt-empty-text">Waiting for live tag data…</span>
+    <span class="lt-empty-status">{{ isConnected ? 'Connected' : 'Connecting…' }}</span>
+  </div>
+
+  <!-- Tag Detail Popup — single tag -->
+  <div
+    class="lt-tag-popup"
+    *ngIf="activeTags.length === 1"
+    [style.left.px]="popupPos.x"
+    [style.top.px]="popupPos.y"
+  >
+    <button class="lt-popup-close" (click)="closePopup()">×</button>
+    <div class="lt-popup-header">
+      <span class="lt-popup-dot" [style.background]="getTtpColor(activeTags[0].ttp)"></span>
+      <strong>{{ getTtpLabel(activeTags[0].ttp) }}</strong>
+    </div>
+    <div class="lt-popup-row">
+      <span class="lt-popup-label">Tag ID</span>
+      <span class="lt-popup-val">{{ activeTags[0].tid }}</span>
+    </div>
+    <div class="lt-popup-row" *ngIf="activeTags[0].tvl">
+      <span class="lt-popup-label">Entity</span>
+      <span class="lt-popup-val">{{ activeTags[0].tvl }}</span>
+    </div>
+    <div class="lt-popup-row">
+      <span class="lt-popup-label">Type</span>
+      <span class="lt-popup-val">{{ activeTags[0].ttp }}</span>
+    </div>
+    <div class="lt-popup-row">
+      <span class="lt-popup-label">Floor</span>
+      <span class="lt-popup-val">{{ activeTags[0].flr }}</span>
+    </div>
+  </div>
+
+  <!-- Tag List Popup — multiple tags at the same position -->
+  <div
+    class="lt-cluster-popup"
+    *ngIf="activeTags.length > 1"
+    [style.left.px]="popupPos.x"
+    [style.top.px]="popupPos.y"
+  >
+    <div class="lt-cluster-popup-header">
+      <span class="lt-cluster-count">{{ activeTags.length }} tags here</span>
+      <button class="lt-popup-close" (click)="closePopup()">×</button>
+    </div>
+    <div class="lt-cluster-list">
+      <div class="lt-cluster-item" *ngFor="let tag of activeTags">
+        <span class="lt-popup-dot" [style.background]="getTtpColor(tag.ttp)"></span>
+        <div class="lt-cluster-item-body">
+          <div class="lt-cluster-item-type">{{ getTtpLabel(tag.ttp) }}</div>
+          <div class="lt-cluster-item-id">{{ tag.tid }}<span *ngIf="tag.tvl"> · {{ tag.tvl }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Controls — zoom / reset / rotate (hidden in mustering mode) -->
+  <div class="lt-right-controls" *ngIf="!isLoading && requestType !== 'mustering'">
+    <button class="lt-ctrl-btn" (click)="zoomIn()" title="Zoom In">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="3" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+    <button class="lt-ctrl-btn" (click)="zoomOut()" title="Zoom Out">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="3" stroke-linecap="round">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+    <div class="lt-ctrl-divider"></div>
+    <button class="lt-ctrl-btn" (click)="resetCamera()" title="Reset View">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      </svg>
+    </button>
+    <button class="lt-ctrl-btn" *ngIf="viewMode !== '2d'" [class.active]="isRotateMode"
+      (click)="toggleRotateMode()"
+      [title]="isRotateMode ? 'Rotate ON — click to disable' : 'Enable 3D Rotate'">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="round">
+        <path d="M22 10 A10 4 0 1 0 14 13.9"/>
+        <polyline points="10.5 12 14 13.9 11.5 16.8" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Floor Selector + Settings (hidden in mustering mode) -->
+  <div class="lt-floor-selector" *ngIf="!isLoading && requestType !== 'mustering'">
+    <!-- Settings button — first in DOM → visually bottom with column-reverse -->
+    <button class="lt-floor-settings-btn"
+      [class.active]="isSettingsOpen"
+      (click)="isSettingsOpen = !isSettingsOpen"
+      title="Settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+    <!-- Floor chips — shown only when multiple floors exist -->
+    <ng-container *ngIf="availableFloors.length > 1">
+      <div class="lt-floor-divider"></div>
+      <button
+        class="lt-floor-chip"
+        *ngFor="let floor of availableFloors; let i = index"
+        [class.active]="floor.id === selectedFloor?.id"
+        [title]="floor.name"
+        (click)="onFloorSelect(floor)">
+        {{ i }}F
+      </button>
+    </ng-container>
+  </div>
+
+  <!-- Settings Panel (hidden in mustering mode) -->
+  <div class="lt-settings-panel" *ngIf="!isLoading && requestType !== 'mustering' && isSettingsOpen">
+    <div class="lt-settings-header">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="lt-settings-title">Settings</span>
+      <button class="lt-settings-close" (click)="isSettingsOpen = false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="lt-settings-body">
+      <div class="lt-settings-section">
+        <span class="lt-settings-label">View</span>
+        <div class="lt-settings-chips">
+          <button class="lt-settings-chip" [class.active]="viewMode === '3d'"
+            (click)="onViewModeChange('3d')">3D</button>
+          <button class="lt-settings-chip" [class.active]="viewMode === '2d'"
+            (click)="onViewModeChange('2d')">2D</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

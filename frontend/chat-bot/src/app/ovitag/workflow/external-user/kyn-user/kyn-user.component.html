@@ -1,0 +1,126 @@
+<div class="input-component-holder container-fluid ovi-font-family" style="height: 100%;">
+    <mat-toolbar class="block-1" style="height: 80px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center;width: calc(100% - 390px);">
+            <div class="circle">
+                <button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                    <mat-icon class="icon-style" style="padding: 9px 0px 0 0;">keyboard_arrow_left</mat-icon>
+                </button>
+            </div>
+            <div class="profile-container">
+                <img *ngIf="profileImg !== null" class="profile-photo" [src]="profileImg" alt="Profile">
+            </div>
+            <div class="title-Name">{{data.Name}}</div>
+        </div>
+        <span class="search-align">
+            <mat-icon class="ovi-fnt-sze20" style="padding: 5px 7px 0px;">search</mat-icon>
+            <input matInput style="padding: 5px;" (keyup)="applyFilter($event.target.value)"
+                placeholder="{{'Search'|translate}}" autocomplete="off">
+        </span>
+    </mat-toolbar>
+    <div class="mat-custom-form-field-box" style="height: calc(100vh - 140px);overflow: auto;">
+        <mat-tab-group class="custom-tab-group" (selectedTabChange)="tabClick($event)" [selectedIndex]="selectedIndex">
+            <mat-tab label="{{'OverView'|translate}}">
+                <div style="height: calc(100vh - 230px)">
+                    <div *ngIf="false" class="form-row block-3" style="padding: 10px 20px;">
+                        <div class="row-field-resource">
+                            <mat-form-field class="overViewField">
+                                <mat-select placeholder="{{'Location'|translate}}"
+                                    (selectionChange)="onLocationChange($event.value)">
+                                    <mat-option [value]="null">none</mat-option>
+                                    <mat-option *ngFor="let data of locationList" [value]="data.id">
+                                        {{data.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class="row-field-resource">
+                            <mat-form-field class="overViewField">
+                                <mat-select placeholder="{{'Category'|translate}}"
+                                    (selectionChange)="onCategorieChange($event.value)">
+                                    <mat-option [value]="null">none</mat-option>
+                                    <mat-option *ngFor="let data of categoriesList" [value]="data.id">
+                                        {{data.name}}
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                        <mat-card *ngIf="klips !== null" class="count-card">
+                            <span class="count">Klips:&nbsp;
+                                <div style="font-weight: bold;" [countUp]="klips" [durationUnit]="'s'" [duration]="duration"></div>
+                            </span>
+                        </mat-card>
+                        <mat-card *ngIf="notice !== null" class="count-card">
+                            <span class="count">Notice:&nbsp;
+                                <div style="font-weight: bold;" [countUp]="notice" [durationUnit]="'s'" [duration]="duration"></div>
+                            </span>
+                        </mat-card>
+                        <mat-card *ngIf="post !== null" class="count-card">
+                            <span class="count">Post:&nbsp;
+                                <div style="font-weight: bold;" [countUp]="post" [durationUnit]="'s'" [duration]="duration"></div>
+                            </span>
+                        </mat-card>
+                        <mat-card *ngIf="telekast !== null" class="count-card">
+                            <span class="count">Telekast:&nbsp;
+                                <div style="font-weight: bold;" [countUp]="telekast" [durationUnit]="'s'" [duration]="duration"></div>
+                            </span>
+                        </mat-card>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Content'|translate}}">
+                <div style="padding: 5px 20px;">
+                    <button *ngFor="let btn of contentBtns" mat-button class="content-btn" [disabled]="editAction"
+                        [ngClass]="this.selectedBtn === btn.code ? 'seleted-btn' : 'content-btn'"
+                        (click)="contentView(btn.code)">{{btn.value}}
+                    </button>
+                </div>
+                <div style="padding: 15px;">
+                    <div fxLayout="column" class="mat-elevation-z4 manage-component"
+                        [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px" style="height:calc(100vh - 265px);">
+                        <div class="mat-table-overflow" style="height: 100%;width: 100%;">
+                            <mat-table #table [dataSource]="ContentDataSource" matSort
+                                style="height: calc(100% - 70px); overflow: auto;" *ngIf="showTable">
+                                <ng-container *ngFor="let col of displayedData" matColumnDef="{{col.colName}}">
+                                    <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header"
+                                        style="justify-content: flex-start;"> {{col.title}} </mat-header-cell>
+                                    <mat-cell *matCellDef="let element">
+                                        <span *ngIf="col.colName == 'thumbnail'" style="height: 65px;">
+                                            <img [src]="element.thumbnailUrl" class="thumbnail-img"  alt="thumbnail-img" 
+                                                (click)="play(element)" (keydown.enter)="fixClick()">
+                                            <span class="duration">{{element.duration | durationFormat}}</span>
+                                        </span>
+                                        <span *ngIf="col.colName == 'publishedAt'">{{element[col.dataName] | date :
+                                            "hh:mm a, d MMM"}}</span>
+
+                                        <span *ngIf="col.colName == 'Action'">
+                                            <button mat-icon-button [matMenuTriggerFor]="menu">
+                                                <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                                            </button>
+                                            <mat-menu #menu="matMenu">
+                                                <button mat-menu-item (click)="deleteVideo(element.Id)">
+                                                    <span class="activity-edit">Delete</span>
+                                                </button>
+                                            </mat-menu>
+                                        </span>
+                                        <span *ngIf="col.colName != 'thumbnail' && col.colName != 'publishedAt' &&
+                                             col.colName != 'Action'">{{element[col.dataName]}}</span>
+                                    </mat-cell>
+                                </ng-container>
+                                <mat-header-row *matHeaderRowDef="VideoDisplayedColumns; sticky: true;" class="manage-table-header-row"
+                                    style="min-height: 40px;"></mat-header-row>
+                                <mat-row *matRowDef="let row; columns: VideoDisplayedColumns;" class="element-row"
+                                    style="min-height: 40px;" (toggleChange)="onToggleChange($event,row)">
+                                </mat-row>
+                            </mat-table>
+                            <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]"
+                                showFirstLastButtons></mat-paginator>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Audience'|translate}}"></mat-tab>
+        </mat-tab-group>
+    </div>
+</div>

@@ -1,0 +1,220 @@
+<div class="font-style ovi-font-family">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+     <tw-layout-header-component  [filterInputs]="filterInputs" [reportList]="reportList"
+        [enableExcel]="reportData['enableexcel']" [enablePdf]="reportData['enablepdf']" [enableRefresh]="true" [enableInsights]="enableInsights"
+        (reportHeaderAction)="reportHeaderAction($event)"></tw-layout-header-component>
+
+        
+    <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'" *ngIf="false">
+        <mat-grid-tile [colspan]="2" class="arrow">
+            <div id="arrowbox"><span>{{"Operation Theatre"|translate}}</span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13"  (change)="HCselected = $event.target.value" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}" [selected]="i==0 ? true : null">{{i.name}}</option>
+                </select>
+                <span class="floating-label ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'OT-Rep' || HCselected == 'OT-utilz' || HCselected == 'OT-wait' || HCselected == 'OT-daily'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'OT-Rep' && HCselected != 'OT-utilz' && HCselected != 'OT-wait' && HCselected != 'OT-daily'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'OT-Rep' || HCselected == 'OT-utilz' || HCselected == 'OT-wait' || HCselected == 'OT-daily'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <div class="custom-button" [ngClass] = "HCselected == 'OT-move'?selected['selectedId'] == HCselected && selected['todate'] == toDate && selected['Uhid'] == patientUhid.value ?'disabled-content' : 'none':selected['selectedId'] == HCselected && selected['fromDate'] == fromDate && selected['todate'] == toDate ? 'disabled-content' : 'none'"(click)="getOTReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100" (keydown.enter)="fixClick()">
+                            {{"Get Insights"|translate}}
+                    </div>     
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getOTReports(HCselected)"  (keydown.enter)="fixClick()" >autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png"  alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png"  alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list> 
+</div>
+
+<!--OT UTILIZATION-->
+<div *ngIf="selected['selectedId'] == 'OT-Rep' && reportData['tableView'] && !reportData['loading'] && !reportData['noRecords'] && HCselected == reportData['prevselected']">
+    <app-optheatre-table [tableData]="reportData['Table']"></app-optheatre-table>
+    <!-- <app-table-component [data]="reportData['Table']"  [id]="selected['selectedId']"></app-table-component> -->
+</div>
+<!--OT Location Utilization-->
+<mat-grid-list cols ="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" *ngIf="reportData['showCards'] && HCselected == 'OT-utilz' && selected['selectedId'] == 'OT-utilz'" style="padding-bottom: 30px;">
+    <mat-grid-tile  class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader && selected['selectedId'] == 'OT-utilz'">
+            {tile.header, select, Total Surgeries {Total Surgeries} Total OT Utilization {Total OT Utilization} Total PreOP Time {Total PreOP Time} Total PostOp Time {Total PostOp Time} Total Surgeons {Total Surgeons} Max Utilized OT (by hr) {Max Utilized OT (by hr)} Min Utilized OT (by hr) {Min Utilized OT (by hr)} Most Utilized OT (by surgery) {Most Utilized OT (by surgery)}}</mat-grid-tile-header>
+        <div class="ovi-fnt-sze20" style="font-weight:bold; margin-top: 10px;padding-top: 30px;justify-content: center;">{{tile.content}}</div>
+    </mat-grid-tile>
+</mat-grid-list>
+<mat-grid-list cols="2" rowHeight="190px" *ngIf="HCselected == 'OT-utilz' && selected['selectedId'] == 'OT-utilz'" style="padding-bottom: 20px;margin-right: 25px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+    <!-- <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" style="margin-right: 20px;">
+        <canvas id="otUtilizAgg" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+    </mat-grid-tile> -->
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="list" style="margin-right: 20px;">
+        <canvas id="otUtilizPercent" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="list" style="margin-left: 20px;">
+        <canvas id="otOccupancy" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+    </mat-grid-tile>
+</mat-grid-list>   
+<div style="margin-top:20px;">
+    <mat-grid-list cols="1" rowHeight="250px" *ngIf="HCselected == 'OT-utilz' && selected['selectedId'] == 'OT-utilz'" style="padding-bottom: 20px;margin-right: 25px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="list">
+            <canvas id="otRoomUtiliz" style="padding-bottom: 10px;overflow-x: scroll;max-height:90%;margin-top: 20px;width: 90%;overflow-y: hidden;"></canvas>
+        </mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="list" style="margin-top: 20px;">
+            <canvas id="assetUtliz" style="padding-bottom: 10px;overflow-x: scroll;max-height:90%;width: 90%;overflow-y: hidden;"></canvas>
+        </mat-grid-tile>
+    </mat-grid-list>
+</div>
+<div style="margin-top:20px;">
+    <mat-grid-list cols="2"  rowHeight={{chartHgt}} style="overflow-y: auto;" *ngIf="HCselected == 'OT-utilz' && selected['selectedId'] == 'OT-utilz'" style="padding-bottom: 20px;margin-right: 25px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="list" style="margin-top: 20px; margin-left: 5px;overflow-y: auto;">
+            <div style="min-height: 100%; width: 100%;">
+                <canvas id="otWardUtiliz"></canvas>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="2" class="list" style="margin-top: 20px; margin-left: 5px;overflow-y: auto;">
+            <div style="min-height: 100%; width: 100%">
+                <canvas id="otSurgeon"></canvas>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+</div>
+<!--OT waittime-->
+<mat-grid-list cols ="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" *ngIf="reportData['showCards'] && HCselected == 'OT-wait' && selected['selectedId'] == 'OT-wait'" style="padding-bottom: 30px;">
+    <mat-grid-tile  class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader && selected['selectedId'] == 'OT-wait'">
+            {tile.header, select, Total Surgeries {Total Surgeries} Total OT Waittime {Total OT Waittime} Total PreOP Waittime {Total PreOP Waittime} Total PostOp Waittime {Total PostOp Waittime}}</mat-grid-tile-header>
+        <div style="font-weight:bold; margin-top: 10px;padding-top: 30px;justify-content: center;" [ngStyle]="{'font-size' : tile.header == 'Event Start Time' && HCselected == 'staff-roll-call' ? '15px' : '30px'}">{{tile.content}}</div>
+    </mat-grid-tile>
+</mat-grid-list>
+<mat-grid-list cols="1" rowHeight="190px" *ngIf="HCselected == 'OT-wait' && selected['selectedId'] == 'OT-wait'" style="padding-bottom: 20px;margin-right: 25px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+    <mat-grid-tile class="list" [colspan]="1" [rowspan]="2">
+        <canvas id="otwaitLoc" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+    </mat-grid-tile>
+    <!-- <mat-grid-tile [colspan]="1" [rowspan]="2" class="list" style="margin-top: 20px;">
+        <canvas id="otWaitSurgery" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+    </mat-grid-tile> -->
+    <mat-grid-tile [colspan]="1" [rowspan]="2">
+        <div style="height: 90%; width: 99%; margin-left: 5px;  overflow-x: auto;">
+            <div style="height: 100%; min-width: 100%;" [ngStyle]="{'width':waitSumLabel> 25 ? (waitSumLabel * 4)+ '%' : '100%'}">
+                <canvas id="otWaitSurgery" style="padding-bottom: 10px;overflow-x: auto;max-height:90%;"></canvas>
+            </div>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--otdaily-->
+<div style="display: flex; flex-direction: column; height: calc(100% - 110px);row-gap: 30px;" *ngIf="reportData['showCards'] && HCselected == 'OT-daily' && selected['selectedId'] == 'OT-daily'">
+<mat-grid-list cols ="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" *ngIf="reportData['showCards'] && HCselected == 'OT-daily' && selected['selectedId'] == 'OT-daily'" style="padding-bottom: 50px;">
+    <mat-grid-tile  class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader && selected['selectedId'] == 'OT-daily'">
+            {tile.header, select, No.of.Surgeries {No.of.Surgeries} OT Locations {OT Locations} Surgeons {Surgeons} Assets Utlized {Assets Utlized}}</mat-grid-tile-header>
+        <div style="font-weight:bold; margin-top: 10px;padding-top: 30px;justify-content: center;" [ngStyle]="{'font-size' : tile.header == 'Event Start Time' && HCselected == 'staff-roll-call' ? '15px' : '30px'}">{{tile.content}}</div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!-- <mat-grid-list cols="1" rowHeight="390px" *ngIf="HCselected == 'OT-daily' && selected['selectedId'] == 'OT-daily'" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+    <mat-grid-tile class="list" [colspan]="1" [rowspan]="2" *ngIf="chartLoaded">
+        <mat-grid-tile-header [ngStyle]="headercolor && {'background':headercolor}">OT Chart</mat-grid-tile-header>
+        <google-chart [data]="timelineChartData" style="width:1460px;"></google-chart>
+    </mat-grid-tile>
+</mat-grid-list> -->
+<mat-grid-list cols="1" class="chart-grid" rowHeight="fit"
+               *ngIf="HCselected == 'OT-daily' && selected['selectedId'] == 'OT-daily'"
+               style="padding-bottom: 20px;"
+               [ngStyle]="pagebgcolor && {'background': pagebgcolor}">
+  <mat-grid-tile class="list" [colspan]="1" [rowspan]="1" *ngIf="chartLoaded">
+    <div class="tile-container_ot">
+      <div class="tile-header_ot" [ngStyle]="headercolor && {'background': headercolor}">
+        {{"OT Chart"|translate}}"
+      </div>
+      <div class="tile-chart">
+        <google-chart [data]="timelineChartData"></google-chart>
+      </div>
+    </div>
+  </mat-grid-tile>
+</mat-grid-list>
+</div>
+
+<mat-grid-list [cols]="8" rowHeight="50px" *ngIf="HCselected == 'OT-move'">
+    <mat-grid-tile class="oflw-style" [colspan]="2">  
+        <div style="height: 100%;width: 100%;float: left;">
+            <input [class.disabled-content]="reportData['loading']" type="text" placeholder="{{'Search Patient'|translate}}" (keyup)="getPatientsCheck($event)" class="ovi-font-family ovi-fnt-sze15" style="height: 28px;width: 80%;" [matAutocomplete]="auto">
+            <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor="let patient of patientList" (click)="setPatientName(patient.uhid)" value="{{patient.patientName}}, {{patient.uhid}}" (keydown.enter)="fixClick()" >
+                {{patient.patientName}}, {{patient.uhid}}
+                </mat-option>
+            </mat-autocomplete>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!--Table-->
+<div *ngIf="selected['selectedId'] == 'OT-move' && reportData['showTable']" [ngStyle]="{display: reportData['showTable']&& HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="margin-top: 5px;">
+    <angular-table-component [tableData]="reportData['Table']"  [id]="selected['selectedId']" [columns]="reportData['TableColumns']"></angular-table-component>
+</div>
+<!-- <mat-grid-list class="ot-bar" cols = 2 rowHeight="300px"  [ngStyle] = "{display :HCselected=='OT-Rep' && !reportData['noRecords'] && !reportData['loading'] ? 'block' : 'none'}" style="padding-bottom: 5px;">
+    <mat-grid-tile class="ot-bar">
+        <canvas id="OTU"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="ot-bar"> 
+        <canvas id="OTNu" ></canvas>
+    </mat-grid-tile>
+</mat-grid-list>  -->
+
+<!-- OT-TAT ALL REPORT -->
+<div *ngIf= "selected['selectedId'] == 'tat-all-rep-ot' && !reportData['loading'] && !reportData['noRecords']&& HCselected == reportData['prevselected']" style="font-style: italic;font-weight: bold;text-align: center;padding-bottom: 10px;padding-top: 15px;">{{"Download Excel to view the records"|translate}}</div>
+<div *ngIf="reportData['noRecords'] && !reportData['invalidDate'] && !reportData['nullIdentifier']&& HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;">{{"No Records"|translate}}</div>
+<div *ngIf="reportData['invalidDate']&& HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;">{{reportData['invalidDateMessage']}}</div>
+<div *ngIf="reportData['nullIdentifier']&& HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Identifier Required"|translate}}</div>

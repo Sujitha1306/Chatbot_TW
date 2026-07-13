@@ -1,0 +1,71 @@
+<div class="rw-root ovi-font-family">
+  <mat-toolbar class="input-header">
+    <div class="header-name">Rework Task</div>
+    <div class="header-close">
+      <button mat-icon-button (click)="cancel()">
+        <mat-icon>highlight_off</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+
+  <div class="rw-banner">
+    <div class="rw-banner-item">
+      <span class="rw-banner-label">Sales Order</span>
+      <span class="rw-banner-value">{{ currentTask?.deliveryRequestIdentifier || '—' }}</span>
+    </div>
+    <div class="rw-banner-item">
+      <span class="rw-banner-label">Item</span>
+      <span class="rw-banner-value">{{ currentTask?.itemMasterName || '—' }}</span>
+    </div>
+    <div class="rw-banner-item">
+      <span class="rw-banner-label">Activity</span>
+      <span class="rw-banner-value">{{ currentTask?.activityName || '—' }}</span>
+    </div>
+  </div>
+
+  <form [formGroup]="form" class="rw-scroll-body">
+    <div class="rw-activity-scroll">
+      <div class="rw-activity-header">
+        <span>Select Previous Activity <span class="mandatory-field">*</span></span>
+      </div>
+
+      <div *ngIf="!previousActivities.length" class="rw-empty">No previous completed activities found</div>
+
+      <div class="rw-activity-list" *ngIf="previousActivities.length">
+        <div class="rw-activity-row" *ngFor="let act of previousActivities"
+          [class.rw-activity-selected]="form.value.selectedActivity?.requestId === act.requestId"
+          (click)="onSelectActivity(act)">
+          <input type="radio" name="selectedActivity" class="rw-hidden-radio"
+            [value]="act">
+          <span class="rw-radio-indicator"></span>
+          <div class="rw-activity-info">
+            <span class="rw-activity-name">{{ act.activityName || act.itemMasterName }}</span>
+            <span class="rw-activity-meta">
+              <span class="rw-activity-user">
+                <mat-icon>person_outline</mat-icon>
+                {{ act.performerName || '—' }}
+              </span>
+              <span class="rw-activity-time">
+                <mat-icon>schedule</mat-icon>
+                {{ getCompletedTime(act) | date:'dd MMM yyyy hh:mm a' }}
+              </span>
+            </span>
+          </div>
+          <mat-icon class="rw-check-icon">check_circle</mat-icon>
+        </div>
+      </div>
+
+      <div class="rw-remarks-area">
+        <mat-form-field appearance="outline" class="rw-textarea">
+          <mat-label>Remarks</mat-label>
+          <textarea matInput formControlName="remarks" rows="2" placeholder="Enter remarks..."></textarea>
+        </mat-form-field>
+      </div>
+    </div>
+  </form>
+
+  <div class="rw-footer">
+    <button mat-button class="cancle-btn" type="button" (click)="cancel()">Cancel</button>
+    <button mat-button class="active-btn" type="button" (click)="save()" [disabled]="!form.value.selectedActivity">Save</button>
+  </div>
+</div>

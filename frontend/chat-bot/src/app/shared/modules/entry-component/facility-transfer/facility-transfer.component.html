@@ -1,0 +1,138 @@
+<div class="ovi-font-family" style="height:100%; width:100%;overflow:hidden">
+    <div class="ovi-pop-hdr">
+        <span class="ovi-pop-hdr-name">{{"Manage Event - Asset Transfer"|translate}}</span>
+        <button mat-icon-button mat-dialog-close>
+            <mat-icon class="icon-style">highlight_off</mat-icon>
+        </button>
+    </div>
+    <app-banner [type]="'new'" [bannerData]="bannerlabel"></app-banner>
+    <div class="ovi-matfrmfld popup-margin" style="height:calc(100% - 135px); overflow:auto;"[formGroup]="transferForm">
+        <ng-container *ngIf="isAnyOpenEntityAvailable">
+        <div class="summary-container ovi-lbl-text-size">
+            <ng-container *ngFor="let section of openItems">
+            <div class="summary-chip" *ngIf="section?.data?.length > 0" 
+                appDebounceClick [debounceTime]="300" cdkFocusInitial (debounceClick)="onNavigate(section, section?.key,section?.data?.length )"
+                appTooltip [tooltipText]="section.label + ' (' + section.data.length + ')'" placement="bottom">
+                <mat-icon [style.color]="section.color" class ="sectionIcon">{{ section.icon }}</mat-icon>
+                <span class="ovi-lbl-text-size">{{ section.label }}</span>
+                <span class="count">{{ section.data.length > 100 ? '99+' : section.data.length }}</span>
+            </div>
+            </ng-container>
+        </div>
+
+        <div class="open-items-warning">
+            <span class="ovi-lbl-text-size" style="display: flex;justify-content: center;padding:5px">{{"Please Complete the Open Items to Initiate Facility Transfer"|translate}}</span>
+        </div>
+        </ng-container>
+
+        <div class="ovi-popup-title-text-size top-styl">{{"TRANSFER DETAILS"|translate}}</div>
+        <mat-divider class="divider"></mat-divider>
+        <div class="ovi-row-gap">
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                <mat-label class="ovi-lbl-text-size">{{"Action Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate"
+                    formControlName="assetTransferType" [disabled]="true">
+                    <mat-option *ngFor="let data of assetTransferTypeDetails" [value]="data.code">
+                        {{data.value}}
+                    </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="transferForm.controls.assetTransferType.errors?.required">
+                        <span>{{"Action Type is Required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate"
+                    formControlName="transferType" [disabled]="true">
+                    <mat-option *ngFor="let data of transferType" [value]="data.code">{{data.value}}
+                    </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="transferForm.controls.transferType.errors?.required">
+                        <span>{{"Category is Required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+            <mat-label class="ovi-lbl-text-size">{{ "Transfer Type" | translate }}<span class="mandatory-field">*</span></mat-label>
+                <mat-radio-group formControlName="isPermanentTransfer" style="display: flex; align-items: center;">
+                    <mat-radio-button style="padding:5px;" [value]="true"> {{ 'Permanent' | translate }} </mat-radio-button>
+                    <mat-radio-button [value]="false"> {{ 'Temporary' | translate }}</mat-radio-button>
+                    <mat-error *ngIf="transferForm.controls.isPermanentTransfer.errors?.required">
+                        <span>{{"TransferType is Required"|translate}}.</span>
+                    </mat-error>
+                </mat-radio-group>
+            </div>
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                <mat-label class="ovi-lbl-text-size">{{"Facility"|translate}} <span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate"
+                    formControlName="facilityId" matSelectSearch>
+                    <mat-option *ngFor="let data of facilityList" [value]="data.id">
+                        {{data.name}}
+                    </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="transferForm.controls.facilityId.errors?.required">
+                        <span>{{"Facility is Required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                <mat-label class="ovi-lbl-text-size">{{"Department"|translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department'|translate"formControlName="departmentId" matSelectSearch>
+                    <mat-option *ngFor="let data of departmentList" [value]="data.id">{{data.name}}
+                    </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="transferForm.controls.departmentId.errors?.required">
+                        <span>{{"Department is Required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                <mat-label class="ovi-lbl-text-size">{{"Department Owner"|translate}}</mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Owner'|translate"
+                        formControlName="ownerId" appTypeHit (typeHit)="searchUserNameList($event)"
+                        [matAutocomplete]="autoOwner" autocomplete="off">
+                    <mat-autocomplete #autoOwner="matAutocomplete" [displayWith]="displayOwner">
+                        <mat-option *ngFor="let option of ownerNameList" [value]="option.id"
+                            (keydown.enter)="fixClick()">
+                            {{ option.name }}
+                        </mat-option>
+                    </mat-autocomplete>
+                    <mat-error *ngIf="transferForm.get('ownerId')?.hasError('required')">
+                    {{ 'Owner is required' | translate }}
+                    </mat-error>
+
+                    <mat-error *ngIf="transferForm.get('ownerId')?.hasError('invalidUser')">
+                    {{ 'Please select a valid option from the dropdown' | translate }}
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div *ngIf="data?.tagSerialNumber"class="ovi-row-two-clmn ">
+            <mat-label class="ovi-lbl-text-size">{{ "Do you wish to Transfer Asset with the Associated tag" | translate }}
+            <span *ngIf="data?.tagSerialNumber">({{ data.tagSerialNumber }}) </span> ? </mat-label>
+                <mat-radio-group formControlName="isTagAssociated" style="display: flex; align-items: center;">
+                    <mat-radio-button style="padding:5px;" [value]="true"> {{ 'Yes' | translate }} </mat-radio-button>
+                    <mat-radio-button [value]="false"> {{ 'No' | translate }}</mat-radio-button>
+                </mat-radio-group>
+            </div>
+            <div class="ovi-row-clmn ovi-matfrmfld-textarea-top-box">
+                <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                <mat-form-field id="textHeight" class="ovi-row-frmfld-wdh" appearance="outline">
+                    <textarea input matInput appPlaceholder [showPlaceholder]="false"
+                        [placeholderText]="'Comments'|translate" formControlName="comments"></textarea>
+                </mat-form-field>
+            </div>
+        </div>
+    </div>
+
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn " appDebounceClick [debounceTime]="300" cdkFocusInitial
+        [disabled]="transferForm.invalid || isAnyOpenEntityAvailable" (debounceClick)="saveTransfer()">{{"Save"|translate}}</button>
+    </div>
+</div>

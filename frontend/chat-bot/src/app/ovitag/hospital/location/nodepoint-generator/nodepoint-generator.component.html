@@ -1,0 +1,179 @@
+<div class="input-component-holder ovi-font-family" style="height:calc(100% - 50px) ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Node Generator"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+<!-- <div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create Broker"|translate}}</div>
+        <div *ngIf="data">{{"Modify Broker"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div> -->
+
+
+    <div style="width: 100%; height : calc(100% - 80px);overflow: auto;" class="input-body ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+        <div style="height: 130px;width: 100%;display: flex;flex-direction: row;justify-content: space-evenly;margin-bottom: 8px;">
+                    <div style="width: calc(100% - 25% - 170px);height: 100%;margin-top: 5px;">
+                    <div style="width: 35%;display: flex;float: left;justify-content: center;align-items: center;">
+                        <form class="input-form-group">
+                        <div class=" ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Floor"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select  (selectionChange)="changeFloor($event.value, 'floorChange')" class="custom-select-box" [formControl]="selectedFloor">
+                                    <mat-option *ngFor="let flr of blockData" [value]="flr.id">{{flr.name}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>  
+
+                        <div class=" ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Type"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select (selectionChange)="changeType($event.value)" class="custom-select-box"  [value]="mapNodes.activeNode?.type" >
+                                    <mat-option *ngFor="let type of ipSelect.nodeTypes" [value]="type.code">{{type.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        </form>
+                    </div>
+                    <div style="width:35%;display: flex;float: left;justify-content: center;align-items: center;">
+                    <form class="input-form-group">      
+                        <div class=" ovi-matfrmfld-drpdwn-top-box" *ngIf="floorLocations.length">
+                            <mat-label class="ovi-lbl-text-size">{{"Location"|translate}} </mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select  [value]="mapNodes.activeNode?.location_id" (selectionChange)="changeLocation($event.value)" class="custom-select-box" >
+                                    <mat-option *ngFor="let loc of floorLocations" [value]="loc.id">
+                                    {{loc.name}} {{ loc.isLogicalParent ? ' ( Logical )': ''}} {{ loc.locationTypeLevel == 2 ? ' ( Floor )': ''}} 
+                                    </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                        <div class=" ovi-matfrmfld-drpdwn-top-box" >
+                            <mat-label class="ovi-lbl-text-size">{{"Exit"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                <mat-select *ngIf="mapNodes.exitNodeFlag != 1" [value]="mapNodes.activeNode?.exit" (selectionChange)="linkExit($event.value)" class="custom-select-box" [disabled]="mapNodes.activeNode && (mapNodes.activeNode?.type == 'NT-NN' || mapNodes.activeNode?.type == 'NT-RN')" >
+                                    <mat-option value="new"  [selected]="mapNodes.activeNode?.hasOwnProperty('r_exit')"> {{"Exit" | translate}} </mat-option>
+                                    <mat-option *ngFor="let exit of ipSelect.exitNodeList" [value]="exit.id" [disabled]="mapNodes.selectedExitList.includes(exit.id)"> {{ exit.name }} </mat-option>
+                                </mat-select>
+                                <mat-select *ngIf="mapNodes.exitNodeFlag == 1" [value]="mapNodes.activeNode?.exit" (selectionChange)="linkExit($event.value)" class="custom-select-box" [disabled]="mapNodes.activeNode && (mapNodes.activeNode?.type == 'NT-NN' || mapNodes.activeNode?.type == 'NT-RN')" >
+                                     <mat-option value="new" [selected]="mapNodes.activeNode?.hasOwnProperty('r_exit')">  {{"Exit" | translate}} </mat-option>
+                                    <mat-option *ngFor="let exit of ipSelect.tempExitNodeList" [value]="exit.id"  [disabled]="mapNodes.selectedExitList.includes(exit.id)"> {{ exit.name }} </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </form>
+                    </div>
+                    <div style="width: 30%;display: flex;float: left;justify-content: center;align-items: center;">
+                    <form class="input-form-group">
+                        <div style="display: flex; gap: 5px;">
+                            <div class="ovi-matfrmfld-input-box-pdg" style="width: 100px;">
+                                <mat-label class="ovi-lbl-text-size">{{"X"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline" required>
+                                    <input matInput type ="number" appPlaceholder [showPlaceholder]="false" [placeholderText]="'X'|translate" [value]="xValue.value"  (change)="moveNode($event.target.value, 'x')" autocomplete="off">
+                                </mat-form-field>
+                            </div>
+
+                            <div class="ovi-matfrmfld-input-box-pdg" style="width: 100px;">
+                                <mat-label class="ovi-lbl-text-size">{{"Y"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline" required>
+                                    <input matInput type ="number" appPlaceholder [showPlaceholder]="false" [placeholderText]="'X'|translate" [value]="this.yValue.value"  (change)="moveNode($event.target.value, 'y')" autocomplete="off">
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size">{{"Distance"|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline" required>
+                                    <input matInput type ="number" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Distance'|translate" [value]="this.distanceValue.value"  (change)="changeDistance($event.target.value)" autocomplete="off">
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </form>
+                    </div>
+                    </div>
+                    <div style="height: 100%;width: 25%;float: left;margin-top: 5px;">
+                    <div class="ovi-fnt-sze13" style="display: flex; justify-content: center; gap: 0 4px; flex-direction: column;">
+                        <mat-slide-toggle [checked]="ipButton['enableGeoDirect']" (change) = "getDirection()">{{"Enable the Geo Direction"|translate}}</mat-slide-toggle>
+                        <mat-slide-toggle [checked]="isShowCursorMovement" (change) = "toggleCursorMovement()">{{"Enable Cursor Movement Direction"|translate}}</mat-slide-toggle>
+                    </div>
+                    <div style="height: 100%;width: 50%;margin-top: -25px;display: flex;flex-direction: column;justify-content: center;align-items: center;float: left;">
+                        <button mat-button class="ndg-control-btn"
+                        [ngClass]="{'ovi-prmry-bg-clr ovi-prmry-wht-clr': ipButton.isShowReader,
+                                    'node-inactive': !ipButton.isShowReader}"  (click)="ipButton.isShowReader = !ipButton.isShowReader; showReader(ipButton.isShowReader)">
+                          {ipButton.isShowReader ? 'Hide Reader' : 'Show Reader', select, Hide Reader {{{"Hide Reader"|translate}}} Show Reader {{{"Show Reader"|translate}}}}</button>
+                        <button mat-button class="ndg-control-btn"
+                         [ngClass]="{ 'ovi-prmry-bg-clr ovi-prmry-wht-clr': ipButton.isGenerateNode && mapNodes.activeNode != null,
+                            'node-inactive': !ipButton.isGenerateNode && mapNodes.activeNode != null,
+                            'node-disabled': mapNodes.activeNode == null}"  (click)="generateNode()" [disabled]="mapNodes.activeNode == null">{{"Generate"|translate}}</button>
+                    </div>
+                    <div style="height: 100%;width: 50%;margin-top: -25px;display: flex;flex-direction: column;justify-content: center;align-items: center;float: left;">
+                        <button mat-button class="ndg-control-btn" 
+                        [ngClass]="{'ovi-prmry-bg-clr': mapNodes.activeNode != null && mapNodes.activeNode.links.length > 0,
+                                    'node-no-links': mapNodes.activeNode == null || mapNodes.activeNode.links.length === 0 }" 
+                                     (click)="getLinkData(mapNodes.activeNode)" [disabled]="mapNodes.activeNode == null || mapNodes.activeNode.links.length == 0">{{"Connections"|translate}}</button>
+                        <button mat-button class="ndg-control-btn" 
+                        [ngClass]="{'ovi-prmry-bg-clr ovi-prmry-wht-clr': ipButton.isNodeLink && mapNodes.activeNode != null,
+                                    'node-inactive': !ipButton.isNodeLink && mapNodes.activeNode != null, 'node-disabled': mapNodes.activeNode == null }" 
+                                    (click)="linkNode()"  [disabled]="mapNodes.activeNode == null">{{"Link"|translate}}</button>
+                    </div>
+                    </div>
+                    <div style="height: 100%;width: 170px;display: flex;flex-direction: column;justify-content: center;align-items: center;float: right;">
+                    <div style="margin-bottom: 5px;">                
+                    <mat-radio-group name="Toggle" aria-label="Font Style" value="create">
+                        <mat-radio-button style="padding: 0px 5px;" value="create" (change)="toggleChange($event.value)">{{"Create"|translate}}</mat-radio-button>
+                        <mat-radio-button style="padding: 0px 5px;" value="move" (change)="toggleChange($event.value)">{{"Move"|translate}}</mat-radio-button>                        
+                    </mat-radio-group>
+                    </div>
+                    <div style="height: 90px;width: 90px;border-radius: 50%;display: flex;flex-direction: column;align-items: center;justify-content: center;background: #dddddd;">
+                    <div style="display:flex; justify-content: center;height: 33%;width:100%;border-top-left-radius: 100%;border-top-right-radius: 100%;">
+                        <button mat-icon-button style="height: 100%;width: 50%;" (click)="toggleMethod('u',1)"><mat-icon style="padding: 0;" class="icon-style">keyboard_arrow_up</mat-icon></button>
+                    </div>
+                    <div style="height: 33%;width: 100%;">
+                        <div style="height: 100%;width: 50%;float: left;"><button mat-icon-button style="height: 100%;width: 50%;display: flex;justify-content: flex-start;margin-left: 5px;" (click)="toggleMethod('l',1)"><mat-icon style="padding: 0;" class="icon-style">keyboard_arrow_left</mat-icon></button></div>
+                        <div style="height: 100%;width: 50%;float: right;display: flex;justify-content: flex-end;"><button mat-icon-button style="height: 100%;width: 50%;display: flex;justify-content: flex-end;margin-right: 5px;" (click)="toggleMethod('r',1)"><mat-icon style="padding: 0;" class="icon-style">keyboard_arrow_right</mat-icon></button></div>
+                    </div>
+                    <div style="display:flex; justify-content: center;height: 33%;width: 100%;border-bottom-left-radius: 100%;border-bottom-right-radius: 100%;">
+                        <button mat-icon-button style="height: 100%;width: 50%;" (click)="toggleMethod('d',1)"><mat-icon style="padding: 0;" class="icon-style">keyboard_arrow_down</mat-icon></button>
+                    </div>
+                    </div>
+                    </div>
+        </div>
+        <div style="height: calc(100% - 140px);width: 100%;display: flex;justify-content: center;">
+            <div id="flrMap" class="rdr-frame"></div>
+        </div>
+        <div *ngIf="ipButton.isDistOpen" style="height: 270px; width:450px;background: #f7f7f7;position: absolute;padding:5px;top: 125px;right: 20vw; margin-left: 12px;z-index: 1000;border-radius: 10px;box-shadow: 0px 1px 8px 0.1px #525252;">
+            <div style="height: 30px;width: 100%;">
+                <div style="float: left;">
+                    <p class="ovi-fnt-sze16" style="padding-top:5px;margin: 0px 0px 0px 5px;overflow: hidden;white-space: nowrap;text-overflow: ellipsis;font-weight: 600;" *ngIf="mapNodes.distNodeList.hasOwnProperty('id')">   Selected ID: {{mapNodes.distNodeList.id}}, {{mapNodes.distNodeList.type}}{{ mapNodes.distNodeList.exit != 0 ? '('+mapNodes.distNodeList.exit +')': ''}}, {{mapNodes.distNodeList.loc}} </p>
+                    <p class="ovi-fnt-sze16" style="padding-top:5px;margin: 0px 0px 0px 5px;overflow: hidden;white-space: nowrap;text-overflow: ellipsis;font-weight: 600;" *ngIf="mapNodes.distNodeList.hasOwnProperty('r_id')"> Selected ID: {{mapNodes.distNodeList.r_id}}, {{mapNodes.distNodeList.type}}{{ mapNodes.distNodeList.exit != 0 ? '('+mapNodes.distNodeList.exit +')': ''}}, {{mapNodes.distNodeList.loc}}</p>
+                </div>
+                <mat-icon class="icon-style ovi-fnt-sze22" style="float: right;padding-top: 8px;padding-right: 5px;background: #f7f7f7;border-top-left-radius: 10px;border-top-right-radius: 10px;cursor: pointer;" (click)="ipButton.isDistOpen = !ipButton.isDistOpen" (keydown.enter)="fixClick()">highlight_off</mat-icon>
+            </div>
+            <div style="height: calc(100% - 50px);">
+                <mat-nav-list style="height: 100%;width: 100%; overflow:auto;">
+                    <mat-list-item *ngFor="let node of mapNodes.distNodeList.links">
+                        <div style="width: calc(100% - 20px);white-space: nowrap;overflow: hidden;text-overflow: ellipsis;">
+                        <span class="ovi-fnt-sze13" *ngIf="node.hasOwnProperty('link_node_id')" style="white-space: nowrap;">Id : {{node.link_node_id}}, Distance : </span>
+                        <span class="ovi-fnt-sze13" *ngIf="node.hasOwnProperty('r_link_node_id')" style="white-space: nowrap;">Id : {{node.r_link_node_id}}, Distance : </span>
+                        <input #distVal style="height: 20px;width: 40px;margin:0px 3px;" value="{{node.weight.toFixed(2)}}">
+                        <span class="ovi-fnt-sze13" [matTooltip]="node.loc" style="white-space: nowrap;overflow: hidden;text-overflow: ellipsis;"> m, {{node.loc}}, {{node.degree}} deg</span>
+                        </div>
+                        <mat-icon class="ovi-fnt-sze22" matTooltip="{{'Apply'|translate}}" [ngStyle]="{color: distVal.value != node.weight.toFixed(2) ? '#41cd41' : 'grey'}" style="line-height: 20px !important;" (click)="(node.weight.toFixed(2) == distVal.value) ? '' : applyChanges(node, distVal.value)" (keydown.enter)="fixClick()">check_circle</mat-icon>
+                        <mat-divider></mat-divider>
+                    </mat-list-item>
+                </mat-nav-list>
+            </div>
+        </div>
+    </div>
+    <div class="input-footer" *ngIf = "!ipButton.enableGeoDirect">
+        <button mat-button class="cancle-btn" style="float: left;margin-left: 5px;" [ngStyle]="{background : mapNodes.activeNode != null ? 'red' : '#dddddd'}" (click)="delete()" [disabled]="mapNodes.activeNode == null || ipButton.isDistOpen">{{"Delete"|translate}}</button>
+        <button mat-button class="cancle-btn" *ngIf="mapNodes.nodeData.length && ipButton.isAllDelete" style="background: red;float: left;margin-left: 5px;" (click)="deleteAllNode()" [disabled]="ipButton.isDistOpen">{{"Delete All"|translate}}</button>
+        <button mat-button class="cancle-btn" style="float: right;margin-left: 5px;" mat-dialog-close [disabled]="ipButton.isDistOpen">{{"Cancel"|translate}}</button>
+        <button mat-button class="cancle-btn" style="float: right;margin-left: 5px;" appDebounceClick (debounceClick)="saveNode(false)" [debounceTime]="300" [disabled]="ipButton.isDistOpen">{{"Save"|translate}} </button>
+        <button mat-button class="cancle-btn" style="float: right;margin-left: 5px;" appDebounceClick (debounceClick)="saveNode(true)" [debounceTime]="300" [disabled]="ipButton.isDistOpen">{{"Save & Close"|translate}}</button>        
+    </div>
+    <div class="input-footer" *ngIf = "ipButton.enableGeoDirect">
+        <button mat-button class="cancle-btn" style="float: left;margin-left: 5px;" [ngStyle]="{background : mapNodes.activeNode != null ? 'red' : '#dddddd'}" [disabled]="true">{{floorData[0]['nodePoints']}}</button>
+        <button mat-button class="cancle-btn" style="float: right;margin-left: 5px;" mat-dialog-close [disabled]="ipButton.isDistOpen">{{"Cancel"|translate}}</button>
+        <button mat-button class="cancle-btn  ovi-prmry-bg-clr ovi-prmry-wht-clr" style="float: right;margin-left: 5px;" appDebounceClick (debounceClick)="saveLocationDirection()" [debounceTime]="300" [disabled]="polylinePoints.length != 2">{{"Save Direction"|translate}}</button>        
+    </div>
+</div>

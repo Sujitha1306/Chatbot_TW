@@ -1,0 +1,297 @@
+<div #container style="overflow: auto;" [ngClass]="this.hazardType !== 'none' ? 'popup-margin' : ''" [formGroup]="locationForm" appWindowResize (resized)="onWindowResized($event)"
+[style.height.px]="this.hazardType !== 'none' ? this.height : this.height1" [ngStyle]="{'border': this.hazardType !== 'none' ? '' : '2px solid lightgrey',
+'padding-top': this.hazardType !== 'none' ? '' : '10px', 'padding-left': this.hazardType !== 'none' ? '' : '10px'}"
+class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin">
+            <mat-drawer-container class="drawer-container" autosize>   
+                <mat-drawer #menu mode="side" opened="true" style = "height: 100%; background-color: white;" [resizableMinWidth]="300" appResizable>
+                    <div class="ovi-matfrmfld-box-top-btm-pdg">
+                        <div style="max-width: 380px;height: calc(100% - 20px);">
+                            <div *ngIf="this.hazardType === 'none'" class="ovi-prmry-bg-clr ovi-prmry-wht-clr ovi-fnt-sze14" style="text-align: center;padding: 12px;">
+                                <span >Setup - {{this.hazmatLocation?.name}}</span>
+                            </div>
+                            <div *ngIf="this.hazardType !== 'none'" class="ovi-matfrmfld-input-box-pdg" style="width: 90%;display: inline-grid;">
+                                            <div class="ovi-lbl-text-size">{{"Training Location"|translate}} <span class="mandatory-field">*</span></div>
+                                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to Location'|translate" formControlName="locationId" id="locationSearch"
+                                                appTypeHit (typeHit)="getLocationSearch($event);" [matAutocomplete]="Loc" autocomplete="off" required>
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.locationIdEnabled === true ? getLocationIdList.bind(locationDetails) : ''"
+                                                    #Loc="matAutocomplete">
+                                                    <mat-option *ngFor="let option of locationDetails" [value]="option.id">
+                                                        <div class="alrt-wid-styl" (click)="getLocName(option);getFloorDetail(option.parentId);" (keydown.enter)="fixClick()">{{option.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error *ngIf="locationForm.controls.locationId.invalid" class="error-txt-1">
+                                                    <span 
+                                                        [hidden]="!locationForm.controls['locationId'].errors.required">{{"Location
+                                                        is required"|translate}}.</span>
+                                                    <span [hidden]="!locationForm.controls['locationId'].errors.requireMatch">{{"Please select value
+                                                        from the option"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                    </div>
+                                    <div *ngIf="this.hazardType !== 'none'" class="ovi-matfrmfld-drpdwn-top-box" style="width: 90%;display: inline-grid;">
+                                            <div class="ovi-lbl-text-size">{{"Select Hazard"|translate}} <span class="mandatory-field">*</span></div>
+                                            <mat-form-field class="eovi-row-frmfld-wdh " appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Hazard Type'|translate" formControlName="hazardType" [disableOptionCentering]="true" required>
+                                                    <mat-option *ngFor="let data of hazardTypeList" [value]="data.code" (click)="checkStatus()" (keydown.enter)="fixClick()">{{data.value}}</mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                    </div>
+                                    <span *ngIf="this.hazardType !== 'none'"><mat-icon class="ovi-prmry-clr" style="float: right; margin-top: 20px;cursor: pointer;"
+                                        (click)="locationForm.controls['hazardType'].value !== null ? openActivity() : ''" (keydown.enter)="fixClick()">create</mat-icon></span>
+                                    <div *ngIf="this.hazardType === 'none'" class="ovi-matfrmfld-input-box-pdg" style="width: 90%;display: inline-grid;">
+                                            <div class="ovi-lbl-text-size">{{"Select Activity"|translate}} <span class="mandatory-field">*</span></div>
+                                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to Activity'|translate" formControlName="activityId" id="activitySearch"
+                                                appTypeHit (typeHit)="getActivitySearch($event);" [matAutocomplete]="act" autocomplete="off" required>
+                                                <mat-autocomplete autoActiveFirstOption
+                                                    [displayWith]="this.activityIdEnabled === true ? getActivityIdList.bind(activityDetails) : ''"
+                                                    #act="matAutocomplete">
+                                                    <mat-option *ngFor="let option of activityDetails" [value]="option.id">
+                                                        <div class="alrt-wid-styl" (click)="getConfig(option);checkStatus();" (keydown.enter)="fixClick()">{{option.name}}</div>
+                                                    </mat-option>
+                                                </mat-autocomplete>
+                                                <mat-error *ngIf="locationForm.controls.activityId.invalid" class="error-txt-1">
+                                                    <span 
+                                                        [hidden]="!locationForm.controls['activityId'].errors.required">{{"Activity
+                                                        is required"|translate}}.</span>
+                                                    <span [hidden]="!locationForm.controls['activityId'].errors.requireMatch">{{"Please select value
+                                                        from the option"|translate}}</span>
+                                                </mat-error>
+                                            </mat-form-field>
+                                    </div>
+                                    <span *ngIf="this.hazardType === 'none'"><mat-icon class="ovi-prmry-clr" style="float: right; margin-top: 20px;cursor: pointer;"
+                                        (click)="locationForm.controls['activityId'].value !== null ? openActivity() : ''" (keydown.enter)="fixClick()">create</mat-icon></span>
+                                    <div class="ovi-matfrmfld-drpdwn-top-box" style="width: 90%;display: inline-grid;">
+                                            <div class="ovi-lbl-text-size">{{"Select Kit"|translate}} </div>
+                                            <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select Kit'|translate" formControlName="kitId" [disableOptionCentering]="true"
+                                                [disabled]="locationForm.controls.locationId.invalid">
+                                                    <mat-option *ngFor="let kit of kitList" [value]="kit.id" (click)="clear()" (keydown.enter)="fixClick()">
+                                                        {{kit.name}}
+                                                    </mat-option>
+                                                </mat-select>
+                                            </mat-form-field>
+                                    </div>
+                                    <span><mat-icon [ngClass]="locationForm.controls['kitId'].value !== null ? 'blue-kit' : 'grey-kit'"
+                                        (click)="this.beaconList.length == 0 && !seperationExist ? addKit() : ''" (keydown.enter)="fixClick()">add_circle_outline</mat-icon></span>
+                                    <div style="display: inline-flex;width: 100%;">
+                                        <div class="ovi-matfrmfld-drpdwn-top-box" style="width: 20%;padding-right: 10px;">
+                                                <div class="ovi-lbl-text-size">{{"No.of Hazard"|translate}} </div>
+                                                <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'No.of Hazard'|translate" formControlName="hazardCount" [disableOptionCentering]="true"
+                                                    (selectionChange)="this.checkStatus();">
+                                                        <mat-option [value]="1">1</mat-option>
+                                                    </mat-select>
+                                                </mat-form-field>
+                                        </div>
+                                        <div class="ovi-matfrmfld-brdrds-right ovi-matfrmfld-drpdwn-top-box" style="width: 20%;padding-right: 10px;">
+                                            <div class="ovi-lbl-text-size">{{"RAYE Flare"|translate}} </div>
+                                             <div style="display: flex;margin-top: -19px;">
+                                                <div class="filter-item-box filter-box1-box2" style="padding-right: 5px;">
+                                                    <div  id="filter-box1">R</div>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 21px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="r" (keyup)="validate_r_a_y_e($event.target.value, 'r');">
+                                                    </mat-form-field>
+                                                </div>
+                                                <div class="filter-item-box filter-box1-box2" style="padding-right: 5px;">
+                                                    <div  id="filter-box1">A</div>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 21px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="a" (keyup)="validate_r_a_y_e($event.target.value, 'a');">
+                                                    </mat-form-field>
+                                                </div>
+                                                <div class="filter-item-box filter-box1-box2" style="padding-right: 5px;">
+                                                    <div  id="filter-box1">Y</div>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 21px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="y" (keyup)="validate_r_a_y_e($event.target.value, 'y');">
+                                                    </mat-form-field>
+                                                </div>
+                                                <div class="filter-item-box filter-box1-box2" style="padding-right: 5px;">
+                                                    <div  id="filter-box1">E</div>
+                                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" style="top: 21px;max-width: 40px;line-height: normal;" appearance="outline">
+                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" autocomplete="off" formControlName="e" (keyup)="validate_r_a_y_e($event.target.value, 'e');">
+                                                    </mat-form-field>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ovi-fnt-sze10">
+                                        <mat-hint *ngIf="rExceed || aExceed || yExceed || eExceed">
+                                            <span style="color:red;">*Value should be lesser than {{configValue?.max_value}} and greater than {{configValue?.min_value}}.</span>
+                                        </mat-hint>  
+                                        <mat-error *ngIf="locationForm.controls.r.invalid" class="error-txt-1">
+                                            <span [hidden]="!locationForm.controls['r'].errors.required">{{"R is required"|translate}}.</span>
+                                        </mat-error>
+                                        <mat-error *ngIf="locationForm.controls.a.invalid" class="error-txt-1">
+                                            <span [hidden]="!locationForm.controls['a'].errors.required">{{"A is required"|translate}}.</span>
+                                        </mat-error>
+                                        <mat-error *ngIf="locationForm.controls.y.invalid" class="error-txt-1">
+                                            <span [hidden]="!locationForm.controls['y'].errors.required">{{"Y is required"|translate}}.</span>
+                                        </mat-error>
+                                        <mat-error *ngIf="locationForm.controls.e.invalid" class="error-txt-1">
+                                            <span [hidden]="!locationForm.controls['e'].errors.required">{{"E is required"|translate}}.</span>
+                                        </mat-error>
+                                        <mat-error *ngIf="locationForm.controls.r.invalid || locationForm.controls.a.invalid || locationForm.controls.y.invalid || locationForm.controls.e.invalid" class="error-txt-1">
+                                            <span [hidden]="!locationForm.controls['r'].errors.pattern || !locationForm.controls['a'].errors.pattern || !locationForm.controls['y'].errors.pattern || !locationForm.controls['e'].errors.pattern">please enter numbers only"|translate}}.</span>
+                                        </mat-error>  
+                                    </div>
+                                    <mat-label *ngIf="configValue?.value_type" class="ovi-lbl-text-size" style="color: black;">{{"Hazard"|translate}} : <span class="ovi-prmry-clr">{{configValue?.value_type}}</span></mat-label>
+                            <div class="tw-popup-content-tbl block-7" *ngIf="isBeaconExist && this.dataSource?.data?.length !== 0"
+                            style="padding: 15px 35px 5px 5px;">
+                                <div class="mat-elevation-z4 hazmat-input" [ngClass.xs]="'components-container-xs'">
+                                    <div class="tw-mat-table-overflow box-26" style ="overflow-x: auto;">
+                                        <table mat-table class="tw-table" [dataSource]="dataSource" matSort>
+                                            <caption style="display:none">Beacon List</caption>
+
+                                            <ng-container matColumnDef="S.No">
+                                                <th scope="col" mat-header-cell *matHeaderCellDef
+                                                    class="tw-manage-table-header">
+                                                    {{"S.No"|translate}} </th>
+                                                <td mat-cell *matCellDef="let data; let i = index;" style="padding-right: 20px;">
+                                                    {{i+1}}
+                                                </td>
+                                            </ng-container>
+
+                                            <ng-container matColumnDef="identifyingValue">
+                                                <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                                    class="tw-manage-table-header"> {{"Beacon"|translate}} </th>
+                                                <td mat-cell *matCellDef="let data" style="padding-right: 20px;"> {{data.identifyingValue}}
+                                                </td>
+                                            </ng-container>
+
+                                            <ng-container matColumnDef="Value">
+                                                <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                                    class="tw-manage-table-header">{{"Value"|translate}}</th>
+                                                <td mat-cell *matCellDef="let data; let i = index;" style="padding-right: 20px;">
+                                                    <span [ngClass]="data.isEditing?'hazmat-table-input':''">
+                                                        <span *ngIf="!data.isEditing; else editTemplate" class="hazmat-table-input">
+                                                            <span *ngIf="data.isEdited">{{data.updatedValue}}</span>
+                                                            <span *ngIf="data.hasOwnProperty('hazardValue') && !data.isEdited"> {{data.hazardValue}}</span>
+                                                            <span *ngIf="!data.hasOwnProperty('hazardValue')">
+                                                            <span *ngIf="this.updatedData == true && !data.isEdited">{{data.value}}</span>
+                                                            <span *ngIf="(hazardType?.substring(0,5) === 'HT-AP' || activityData?.configValue?.hazard_type?.substring(0,5) === 'HT-AP') && !data.isEdited">
+                                                                <span *ngIf="configValue?.max_value == 2">
+                                                                    <span>{{ i%2 == 0 ? 1 : 2}}</span>
+                                                                </span>
+                                                                <span *ngIf="configValue?.max_value != 2">
+                                                                    <span *ngIf="6 >= (i+1) && 5 >= (dataSource.data?.length / 2)">{{i+1}}</span>
+                                                                    <span *ngIf="(i+1) > 6 && dataSource.data?.length > 6 && 5 >= (dataSource.data?.length / 2)">{{6-((i+1)-6)}}</span>
+                                                                    <span *ngIf="(dataSource.data?.length / 2) > 5 && (dataSource.data?.length / 2 | number:'1.0-0') >= (i+1)">{{i+1}}</span>
+                                                                    <span *ngIf="(dataSource.data?.length / 2) > 5 && (i+1) > (dataSource.data?.length / 2 | number:'1.0-0')">
+                                                                        {{((dataSource.data?.length / 2 | number:'1.0-0') - ((i+1) - (dataSource.data?.length / 2 | number:'1.0-0'))) === 0 ? 1 : 
+                                                                        (dataSource.data?.length / 2 | number:'1.0-0') - ((i+1) - (dataSource.data?.length / 2 | number:'1.0-0'))}}</span>
+                                                                </span>
+                                                            </span>
+                                                            <span *ngIf="(hazardType?.substring(0,4) === 'HT-G' || activityData?.configValue?.hazard_type?.substring(0,4) === 'HT-G') && !data.isEdited">
+                                                                <span *ngIf="i === 0">{{this.hazardActivity?.min?.value}}</span>
+                                                                <span *ngIf="i !== 0 && dataSource.data?.length !== (i+1)">{{getLogicValue(i)}}</span>
+                                                                <span *ngIf="dataSource.data?.length === (i+1)">{{this.hazardActivity?.max?.value}}</span>
+                                                            </span>
+                                                            <span *ngIf="(hazardType?.substring(0,5) === 'HT-IM' || activityData?.configValue?.hazard_type?.substring(0,5) === 'HT-IM') && !data.isEdited">
+                                                                <span *ngIf="dataSource.data?.length !== (i+1)">{{getLogicIntensValue(i)}}</span>
+                                                                <span *ngIf="dataSource.data?.length === (i+1)">{{this.hazardActivity?.max?.value}}</span>
+                                                            </span>
+                                                            <span *ngIf="(hazardType?.substring(0,5) === 'HT-UR' || activityData?.configValue?.hazard_type?.substring(0,5) === 'HT-UR') && !data.isEdited">
+                                                                <span *ngIf="i === 0">{{this.hazardActivity?.min?.value}}</span>
+                                                                <span *ngIf="i !== 0 && dataSource.data?.length !== (i+1)">{{getLogicUltraValue(i)}}</span>
+                                                                <span *ngIf="dataSource.data?.length === (i+1)">{{this.hazardActivity?.max?.value}}</span>
+                                                            </span>
+                                                            </span>
+                                                            <span *ngIf="this.editedRow === null"><mat-icon (click)="data.isEditing=!data.isEditing;setEditedValue(data)" class="ovi-prmry-clr ovi-fnt-sze16" style="cursor: pointer;" (keydown.enter)="fixClick()">edit</mat-icon></span>
+                                                        </span>
+                                                        <ng-template #editTemplate>
+                                                            <input class="ovi-fnt-sze10" style="width: 60px;color: #464343;border-radius: 4px;border-color: #c8c2c2;border-width: thin;height : 25px;" type="number" [formControl]="editedValue" 
+                                                            appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" /> 
+                                                            <mat-icon style="color: #43a047;padding-bottom: 5px;cursor: pointer;" (click)="saveRow(data)" (keydown.enter)="fixClick()">check_circle</mat-icon>
+                                                            <mat-icon style="color: #ef3a3a;padding-bottom: 5px;cursor: pointer;" (click)="data.isEditing=!data.isEditing;this.editedRow = null" (keydown.enter)="fixClick()">cancel</mat-icon>
+                                                        </ng-template>                                                      
+                                                    </span>
+                                                </td>
+                                            </ng-container>
+
+                                            <ng-container matColumnDef="Haz">
+                                                <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                                    class="tw-manage-table-header">{{"Haz"|translate}}</th>
+                                                <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                    <div *ngIf="this['haz' + data.identifyingValue] && this['haz' + data.identifyingValue] !== 0" 
+                                                    class="sm-circle-bl sm-circle-red">
+                                                    </div>
+                                                </td>
+                                            </ng-container>
+
+                                            <ng-container matColumnDef="isActive">
+                                                <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                                    class="tw-manage-table-header">{{"Status"|translate}}</th>
+                                                <td mat-cell *matCellDef="let data" style="padding-right: 20px;">
+                                                    <span *ngIf="data.isActive === true">
+                                                        <mat-icon class="ovi-fnt-sze18" [ngStyle]="{'color': data.isActive === true ? 'limegreen' : 'lightred'}">check_circle_outline</mat-icon>
+                                                    </span>
+                                                </td>
+                                            </ng-container>
+
+                                            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true;"
+                                                class="tw-manage-table-header-row"></tr>
+                                            <tr mat-row *matRowDef="let data; columns: displayedColumns; let i = index;">
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </mat-drawer>
+                <mat-drawer-content class="drawer-content">
+                    <div style="width: calc(100% - 2px);height: calc(100% - 2px);">
+                        <div style="height: 30px;">
+                            <div class="ovi-prmry-bg-clr" style="float: left;height: 30px; width: 40px; border-radius: 0px 20px 20px 0px; padding-bottom: 12px;margin-left: 5px;">
+                                <button mat-icon-button (click)="menu.toggle()">
+                                    <mat-icon *ngIf="menu._opened" class="ovi-prmry-wht-clr ovi-fnt-sze26" style=" font-weight: 600; margin-right: 8px;margin-top: -7px;">keyboard_double_arrow_left</mat-icon>
+                                    <mat-icon *ngIf="!menu._opened" class="ovi-prmry-wht-clr ovi-fnt-sze26" style="font-weight: 600; margin-right: 8px;margin-top: -7px;">keyboard_double_arrow_right</mat-icon>
+                                </button>
+                            </div>
+                            <div class="ovi-row-gap" style="align-items: baseline;">
+                            <div class="ovi-row-five-clmn ovi-fnt-sze12"  style="padding-left: 5px;color: gray;" *ngIf="multiReaderInfo.floorId">
+                                <mat-checkbox (change)="ShowLabel()" [checked]="multiReaderInfo.showLabel">{{"Show Label"|translate}}</mat-checkbox>
+                            </div>
+                            <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box" style="display: flex;align-items: baseline;">
+                                <mat-label class="ovi-lbl-text-size" style="padding-right: 10px;">{{'Type'|translate}}</mat-label>
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Type'|translate" [(ngModel)]="selectedType" [ngModelOptions]="{ standalone: true }" (selectionChange)="onTypeChange($event)">
+                                    <mat-option value="kmlFile">KML File</mat-option>
+                                    <mat-option value="alohaModel">Create Aloha Model</mat-option>
+                                  </mat-select>
+                                </mat-form-field>
+                              </div>
+                            <div  class="ovi-row-five-clmn"  *ngIf="this.maps['floors']?.[this.floorId]?.['locationTypeId'] == 23 && selectedType =='kmlFile'">
+                                <button mat-button class="active-btn margin-r-1 file-upload-button" style="margin-right: 5px !important;" 
+                                [disabled]="!configValue">{{"Upload KML File"|translate}}
+                                <input type="file" #fileInput (change)="onFileChange($event)" debounceTime =2000>
+                                </button>
+                                <span class="file-info">{{ fileInfo }}</span>
+                            </div>
+                            <div  class="ovi-row-five-clmn"  *ngIf="this.maps['floors']?.[this.floorId]?.['locationTypeId'] == 23 && selectedType =='alohaModel'" >
+                            <button mat-button class="active-btn"   [disabled]="(!sourcePoint || !destinationPoint)"   (click)="drawEllipses(sourcePoint._latlng,destinationPoint._latlng)"
+                            [debounceTime]="300" >{{"Generate Aloha"|translate}}</button>
+                            </div>
+                            </div>
+                            <div style="float: right;padding-left: 10px;" *ngIf="showautomanual">
+                                <span style="display: block;">
+                                    <span style="margin-left: 20px;">
+                                        <button mat-button class="hazmat-card-btn" disabled
+                                            [ngClass]="locationForm.controls.beaconPosition.value === true ? 'selected-btn1' : 'hazmat-card-btn1'"
+                                            [value]="true" (click)="setBeaconPosition(true);">{{"Auto"|translate}}</button>
+                                        <button mat-button class="hazmat-card-btn"
+                                            [ngClass]="locationForm.controls.beaconPosition.value === false ? 'selected-btn2' : 'hazmat-card-btn2'"
+                                            [value]="false" (click)="setBeaconPosition(false);">{{"Manual"|translate}}</button>
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                        <div style="height: calc(100% - 50px); padding: 15px 5px 5px 5px;position: relative;">
+                            <div id="locationId" class="floorMap-img"></div>
+                        </div>
+                    </div>
+                </mat-drawer-content>
+            </mat-drawer-container>
+</div>

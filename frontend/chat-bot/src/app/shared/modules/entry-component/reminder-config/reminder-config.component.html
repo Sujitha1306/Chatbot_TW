@@ -1,0 +1,919 @@
+<div class="ovi-font-family">
+    <div [ngStyle]="{'height': dialogType !== 'tab' ? 'calc(100vh - 125px)' : '100%'}" style="overflow: auto;" [formGroup]="reminderForm">
+        <mat-expansion-panel hideToggle [expanded]="expandedPanel === 'reminder'" [disabled]="!reminderForm.controls['reminder'].value" class="expand popup-margin">
+            <mat-expansion-panel-header (click)="reminderForm.controls['reminder'].value ? togglePanel('click', 'reminder') : ''" (keydown.enter)="fixClick()">
+                <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                    <div>
+                        <div>{{"Reminder"|translate}}</div>
+                        <div class="ovi-lbl-text-size" style="color: #898989;">{{"Receive notification for open task"|translate}}</div>
+                    </div>
+                    <mat-slide-toggle class="slider-btn" (click)="$event.stopPropagation();" (change)="togglePanel($event.checked,'reminder');" formControlName="reminder" (keydown.enter)="fixClick()"></mat-slide-toggle>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div style="margin: 5px 0px 0px 5px;" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                <div class="ovi-row-gap">
+                    <span>
+                        <div class="reminder-header">{{"Reminder Type"|translate}}</div>
+                        <div style="display: flex; height: 45px; align-items: center;">
+                            <mat-radio-group formControlName="remindType" aria-label="Select an option">
+                                <mat-radio-button style="padding-left: 5px;" value="Automatic" (click)="setValidators('Automatic', 'remindType')">{{"Automatic"|translate}}</mat-radio-button>
+                                <mat-radio-button style="padding-left: 5px;" value="Custom" (click)="setValidators('Custom', 'remindType')">{{"Custom"|translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </span>
+                    <span *ngIf="reminderForm.controls['remindType'].value !== 'Automatic'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"By Time Threshold"|translate}}</div>
+                        <div class="field-time-container">
+                            <div class="ovi-matfrmfld-drpdwn-top-box" style="width: 50%">
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"
+                                        formControlName="remindThresholdStart">
+                                        <mat-error *ngIf="reminderForm.controls.remindThresholdStart.invalid">
+                                            <span [hidden]="!reminderForm.get('remindThresholdStart')?.errors?.['pattern']">
+                                                {{"Scheduled to start must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                        </mat-error>
+                                </mat-form-field>
+                                <div [hidden]="reminderForm.get('remindThresholdStart')?.errors?.['pattern']" class="field-hint">{{"Before the task is scheduled to start"|translate}}</div>
+                            </div>
+                            <div class="ovi-matfrmfld-drpdwn-top-box" style="width: 50%">
+                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                    <input matInput #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"
+                                        formControlName="remindThresholdRepeat">
+                                    <mat-error *ngIf="reminderForm.controls.remindThresholdRepeat.invalid">
+                                        <span [hidden]="!reminderForm.get('remindThresholdRepeat')?.errors?.['pattern']">
+                                            {{"Reminder repeat interval must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                                <div [hidden]="reminderForm.get('remindThresholdRepeat')?.errors?.['pattern']" class="field-hint">{{"Reminder repeat interval, if needed"|translate}}</div>
+                            </div>
+                        </div>
+                    </span>
+
+
+                    <span *ngIf="reminderForm.controls['remindType'].value !== 'Automatic'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Anytime Threshold"|translate}}</div>
+                        <div class="field-time-container">
+                            <div class="ovi-matfrmfld-drpdwn-top-box" style="width: 50%">
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate" class="time-input"
+                                        formControlName="remindAnytimeBegin" [value]="null"
+                                        [ngxTimepicker]="timepicker3" [disableClick]="true">
+                                    <ngx-material-timepicker-toggle matSuffix [for]="timepicker3">
+                                    </ngx-material-timepicker-toggle>
+                                    <ngx-material-timepicker #timepicker3></ngx-material-timepicker>
+                                </mat-form-field>
+                                <div class="field-hint">{{"Set the time for the reminder to begin"|translate}}</div>
+                            </div>
+                            <div class="ovi-matfrmfld-drpdwn-top-box" style="width: 50%">
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate" class="time-input"
+                                        formControlName="remindAnytimeRepeat">
+                                    <mat-error *ngIf="reminderForm.controls.remindAnytimeRepeat.invalid">
+                                        <span [hidden]="!reminderForm.get('remindAnytimeRepeat')?.errors?.['pattern']">
+                                            {{"Reminder repeat interval must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                                <div [hidden]="reminderForm.get('remindAnytimeRepeat')?.errors?.['pattern']" class="field-hint">{{"Reminder repeat interval, if needed"|translate}}</div>
+                            </div>
+                        </div>
+                    </span>
+                </div>
+                <div *ngIf="reminderForm.controls['remindType'].value === 'Automatic'" class="automatic-text">{{"Automatic reminder will be sent based on system-determined optimal timing"|translate}}</div>
+                <div class="reminder-notifi-container">
+                    <div class="reminder-sub-titles" style="display: flex; align-items: center; gap: 5px;"><mat-icon class="ovi-fnt-sze14" 
+                            style="height: fit-content; width: fit-content; padding-top: 2px;">chat_bubble_outline</mat-icon>
+                        {{"Notification Configuration"|translate}}
+                    </div>
+                    <div class="ovi-row-gap" style="gap: 5px 10px;" [formGroup]="notificationConfigForm">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate"
+                                    (selectionChange)="getTemplateData($event)" formControlName="channelId">
+                                    <mat-option *ngFor="let data of channelType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.channelId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['channelId'].errors.required">{{"Channel is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template'|translate"
+                                    formControlName="templateId">
+                                    <mat-option *ngFor="let data of templateData"
+                                        [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.templateId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['templateId'].errors.required">{{"Template is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                                (selectionChange)="getIncharge($event.value)" formControlName="recipientTypeId">
+                                    <mat-option *ngFor="let data of recipientType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientTypeId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientTypeId'].errors.required">{{"Recipient Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['RT-US', 'RT-RO', 'RT-DT'].includes(notificationConfigForm.get('recipientTypeId')?.value)"
+                             class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                                    formControlName="recipientId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                    [matAutocomplete]="recipient" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                    #recipient="matAutocomplete">
+                                    <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientId'].errors.required">{{"Recipient is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!notificationConfigForm.get('recipientId').hasError('invalidIncharge')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="display: flex; align-items: center; padding-top: 15px;">
+                            <button mat-button class="active-btn" appDebounceClick
+                                [debounceTime]="300" [disabled]="notificationConfigForm.invalid || dublicateNotification" (click)="addNotificationConfig('NT-RM')">{{"Add"|translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-container card-scroll">
+                        <mat-card *ngFor="let data of reminderNotifi" class="notifi-card-box" appearance="outlined">
+                            <mat-card-content class="ovi-fnt-sze12" >
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px;">
+                                    <span class="notifi-card-box-title">{{data.channelName}}</span>
+                                    <mat-icon *ngIf="!['RT-EP', 'RT-EO'].includes(data.identifyingType) && ['CH-NO', 'CH-EM'].includes(data.channel)" class="delete-notifi" 
+                                      (click)="deleteNotificationConfig(data.notificationTypeId, data)" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                                </div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Template"|translate}}:</span>{{data.notificationTypeName}}</div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Recipient Type"|translate}}:</span>{{data.identifyingTypeName}}</div>
+                                <div class="notifi-card-box-content">{{data.identifyingName}}</div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel hideToggle [expanded]="expandedPanel == 'sla'" [disabled]="!reminderForm.controls['sla'].value" class="expand popup-margin">
+            <mat-expansion-panel-header (click)="reminderForm.controls['sla'].value ? togglePanel('click', 'sla') : ''" (keydown.enter)="fixClick()">
+                <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                    <div>
+                        <div>{{"SLA"|translate}}</div>
+                        <div class="ovi-lbl-text-size" style="color: #898989;">{{"Track and receive notification for SLA breaches"|translate}}</div>
+                    </div>
+                    <mat-slide-toggle class="slider-btn" formControlName="sla" (change)="togglePanel($event.checked,'sla');"></mat-slide-toggle>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div style="margin: 5px 0px 0px 5px;" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                <div class="ovi-row-gap">
+                    <span>
+                        <div class="reminder-header">{{"SLA Type"|translate}}</div>
+                        <div style="display: flex; height: 45px; align-items: center;">
+                            <mat-radio-group formControlName="slaType" aria-label="Select an option">
+                                <mat-radio-button style="padding-left: 5px;" value="Automatic" (click)="setValidators('Automatic', 'slaType')">{{"Automatic"|translate}}</mat-radio-button>
+                                <mat-radio-button style="padding-left: 5px;" value="Custom" (click)="setValidators('Custom', 'slaType')">{{"Custom"|translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </span>
+                    <span *ngIf="reminderForm.controls['slaType'].value !== 'Automatic'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"SLA Threshold"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"
+                                    formControlName="slaThreshold">
+                                <mat-error *ngIf="reminderForm.controls.slaThreshold.invalid">
+                                    <span [hidden]="!reminderForm.get('slaThreshold')?.errors?.['pattern']">
+                                        {{"SLA Threshold must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                </div>
+                <div *ngIf="reminderForm.controls['slaType'].value === 'Automatic'" class="automatic-text">{{"Automatic SLA threshold will be calculated based on item priority and business impact"|translate}}</div>
+                <div class="reminder-notifi-container">
+                    <div class="reminder-sub-titles" style="display: flex; align-items: center; gap: 5px;"><mat-icon class="ovi-fnt-sze14" 
+                            style="height: fit-content; width: fit-content; padding-top: 2px;">chat_bubble_outline</mat-icon>
+                        {{"Notification Configuration"|translate}}
+                    </div>
+                    <div class="ovi-row-gap" style="gap: 5px 10px;" [formGroup]="notificationConfigForm">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate"
+                                    (selectionChange)="getTemplateData($event)" formControlName="channelId">
+                                    <mat-option *ngFor="let data of channelType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.channelId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['channelId'].errors.required">{{"Channel is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template'|translate"
+                                    formControlName="templateId">
+                                    <mat-option *ngFor="let data of templateData"
+                                        [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.templateId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['templateId'].errors.required">{{"Template is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                                (selectionChange)="getIncharge($event.value)" formControlName="recipientTypeId">
+                                    <mat-option *ngFor="let data of recipientType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientTypeId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientTypeId'].errors.required">{{"Recipient Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['RT-US', 'RT-RO', 'RT-DT'].includes(notificationConfigForm.get('recipientTypeId')?.value)"
+                             class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                                    formControlName="recipientId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                    [matAutocomplete]="recipient" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                    #recipient="matAutocomplete">
+                                    <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientId'].errors.required">{{"Recipient is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!notificationConfigForm.get('recipientId').hasError('invalidIncharge')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="display: flex; align-items: center; padding-top: 15px;">
+                            <button mat-button class="active-btn" appDebounceClick
+                                [debounceTime]="300" [disabled]="notificationConfigForm.invalid || dublicateNotification" (click)="addNotificationConfig('NT-SLA')">{{"Add"|translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-container card-scroll">
+                        <mat-card *ngFor="let data of slaNotifi" class="notifi-card-box" appearance="outlined">
+                            <mat-card-content class="ovi-fnt-sze12">
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px;">
+                                    <span class="notifi-card-box-title">{{data.channelName}}</span>
+                                    <mat-icon *ngIf="!['RT-EP', 'RT-EO'].includes(data.identifyingType) && ['CH-NO', 'CH-EM'].includes(data.channel)" class="delete-notifi" (click)="deleteNotificationConfig(data.notificationTypeId, data)" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                                </div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Template"|translate}}:</span>{{data.notificationTypeName}}</div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Recipient Type"|translate}}:</span>{{data.identifyingTypeName}}</div>
+                                <div class="notifi-card-box-content">{{data.identifyingName}}</div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel hideToggle [expanded]="expandedPanel == 'slaReminder'" [disabled]="!reminderForm.controls['slaReminder'].value" class="expand popup-margin">
+            <mat-expansion-panel-header (click)="reminderForm.controls['slaReminder'].value ? togglePanel('click', 'slaReminder') : ''"  (keydown.enter)="fixClick()">
+                <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                    <div>
+                        <div>{{"SLA Reminder"|translate}}</div>
+                        <div class="ovi-lbl-text-size" style="color: #898989;">{{"Receive notification before SLA thresholds are breached"|translate}}</div>
+                    </div>
+                    <mat-slide-toggle class="slider-btn" formControlName="slaReminder" [disabled]="!reminderForm.controls['sla'].value" (change)="togglePanel($event.checked,'slaReminder')"></mat-slide-toggle>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div style="margin: 5px 0px 0px 5px;" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                <div class="ovi-row-gap">
+                    <span>
+                        <div class="reminder-header">{{"SLA Reminder Type"|translate}}</div>
+                        <div style="display: flex; height: 45px; align-items: center;">
+                            <mat-radio-group formControlName="slaRemindType" aria-label="Select an option">
+                                <mat-radio-button style="padding-left: 5px;" value="Automatic" (click)="setValidators('Automatic', 'slaRemindType')">{{"Automatic"|translate}}</mat-radio-button>
+                                <mat-radio-button style="padding-left: 5px;" value="Custom" (click)="setValidators('Custom', 'slaRemindType')">{{"Custom"|translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </span>
+                    <span *ngIf="reminderForm.controls['slaRemindType'].value !== 'Automatic'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"SLA Reminder Threshold"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"
+                                    formControlName="slaRemindthreshold">
+                                <mat-error *ngIf="reminderForm.controls.slaRemindthreshold.invalid">
+                                    <span [hidden]="!reminderForm.get('slaRemindthreshold')?.errors?.['pattern']">
+                                        {{"SLA Reminder Threshold must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                </div>
+                <div *ngIf="reminderForm.controls['slaRemindType'].value === 'Automatic'" class="automatic-text">{{"Automatic SLA reminder will be sent at optimal times based on item priority and SLA threshold"|translate}}</div>
+                <div class="reminder-notifi-container">
+                    <div class="reminder-sub-titles" style="display: flex; align-items: center; gap: 5px;"><mat-icon class="ovi-fnt-sze14" 
+                            style="height: fit-content; width: fit-content; padding-top: 2px;">chat_bubble_outline</mat-icon>
+                        {{"Notification Configuration"|translate}}
+                    </div>
+                    <div class="ovi-row-gap" style="gap: 5px 10px;" [formGroup]="notificationConfigForm">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate"
+                                    (selectionChange)="getTemplateData($event)" formControlName="channelId">
+                                    <mat-option *ngFor="let data of channelType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.channelId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['channelId'].errors.required">{{"Channel is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template'|translate"
+                                    formControlName="templateId">
+                                    <mat-option *ngFor="let data of templateData"
+                                        [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.templateId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['templateId'].errors.required">{{"Template is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                                (selectionChange)="getIncharge($event.value)" formControlName="recipientTypeId">
+                                    <mat-option *ngFor="let data of recipientType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientTypeId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientTypeId'].errors.required">{{"Recipient Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['RT-US', 'RT-RO', 'RT-DT'].includes(notificationConfigForm.get('recipientTypeId')?.value)"
+                             class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                                    formControlName="recipientId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                    [matAutocomplete]="recipient" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                    #recipient="matAutocomplete">
+                                    <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientId'].errors.required">{{"Recipient is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!notificationConfigForm.get('recipientId').hasError('invalidIncharge')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="display: flex; align-items: center; padding-top: 15px;">
+                            <button mat-button class="active-btn" appDebounceClick
+                                [debounceTime]="300" [disabled]="notificationConfigForm.invalid || dublicateNotification" (click)="addNotificationConfig('NT-SLR')">{{"Add"|translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-container card-scroll">
+                        <mat-card *ngFor="let data of slaReminderNotifi" class="notifi-card-box" appearance="outlined">
+                            <mat-card-content class="ovi-fnt-sze12">
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px;">
+                                    <span class="notifi-card-box-title">{{data.channelName}}</span>
+                                    <mat-icon *ngIf="!['RT-EP', 'RT-EO'].includes(data.identifyingType) && ['CH-NO', 'CH-EM'].includes(data.channel)" class="delete-notifi" (click)="deleteNotificationConfig(data.notificationTypeId, data)" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                                </div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Template"|translate}}:</span>{{data.notificationTypeName}}</div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Recipient Type"|translate}}:</span>{{data.identifyingTypeName}}</div>
+                                <div class="notifi-card-box-content">{{data.identifyingName}}</div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel hideToggle [expanded]="expandedPanel == 'escalationLevel1'" [disabled]="!reminderForm.controls['escalationLevel1'].value" class="expand popup-margin">
+            <mat-expansion-panel-header (click)="reminderForm.controls['escalationLevel1'].value ? togglePanel('click', 'escalationLevel1') : ''" (keydown.enter)="fixClick()">
+                <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                    <div>
+                        <div>{{"Escalation(Level 1)"|translate}}</div>
+                        <div class="ovi-lbl-text-size" style="color: #898989;">{{"Automatically escalate items that exceed thresholds"|translate}}</div>
+                    </div>
+                    <mat-slide-toggle class="slider-btn" formControlName="escalationLevel1" (change)="togglePanel($event.checked,'escalationLevel1');"></mat-slide-toggle>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div style="margin: 5px 0px 0px 5px;" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                <div class="ovi-row-gap" style="gap: 5px 15px;">
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation Type"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'select Type'|translate"
+                                    (selectionChange)="getIncharge($event.value, 'esc1')" formControlName="esc1Type">
+                                    <mat-option *ngFor="let data of escalationType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation ID"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'search and select'|translate"
+                                    formControlName="esc1Id" appTypeHit (typeHit)="escalationL1UserNames($event)"
+                                    [matAutocomplete]="escalation1" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.escalationL1Enabled === true ? getEscalationL1List.bind(escalationL1List) : ''"
+                                    #escalation1="matAutocomplete">
+                                    <mat-option *ngFor="let option of escalationL1List" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="reminderForm.controls.esc1Id.invalid">
+                                    <span [hidden]="!reminderForm.controls['esc1Id'].errors.required">{{"Escalation Id is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!reminderForm.get('esc1Id').hasError('invalidInchargeL1')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation Threshold"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"
+                                    formControlName="esc1Threshold">
+                                <mat-error *ngIf="reminderForm.controls.esc1Threshold.invalid">
+                                    <span [hidden]="!reminderForm.get('esc1Threshold')?.errors?.['pattern']">
+                                        {{"Escalation Threshold must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation Anytime"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate" class="time-input"
+                                    formControlName="escalationL1Anytime" [value]="null" [ngxTimepicker]="timepickerL1"
+                                    [disableClick]="true">
+                                <ngx-material-timepicker-toggle matSuffix [for]="timepickerL1">
+                                </ngx-material-timepicker-toggle>
+                                <ngx-material-timepicker #timepickerL1></ngx-material-timepicker>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                </div>
+                <div class="reminder-notifi-container">
+                    <div class="reminder-sub-titles" style="display: flex; align-items: center; gap: 5px;"><mat-icon class="ovi-fnt-sze14" 
+                            style="height: fit-content; width: fit-content; padding-top: 2px;">chat_bubble_outline</mat-icon>
+                        {{"Notification Configuration"|translate}}
+                    </div>
+                    <div class="ovi-row-gap" style="gap: 5px 10px;" [formGroup]="notificationConfigForm">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate"
+                                    (selectionChange)="getTemplateData($event)" formControlName="channelId">
+                                    <mat-option *ngFor="let data of channelType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.channelId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['channelId'].errors.required">{{"Channel is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template'|translate"
+                                    formControlName="templateId">
+                                    <mat-option *ngFor="let data of templateData"
+                                        [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm.controls.templateId.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['templateId'].errors.required">{{"Template is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                                (selectionChange)="getIncharge($event.value)" formControlName="recipientTypeId">
+                                    <mat-option *ngFor="let data of recipientType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientTypeId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientTypeId'].errors.required">{{"Recipient Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['RT-US', 'RT-RO', 'RT-DT'].includes(notificationConfigForm.get('recipientTypeId')?.value)"
+                             class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                                    formControlName="recipientId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                    [matAutocomplete]="recipient" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                    #recipient="matAutocomplete">
+                                    <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientId'].errors.required">{{"Recipient is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!notificationConfigForm.get('recipientId').hasError('invalidIncharge')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="display: flex; align-items: center; padding-top: 15px;">
+                            <button mat-button class="active-btn" appDebounceClick
+                                [debounceTime]="300" [disabled]="notificationConfigForm.invalid || dublicateNotification" (click)="addNotificationConfig('NT-ES1')">{{"Add"|translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-container card-scroll">
+                        <mat-card *ngFor="let data of escalationL1Notifi" class="notifi-card-box" appearance="outlined">
+                            <mat-card-content class="ovi-fnt-sze12">
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px;">
+                                    <span class="notifi-card-box-title">{{data.channelName}}</span>
+                                    <mat-icon *ngIf="!['RT-EP', 'RT-EO'].includes(data.identifyingType) && ['CH-NO', 'CH-EM'].includes(data.channel)" class="delete-notifi" (click)="deleteNotificationConfig(data.notificationTypeId, data)" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                                </div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Template"|translate}}:</span>{{data.notificationTypeName}}</div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Recipient Type"|translate}}:</span>{{data.identifyingTypeName}}</div>
+                                <div class="notifi-card-box-content">{{data.identifyingName}}</div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel hideToggle [expanded]="expandedPanel == 'escalationLevel2'" [disabled]="!reminderForm.controls['escalationLevel2'].value" class="expand popup-margin">
+            <mat-expansion-panel-header (click)="reminderForm.controls['escalationLevel2'].value ? togglePanel('click', 'escalationLevel2') : ''" (keydown.enter)="fixClick()">
+                <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                    <div>
+                        <div>{{"Escalation(Level 2)"|translate}}</div>
+                        <div class="ovi-lbl-text-size" style="color: #898989;">{{"Automatically escalate items that exceed thresholds"|translate}}</div>
+                    </div>
+                    <mat-slide-toggle class="slider-btn" formControlName="escalationLevel2" [disabled]="!reminderForm.controls['escalationLevel1'].value" (change)="togglePanel($event.checked,'escalationLevel2');"></mat-slide-toggle>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div style="margin: 5px 0px 0px 5px;" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                <div class="ovi-row-gap" style="gap: 5px 15px;">
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation Type"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'select Type'|translate"
+                                    (selectionChange)="getIncharge($event.value, 'esc2')" formControlName="esc2Type">
+                                    <mat-option *ngFor="let data of escalationType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation ID"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'search and select'|translate" 
+                                    formControlName="esc2Id" appTypeHit (typeHit)="escalationL2UserNames($event)"
+                                    [matAutocomplete]="escalation2" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.escalationL2Enabled === true ? getEscalationL2List.bind(escalationL2List) : ''"
+                                    #escalation2="matAutocomplete">
+                                    <mat-option *ngFor="let option of escalationL2List" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="reminderForm.controls.esc2Id.invalid">
+                                    <span [hidden]="!reminderForm.controls['esc2Id'].errors.required">{{"Escalation Id is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!reminderForm.get('esc2Id').hasError('invalidInchargeL2')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation Threshold"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"
+                                    formControlName="esc2Threshold">
+                                <mat-error *ngIf="reminderForm.controls.esc2Threshold.invalid">
+                                    <span [hidden]="!reminderForm.get('esc2Threshold')?.errors?.['pattern']">
+                                        {{"Escalation Threshold must be in HH:MM format (example: 00:30)."|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                    <span class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Escalation Anytime"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'--:--'|translate"  class="time-input"
+                                    formControlName="escalationL2Anytime" [value]="null" [ngxTimepicker]="timepickerL2"
+                                    [disableClick]="true">
+                                <ngx-material-timepicker-toggle matSuffix [for]="timepickerL2"></ngx-material-timepicker-toggle>
+                                <ngx-material-timepicker #timepickerL2></ngx-material-timepicker>
+                            </mat-form-field>
+                        </div>
+                    </span>
+                </div>
+                <div class="reminder-notifi-container">
+                    <div class="reminder-sub-titles" style="display: flex; align-items: center; gap: 5px;"><mat-icon class="ovi-fnt-sze14" 
+                            style="height: fit-content; width: fit-content; padding-top: 2px;">chat_bubble_outline</mat-icon>
+                        {{"Notification Configuration"|translate}}
+                    </div>
+                    <div class="ovi-row-gap" style="gap: 5px 10px;" [formGroup]="notificationConfigForm">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate"
+                                    (selectionChange)="getTemplateData($event)" formControlName="channelId">
+                                    <mat-option *ngFor="let data of channelType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.channelId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['channelId'].errors.required">{{"Channel is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template'|translate"
+                                    formControlName="templateId">
+                                    <mat-option *ngFor="let data of templateData"
+                                        [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.templateId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['templateId'].errors.required">{{"Template is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                                (selectionChange)="getIncharge($event.value)" formControlName="recipientTypeId">
+                                    <mat-option *ngFor="let data of recipientType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientTypeId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientTypeId'].errors.required">{{"Recipient Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['RT-US', 'RT-RO', 'RT-DT'].includes(notificationConfigForm.get('recipientTypeId')?.value)"
+                             class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                                    formControlName="recipientId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                    [matAutocomplete]="recipient" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                    #recipient="matAutocomplete">
+                                    <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientId'].errors.required">{{"Recipient is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!notificationConfigForm.get('recipientId').hasError('invalidIncharge')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="display: flex; align-items: center; padding-top: 15px;">
+                            <button mat-button class="active-btn" appDebounceClick
+                                [debounceTime]="300" [disabled]="notificationConfigForm.invalid || dublicateNotification" (click)="addNotificationConfig('NT-ES2')">{{"Add"|translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-container card-scroll">
+                        <mat-card *ngFor="let data of escalationL2Notifi" class="notifi-card-box" appearance="outlined">
+                            <mat-card-content class="ovi-fnt-sze12">
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px;">
+                                    <span class="notifi-card-box-title">{{data.channelName}}</span>
+                                    <mat-icon *ngIf="!['RT-EP', 'RT-EO'].includes(data.identifyingType) && ['CH-NO', 'CH-EM'].includes(data.channel)" class="delete-notifi" (click)="deleteNotificationConfig(data.notificationTypeId, data)" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                                </div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Template"|translate}}:</span>{{data.notificationTypeName}}</div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Recipient Type"|translate}}:</span>{{data.identifyingTypeName}}</div>
+                                <div class="notifi-card-box-content">{{data.identifyingName}}</div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+
+        <mat-expansion-panel hideToggle [expanded]="expandedPanel == 'scheduleReminder'" [disabled]="!reminderForm.controls['scheduleReminder'].value" class="expand popup-margin">
+            <mat-expansion-panel-header (click)="reminderForm.controls['scheduleReminder'].value ? togglePanel('click', 'scheduleReminder') : ''" (keydown.enter)="fixClick()">
+                <mat-panel-title class="reminder-sub-titles" style="justify-content: space-between;">
+                    <div>
+                        <div>{{"Schedule Reminder"|translate}}</div>
+                        <div class="ovi-lbl-text-size" style="color: #898989;">{{"Receive notification for upcoming scheduled tasks"|translate}}</div>
+                    </div>
+                    <mat-slide-toggle class="slider-btn" formControlName="scheduleReminder" (change)="togglePanel($event.checked,'scheduleReminder');"></mat-slide-toggle>
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div style="margin: 5px 0px 0px 5px;" class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
+                <div class="ovi-row-gap">
+                    <span>
+                        <div class="reminder-header">{{"Schedule Type"|translate}}</div>
+                        <div style="display: flex; height: 45px; align-items: center;">
+                            <mat-radio-group formControlName="scheduleType" aria-label="Select an option">
+                                <mat-radio-button style="padding-left: 5px;" value="Automatic" (click)="setValidators('Automatic', 'scheduleType')">{{"Automatic"|translate}}</mat-radio-button>
+                                <mat-radio-button style="padding-left: 5px;" value="Custom" (click)="setValidators('Custom', 'scheduleType')">{{"Custom"|translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                    </span>
+                    <span *ngIf="reminderForm.controls['scheduleType'].value !== 'Automatic'" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <div class="reminder-header">{{"Schedule Reminder"|translate}}</div>
+                        <div class="ovi-matfrmfld-drpdwn-top-box">
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Reminder Times'|translate" class="time-input" formControlName="scheduleDays">
+                            </mat-form-field>
+                        </div>
+                    </span>
+                </div>
+                <div class="reminder-notifi-container">
+                    <div class="reminder-sub-titles" style="display: flex; align-items: center; gap: 5px;"><mat-icon class="ovi-fnt-sze14" 
+                            style="height: fit-content; width: fit-content; padding-top: 2px;">chat_bubble_outline</mat-icon>
+                        {{"Notification Configuration"|translate}}
+                    </div>
+                    <div class="ovi-row-gap" style="gap: 5px 10px;" [formGroup]="notificationConfigForm">
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel'|translate"
+                                    (selectionChange)="getTemplateData($event)" formControlName="channelId">
+                                    <mat-option *ngFor="let data of channelType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.channelId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['channelId'].errors.required">{{"Channel is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Template"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Template'|translate"
+                                    formControlName="templateId">
+                                    <mat-option *ngFor="let data of templateData"
+                                        [value]="data.id">{{data.name}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.templateId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['templateId'].errors.required">{{"Template is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}<span
+                                    class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Type'|translate"
+                                (selectionChange)="getIncharge($event.value)" formControlName="recipientTypeId">
+                                    <mat-option *ngFor="let data of recipientType"
+                                        [value]="data.code">{{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientTypeId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientTypeId'].errors.required">{{"Recipient Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div *ngIf="['RT-US', 'RT-RO', 'RT-DT'].includes(notificationConfigForm.get('recipientTypeId')?.value)"
+                             class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recipient Name'|translate"
+                                    formControlName="recipientId" appTypeHit (typeHit)="searchUserNamelist($event)"
+                                    [matAutocomplete]="recipient" autocomplete="off">
+                                <mat-autocomplete autoActiveFirstOption
+                                    [displayWith]="this.inchargeEnabled === true ? getInchargeList.bind(inchargeList) : ''"
+                                    #recipient="matAutocomplete">
+                                    <mat-option *ngFor="let option of inchargeList" [value]="option.id">
+                                        <div class="act-wid-styl">{{option.name}}</div>
+                                    </mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="notificationConfigForm?.controls?.recipientId?.invalid">
+                                    <span [hidden]="!notificationConfigForm.controls['recipientId'].errors.required">{{"Recipient is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!notificationConfigForm.get('recipientId').hasError('invalidIncharge')">{{ 'Please
+                                        select a value from the options' | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <div style="display: flex; align-items: center; padding-top: 15px;">
+                            <button mat-button class="active-btn" appDebounceClick
+                                [debounceTime]="300" [disabled]="notificationConfigForm.invalid || dublicateNotification" (click)="addNotificationConfig('NT-SRM')">{{"Add"|translate}}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-container card-scroll">
+                        <mat-card *ngFor="let data of scheduledNotifi" class="notifi-card-box" appearance="outlined">
+                            <mat-card-content class="ovi-fnt-sze12">
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 5px;">
+                                    <span class="notifi-card-box-title">{{data.channelName}}</span>
+                                    <mat-icon *ngIf="!['RT-EP', 'RT-EO'].includes(data.identifyingType) && ['CH-NO', 'CH-EM'].includes(data.channel)" class="delete-notifi" (click)="deleteNotificationConfig(data.notificationTypeId, data)" (keydown.enter)="fixClick()">delete_outline</mat-icon>
+                                </div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Template"|translate}}:</span>{{data.notificationTypeName}}</div>
+                                <div class="notifi-card-box-content"><span class="notifi-card-subtitle">{{"Recipient Type"|translate}}:</span>{{data.identifyingTypeName}}</div>
+                                <div class="notifi-card-box-content">{{data.identifyingName}}</div>
+                            </mat-card-content>
+                        </mat-card>
+                    </div>
+                </div>
+            </div>
+        </mat-expansion-panel>
+    </div>
+    <!-- <div *ngIf="type !== 'create'" class="ovi-pop-ftr">
+        <button  mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!slaData && type === 'modify' && activityData !== null"  mat-button class="active-btn" [disabled]="!reminderForm.dirty || reminderForm.invalid" appDebounceClick 
+            (debounceClick)="saveReminderNotification()" [debounceTime]="300" cdkFocusInitial>
+            {{"Create"|translate}}
+        </button>
+        <button *ngIf="slaData"  mat-button class="active-btn" [disabled]="!reminderForm.dirty || reminderForm.invalid" appDebounceClick 
+            (debounceClick)="updateReminderNotification()" [debounceTime]="300" cdkFocusInitial>
+            {{"Update"|translate}}
+        </button>
+    </div> -->
+</div>

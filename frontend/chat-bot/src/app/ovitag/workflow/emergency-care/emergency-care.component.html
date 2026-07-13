@@ -1,0 +1,107 @@
+<div class="manage-body">
+  <tw-header-new-component [component]="'emergency-care'" [permission]="null" [dateFilter]="selectedView ? selectedDate : null" [selectFilter]="selectFilter" [rowFilter]="rowFilter" [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="selectedName !== null ? selectedName : true"
+    [locationId]="null" [selectedView]="selectedView" [multiView]="false" (selectedViewAction)="selectedTabAction($event)" (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+    <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+      <mat-tab  label="{{'Patients'|translate}}">
+        <ng-template mat-tab-label>{{"Patients"|translate}}</ng-template>
+        <div *ngIf="selectedView == 'table'">
+          <tw-table-component [component]="'emergency-care'" [columns]="HCDisplayedColumns" [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [dateTimeColumns]="dateTimeColumns" [timeColumns]="timeColumns"
+           [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [rowClick]="true" [rowId]="'patientId'" (rowClickAction)="rowClick($event)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="null" [tableClass]="'tab-table'"></tw-table-component>
+        </div>
+
+      </mat-tab>
+      <mat-tab  label="{{'ER view'|translate}}">
+        <ng-template mat-tab-label>{{"ER view"|translate}}</ng-template>
+      <div class="er-manage-body" *ngIf="selectedView == 'card'" (window:resize)="onResizeWindow1($event)" [style.max-height.px]="this.CardHeight">
+        <app-card-management [cardData]="otCardInfo" [selectedDate]="selectedDate" [statusCountInfo]="statusCountInfo" [visitTypeId]="'VT-EC'" (refreshCard)="refreshPage()"></app-card-management>
+        <div *ngIf="false">
+        <div id="block_container" class="header_">
+          <div class="right_ dq-status-styl" id="colr">
+          </div>
+        </div>
+        <div class="dig-q-styl">
+
+          <mat-grid-list [cols]="gridCols" rowHeight="430px" (window:resize)="onResizeGridCols($event)" style="overflow: auto;">
+            <mat-grid-tile class="custom-mat-grid-tile" *ngFor="let group of digitalQueueList_new">
+              <div class="category-header" [id]="digitalQueueModelId.DQ_LA" class="border-styl_" style="background-color: white;">
+                <div class="groupHeaderClass hdr-styl header_">
+                  <div class="header left_">{{group.name}}</div>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="queue-locations">
+                  <mat-list class="locations-list" [style.height.px]="list_height">
+                    <div *ngFor="let location of group.locations">
+                      <mat-list-item *ngIf="!location.test_locations" class="single-location">
+                        <div style="display: flex ; width: 100%; justify-content: space-between;">
+                        <div class="location-info">
+                          <div mat-line class="location-name" appTooltip [tooltipText]="location.testName" placement="bottom">
+                            {{location.testName}}</div>
+                          <div mat-line class="location-desc">{{location.floorName}},
+                            {{location.name}}</div>
+                        </div>
+                        <div class="location-queue-count" *ngIf="group.code != 'Waiting'">
+                          <span class="circle" id="colr1"
+                            (click)="locationInfo(location.id, location.testName, 'QS-IP', location.testId, location.inprogressCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                            {{location.inprogressCount}}
+                          </span>
+                          <span class="circle" id="colr2" [ngClass]="location.waitingAlert ? 'blink-orange' : ''"
+                            (click)="locationInfo(location.id, location.testName, 'QS-WT', location.testId, location.waitingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                            {{location.waitingCount}}
+                          </span>
+                          <span class="circle" id="colr3"
+                            (click)="locationInfo(location.id, location.testName, 'QS-CO', location.testId, location.completedCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                            {{location.completedCount}}
+                          </span>
+                        </div>
+                        <div class="location-queue-count" *ngIf="group.code == 'Waiting'">
+                          <span class="circle" id="colr2"
+                            (click)="locationInfo(location.id, 'Waiting Area', 'QS-PE', location.testId, location.pendingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                            {{location.pendingCount}}
+                          </span>
+                          </div>
+                        </div>
+                      </mat-list-item>
+                      <div *ngIf="location.test_locations" style="border: 1px solid #E2E9ED;">
+                        <mat-list-item style="height: 35px !important;" class="multi-location">
+                          <div class="test-name">{{location.testName}}</div>
+                        </mat-list-item>
+                        <mat-list-item *ngFor="let test_location of location.test_locations"
+                          style="height: 50px !important;" class="multi-location">
+                          <div style="display: flex ; width: 100%; justify-content: space-between;">
+                          <div class="location-info">{{test_location.floorName}},
+                            {{test_location.name}}</div>
+                          <div class="location-queue-count">
+                            <span class="circle" id="colr1"
+                              (click)="locationInfo(test_location.id, test_location.testName, 'QS-IP', location.testId, test_location.inprogressCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                              {{test_location.inprogressCount}}
+                            </span>
+                            <span class="circle" id="colr2"
+                              (click)="locationInfo(test_location.id, test_location.testName, 'QS-WT', location.testId, test_location.waitingCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                              {{test_location.waitingCount}}
+                            </span>
+                            <span class="circle" id="colr3"
+                              (click)="locationInfo(test_location.id, test_location.testName, 'QS-CO', location.testId, test_location.completedCount, location.testType, group.visitStatusId, group.planTypeId)" (keydown.enter)="fixClick()">
+                              {{test_location.completedCount}}
+                            </span>
+                          </div>
+                          </div>
+                        </mat-list-item>
+                      </div>
+                    </div>
+                  </mat-list>
+                </div>
+              </div>
+            </mat-grid-tile>
+          </mat-grid-list>
+        </div>
+        </div>
+      </div>
+      </mat-tab>
+      <mat-tab label="Floor plan">
+        <ng-template mat-tab-label>{{"Floor plan"|translate}}</ng-template>
+        <div style="height: calc(100vh - 80px);" *ngIf="selectedTabIndex == 2">
+          <tw-common-leaflet [blockSelect]="blockId" [floorSelect]="floorId" [type]="'container'" [options]="contextOptions"></tw-common-leaflet>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+</div>

@@ -1,0 +1,96 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="data.id == null"> {{"Create Routine Template"|translate}} </div>
+        <div *ngIf="data.id != null"> {{"Modify Routine Template"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: auto;height:calc(100vh - 170px);">
+        <div style="max-width: 80% ;" [formGroup]="routineTemplateForm">
+            <div *ngIf="!data.id" class="ovi-row-gap" style="display: flex; gap: 15px; padding: 5px 3px;">
+                <div *ngFor="let option of contextList" class="tab-buttons"
+                    [class.active]="option.code === selectedContext" (click)="getRoutineTypeList(option.code)" (keydown.enter)="fixClick()">
+                    <img class="svg-icon" [class.active]="selectedContext === option.code"  alt="task" 
+                        [src]="option.code === 'RC-LOC' ? '/assets/Menus/task-location.svg' : option.code === 'RC-AST' ? '/assets/Menus/task-asset.svg' : 
+                            option.code === 'RC-PAT' ? '/assets/Menus/task-patient.svg' : '/assets/icons/user 1.svg'" />
+                    <span>{{ option.value | translate }}</span>
+                </div>
+            </div>
+            <div class="ovi-row-gap" style="display: flex; gap: 15px; padding: 5px 3px;">
+                <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Routine Type"|translate}}<span
+                            class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Type'|translate"
+                            (selectionChange)="getScheduleType($event.value)" formControlName="routineTypeId"
+                            [disableOptionCentering]="true" [disabled]="data.id">
+                            <mat-option *ngFor="let data of routineList" [value]="data.code">{{data.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="routineTemplateForm.controls.routineTypeId.invalid">
+                            <span [hidden]="!routineTemplateForm.controls['routineTypeId'].errors.required">
+                                {{"Routine type is required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Schedule Type"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate" [disabled]="data.id"
+                            formControlName="scheduleTypeId" [disableOptionCentering]="true">
+                            <mat-option [value]="null"></mat-option>
+                            <mat-option *ngFor="let data of scheduleType" [value]="data.code">{{data.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="routineTemplateForm.controls.scheduleTypeId.invalid">
+                            <span [hidden]="!routineTemplateForm.controls['scheduleTypeId'].errors.required">
+                                {{"schedule type is required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Routine Name"|translate}}<span
+                            class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Routine Name'|translate" autocomplete="off" formControlName="routineId">
+                        <mat-error *ngIf="routineTemplateForm.controls.routineId.invalid">
+                            <span [hidden]="!routineTemplateForm.controls['routineId'].errors.required">
+                                {{"Routine name is required"|translate}}.</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" rows=2
+                            formControlName="description"></textarea>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="data.id">
+            <div class="activity-header">
+                <span class="ovi-fnt-sze13" style="color: #000000; font-weight: 600;display: flex; gap: 5px; padding: 5px 3px;">Activity List
+                    <span class="material-icons  ovi-prmry-clr ovi-fnt-sze18" style="padding: 0; cursor: pointer;"
+                        (click)="addActivity('')" (keydown.enter)="fixClick()">control_point</span>
+                </span>
+            </div>
+            <angular-table-component [id]="'manageRoutine'" [type]="'ng-table'" [tableData]="activityTableData"
+                [columns]="['Activity', 'Assign Type', 'Assign To', 'Schedule Type', 'Location', 'edit']"
+                [columnData]="['activityName', 'inchargeType', 'inchargeName', 'scheduleTypeName', 'locationName', 'edit']"
+                [menuButton]="moreOptions" (triggerAction)="triggerAction($event)">
+            </angular-table-component>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" style=" margin-right: 5px;"
+            mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data.id" mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+            (debounceClick)="saveRoutineTemplate()" [disabled]="routineTemplateForm.invalid"
+            cdkFocusInitial>{{"Create"|translate}}
+        </button>
+        <button *ngIf="data.id" mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+            (debounceClick)="updateRoutineTemplate()" [disabled]="routineTemplateForm.invalid" cdkFocusInitial>{{"Update"|translate}}
+        </button>
+    </div>
+</div>

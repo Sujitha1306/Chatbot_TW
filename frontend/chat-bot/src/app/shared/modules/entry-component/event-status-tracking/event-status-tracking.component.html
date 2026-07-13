@@ -1,0 +1,162 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div > {{"Task History"|translate}} </div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="content-container">
+        <div class="banner-container">
+            <div style="display: flex; padding: 5px 10px; gap: 20px;">
+                <span class="banner-text"><img height="15px" width="15px" class="svg-blue"  alt="visitor"
+                        src="/assets/icons/visitor-id 1.svg" />{{data.requestIdentifier}}</span>
+                <span *ngIf="data?.nonPerformerName" class="banner-text"><img class="svg-blue" height="15px" width="15px"  alt="task" 
+                        [src]="data.requestCategoryId === 'PR-LC' ? '/assets/Menus/task-location.svg' : data.requestCategoryId === 'PR-AT' ? '/assets/Menus/task-asset.svg' : 
+                    data.requestCategoryId === 'PR-PA' ? '/assets/Menus/task-patient.svg' : '/assets/Menus/task-general.svg'" />{{data.nonPerformerName}}</span>
+            </div>
+            <div class="tracking-wrapper">
+                <button class="scroll-btn left" *ngIf="showLeftArrow" (click)="scrollLeft()">&#10094;</button>
+            
+                <div class="tracking-scroll" #scrollContainer (scroll)="onScroll()">
+                    <div class="tracking-container">
+                        <div *ngFor="let status of statusList; let i = index" class="tracking-step">
+                            <div class="circle" [ngClass]="status.statusId === 'RQ-CO' ? 'th-complete' :
+                                 status.statusId === 'RQ-IP' ? 'th-inprogress' :
+                                 status.statusId === 'RQ-RAS' ? 'th-re-assigned' :
+                                 status.statusId === 'RQ-CA' ? 'th-created' :
+                                 status.statusId === 'RQ-CR' ? 'active-circle' : 'th-pending'">
+                                <img *ngIf="status.requestTypeId != 'RQT-WRK'" [src]="status.statusId === 'RQ-CR' ? '/assets/icons/requested 1.svg' :
+                                  status.statusId === 'RQ-RAS' ? '/assets/icons/accepted 1.svg' :
+                                  status.statusId === 'RQ-IP' ? '/assets/icons/approved 1.svg' :
+                                  status.statusId === 'RQ-PEN' ? '/assets/Alert/common_icons/pending.svg' :
+                                  '/assets/icons/departed 1.svg'" />
+                                <img *ngIf="status.requestTypeId == 'RQT-WRK'" src="/assets/Alert/common_icons/work-orders.svg" />
+                            </div>
+            
+                            <div *ngIf="status.statusId !== 'RQ-CO' && status.statusId !== 'RQ-CL' && status.requestTypeId !== 'RQT-TKT'" class="dotted-line"
+                                [ngClass]="{'active-dotted-line': status.statusId && statusList[i + 1]?.statusId}"
+                                [style.--index]="i">
+                            </div>
+            
+                            <div class="value">{{ status.statusName }}</div>
+                            <div *ngIf="status.name" class="value-1">{{ status.name }}</div>
+                            <div *ngIf="status.createdUser && (i === 0 || i === statusList.length - 1)" class="value-1">
+                                {{ i === 0 ? 'By:' : 'Upd. By:' }} {{ status.createdUser }}
+                            </div>
+                            <div class="value-2">{{ status.eventTime | date:'dd MMM yyyy hh:mm a' }}</div>
+            
+                        </div>
+                    </div>
+                </div>
+                <button class="scroll-btn right" *ngIf="showRightArrow" (click)="scrollRight()">&#10095;</button>
+            </div>
+        </div>
+        <div>
+            <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="tabChanged($event)">
+                <mat-tab>
+                    <ng-template mat-tab-label style="gap: 5px;">
+                        <img height="16px" width="16px" class="svg-icon" src="../../../../../assets/icons/info 1.svg"   alt="Info">
+                        <span>{{"Info" | translate}}</span>
+                    </ng-template>
+                    <div class="info-container">
+                        <div class="info-content" style="margin-bottom: 10px">
+                            <div class="info-header">{{"Task Info" | translate}}</div>
+                            <div *ngIf="data" style="display: flex; gap: 20px; padding: 10px 0; flex-wrap: wrap;">
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">Type</div>
+                                    <div class="ovi-fnt-sze13" >{{data.routineTypeName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Identifier" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.requestIdentifier}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Request Category" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.requestCategoryId === 'PR-AT' ? 'Asset' : 
+                                        data.requestCategoryId === 'PR-LC' ? 'Location' : data.requestCategoryId === 'PR-PA' ? 'Patient' : 'General'}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Category" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.activityCategoryName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Task" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.activityName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{data.requestCategoryId === 'PR-AT' ? 'Asset' : 
+                                        data.requestCategoryId === 'PR-LC' ? 'Location' : data.requestCategoryId === 'PR-PA' ? 'Patient' : 'General'}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.nonPerformerName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Assign Type" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.performerType === 'RT-US' ? 'User' : data.performerType === 'RT-RO' ? 'Role' : 'Department' }}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Assign To" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.performerName}}</div>
+                                </span>
+                                 <span *ngIf="data.requestCategoryId !== 'PR-LC'" style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Location" | translate}}</div>
+                                    <div *ngIf="data.destinationLocationName" class="ovi-fnt-sze13" >{{data.destinationLocationName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Status" | translate}} </div>
+                                    <div class="ovi-fnt-sze13" >{{data.statusName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Requested By" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.userName}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Start Time" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.startTime | date: 'dd MMM yyyy hh:mm a'}}</div>
+                                </span>
+                                <span style="padding: 0 10px;">
+                                    <div class="info-lable">{{"Schedule Date" | translate}}</div>
+                                    <div class="ovi-fnt-sze13" >{{data.scheduleDate | date: 'dd MMM yyyy hh:mm a'}}</div>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="info-content" style="margin-bottom: 10px">
+                            <div class="info-header">{{"Documents" | translate}}</div>
+                            <div *ngIf="attachmentInfo.length > 0" style="padding-top: 10px;">
+                                <angular-table-component [id]="'Documents'" [type]="'ng-table'"
+                                    [tableData]="attachmentInfo"
+                                    [columns]="['Document Type','Document Name','Created by','Created Time','Modified by','Modified Time','Attachment']"
+                                    [columnData]="['documentTypeName','fileName','createdBy','createdOn','modifyByName','modifiedOn','']"
+                                    (triggerAction)="triggerAction($event)">
+                                </angular-table-component>
+                            </div>
+                            <div *ngIf="attachmentInfo.length === 0" class="no-shift">{{"No records Found"|translate}} </div>
+                        </div>
+                        <div class="info-content" style="margin-bottom: 10px">
+                            <div class="info-header">{{"Forms" | translate}}</div>
+                            <div *ngIf="ticketformBuilderSource.length > 0" style="padding-top: 10px;">
+                                <angular-table-component [id]="'formBuilder'" [type]="'ng-table'"
+                                    [tableData]="ticketformBuilderSource"
+                                    [columns]="['Type', 'Comments', 'Modified by', 'Date', 'Form Status', 'PreviewHistory']"
+                                    [columnData]="['name', 'comments', 'modifiedUser', 'startDate', 'entityFormStatusName', 'PreviewHistory']"
+                                    (triggerAction)="triggerAction($event)">
+                                </angular-table-component>
+                            </div>
+                            <div *ngIf="ticketformBuilderSource.length === 0" class="no-shift">{{"No records Found"|translate}} </div> 
+                        </div>
+                    </div>
+                </mat-tab>
+                <mat-tab>
+                    <ng-template mat-tab-label style="gap: 5px;">
+                        <img height="16px" width="16px" class="svg-icon" src="../../../../../assets/icons/event-history 1.svg"   alt="history">
+                        <span>{{"Task History" | translate}}</span>
+                    </ng-template>
+                    <div style="height: calc(100Vh - 305px);">
+                        <angular-table-component [id]="'manageRoutine'" [type]="'ng-table'" [tableData]="taskdataSource"
+                            [component]="'task-history'"
+                            [columns]="['Name', 'Status', 'Event Time', 'Comments', 'Updated By']"
+                            [columnData]="['name', 'statusName', 'eventTime', 'comments', 'createdUser']"
+                            (triggerAction)="null">
+                        </angular-table-component>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
+        </div>
+    </div>
+</div>

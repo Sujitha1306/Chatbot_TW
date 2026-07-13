@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class TrackerWaveChatbot:
     """TrackerWave unified analytics chatbot with improved reliability."""
-    
+     
     def __init__(self, testing_mode=False):
         self.db = ClickHouseConnection()
         self.testing_mode = testing_mode

@@ -1,0 +1,122 @@
+<div class="pw-patient-mainHeader">
+    <div class="loading-spinner" *ngIf="isLoading">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <div class="ovi-font-family">
+        <div class="pwa-patient-header-content">
+            <span class="pwa-patinet-header">{{ 'Healthcare Security' | translate }}</span>
+            <span class="pwa-patient-wheel">  {{ 'Wheelchair ManangeMent System' | titlecase }} ✨ </span>
+            <div class="pwa-patient-pickup-highlight">
+                <span class="pwa-patinet-pickup-icon">👤</span>
+                <span style="font-weight: 600;" class="pwa-patient-pickup-text ovi-fnt-sze12">{{ userName | titlecase }}</span>
+            </div>
+            <div style="text-align: end;margin-top: -13px;" (click)="logout()">
+                <mat-icon class="fab-menu-icons" appTooltip tooltipText="{{'logout'|translate}}" >exit_to_app</mat-icon>
+            </div>
+        </div>
+        <div class="pwa-patient-page ">
+            <div class="pwa-btn-header">
+                <div class="pwa-header-actions">
+            
+                    <button class="pwa-action-btn" appTooltip tooltipText="{{'Add'|translate}}" [class.active-btns]="activeView === 'add'" (click)="setView('add')">
+                        <span><mat-icon style="font-size: 22px;">add</mat-icon></span>
+                    </button>
+            
+                    <button class="pwa-action-btn" appTooltip tooltipText="{{'ListView'|translate}}" [class.active-btns]="activeView === 'list'" (click)="setView('list')">
+                        <span><mat-icon style="font-size: 21px;" >list</mat-icon></span>
+                    </button>
+            
+                </div>
+            </div>
+            <div *ngIf="activeView == 'add'" class="pwa-patinet-card">
+                <form [formGroup]="patientForm" novalidate autocomplete="off">
+        
+                    <div class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> 👤 {{"Patient Name" |translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput formControlName="patientName">
+                            <mat-error *ngIf="!patientForm.controls.patientName.valid">
+                                <span [hidden]="!patientForm.controls['patientName'].errors.required">
+                                    {{"Patient Name required"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+        
+                    <div class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> 📋 {{"Patinet MRN" |translate}}</mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput formControlName="patientMRN">
+                        </mat-form-field>
+                    </div>
+        
+                    <div class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> 📱 {{"Mobile Number"|translate}}</mat-label>
+                        <mat-form-field appearance="outline">
+                            <input matInput formControlName="mobileNo">
+                            <mat-error *ngIf="!patientForm.controls.mobileNo.valid">
+                                <span [hidden]="!patientForm.controls['mobileNo'].errors.pattern">
+                                    {{"Invalid Mobile number"|translate}}
+                                </span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+        
+                    <div class="input-field-colum ovi-lbl-text-size ovi-font-family">
+                        <mat-label> 🧑‍🦽‍➡️ {{"Wheelchair ID" |translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field appearance="outline" >
+                            <mat-select formControlName="wheelchairId" appPlaceholder [showPlaceholder]="true"
+                                [placeholderText]="'Scan QR code'|translate" matSelectSearch>
+                                <mat-option *ngFor="let type of assetList" [value]="type.code">
+                                    {{type.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="!patientForm.controls.wheelchairId.valid">
+                                <span [hidden]="!patientForm.controls['wheelchairId'].errors.required">{{"Wheelchair ID required"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                        <span>
+                            <mat-icon class="pwa-custome-icon-style"
+                                style="font-size: 25px !important;padding-left: 5px !important;"
+                                (click)="qrScan()">qr_code</mat-icon>
+                        </span>
+                    </div> 
+
+                </form>
+            </div>
+        
+            <div *ngIf="activeView == 'add'" style="width: 100%;max-width: 431px;">
+                <button mat-button class="pwa-patient-btn ovi-font-family" [disabled]="patientForm.invalid" appDebounceClick 
+                (debounceClick)="patientchairRequest()" cdkFocusInitial [debounceTime]="300">{{"SUBMIT"|translate}}</button>
+            </div>
+
+            <div *ngIf="activeView == 'list'" style="height: calc(100vh - 225px); overflow-x: hidden;">
+                <div class="pwa-patient-card" *ngFor="let item of listViewData">
+                
+                    <div class="pwa-card-info">
+                        <div class="pwa-card-title">👤 {{ item.identifyingValue | titlecase }}</div>
+                        <div class="pwa-card-sub">📋 {{ item.uhid }}</div>
+                    </div>
+                
+                    <div class="pwa-card-info">
+                        <div class="pwa-card-sub">🧑‍🦽‍➡️ {{ item.entityName | titlecase }}</div>
+                        <div class="pwa-card-sub">📱 {{ item.mobileNumber }}</div>
+                    </div>
+                
+                    <div>
+                        <button mat-button class="received-btn" appDebounceClick [disabled]="item.bookingStatusId === 'BK-CMP'" 
+                                (debounceClick)="patientchairReceived(item)" cdkFocusInitial [debounceTime]="300">
+                            {{item.bookingStatusId === 'BK-CMP' ? 'Completed' : 'Return'}}
+                        </button>
+                    </div>
+                
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

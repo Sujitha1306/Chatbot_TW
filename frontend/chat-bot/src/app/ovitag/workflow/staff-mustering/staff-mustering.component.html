@@ -1,0 +1,320 @@
+<div class="ovi-font-family " style="overflow-y: auto;">
+  <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+    <mat-tab label="{{'Staff Mustering'|translate}}" style="overflow-y: auto;">
+
+      <div class="tab-content-scroll tab-content-wrapper">      
+        <div *ngIf="!hide"    style="display: flex; flex-direction: column; align-items: flex-start;height: 100vh;">
+          <div class="panel" style="width: 100vw;">
+            <h2 class="ovi-font-family">Emergency Control Panel</h2>
+            <div class="button-group" id="buttonGroup">
+              <button *ngFor="let r of routines" class="btn" (click)="eventType(r)">
+                {{ r.name }}
+              </button>
+            </div>
+          </div>
+          <div *ngIf="enableCard" class="local-overlay">
+            <div class="local-modal">
+              <mat-icon class="close-Icon" (click)="enableCard = false">
+                highlight_off
+              </mat-icon>
+              <h2 class="initiate-title">Emergency Muster</h2>
+              <p class="initiate-subtitle">
+                Click the button below only in the event of a genuine emergency. This will trigger the staff mustering
+                procedure across the facility.
+              </p>
+
+              <button mat-raised-button color="warn" class="initiate-btn" (click)="toggleInitiate()"
+                [disabled]="initiated">
+                <mat-icon>{{ initiated ? 'check' : 'warning' }}</mat-icon>
+                <span>{{ initiated ? 'Initiated' : 'Initiate Emergency Muster' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="!enableCard" style="width: 100%;">
+
+            <div class="card-container">
+              <div class="card" *ngFor="let item of employeedashboardData">
+                <div class="card-label">{{ item.label }}</div>
+                <div class="card-value">{{ item.value }}</div>
+
+                <div class="card-breakdown" *ngIf="item.breakdown">
+                  <div class="breakdown-item" *ngFor="let b of item.breakdown">
+                    {{ b.label }}: {{ b.value }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          <div style="
+              width: 100%;
+              background: #fff;
+              border-radius: 12px;
+              box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+              padding: 20px;
+              box-sizing: border-box;
+            ">
+          
+            <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 30px; color: #222;">
+              Building-wise Count
+            </h2>
+          
+            <div style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+                gap: 16px;
+                width: 100%;
+                box-sizing: border-box;
+              ">
+          
+              <div *ngFor="let b of locationCard" style="
+                  width: 100%;
+                  max-width: 210px;
+                  border-radius: 12px;
+                  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+                  overflow: hidden;
+                  background: #fff;
+                  cursor: pointer;
+                ">
+          
+                <div style="background: #cddfed; padding: 12px 14px;">
+                  <div style="font-size: 15px; font-weight: 600; color: #222;">
+                    {{ b.title }}
+                  </div>
+                </div>
+          
+                <div style="padding: 14px 16px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="font-size: 14px; color: #555;">Employees</span>
+                    <span style="font-size: 20px; font-weight: 700; color: #007bff;">
+                      {{ b.employeeCount }}
+                    </span>
+                  </div>          
+          
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="font-size: 14px; color: #555;">Visitors</span>
+                    <span style="font-size: 20px; font-weight: 700; color: #ff6600;">
+                      {{ b.visitorCount }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+        <div *ngIf="isInitiated" class="animated-panel">
+          <div class="emergency-banner"  >
+            <div style="display: flex; flex-direction: column; gap : 5px">
+              <div class="emergency-title">{{ typeOfEmergency }} ● <span style="font-size: 16px;font-weight: 500;">{{ emergencyDuration }}</span></div>
+              <div class="emergency-duration ">
+                Started at {{ actualTime | date:'h:mm a' }}
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-right: 10px;">
+            <button mat-button [matMenuTriggerFor]="emergencyMenu" class="status-badge ">
+              {{ statusText }}
+              <mat-icon>arrow_drop_down</mat-icon>
+            </button>
+
+
+            <mat-menu #emergencyMenu="matMenu">
+              <button mat-menu-item (click)="completeEmergency()">
+                Complete Emergency
+              </button>
+              <button mat-menu-item (click)="cancelEmergency()">
+                Cancel Emergency
+              </button>
+            </mat-menu>
+
+             <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom" 
+            style="cursor: pointer; float: right;" (click)="getMustering()" (keydown.enter)="fixClick()">autorenew</i>
+             </span>
+        </div>
+          </div>
+
+          <div class="animated-panel">
+            <div class="card-container">
+              <div class="card" *ngFor="let item of dashboardData">
+                <div class="card-label">{{ item.label }}</div>
+                <div class="card-value">{{ item.value }}</div>
+
+                <div class="card-breakdown" *ngIf="item.breakdown">
+                  <div class="breakdown-item" *ngFor="let b of item.breakdown">
+                    {{ b.label }}: {{ b.value }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="header">
+              <h2>People in Buildings</h2>
+              <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="margin-top: 10px;" *ngIf="false">
+                <mat-form-field appearance="outline" class="floor-dropdown">
+                  <mat-label class="ovi-lbl-text-size">View By</mat-label>
+                  <mat-select [(value)]="selectedView" (selectionChange)="onViewChange($event.value)">
+                    <mat-option value="floors">Floors</mat-option>
+                    <mat-option value="blocks">Blocks</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <span class="ovi-lbl-text-size block-with-close" *ngIf="this.selectedblock && false" >
+                Selected Block : <span style="font-weight: 400;">{{ selectedblock?.name }}</span>
+                <span class="close-icon" (click)="onClearSelectedBlock($event)">✕</span>
+              </span>
+            </div>
+
+              <div class="loc-card-container animated-panel" >
+                <div *ngFor="let item of locationCard" 
+                    (keydown.enter)="fixClick()" 
+                    (click)="openFloorMap(item.parentId)">
+                  
+                  <div class="floor-card" [style.border]="item.count > 0 ? '2px solid red' : 'none'">
+                    <div class="floor-header">
+                      <div class="floor-title">{{ item.title }}</div>
+                    </div>
+                    
+                    <div class="floor-stats">
+                      <div class="total-card">
+                        <div class="total-left">
+                          <div class="total-icon">
+                            <mat-icon>groups</mat-icon>
+                          </div>
+                          <span class="total-label">Total</span>
+                        </div>
+                        <span class="total-number">{{ item.count }}</span>
+                      </div>
+                      <div class="stat-row">
+                        <div class="stat-left">
+                          <mat-icon class="icon-green">work_outline</mat-icon>
+                          <span class="stat-label">Employees</span>
+                        </div>
+                        <span class="stat-value emp-value">{{item.employeeCount}}</span>
+                      </div>
+                      
+                      <div class="stat-row">
+                        <div class="stat-left">
+                          <mat-icon class="icon-yellow">person_outline</mat-icon>
+                          <span class="stat-label">Visitors</span>
+                        </div>
+                        <span class="stat-value visitor-value">{{item.visitorCount}}</span>
+                      </div>
+                    </div>
+                    
+                    <div class="bottom-line" [style.background]="item.count > 0 ? 'red' : ''"></div>
+                  </div>
+                </div>
+              </div>
+            <!-- <div class="loc-card-container animated-panel" *ngIf="selectedView === 'blocks'">
+              <div  *ngFor="let block of blocks" (click)="onBlockSelected(block.id)">
+                <div class="floor-card"  [style.border]="block.count > 0 ? '2px solid red' : 'none'">
+                  <div class="floor-header">
+                    <div class="floor-title-section">
+                      <div class="floor-title">{{ block.name }}</div>
+                    </div>
+                  </div>
+                  <hr class="divider" />
+                  <div class="floor-stats">
+                    <div class="total-card">
+                      <div class="total-left">
+                        <div class="total-icon">
+                          <mat-icon>groups</mat-icon>
+                        </div>
+                        <span class="total-label">Total</span>
+                      </div>
+                      <span class="total-number">{{ block.count }}</span>
+                    </div>
+
+                    <div class="stat-row">
+                      <div class="stat-left">
+                        <mat-icon class="icon-green">work_outline</mat-icon>
+                        <span class="stat-label">Employees</span>
+                      </div>
+                      <span class="stat-value emp-value">{{block.count}}</span>
+                    </div>
+                    <div class="stat-row">
+                      <div class="stat-left">
+                        <mat-icon class="icon-yellow">person_outline</mat-icon>
+                        <span class="stat-label">Visitors</span>
+                      </div>
+                      <span class="stat-value visitor-value">{{block.count}}</span>
+                    </div>
+                  </div>
+                  <div class="bottom-line" [style]="{ background: block.count > 0 ? 'red' : '' }"></div>
+                </div>
+              </div>
+            </div>
+            <div class="loc-card-container animated-panel" *ngIf="selectedView === 'locations'">
+              <div class="loc-card animated-panel" *ngFor="let item of selectedFloorLocations">
+                <div class="loc-top">
+                  <div class="loc-name">{{ item.title }}</div>
+                </div>
+
+                <div class="loc-bottom">
+                  <div class="stat-box total">
+                    <div class="value">{{ block.count }}</div>
+                    <div class="label">Total</div>
+                  </div>
+
+                  <div class="stat-box">
+                    <div class="value">{{ block.count }}</div>
+                    <div class="label">Employees</div>
+                  </div>
+
+                  <div class="stat-box">
+                    <div class="value">{{ block.count }}</div>
+                    <div class="label">Visitors</div>
+                  </div>
+                </div>
+              </div>
+            </div> -->
+
+            <div class="header" *ngIf="assemblyPoints.length > 0">
+              <h2> Safe Assembly Points</h2>
+            </div>
+            <div class="loc-card-container" *ngIf="assemblyPoints.length > 0">
+              <div class="sap-single-card" *ngFor="let item of assemblyPoints">
+                <div class="sap-card-top">
+                  <div class="sap-title">{{ item.locationName }}</div>
+                  <div class="sap-subtitle">{{ item.subtitle }}</div>
+                </div>
+                <div class="sap-card-bottom">
+                  <span class="sap-count">{{ item.count }}</span>
+                  <span class="sap-label">{{ 'People' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <tw-header-new-component [type]="'new'" [component]="'musteringHistory'" [permission]="null"
+              [rowFilter]="null" [selectDropdown]="null" [selectedName]="null" [locationId]="null" [dateFilter]="null"
+              [selectedView]="null" (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)"[manageAction]="null"
+              [groupFilter]="[]"></tw-header-new-component>
+            <angular-table-component [id]="'staffMustering'" [type]="'ng-table'" [tableData]="sapData"
+              [columns]="displayColumns" [columnData]="sapColumns" (triggerAction)="eventAction($event)"
+              [applyFilter]="applyFilterValue">
+            </angular-table-component>
+          </div>
+        </div>
+      </div>
+
+    </mat-tab>
+    <mat-tab label="{{'History'|translate}}">
+      <div style="margin-top: 10px;">
+        <tw-header-new-component [type]="'new'" [component]="'staffMustering-history'" [permission]="null" [dateFilter]="selectedDate"
+          [rowFilter]="null" [selectDropdown]="null" [selectedName]="null" [locationId]="null" [selectedView]="null" [manageAction]="null" 
+          (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)"  
+          [groupFilter]="[]"></tw-header-new-component>
+        <tw-table-component [component]="'staffMustering'" [eventColumn]="eventColumn" [columns]="historyColumns" [dateTimeColumns]="dateTimeColumn"
+          [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"
+          [rowId]="'Id'" [rowClick]="true" (rowClickAction)="rowClick($event)" (eventAction)="eventAction($event)"
+          [permissionControl]="permissionControl" [pagination]="null" [applyFilter]="applyFilterValue" [pagination]="[{pageSize: pageSize , pageStart: pageStart,length: pageLength}]">
+        </tw-table-component>
+      </div>
+    </mat-tab>
+    <mat-tab label="{{'Map'|translate}}">
+      <div style="height: 100vh;">
+        <app-common-dialog *ngIf="floorData" [injectdata]="floorData" [editable]="floorData.editable"></app-common-dialog>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

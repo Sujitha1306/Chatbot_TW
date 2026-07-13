@@ -1,0 +1,94 @@
+<div class="manage-body container-fluid ovi-font-family">
+    <mat-toolbar class="block-1" style="height: 50px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center;margin-left: 5px;">
+            <div class="circle">
+                <button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                    <mat-icon class="icon-style" style="padding: 9px 0px 0 0;">close</mat-icon>
+                </button>
+            </div>
+            <div class="title-Name">{{"Schedule shows"|translate}}</div>
+        </div>
+    </mat-toolbar>
+    <div style="margin-left: 45px; width: 90%;padding: 10px; display: flex; align-items: center">
+        <div style="width: calc(100% - 120px);">
+            <div style="display: flex;">
+                <div id="box1">{{"Select Date"|translate}}</div>
+                <span id="box2">
+                    <mat-form-field class="select time-insert" appearance="none">
+                        <input *ngIf="data === 'previous'" matInput [matDatepicker]="picker1"
+                            class="tw-input-date" [(ngModel)]="selectedDate" [ngModelOptions]="{ standalone: true }" (dateChange)="getDate($event)" readonly />
+                        <input *ngIf="data !== 'previous'" matInput  [matDatepicker]="picker1"
+                            class="tw-input-date" [min]="today" [(ngModel)]="selectedDate" [ngModelOptions]="{ standalone: true }"
+                            (dateChange)="getDate($event)" readonly />
+                        <mat-datepicker-toggle matSuffix [for]="picker1"
+                            style="padding-right:2px;"></mat-datepicker-toggle>
+                        <mat-datepicker #picker1></mat-datepicker>
+                    </mat-form-field>
+                </span>
+            </div>
+        </div>
+    </div>
+    <mat-card class="uplaod-box">
+        <mat-card-content id="sh-approved" style="height: 100%; padding: 0 25px; overflow: auto;">
+            <div style="display: inline;">
+                <mat-list *ngFor="let list of requestList">
+                    <mat-list-item class="item">
+                        <div style="display: flex">
+                            <div style="margin-top: 25px; width: 93px; font-weight: 600;">{{list.slotTime}}</div>
+                            <div style="display: block">
+                                <img [src]="list.thumbnailUrl != ''? list.thumbnailUrl : '/assets/Alert/black.png'" alt="thumbnail-img"
+                                    class="thumbnail-img">
+                                <span class="duration">{{list.duration}}</span>
+                            </div>
+                            <span style="width: calc(100% - 480px);">
+                                <div class="table-title">{{list.title}}</div>
+                                <div class="ovi-fnt-sze11" style="padding: 1px 10px;">{{"Type"|translate}}
+                                    - <span *ngIf="list.telecastValue === 'Live Telecast'" class="live"></span>
+                                    <span
+                                        [ngStyle]="{color: list.telecastValue === 'Live Telecast' ? 'red' : ''}">{{list.telecastValue}}</span>
+                                </div>
+                                <div class="ovi-fnt-sze11" style="padding: 1px 10px;">{{"Requested
+                                    slot"|translate}}<span>{{list.telecastValue}}</span></div>
+                            </span>
+                            <span *ngIf="data !== 'previous' && data !== 'onlyView'" class="replace">
+                                <button mat-button style="background: #f4f4f4; margin-right:10px;" (click)="getApproveData('modify', list)" >{{"Replace the
+                                    video"|translate}}</button>
+                                <button mat-button (click)="scheduleDelete(list)" style="padding: 0px; min-width: 35px !important; background: #f4f4f4;">
+                                    <mat-icon style="padding-top: 0px;">delete_outline</mat-icon>
+                                </button>
+                            </span>
+                        </div>
+                    </mat-list-item>
+                </mat-list>
+                <mat-list *ngIf="data !== 'previous' && data !== 'onlyView'">
+                    <mat-list-item class="new-item">
+                        <div>
+                            <mat-form-field class="example-full-width form-field time-insert"
+                                style="width: 80px; padding: 0 15px 0 0; top: 7px" appearance="none">
+                                <input matInput  #date appPlaceholder [showPlaceholder]="true" [placeholderText]="'Schedule'|translate" class="time-input"
+                                    autofocus="timeEdit" [formControl]="time" [readonly]="!timeEdit">
+                                <mat-icon *ngIf="!timeEdit" matSuffix
+                                    style="font-weight: 600;cursor: pointer; color: #3a9bff"
+                                    (click)="edit(true)"  (keydown.enter)="fixClick()">edit</mat-icon>
+                                <span *ngIf="timeEdit && !time.hasError('invalidTimeFormat')" class="ti-btn" matSuffix
+                                    (click)="edit(false)" (keydown.enter)="fixClick()">
+                                    <mat-icon style="padding-left: 2px;" *ngIf="timeEdit" (click)="edit(false)" (keydown.enter)="fixClick()">done</mat-icon>
+                                </span>
+                                <mat-error>
+                                    <span *ngIf="time.hasError('invalidDate')">{{"Selected date is invalid"|translate}}</span>
+                                    <span *ngIf="time.hasError('invalidTimeFormat')">{{"Invalid time format (HH:mm)"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                        <span *ngIf="!timeEdit">
+                            <button style="background: #000000; color: #ffff;" mat-button (click)="getApproveData('create', '')">+
+                                {{"Add new"|translate}}</button>
+                        </span>
+                    </mat-list-item>
+                </mat-list>
+            </div>
+        </mat-card-content>
+    </mat-card>
+    <app-approved-request *ngIf="isOpen" style="display: flex; justify-content: flex-end;" (show)="open($event)"
+        [pasingReport]="passingdata"></app-approved-request>
+</div>

@@ -1,0 +1,112 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+  <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="barcodeForm">
+    <div class="ovi-row-gap">
+
+      <div *ngIf="type != 'location'" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"Code-Type"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <mat-select placeholder="{{'Code-Type' | translate}}" formControlName="selectedType"
+            [disabled]="barcodeForm.get('selectedType').value !== null">
+            <mat-option value="bar-code">Bar-code</mat-option>
+            <mat-option value="qr-code">QR-code</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="type != 'location'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"Pre-Text"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <input matInput formControlName="name" id="name" placeholder="{{'Pre-Text' | translate}}">
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="type != 'location'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"From"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <input matInput formControlName="fromValue" id="fromValue" type="number" autocomplete="off"
+            placeholder="From">
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="type != 'location'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+        <mat-label class="ovi-lbl-text-size">{{"To"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <input matInput formControlName="toValue" id="toValue" type="number" autocomplete="off" placeholder="To">
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="type != 'location'" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+        <mat-label class="ovi-lbl-text-size">{{"Page Size"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <mat-select placeholder="{{'Page Size' | translate}}" formControlName="pagesize">
+            <mat-option *ngFor="let option of pageSizeOptions" [value]="option.value">{{ option.key }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="type == 'location'">
+        <mat-label class="ovi-lbl-text-size">{{"Locations"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <mat-select placeholder="{{'Locations' | translate}}" formControlName="multiSelected" multiple
+            (openedChange)="openedChange($event)">
+            <mat-option *ngFor="let data of dataGenerate" [value]="data.locations">{{data.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="barcodeForm.value.selectedType === 'bar-code'">
+        <mat-label class="ovi-lbl-text-size">{{"Label Size"|translate}} </mat-label>
+        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+          <mat-select placeholder="{{'Label Size' | translate}}" formControlName="selectedSizess">
+            <mat-option *ngFor="let option of sizeOptions" [value]="option.value">
+              {{ option.value }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+
+  <div class="ovi-pop-ftr">
+
+    <button mat-button class="active-btn" appDebounceClick (debounceClick)="generateValue()" cdkFocusInitial
+      [debounceTime]="100">{{"Generate"|translate}}</button>
+
+    <button mat-button class="active-btn " appDebounceClick (debounceClick)="savePdf(barcodeForm.value.selectedType)"
+      cdkFocusInitial [debounceTime]="1000">{{'Print' | translate}}</button>
+
+    <button mat-button class="cancle-btn" (click)="removeSelectedRows()">{{"Clear"|translate}}</button>
+  </div>  
+
+  <div class="box container" *ngIf="showData" id="contentToConvert" [style.width.px]="pageWidth" style="overflow: auto;"
+    [ngStyle]="{'height' : type == 'location' ? 'calc(100% - 120px)' : 'calc(100% - 185px)' }">
+
+    <div class="content" *ngFor="let data of barcodearray; let i = index">
+
+        <ngx-barcode6 *ngIf="barcodeForm.value.selectedType === 'bar-code'" [elementType]="'svg'" [bc-width]="iconWidth"
+            [bc-height]="iconLength" [bc-text-align]="center" [bc-font-size]="selectedFontSize" [bc-value]="data"
+            [bc-display-value]="true">
+        </ngx-barcode6>
+
+      <div style="align-items: center;" [ngStyle]="{'display': type == 'location' ? '' : 'flex'}">
+
+         <div *ngIf="barcodeForm.value.selectedType !== 'bar-code' && this.position==='left'" style="font: 16px monospace;"> 
+            {{ data }}
+          </div>
+
+          <qrcode *ngIf="barcodeForm.value.selectedType !== 'bar-code'" [elementType]="'svg'" [qrdata]="data"
+            [errorCorrectionLevel]="'M'" [width]="170" [scale]="selectedFontSize" [margin]="selectedMargins" [colorDark]="colorDark">
+          </qrcode>
+
+          <div *ngIf="barcodeForm.value.selectedType !== 'bar-code' && this.position === 'right'" style="font: 16px monospace;"> 
+            {{ data }} 
+          </div>
+
+          <div *ngIf="type == 'location' && barcodeDetail[i]?.locationName" style="font: 16px monospace;display: flex;justify-content: center;">
+            {{ barcodeDetail[i].locationName }}
+          </div>
+
+      </div>
+    </div>    
+  </div>
+</div>

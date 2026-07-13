@@ -1,0 +1,61 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Manage"|translate}} {{ 'Config File'|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+  
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);" [formGroup]="configForm">
+            <div class="ovi-row-gap">
+              <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                 <mat-label class="ovi-lbl-text-size">{{"Config Key"|translate}} <span class="mandatory-field">*</span></mat-label>
+                  <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Config Key'|translate" formControlName="id" required autocomplete="off" [readonly]="data !== null">
+                     <mat-error *ngIf="configForm.controls.id.invalid">
+                      <span [hidden]="!configForm.controls['id'].errors.required">
+                        {{"Config Key is required."|translate}}</span>
+                    </mat-error>    
+                  </mat-form-field>                            
+              </div>
+              <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Facility ID"|translate}}</mat-label>
+                  <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Facility Id'|translate"
+                      formControlName="facilityId" [disableOptionCentering]="true" (openedChange)="onFilterSearchOpened($event)">
+                      <mat-option>
+                        <ngx-mat-select-search [formControl]="facilitySearch" [placeholderLabel]="'Search' | translate"
+                          [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                      </mat-option>
+                      <mat-option [value]="null"> ---- All -----</mat-option>
+                      <mat-option *ngFor="let data of facilitySearchList" [value]="data.facilityId">
+                        {{ data.displayName }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+              </div>
+              <div class="ovi-row-three-clmn ovi-matfrmfld-textarea-top-box">
+                  <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                      <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate" formControlName="comments" autocomplete="off"  rows="2"></textarea>
+                    </mat-form-field>
+              </div>
+            </div>
+            <div class="form-row" style="max-width: 1090px;">
+              <span class="ovi-lbl-text-size">{{"Content"|translate}}</span>
+              <div class="example-form content-class"> <!-- Apply a custom class for content -->
+                <mat-form-field class="example-full-width form-field" appearance="outline">
+                  <textarea matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Content'|translate" style="background: hsl(0deg 3% 22%);color: #e0e0e0;margin: 5px 0;" formControlName="contentData" autocomplete="off"  rows="10"></textarea>
+                  <mat-error *ngIf="configForm.get('contentData').hasError('invalidJson')" class="ovi-fnt-sze14" style="padding-top: 10px;">{{"Invalid JSON Format"|translate}}</mat-error>
+                </mat-form-field>
+              </div>
+            </div>  
+    </div>
+  
+
+  <div class="ovi-pop-ftr">
+      <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+      <button mat-button class="active-btn" [disabled]="configForm.invalid" *ngIf="data && !isFacilityChecked" appDebounceClick
+        (debounceClick)="updateConfig()" [debounceTime]="300">{{"Update"|translate}}</button>
+      <button mat-button class="active-btn" [disabled]="configForm.invalid" *ngIf="!data || isFacilityChecked" appDebounceClick
+        (debounceClick)="addConfig()" [debounceTime]="300">{{"Save"|translate}}</button>
+  </div>
+</div>

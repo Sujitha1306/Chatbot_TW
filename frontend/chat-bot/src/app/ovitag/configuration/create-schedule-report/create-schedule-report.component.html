@@ -1,0 +1,385 @@
+<div class="loading-spinner" *ngIf="isloading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;overflow: hidden;">
+    <div class="ovi-pop-hdr">
+        <div>Schedule Report</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height: calc(100% - 143px);overflow: auto;">
+         <mat-tab-group (selectedTabChange)="tabClick($event)" [selectedIndex]="selectedIndex" >
+            <mat-tab label="{{'Report Details'|translate}}" [formGroup]="reportForm">
+                <ng-template mat-tab-label >{{"Report Detail"|translate}}</ng-template>
+                <div class="ovi-row-gap" style="overflow: hidden;">
+
+                    <!-- <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                        <mat-label  class="ovi-lbl-text-size">{{"Code"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="text" formControlName="reportCode" appPlaceholder [showPlaceholder]="false"
+                                [placeholderText]="'Code'|translate">
+                        </mat-form-field>
+                    </div> -->
+                
+                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                        <mat-label  class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput type="text" formControlName="reportName" appPlaceholder [showPlaceholder]="false"
+                                [placeholderText]="'Report Name'|translate">
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                        <mat-label  class="ovi-lbl-text-size">{{"Group Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="reportGroupName">
+                                <mat-option *ngFor="let data of reportGroupList" [value]="data.code">
+                                    {{data.value}} </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Model ID"|translate}} <span class="material-icons  ovi-prmry-clr ovi-fnt-sze16"
+                                style="padding-left: 2px; cursor: pointer;position: relative;bottom: -3px;padding-top: 0px !important" (click)="addModel()" appTooltip
+                                tooltipText="{{'Create Model'|translate}}" (keydown.enter)="fixClick()">control_point</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select formControlName="reportModelId">
+                                <mat-option *ngFor="let data of modelList" [value]="data.id">
+                                    {{data.name}} </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+
+                    <div class="ovi-matfrmfld-drpdwn-top-box ovi-row-three-clmn">
+                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <mat-select formControlName="reportstatus">
+                                <mat-option [value]="true">{{"Active"|translate}}</mat-option>
+                                <mat-option [value]="false">{{"Inactive"|translate}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                
+                    <div class="ovi-matfrmfld-textarea-top-box ovi-row-three-clmn">
+                        <mat-label  class="ovi-lbl-text-size">{{"Template"|translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <textarea matInput rows=2 formControlName="reportTemplate" appPlaceholder [showPlaceholder]="false"
+                                [placeholderText]="'Template'|translate"></textarea>
+                        </mat-form-field>
+                    </div>
+                
+                </div>
+            </mat-tab>
+
+            <mat-tab label="{{'Schedule Details'|translate}}" [formGroup]="scheduleForm">
+                <ng-template mat-tab-label>{{"Schedule Detail"|translate}}</ng-template>
+
+                <div class="tw-list-layout">
+                    <div class="tw-left-panel">
+                        <mat-list style="width: 260px !important;" class="selected-mat-list">
+                            <mat-list-item *ngFor="let list of scheduleList; let i = index" (click)="getscheduleList(list, i)" class="selected-entity-list" 
+                            [class.active]="scheduleIndex === i">
+                                <div class="schedule-item">
+                                    <div class="schedule-title" appTooltip tooltipText="{{ list?.name | translate }}" placement="bottom">
+                                        <!-- 🗓️ {{ 'Schedule ' + (i + 1) }} -->
+                                        🗓️ {{ list?.name | titlecase }}
+                                    </div>
+                                
+                                    <div class="schedule-time" *ngIf="list?.schedule">
+                                        <span class="schedule-icon">⏰</span>
+                                        <span class="schedule-text">{{ list?.schedule }}</span>
+                                    </div>
+                                </div>
+                            </mat-list-item>
+                        </mat-list>
+                    </div>
+                    <div class="tw-right-panel">
+                        <div class="schedule-card">
+                            <div class="schedule-trigger" (click)="toggleSchedule()">
+                                <div class="left">
+                                    <mat-icon style="font-size: 19px !important;" >schedule</mat-icon>
+                                    <span>Schedule Details</span>
+                                </div>
+                                <mat-icon class="arrow" [class.rotate]="isScheduleOpen">
+                                    expand_less
+                                </mat-icon>
+                            </div>
+                            <div class="schedule-body" *ngIf="isScheduleOpen">
+                                <div class="ovi-row-gap">
+                                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                                        <mat-label  class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput type="text" formControlName="scheduleName" appPlaceholder [showPlaceholder]="false"
+                                                [placeholderText]="'Name'|translate">
+                                            <mat-error *ngIf="scheduleForm.controls.scheduleName.invalid" class="error-txt-1">
+                                                <span  [hidden]="!scheduleForm.controls.scheduleName.errors.required">{{"Name is
+                                                    required"|translate}}.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{"Time"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput placeholder="{{'Time'|translate}}" class="time-input"
+                                                [ngxTimepicker]="timepicker" [disableClick]="true" formControlName="time">
+                                            <ngx-material-timepicker-toggle matSuffix [for]="timepicker">
+                                            </ngx-material-timepicker-toggle>
+                                            <ngx-material-timepicker #timepicker></ngx-material-timepicker>
+                                            <mat-error *ngIf="scheduleForm.controls.time.invalid">
+                                                <span [hidden]="!scheduleForm.controls['time'].errors.required">
+                                                    {{"Time is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                
+                                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{"Day of Month"|translate}} <span
+                                                class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput placeholder="{{'Day(Month)'|translate}}" autocomplete="off" formControlName="monthDay"
+                                                [readonly]>
+                                            <mat-error *ngIf="scheduleForm.controls.monthDay.invalid">
+                                                <span [hidden]="!scheduleForm.controls['monthDay'].errors.required">
+                                                    {{"Day(Month) is required."|translate}}</span>
+                                                <span [hidden]="!scheduleForm.controls['monthDay'].errors.pattern">
+                                                    {{"Please enter numbers between 1-31 only."|translate}}</span>
+                                                <span [hidden]="!scheduleForm.controls['monthDay'].errors.min">
+                                                    {{"Please enter numbers between 1-31 only."|translate}}
+                                                </span>
+                                                <span [hidden]="!scheduleForm.controls['monthDay'].errors.max">
+                                                    {{"Please enter numbers between 1-31 only."|translate}}
+                                                </span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                
+                                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{"Month"|translate}} <span class="mandatory-field">*</span>
+                                        </mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput placeholder="{{'Month'|translate}}" autocomplete="off" formControlName="month" [readonly]>
+                                            <mat-error *ngIf="scheduleForm.controls.month.invalid">
+                                                <span [hidden]="!scheduleForm.controls['month'].errors.required">
+                                                    {{"Month is required."|translate}}</span>
+                                                <span [hidden]="!scheduleForm.controls['month'].errors.pattern">
+                                                    {{"Please enter numbers between 1-31 only."|translate}}</span>
+                                                <span [hidden]="!scheduleForm.controls['month'].errors.min">
+                                                    {{"Please enter numbers between 1-12 only."|translate}}
+                                                </span>
+                                                <span [hidden]="!scheduleForm.controls['month'].errors.max">
+                                                    {{"Please enter numbers between 1-12 only."|translate}}
+                                                </span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                
+                                    <div class="ovi-matfrmfld-input-box-pdg ovi-row-four-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{"Day of Week"|translate}} <span class="mandatory-field">*</span>
+                                        </mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput placeholder="{{'Day(Week)'|translate}}" autocomplete="off" formControlName="weekDay"
+                                                [readonly]>
+                                            <mat-error *ngIf="scheduleForm.controls.weekDay.invalid">
+                                                <span [hidden]="!scheduleForm.controls['weekDay'].errors.required">
+                                                    {{"Day(week) is required."|translate}}</span>
+                                                <span [hidden]="!scheduleForm.controls['weekDay'].errors.pattern">
+                                                    {{"Please enter numbers between 1-7 only."|translate}}</span>
+                                                <span [hidden]="!scheduleForm.controls['weekDay'].errors.min">
+                                                    {{"Please enter numbers between 1-7 only."|translate}}
+                                                </span>
+                                                <span [hidden]="!scheduleForm.controls['weekDay'].errors.max">
+                                                    {{"Please enter numbers between 1-7 only."|translate}}
+                                                </span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                
+                                    <div class="ovi-matfrmfld-textarea-top-box ovi-row-four-clmn">
+                                        <mat-label  class="ovi-lbl-text-size">{{"Parameters"|translate}} <span
+                                                class="mandatory-field">*</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <textarea matInput rows=2 formControlName="parameters" appPlaceholder [showPlaceholder]="false"
+                                                [placeholderText]="'Parameters'|translate"></textarea>
+                                            <mat-error *ngIf="scheduleForm.controls.parameters.invalid" class="error-txt-1">
+                                                <span  [hidden]="!scheduleForm.controls.parameters.errors.required">{{"Parameters is
+                                                    required"|translate}}.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                
+                                    <div class="ovi-matfrmfld-drpdwn-top-box ovi-row-four-clmn">
+                                        <mat-label class="ovi-lbl-text-size">{{"Status"|translate}} <span class="mandatory-field">*</span>
+                                        </mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <mat-select formControlName="status">
+                                                <mat-option [value]="true">{{"Active"|translate}}</mat-option>
+                                                <mat-option [value]="false">{{"Inactive"|translate}}</mat-option>
+                                            </mat-select>
+                                            <mat-error *ngIf="scheduleForm.controls.status.invalid">
+                                                <span [hidden]="!scheduleForm.controls['status'].errors.required">
+                                                    {{"Status is required."|translate}}</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                            </div>
+                        
+                        </div>
+
+                        <div class="recipient-card">
+                            <div class="recipient-trigger" (click)="toggleRecipient()">
+                                <div class="left">
+                                    <mat-icon style="font-size: 19px !important;">group</mat-icon>
+                                    <span>Recipient Details</span>
+                                </div>
+                        
+                                <mat-icon class="arrow" [class.rotate]="isRecipientOpen">
+                                   expand_less
+                                </mat-icon>
+                            </div>
+                        
+                            <div class="recipient-body" *ngIf="isRecipientOpen">
+                                <div class="ovi-row-gap recipient-content">
+
+                                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                                        <mat-label class="ovi-lbl-text-size">{{"Recipient Type"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                            <mat-select formControlName="recipientType" (selectionChange)="getRecipientName($event.value)">
+                                                <mat-option *ngFor="let data of recipientTypeList" [value]="data.code">
+                                                    {{data.value}}
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"Recipient Name"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                            <input matInput placeholder="{{'Recipient Name'|translate}}" formControlName="recipientName"
+                                                appTypeHit (typeHit)="searchUserNamelist($event)" [matAutocomplete]="auto" autocomplete="off">
+                                            <mat-autocomplete autoActiveFirstOption [displayWith]="recipientEnabled ? getRecipientList.bind(userNameList) : null" #auto="matAutocomplete">
+                                                <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                                                    <div class="alrt-wid-styl">{{option.name}}</div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                        </mat-form-field>
+                                    </div>
+                        
+                                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                                        <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}}</mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                            <mat-select formControlName="channelType">
+                                                <mat-option *ngFor="let data of channelType" [value]="data.code">
+                                                    {{data.value}}
+                                                </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                        
+                                    <div class="recipient-btn-wrap">
+                                        <button mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                            (debounceClick)="addEscalation()" [disabled]="!scheduleForm.get('recipientName').value || !scheduleForm.get('channelType').value 
+                                                     || !scheduleForm.get('recipientType').value">  {{'ADD' | translate}}
+                                        </button>
+                                    </div>
+                                </div>
+                        
+                                <div *ngIf="dataSource.length" class="recipient-table">
+                                    <angular-table-component [id]="'schedule-report'" [type]="'ng-table'" [tableData]="dataSource" [columns]="DisplayColumn" 
+                                    [columnData]="DataColumns" (triggerAction)="eventAction($event)" [menuButton]="moreOptions">
+                                    </angular-table-component>
+                                </div>
+                        
+                            </div>
+                        </div>
+
+                         <div *ngIf="selectedScheduleId" class="mail-card">
+                            <div class="mail-trigger" (click)="toggleSendMail()">
+                                <div class="left">
+                                    <mat-icon style="font-size: 19px !important;">contact_mail</mat-icon>
+                                    <span>Validate Schedule Email</span>
+                                </div>
+                        
+                                <mat-icon class="arrow" [class.rotate]="isSendMailOpen">
+                                   expand_less
+                                </mat-icon>
+                            </div>
+                            <div class="mail-body" *ngIf="isSendMailOpen">
+                                <div class="ovi-row-gap mail-content">
+
+                                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"From time"|translate}} <span class="mandatory-field"> *</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'From Time'|translate" 
+                                                [matDatepicker]="picker1" formControlName="fromDate" [max]="previousDate" (dateChange)="onScheduleChange($event)" >
+                                                <mat-datepicker-toggle matSuffix [for]="picker1" style="padding-right:2px;"></mat-datepicker-toggle>
+                                                <mat-datepicker #picker1></mat-datepicker>
+                                            <mat-error *ngIf="scheduleForm.controls.fromDate.invalid" class="error-txt-1">
+                                                <span [hidden]="!scheduleForm.controls['fromDate'].errors.required">
+                                                    {{"From Time is required"| translate}}.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label class="ovi-lbl-text-size">{{"To time"|translate}} <span class="mandatory-field"> *</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'To Time'|translate"
+                                               [matDatepicker]="picker2" formControlName="toDate" [max]="previousDate" >
+                                                <mat-datepicker-toggle matSuffix [for]="picker2" style="padding-right:2px;"></mat-datepicker-toggle>
+                                                <mat-datepicker #picker2></mat-datepicker>
+                                            <mat-error *ngIf="scheduleForm.controls.toDate.invalid" class="error-txt-1">
+                                                <span [hidden]="!scheduleForm.controls['toDate'].errors.required">
+                                                    {{"To Time is required"| translate}}.</span>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                                        <mat-label  class="ovi-lbl-text-size">{{"Email"|translate}} <span class="mandatory-field"> *</span></mat-label>
+                                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                            <input matInput type="text" formControlName="email" appPlaceholder [showPlaceholder]="false"
+                                                [placeholderText]="'Email'|translate">
+                                                <mat-error *ngIf="scheduleForm.controls.email.invalid">
+                                                    <span  [hidden]="!scheduleForm.controls['email'].errors.required">
+                                                        {{"E-mail is required"|translate}}.
+                                                    </span>
+                                                    <span  [hidden]="!scheduleForm.controls['email'].errors.email">
+                                                        {{"Invalid E-mail"|translate}}
+                                                    </span>
+                                                </mat-error>
+                                        </mat-form-field>
+                                    </div>
+
+                                    <div class="mail-btn-wrap">
+                                        <button mat-button class="active-btn" appDebounceClick [debounceTime]="300"
+                                            (debounceClick)="sendMail()" [disabled]="!scheduleForm.get('fromDate').value || !scheduleForm.get('toDate').value 
+                                                     || !scheduleForm.get('email').value">  {{'Send' | translate}}
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+         </mat-tab-group>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close style="margin-right: 0px !important;">{{"Cancel"|translate}}</button>
+        <button  *ngIf="!selectedScheduleId && selectedIndex == 1" mat-button class="active-btn" appDebounceClick (debounceClick)="createSchdeule()" [debounceTime]="300"
+        cdkFocusInitial [disabled]="scheduleForm.get('scheduleName')?.invalid || scheduleForm.get('parameters')?.invalid || scheduleForm.get('time')?.invalid || 
+        scheduleForm.get('monthDay')?.invalid || scheduleForm.get('month')?.invalid || scheduleForm.get('weekDay')?.invalid || scheduleForm.get('status')?.invalid">{{"Add"|translate}}</button>
+        <button *ngIf="selectedIndex == 1" mat-button class="active-btn" appDebounceClick (debounceClick)="saveDetails()" 
+        [debounceTime]="300" cdkFocusInitial [disabled]="selectedScheduleId">{{"Save"|translate}}</button>
+        <button *ngIf="selectedIndex == 0" mat-button class="active-btn" appDebounceClick (debounceClick)="saveDetails()" 
+        [debounceTime]="300" cdkFocusInitial >{{"Save"|translate}}</button>
+    </div>
+</div>
+

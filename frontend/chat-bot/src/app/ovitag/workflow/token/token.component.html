@@ -1,0 +1,441 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div>
+  <tw-header-new-component [type]="'new'" [component]="'token'" [permission]="null" [dateFilter]="selectedTab === 'Token List' ? this.selectedDate : null" [rowFilter]="null"
+    [manageAction]="showActions" [selectDropdown]="selectDropdown" [groupFilter]="parentFilter"
+    [selectedName]="selectedName !== null ? selectedName : true" [locationId]="null" [selectedView]="selectedView"
+    [multiView]="null" (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)">
+  </tw-header-new-component>
+  <div class="tw-content1">
+    <mat-tab-group (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+        <mat-tab label="{{'Token List'|translate}}">
+          <div *ngIf="selectedTab === 'Token List'">
+            <div class="tw-content1 table-align">
+              <div fxLayout="column" class="mat-elevation-z4 tw-manage-component" [ngClass.xs]="'components-container-xs'"
+                fxLayoutGap="5px" style="height: calc(100vh - 165px);">
+                <div class="table-container tw-mat-table-overflow">
+                  <table mat-table #table class="tw-table" [dataSource]="dataSource" matSort>
+                    <ng-container *ngFor="let col of dataColumns; let colIndex = index;"
+                      matColumnDef="{{displayedColumns[colIndex]}}">
+                      <mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header tw-table-content"
+                        [ngStyle]="{'max-width': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Add' 
+                        || displayedColumns[colIndex] === 'Count' ? '2%' : '',
+                        'padding-left': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Count' ? '0px' : '18px'}"
+                        [disabled]="sortColumn?.indexOf(displayedColumns[colIndex]) > -1"
+                        style="padding-right: 20px;justify-content: start;">
+                        <span 
+                          *ngIf="!(iconHeader?.indexOf(displayedColumns[colIndex]) > -1)">{{displayedColumns[colIndex]|translate}}</span>
+
+                      </mat-header-cell>
+                      <mat-cell *matCellDef="let element;let i = index;" [ngStyle]="{'max-width': displayedColumns[colIndex] === 'ID' || 
+                          displayedColumns[colIndex] === 'Add' || displayedColumns[colIndex] === 'Count'? '2%' : '',
+                        'padding-right': displayedColumns[colIndex] === 'ID' ? '16px' : '20px',
+                        'padding-left': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Count' ? '0px' : '20px',
+                        'cursor': eventColumn?.indexOf(displayedColumns[colIndex]) > -1 ? 'pointer' : '', 
+                        'color': eventColumn?.indexOf(displayedColumns[colIndex]) > -1 ? 'blue' : ''}">
+                        <span *ngIf="!(iconColumn?.indexOf(displayedColumns[colIndex]) > -1)"
+                          (click)="displayedColumns[colIndex] === 'Token'? eventAction(element) : ''"
+                          (keydown.enter)="fixClick()">{{element[col] ? element[col] : ''}}</span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'Add'">
+                          <mat-icon *ngIf="element.close && !element.isChild && element.children?.length !== 0 " id="expand_more"
+                             #expand_more class="exp-colp-style">remove</mat-icon>
+                          <mat-icon *ngIf="(!element.close || element.isChild) && element.children?.length !== 0 "
+                            id="expand_less"  #expand_less class="exp-colp-style">add_box</mat-icon>
+                        </span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'Count'">
+                          <div *ngIf="element?.totalChildCounts !== null && element?.totalChildCounts !== 0" class="step-marker">
+                            <span class="step-number">{{element['totalChildCounts']}}</span>
+                          </div>
+                        </span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'ID'">
+                          <button mat-icon-button [matMenuTriggerFor]="menu">
+                            <mat-icon [ngStyle]="{'color': this.rowId === element.id ? '#808080' : '#D3D3D3'}"
+                              class="ovi-fnt-sze17" style="cursor: pointer;" (click)=rowClick(element)
+                              (keydown.enter)="fixClick()">play_arrow</mat-icon>
+                          </button>
+                        </span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'Token'" style="cursor: pointer;color: blue;"
+                          (keydown.enter)="fixClick()" (click)="this.enrollToken(element)">
+                          {{element[col] }}
+                        </span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'CheckIn Time'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+
+                        <span *ngIf="displayedColumns[colIndex] === 'CheckOut Time'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+                        
+                        <span *ngIf="displayedColumns[colIndex] === 'Token Time'">{{element[col] | date : "hh:mm a, d
+                          MMM"}}</span>
+
+                      </mat-cell>
+                    </ng-container>
+                    <mat-header-row *matHeaderRowDef="displayedColumns;sticky: true;"
+                      class="tw-manage-table-header-row"></mat-header-row>
+                    <mat-row *matRowDef="let row; columns: displayedColumns;" (toggleChange)="onToggleChange(detailRow,row)"
+                      class="element-row" [ngClass]="{'highlight' : row.id === this.rowId, 'engage': row.isAuthorize}"
+                      [cdkDetailRowTpl]="tpl" [cdkDetailRow]="row" (dblclick)="rowClick(row)">
+                    </mat-row>
+                  </table>
+                  <ng-template #tpl let-element>
+                    <div class="mat-row detail-row oflw-style" [@detailExpand]>
+                      <mat-table #table class="tw-table" [dataSource]="element.children" matSort style="overflow: hidden;">
+                        <ng-container *ngFor="let col of dataColumns; let colIndex = index;"
+                          matColumnDef="{{displayedColumns[colIndex]}}">
+                          <mat-header-cell *matHeaderCellDef mat-sort-header class="tw-manage-table-header tw-table-content"
+                            [ngStyle]="{'max-width': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Add' 
+                            || displayedColumns[colIndex] === 'Count' ? '2%' : '',
+                        'padding-left': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Count' ? '0px' : '18px'}"
+                            [disabled]="sortColumn?.indexOf(displayedColumns[colIndex]) > -1"
+                            style="padding-right: 20px;justify-content: start;">
+                            <span 
+                              *ngIf="!(iconHeader?.indexOf(displayedColumns[colIndex]) > -1)">{{displayedColumns[colIndex]|translate}}</span>
+
+                          </mat-header-cell>
+                          <mat-cell *matCellDef="let element;let i = index;" [ngStyle]="{'max-width': displayedColumns[colIndex] === 'ID' || 
+                          displayedColumns[colIndex] === 'Add' || displayedColumns[colIndex] === 'Count' ? '2%' : '',
+                        'padding-right': displayedColumns[colIndex] === 'ID' ? '16px' : '20px',
+                        'padding-left': displayedColumns[colIndex] === 'ID' || displayedColumns[colIndex] === 'Count' ? '0px' : '20px',
+                        'cursor': eventColumn?.indexOf(displayedColumns[colIndex]) > -1 ? 'pointer' : '', 
+                        'color': eventColumn?.indexOf(displayedColumns[colIndex]) > -1 ? 'blue' : ''}">
+                            <span *ngIf="!(iconColumn?.indexOf(displayedColumns[colIndex]) > -1)"
+                              (click)="displayedColumns[colIndex] === 'Token'? eventAction(element) : ''"
+                              (keydown.enter)="fixClick()">{{element[col] ? element[col] : ''}}</span>
+
+                            <span *ngIf="displayedColumns[colIndex] === 'Add'">
+                              <mat-icon *ngIf="element.close && !element.isChild && element.children?.length !== 0 "
+                                id="expand_more"  #expand_more class="exp-colp-style">add_box</mat-icon>
+                              <mat-icon *ngIf="(!element.close || element.isChild) && element.children?.length !== 0 "
+                                id="expand_less"  #expand_less class="exp-colp-style">remove</mat-icon>
+                            </span>
+
+                            <span *ngIf="displayedColumns[colIndex] === 'ID'" style="margin-left: 12px;">
+                              <mat-icon [ngStyle]="{'color': this.rowId === element.id ? '#808080' : '#D3D3D3'}"
+                                class="ovi-fnt-sze17" style="cursor: pointer;" (click)=rowClick(element)
+                                (keydown.enter)="fixClick()">play_arrow</mat-icon>
+                            </span>
+
+                            <span *ngIf="displayedColumns[colIndex] === 'Token'"
+                              style="cursor: pointer;color: blue;margin-left: 15px;" (keydown.enter)="fixClick()"
+                              (click)="this.enrollToken(element)">
+                              {{element[col] }}
+                            </span>
+
+                            <span *ngIf="displayedColumns[colIndex] === 'CheckIn Time'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+
+                            <span *ngIf="displayedColumns[colIndex] === 'CheckOut Time'">{{element[col] | date : "hh:mm a, d MMM"}}</span>
+
+                            <span *ngIf="displayedColumns[colIndex] === 'Token Time'">{{element[col] | date : "hh:mm a, d
+                              MMM"}}</span>
+
+                          </mat-cell>
+                        </ng-container>
+                        <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row bg-colr-style"
+                          [ngClass]="{'highlight' : row.id === this.rowId, 'engage': row.isAuthorize}" [cdkDetailRow]="row"
+                          [cdkDetailRowTpl]="tpl" (dblclick)="rowClick(row)">
+                        </mat-row>
+                      </mat-table>
+                    </div>
+                  </ng-template>
+                </div>
+                <mat-paginator #paginator (page)="getPagination($event)" [length]="this.length" [pageSize]="pageSize"
+                  [pageSizeOptions]="[50, 100, 150, 200]" showFirstLastButtons class="tw-paginator-sticky"></mat-paginator>
+              </div>
+            </div>
+            <div class="ovi-font-family" style="width: 100%; height: 100%;">
+
+              <div #container
+                style="width: 100%; height: calc(100% - 70px);display: flex;align-items: flex-start;flex-direction: column;"
+                *ngIf="false">
+                <div *ngFor="let loc of locations" style="border-bottom: 3px solid #ffbc54;">
+                  <div style="display: flex;align-items: center;">
+                    <div class="card" style="min-height: 100px;width: 300px;">
+                      <h3 class="card-body card-title" style="color: #485cb8;text-align: center;">
+                        {{TokenbyLocation[loc][0]['locationName']}}</h3>
+                    </div>
+                    <div style="max-height: 400px;" style="display: flex;flex-wrap: wrap;">
+                      <div class="card" *ngFor="let token of TokenbyLocation[loc]; let i= index"
+                        style="min-height: 100px;width: 300px;">
+                        <div [ngStyle]="{'color' : i == 0 ? '#2d925f' : '#ff7e00'}" style="min-height: 85px;" class="card-body">
+                          <div style="float: left;">
+                            <h1 style="margin: 10px 0px;">{{token['tokenNo']}}</h1>
+                            <div>{{token['name']}} ({{token['mobileNo']}})</div>
+                          </div>
+                          <div style="float: right;">
+                            <h3 *ngIf="i ==0">GO</h3>
+                            <h3 *ngIf="i == 1">NEXT</h3>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+        <mat-tab [disabled]="activate_btn && !activate_btn.includes('TB_WFDQLOC')" label="{{'Token Queue'|translate}}">
+          <ng-template mat-tab-label>{{"Token Queue"|translate}}</ng-template>
+          <div *ngIf="selectedTab === 'Token Queue'" class="mat-tab-content" (window:resize)="onResizeWindow($event)">
+              <div style="display: flex;align-items: center;justify-content:  space-between;padding:5px 5px 0px 13px;gap: 0 5px;" class="ovi-font-family">
+                  <div>
+                    <div class="filter-item-box filter-box1-box2" style="align-items: center;">
+                      <div id="filter-box1" style="min-width: 50px;"> {{"Location"|translate}} </div>
+                      <div id="filter-box2" style="border-radius: 0px 4px 4px 0px !important;width: 180px  !important;"
+                        [formGroup]="slideForm">
+                        <mat-form-field class="filter-select select-drpdwn-arw dq-search-text-size" appearance="none">
+                          <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Locations'|translate" multiple
+                            [formControl]="selectedLocation" (openedChange)="openedChange($event)"
+                            [disabled]="locationList?.length === 1" matSelectSearch>
+                            <mat-option *ngFor="let location of locationList" [value]="location.id">
+                              {{location.name}}<span *ngIf="location?.floorName != null">, </span>{{location.floorName}}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                  
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display: flex;align-items: center;gap: 0 10px;">
+                    <div style="display: flex;align-items: center;gap: 0 10px;"
+                      *ngIf="showActiveInactive && selectedLocation.value.length == 1">
+                      <span style="display: flex;align-items: center;gap: 0 10px;"
+                        *ngIf="!dynamicConfig || (dynamicConfig && dqtowerconfig.showActiveInactive)">
+                        <mat-radio-group class="example-radio-group" (change)="statusChange($event.value, locationId)"
+                          [(ngModel)]="isAvailable" [ngModelOptions]="{ standalone: true }">
+                          <div class="active ovi-fnt-sze12" style="font-weight:600;color: #284255;"> <mat-radio-button 
+                              [value]="true"> {{"Active (ON)"|translate}}</mat-radio-button> </div>
+                          <div class="inactive ovi-fnt-sze12" style="font-weight:600;color: #284255;"> <mat-radio-button 
+                              [value]="false"> {{"Inactive (OFF)"|translate}}</mat-radio-button> </div>
+                        </mat-radio-group> </span>
+                      <div style="font-weight:600;color: #284255;" class="dq-l-language ovi-fnt-sze12"><span >{{"Language
+                          "|translate}}: </span>
+                        <span class="dq-l-clr" (click)="manageRoom(locationId);" (keydown.enter)="fixClick()">{{locationLanguage}}</span>
+                      </div>
+                      <div class="ovi-fnt-sze12" style="font-weight:600;color: #284255;"><span >{{"Gender "|translate}}: </span>
+                        <span class="dq-l-clr" (click)="manageRoom(locationId);" (keydown.enter)="fixClick()">{{locationGender}}</span>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+              <!--DQ header realign new-code end -->
+              <div class="dig-q-styl" style="margin-top: -6px;">
+
+                  <mat-grid-list [cols]="gridCols === 4 ? gridCols - 1 : gridCols" rowHeight="45px" (window:resize)="onResize($event)">
+                      <!-- DQ In-progress start -->
+
+                      <mat-grid-tile class="custom-mat-grid-tile" *ngIf="digitalQueueModel.DQ_IP"
+                          [colspan]="digitalQueueModelCols.DQ_IP" [rowspan]="digitalQueueModelRows.DQ_IP">
+                          <div class="category-header" [id]="digitalQueueModelId.DQ_IP" class="border-styl_">
+                              <div class="groupHeaderClass hdr-styl header_">
+                                  <div class="header left_ hdr-cls_2">{{"In Progress"|translate}}</div>
+                                  <div class="header right_ dq-header-right " 
+                                      *ngIf="inprogressDetail">{{inprogressDetail.length}}</div>
+                              </div>
+                              <mat-divider></mat-divider>
+                              <div class="queue-locations">
+                                  <mat-list class="locations-list" [style.height.px]="list_height">
+                                      <div class="inporgress-details" *ngFor="let patient of inprogressDetail"
+                                      [ngClass]="patient?.lastStatusId !== null && patient?.lastStatusId != 'QS-IP' ? 'last-status-highlight' : 'last-status-non-highlight'">
+                                          <div class="test-details">
+                                              <div class="test-details-left">
+                                                  <div mat-line class="patient-name">{{patient.name}}</div>
+                                                  <div mat-line class="patient-test-name">
+                                                    <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.tokenNo}}</span>
+                                                    <span style="padding: 5px;">
+                                                      <img *ngIf="patient.tokenTypeId !== null && patient.tokenTypeId === 'TK-VIP'" src="/assets/Alert/common_icons/vip.svg" height="14px" width="15px" alt='VIP'>
+                                                    </span>
+                                                  </div>
+                                                  <div mat-line class="patient-test-name"
+                                                      [matTooltip]="Token">{{"Token"|translate}}</div>
+                                                  <div mat-line class="location-desc">{{patient.locationName}}</div>
+                                              </div>
+                                              <div class="test-details-right">
+                                                  <dq-list-menu (updateStatus)="openedChange(false)" [menu]="true"
+                                                      (isParallel)="getParallel($event)" [locationPending]="false"
+                                                      [queueId]="patient.id" [currentStatus]="'QS-IP'"[visitTypeId]="'VT-TK'"
+                                                      [locationId]="patient.locationId" [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest" [dqtowerconfig] = "dqtowerconfig"
+                                                      [patientTestDetail]="patient" [changeLocation]="this.changeLocation" [selectedLocation]="selectedLocation?.value"></dq-list-menu>
+                                                      <span class="test-details-right-btn1">
+                                                          <div class="out-button" style="cursor: pointer"
+                                                          (click)="updateTokenStatus(patient, 'QS-CO')" (keydown.enter)="fixClick()">{{"OUT"|translate}}</div>
+                                                      </span>
+                                                      <div >
+                                                        <div>
+                                                          <button class="op-btn" style="background-color: #00ABA1;color:white;margin-top: 9px;margin-right: 13px">{{"TK"|translate}}</button>
+                                                          <mat-icon class="speaker-icon" *ngIf="this['tokenNo' + patient?.tokenNo] != false || this['tokenNo' + patient?.tokenNo] == true" 
+                                                          (click)="!isSpeaking ? playAudio(patient) : ''" style="color: #f44336;">volume_off</mat-icon>
+                                                          <mat-icon class="speaker-icon" *ngIf="this['tokenNo' + patient?.tokenNo] == false"
+                                                          (click)="stopAudio(patient)" style="color: #ff8812;">volume_up</mat-icon>
+                                                        </div>
+                                                      </div>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                  </mat-list>
+                              </div>
+                          </div>
+                      </mat-grid-tile>
+                      <!-- DQ Waiting start -->
+                      <mat-grid-tile class="custom-mat-grid-tile" *ngIf="digitalQueueModel.DQ_WA"
+                          [colspan]="digitalQueueModelCols.DQ_WA" [rowspan]="digitalQueueModelRows.DQ_WA">
+                          <div class="category-header" [id]="digitalQueueModelId.DQ_WA" class="border-styl_">
+                              <div class="groupHeaderClass hdr-styl header_">
+                                  <div class="header left_ hdr-cls">
+                                      <span class="ovi-fnt-sze11" style="color: #FF8812;padding-top: 2px;float: left;">&nbsp;&nbsp;{{"Next"|translate}}&nbsp;/</span>
+                                      <span class="ovi-fnt-sze11" style="color: #23374A;padding-top: 2px;float: left;">&nbsp;&nbsp;{{"Waiting"|translate}}</span>
+                                  </div>
+                                  <div class="header right_  ovi-fnt-sze11"  style="padding-top: 13px; color:#f98e22;"
+                                    *ngIf="waitingDetail">{{waitingDetail.length}}
+                                  </div>
+                              </div>
+                              <mat-divider></mat-divider>
+                              <div class="queue-locations">
+                                  <mat-list class="locations-list" [style.height.px]="list_height">
+                                      <div class="lst-styl" *ngFor="let patient of waitingDetail" 
+                                      [ngClass]="patient?.lastStatusId !== null && patient?.lastStatusId != 'QS-WT' && patient?.lastStatusId != 'QS-RG' && 
+                                      patient?.lastStatusId != 'QS-NE' ? 'last-status-highlight' : 'last-status-non-highlight'">
+                                          <div class="mrgn-styl">
+                                              <span class="fnt-styl_">{{patient.name}}
+                                              </span>
+                                              <div class="flt-styl">
+                                                  <dq-list-menu (updateStatus)="openedChange(false)" [menu]="true"
+                                                      [queueId]="patient.id" [locationId]="patient.locationId" [visitTypeId]="'VT-TK'" [locationPending]="false"
+                                                      [currentStatus]="patient?.isPartialComplete === true ? 'QS-PC' : 'QS-WT'"  [dqtowerconfig] = "dqtowerconfig" 
+                                                      [patientTestDetail]="patient" [changeLocation]="this.changeLocation" [selectedLocation]="selectedLocation?.value">
+                                                  </dq-list-menu>
+                                              </div>
+                                              <span class="flt-styl test-details-right-btn">
+                                                  <div class="in-button" style="cursor: pointer" 
+                                                  (click)="updateTokenStatus(patient, 'QS-IP')" (keydown.enter)="fixClick()">{{"IN"|translate}}</div>
+                                              </span>
+                                          </div>
+                                          <div [ngStyle]="{'margin-top': patient.name === null ? '23px' : ''}">
+                                            <button class="op-btn" style="background-color: #00ABA1;color:white ;">{{"TK"|translate}}</button>
+                                          </div>
+                                          <div mat-line class="mrgn-styl loc-patient-test-name">
+                                            <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.tokenNo}}</span>
+                                            <span style="padding: 5px;">
+                                              <img *ngIf="patient.tokenTypeId !== null && patient.tokenTypeId === 'TK-VIP'" src="/assets/Alert/common_icons/vip.svg" height="14px" width="15px" alt='VIP'>
+                                            </span>
+                                          </div> 
+                                          <div mat-line class="mrgn-styl loc-patient-test-name"
+                                              [matTooltip]="Token">
+                                              {{"Token"|translate}}
+                                          </div>
+                                          
+                                          <div class="mrgn-styl patient-loc-name">
+                                              {{patient.locationName}}
+                                          </div>
+                                      </div>
+                                      <div class="dig-q-styl_2" *ngFor="let patient of pendingDetail">
+                                          <div class="mrgn-styl">
+                                              <span class="fnt-styl_">{{patient.name}}</span>
+                                              <div class="flt-styl">
+                                                  <dq-list-menu (updateStatus)="openedChange(false)" [menu]="true"
+                                                      [queueId]="patient.id" [currentStatus]="'QS-PE'"[visitTypeId]="'VT-TK'"
+                                                      [locationId]="patient.locationId" [locationPending]="false"  [dqtowerconfig] = "dqtowerconfig"
+                                                      [patientTestDetail]="patient" [changeLocation]="this.changeLocation" [selectedLocation]="selectedLocation?.value">
+                                                  </dq-list-menu>
+                                              </div>
+                                          </div>
+                                          <div mat-line class="mrgn-styl loc-patient-test-name"
+                                              [matTooltip]="Token">
+                                              {{"Token"|translate}}
+                                          </div>
+                                          <div class="mrgn-styl patient-loc-name">
+                                              {{patient.locationName}}
+                                          </div>
+                                      </div>
+                                  </mat-list>
+                              </div>
+                          </div>
+                      </mat-grid-tile>
+                      <!-- DQ Complete start -->
+                      <mat-grid-tile class="custom-mat-grid-tile" *ngIf="digitalQueueModel.DQ_CO"
+                          [colspan]="digitalQueueModelCols.DQ_CO" [rowspan]="digitalQueueModelRows.DQ_CO">
+                          <div class="category-header" [id]="digitalQueueModelId.DQ_CO" class="border-styl_">
+                              <div class="groupHeaderClass hdr-styl header_">
+                                  <div class="header left_ hdr-cls_">
+                                      <button class="pending-btn" style="height: 30px;width: 80px;margin-top: -6px;line-height: unset;" (click)="getPendingTestByLocId('pending', 0);" mat-button
+                                      [ngClass]="!isEnablePendingTest ? 'unselect-status' : ''"
+                                      [ngStyle]="{color: !isEnablePendingTest ? '#636A6D' : ''}">{{"Pending"|translate}}</button>
+                                      <button class="complete-btn"  style="height: 30px;width: 80px;margin-top: -6px;line-height: unset;"(click)="getPendingTestByLocId('complete', null)" mat-button
+                                      [ngClass]="isEnablePendingTest ? 'unselect-status' : ''"
+                                      [ngStyle]="{color: isEnablePendingTest ? '#636A6D' : ''}">{{"Complete"|translate}}&nbsp;</button>
+                                  </div>
+                                  <div class="header right_ ovi-fnt-sze11" style="color: #03b54d;"
+                                      *ngIf="!isEnablePendingTest && completedDetailList">{{completedDetailList.length}}</div>
+                                      <div class="header right_ ovi-fnt-sze11" style="color: orange;"
+                                          *ngIf="isEnablePendingTest && completedDetailList">{{completedDetailList.length}}</div>
+                              </div>
+                              <mat-divider></mat-divider>
+                              <div class="queue-locations dq-filter">
+                                  <div class="dq-filter" *ngIf="isEnablePendingTest" style="margin:10px 0px 10px 0px;display: flex;">
+                                      <input matInput  id="box-left-test" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" #searchInputClear (keyup)="searchPendingList($event.target.value)"/>
+                                      <div id="box-right-test" [formGroup]="slideForm">
+                                          <mat-form-field appearance="none" class="ovi-fnt-sze10">
+                                              <mat-select formControlName="testId">
+                                                  <mat-option value='0' (click)="getPendingTestByLocId('pending', 0);" (keydown.enter)="fixClick()">{{"All"|translate}}</mat-option>
+                                                  <mat-option *ngFor="let test of testList" [matTooltip]="test?.testName"
+                                                      (click)="getPendingTestByLocId('pending', test.testId);" [value]="test.testId" (keydown.enter)="fixClick()">
+                                                      {{test?.testName}}</mat-option>
+                                              </mat-select>
+                                          </mat-form-field>
+                                      </div>
+                                  </div>
+                                  <mat-list class="locations-list" [style.height.px]="isEnablePendingTest ? list_height - 62 : list_height">
+                                      <div class="lst-styl-complete" *ngFor="let patient of completedDetailList"
+                                     [ngClass]="(patient?.lastStatusId !== null && ((!isEnablePendingTest && patient?.lastStatusId !== 'QS-CO') || 
+                                     (isEnablePendingTest && patient?.lastStatusId !== 'QS-PE'))) ? 'last-status-highlight' : 'last-status-non-highlight'">
+                                          <div class="mrgn-styl">
+                                              <span class="fnt-styl_">{{patient.name}} {{patient.name != null ? ' - ' : ''}}</span>
+                                              <span class="ovi-fnt-sze12" style="font-weight: 800;font-style: italic;">{{patient.tokenNo}}</span>
+                                              <span style="padding: 5px;">
+                                                <img *ngIf="patient.tokenTypeId !== null && patient.tokenTypeId === 'TK-VIP'" src="/assets/Alert/common_icons/vip.svg" height="14px" width="15px" alt='VIP'>
+                                              </span>
+                                                    <div class="flt-styl">
+                                                  <dq-list-menu *ngIf="!isEnablePendingTest" (updateStatus)="openedChange(false)" [menu]="true"
+                                                      (isParallel)="getParallel($event)" [locationPending]="false"
+                                                      [queueId]="patient.id" [currentStatus]="'QS-CO'"[visitTypeId]="'VT-TK'"
+                                                      [locationId]="patient.locationId" [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest" [dqtowerconfig] = "dqtowerconfig"
+                                                      [patientTestDetail]="patient" [changeLocation]="this.changeLocation" [selectedLocation]="selectedLocation?.value">
+                                                  </dq-list-menu>
+                                                  <dq-list-menu *ngIf="isEnablePendingTest" (updateStatus)="openedChange(false)" [menu]="true"
+                                                      (isParallel)="getParallel($event)" [locationPending]="false"
+                                                      [queueId]="patient.id" [currentStatus]="'QS-PE'"[visitTypeId]="'VT-TK'"
+                                                      [locationId]="patient.locationId" [parallelIds]="selectedQueue" [isParalelTestIncluded]="isParalelTest" [dqtowerconfig] = "dqtowerconfig"
+                                                      [patientTestDetail]="patient" [changeLocation]="this.changeLocation" [selectedLocation]="selectedLocation?.value">
+                                                  </dq-list-menu>
+                                              </div>
+                                              <span *ngIf="isEnablePendingTest" class="flt-styl test-details-right-btn" style="width: 16%;">
+                                                  <div class="in-button" style="cursor: pointer" (click)="updateTokenStatus(patient, 'QS-IP')" (keydown.enter)="fixClick()">{{"IN"|translate}}</div>
+                                              </span>
+                                          </div>
+                                          <div mat-line class="mrgn-styl patient-loc-name"
+                                              [matTooltip]="Token">
+                                              {{"Token"|translate}}
+                                          </div>
+                                          <div style="margin-top: 2px;text-align: end;width: 85%;">
+                                            <button class="op-btn" style="margin-top: 2px;background-color: #00ABA1;color:white ;">{{"TK"|translate}}</button>
+                                          </div>
+                                          <div *ngIf="isEnablePendingTest" mat-line class="mrgn-styl loc-patient-cur-test-name">
+                                              <span style="font-style: italic;margin-right: -3px;" *ngIf="patient.currentTestStatusName !== null">&nbsp;({{patient.queueStatusName}})</span>
+                                          </div>
+                                          <div *ngIf="!isEnablePendingTest" class="mrgn-styl patient-loc-name">
+                                              {{patient.locationName}}
+                                            </div>
+                                                  </div>
+                                  </mat-list>
+                              </div>
+                          </div>
+                      </mat-grid-tile>
+                  </mat-grid-list>
+              </div>
+          </div>
+        </mat-tab>
+    </mat-tab-group>
+  </div>

@@ -1,0 +1,452 @@
+<div class="font-style">
+    <div class="loading-spinner" *ngIf="reportData.hasOwnProperty('loading') && reportData['loading']">
+        <div class="spinnerload">
+            <div class="spin1"></div>
+            <div class="spin2"></div>
+            <div class="spin3"></div>
+        </div>
+    </div>
+    <mat-grid-list [formGroup]="reportForm" [cols]="9" rowHeight="50px"  [gutterSize]="'10px'">
+        <mat-grid-tile [colspan]="1" class="arrow">
+            <div id="arrowbox"><span>{{"Asset"|translate}}</span></div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="2">
+            <div [class.disabled-content]="reportData['loading']" style="width: 100%;padding-top: 7px;">
+                <select class="custom-select ovi-font-family ovi-fnt-sze13" (change)="HCselected = $event.target.value" [formControl]="selectedReport" style="padding-top: 10px;">
+                    <option *ngFor="let i of reportList" value="{{i.link}}" [selected]="i==0 ? true : null">{{i.name}}</option>
+                </select>
+                <span class="floating-label  ovi-fnt-sze11" style="padding-left:5px;top:2px;">{{"Analytic Reports"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'asset-loc-history' || HCselected == 'asset-utiby-byid' || HCselected == 'asset-summary' || HCselected == 'sensor-utilz-id' || HCselected == 'sensor-water-leak' || HCselected == 'asset-demand-forecast'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="fromDate = $event.value" (click)="picker.open()" formControlName="fromDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"From Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected != 'asset-loc-history' && HCselected != 'asset-utiby-byid' && HCselected != 'asset-summary' && HCselected != 'sensor-utilz-id' && HCselected != 'sensor-water-leak' && HCselected != 'asset-demand-forecast'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'From Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today" />
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span  class="floating-label">{{"Report Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" [colspan]="1" *ngIf="HCselected == 'asset-loc-history' || HCselected == 'asset-utiby-byid' || HCselected == 'asset-summary' || HCselected == 'sensor-utilz-id' || HCselected == 'sensor-water-leak' || HCselected == 'asset-demand-forecast'">
+            <div class="dateContainer" style="width: 100%;padding-top: 7px;">
+                <input [class.disabled-content]="reportData['loading']" [matDatepicker]="picker" class="custom-input-date ovi-font-family" placeholder="{{'To Date'|translate}}"
+                    (dateInput)="toDate = $event.value" (click)="picker.open()" formControlName="toDate" [max]="today"/>
+                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                    <span class="floating-label">{{"To Date"|translate}}</span>
+            </div>
+        </mat-grid-tile>
+        <mat-grid-tile class="oflw-style" id="getInsight" [colspan]="2" style="justify-content: left;">
+            <div style="width:145px;">
+                <div class="button-icon" >
+                    <div class="custom-button" [ngClass] =
+                     "HCselected == 'asset-loc-history' ? 'none':HCselected =='sensor-water-leak'?selected['selectedId'] == HCselected && selected['todate'] == toDate && selected['fromDate'] == fromDate && assetId.value == selected['assetId'] && frequency.value == selected['frequency']? 'disabled-content':'none':HCselected == 'asset-utiby-byid' || HCselected == 'sensor-utilz-id'? selected['selectedId'] == HCselected && selected['todate'] == toDate && selected['fromDate'] == fromDate
+                      && assetId.value == selected['assetId'] ? 'disabled-content':'none':selected['selectedId'] == HCselected && selected['todate'] == toDate && selected['fromDate'] == fromDate? 'disabled-content' : 'none'" 
+                      (click)="getAssetReports(HCselected);" fxFlex="100" fxFlex.lt-sm="100"fxFlex.sm="100"  (keydown.enter)="fixClick()" >
+                            {{"Get Insights"|translate}}
+                    </div>     
+                </div>
+            </div>
+            <div class="dq-main-wrapper get-insights" style="padding-top: 10px;"><i class="material-icons cur-ptr" matTooltip="{{'Refresh'|translate}}"
+                (click)="getAssetReports(HCselected)"  (keydown.enter)="fixClick()" >autorenew</i>
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="!reportData['noRecords']">
+                <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" (click)="downloadExcel()"   (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+                <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+                <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg"  alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+            </div>
+            <div class = "excel-button1" width = 100px *ngIf="reportData['noRecords']">
+                <img src="/assets/Alert/common_icons/excel_grey.svg"  alt="excel_grey" width=30px  style="cursor: pointer;">
+                <img src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+            </div>
+        </mat-grid-tile>
+        <div class = "excel-button" width = 100px *ngIf="!reportData['noRecords']" >
+            <img *ngIf="!reportData['enableexcel']" src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enableexcel']" src="/assets/Alert/common_icons/excel_icon.png" alt="excel_icon" (click)="downloadExcel()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as excel sheet'|translate}}" width=30px  style="cursor: pointer;">
+            <img *ngIf="reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_icon.png" alt="pdf_icon" (click)="downloadPDF()"  (keydown.enter)="fixClick()" matTooltip="{{'Download as PDF'|translate}}" width = 30px style="padding:0px 5px;cursor: pointer;">
+            <img *ngIf="!reportData['enablepdf']" src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 25px style="padding:0px 5px;cursor: pointer;">
+        </div>
+        <div class = "excel-button" width = 100px *ngIf="reportData['noRecords']">
+            <img src="/assets/Alert/common_icons/excel_grey.svg" alt="excel_grey" width=30px  style="cursor: pointer;">
+            <img src="/assets/Alert/common_icons/pdf_grey.svg" alt="pdf_grey" width = 30px style="padding:0px 5px;cursor: pointer;">
+        </div>
+    </mat-grid-list> 
+</div> 
+<!-- <div class="dq-filter" *ngIf="HCselected == 'asset-loc-history'" style="width: 50%;padding-top: 25px;" >
+    <div id="box-left">
+        Asset Tag Id
+    </div>
+    <div id="box-right" style="position: relative">
+        <input [class.disabled-content]="reportData['loading']" type="text" [formControl]="Uid" (change)="identifier = $event.target.value" style="border: none;outline: none;height: 100%;position: relative;">
+    </div>
+</div> -->
+<!-- ASSET SUMMARY -->
+<div class="report-content" *ngIf="selected['selectedId'] == 'asset-summary' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']">
+<!-- <mat-grid-list [cols]=6 rowHeight="165px"  [ngStyle]="bgcolor && {'background':bgcolor}">
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+             <div class="rs-body">
+                 <div class="rs-body-content"><img src="/assets/Alert/common_icons/asset_icon.svg">
+                    <div class="rs-body-content-name">No. of Asset<br>
+                        <span>{{reportData['assetCount']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+            <div class="rs-body">
+                <div class="rs-body-content"><img src="/assets/Alert/common_icons/datepicker.svg">
+                    <div class="rs-body-content-name">Pending Calibration Due<br><span>{{reportData['pendingCalibrationDue']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+            <div class="rs-body">
+                <div class="rs-body-content"><img src="/assets/Alert/common_icons/amc_due.svg">
+                    <div class="rs-body-content-name">Pending AMC Due<br>
+                        <span>{{reportData['pendingAmcDue']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+            <div class="rs-body">
+                <div class="rs-body-content">
+                    <div class="rs-body-content-name">Missing Assets<br>
+                        <span>{{reportData['missingAsset']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+            <div class="rs-body">
+                <div class="rs-body-content">
+                    <div class="rs-body-content-name">Misplaced Assets<br>
+                        <span>{{reportData['misplacedAsset']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+            <div class="rs-body">
+                <div class="rs-body-content">
+                    <div class="rs-body-content-name">Transferred Assets<br>
+                        <span>{{reportData['transferedAsset']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="oflw-style">
+        <div class="widget-class" style="width: 96%;height: 96%;margin: 2%;">
+            <div class="rs-header"></div>
+            <div class="rs-body">
+                <div class="rs-body-content"><img src="assets/Icons/asset_battery.svg">
+                    <div class="rs-body-content-name">Battery Status<br><span>{{reportData['batteryStatus']}}</span></div>
+                </div>
+            </div>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list> -->
+<!-- cards -->
+<mat-grid-list cols ="{{reportData.cardInfo.col}}" rowHeight="{{reportData.cardInfo.height}}" *ngIf="reportData['showCard'] && HCselected == reportData['prevselected']" style="padding-bottom: 30px;">
+    <mat-grid-tile  class="list" *ngFor="let tile of reportData['tileInfo']" [colspan]="tile.colspan" [rowspan]="tile.rowspan">
+        <mat-grid-tile-header id = "rep-style"  class="ovi-font-family" style="font-weight:500;padding-bottom: 5px" [ngStyle]="headercolor && {'background':headercolor}" *ngIf="tile.showHeader">{{tile.header}}</mat-grid-tile-header>
+        <div class="ovi-fnt-sze30" style="font-weight:bold; margin-top: 10px;padding-top: 30px;justify-content: center;" *ngIf="!tile.islist">{{tile.content}}</div>
+        <div *ngIf="tile.islist">
+            <mat-list style="width: 100%;" *ngFor = "let item of tile.listItemData;let i = index">
+                <mat-list-item class="ovi-fnt-sze13" style="height:25px;text-align: left;" [ngStyle] = "{'padding-top' : i == 0 ? '50px' : '0px'}">{{tile.listItemName[i]}} :  <span style="font-weight: bold;">{{item}}</span></mat-list-item>
+            </mat-list>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<!-- <div class="list" style=" height: 420px; margin-right: 10px; margin-left: 10px;">
+    <canvas id="assetStatus"></canvas> 
+</div> -->
+<mat-grid-list class="asset-summary" cols = 2 rowHeight="410px" style="padding-bottom: 20px;" [ngStyle]="bgcolor && {'background':bgcolor}">
+    <mat-grid-tile class="list">   
+        <canvas id="assetStatus"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="list"> 
+        <canvas id="assetLoc"></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+ <mat-grid-list class="asset-summary" cols = 2 rowHeight="410px" style="padding-bottom: 20px;" [ngStyle]="bgcolor && {'background':bgcolor}">
+    <mat-grid-tile class="list">   
+        <canvas id="assetCalibrationDue"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="list"> 
+        <canvas id="assetAmcDue"></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+<mat-grid-list class="asset-summary" cols="2" rowHeight="300px" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-right: 5px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 33px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Asset Missing"|translate}}</mat-grid-tile-header>
+        <div style="position: relative;height: 530px;width: 100%;" *ngIf="reportData['showMissingTable']">
+            <angular-table-component [tableData]="reportData['missingTable']" [columns]="reportData['missingTableCol']"></angular-table-component>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 33px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Asset Misplaced"|translate}}</mat-grid-tile-header>
+        <div style="position: relative;height: 530px;width: 100%;" *ngIf="reportData['showMisplacedTable']">
+            <angular-table-component [tableData]="reportData['misplacedTable']" [columns]="reportData['misplacedTableCol']"></angular-table-component>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+<mat-grid-list class="asset-summary" cols="2" rowHeight="300px" style="padding-bottom: 20px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}"> 
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-right: 5px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 33px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Asset Transferred"|translate}}</mat-grid-tile-header>
+        <div style="position: relative;height: 530px;width: 100%;" *ngIf="reportData['showTransferTable']">
+            <angular-table-component [tableData]="reportData['transferTable']" [columns]="reportData['transferTableCol']"></angular-table-component>
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="2" class="oflw-style" style="margin-left: 5px;" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+        <mat-grid-tile-header id = "rep-style" style="padding-bottom: 5px;height: 33px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Geofence Alerts"|translate}}</mat-grid-tile-header>
+        <div style="position: relative;height: 530px;width: 100%;" *ngIf="reportData['showGeofenceTable']">
+            <angular-table-component [tableData]="reportData['geofenceTable']" [columns]="reportData['geofenceTableCol']"></angular-table-component>
+        </div>
+    </mat-grid-tile>
+</mat-grid-list>
+</div>
+<!-- <mat-grid-list class="asset-summary" cols = 2 rowHeight="350px" style="overflow: auto;" [ngStyle]="bgcolor && {'background':bgcolor}">
+    <mat-grid-tile class="list">           
+        <canvas id="assetUtilization"></canvas>
+    </mat-grid-tile>
+    <mat-grid-tile class="list">           
+        <canvas id="assetBatteryStatus"></canvas>
+    </mat-grid-tile>
+</mat-grid-list> -->
+<!-- ASSET MOVEMENT SUMMARY -->
+<mat-grid-list class="asset-movement-summary" cols = 4 rowHeight="140px" style="width: 100%;padding-top:10px;padding-bottom: 10px;" *ngIf="selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile  class="list">  
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Asset and Porter Count"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"Number of Assets"|translate}}: <span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['numberOfAssets']}}</span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -10px;">{{"Number of Porters"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['numberOfPorters']}} </span></mat-list-item>
+        </mat-list>        
+        </mat-grid-tile>
+    <mat-grid-tile class="list">
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Asset Movement Details"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;">{{"No. Of Asset Movement"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['assetMovementCount']}}</span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -10px;">{{"No. Of Asset Movement Without Porter"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['assetMovementCountwithoutPorter']}} </span></mat-list-item>
+        </mat-list> 
+    </mat-grid-tile>
+    <mat-grid-tile class="list">
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"Porter Status Count"|translate}}</mat-grid-tile-header>
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: 35px;height: 18px;padding-top: 15px;">{{"Requested"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterRequested']}} </span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -5px;height: 18px;padding-top: 11px;">{{"Accepted"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterAccepted']}} </span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -5px;height: 18px;padding-top: 11px;">{{"Inprogress"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterInprogress']}} </span></mat-list-item>
+            <mat-list-item class="ovi-fnt-sze13" style="text-align: left; margin-top: -5px;height: 18px;padding-top:16px">{{"Completed"|translate}}:<span style="font-weight:bold; text-decoration: none; justify-content: right; padding-left: 5px;"> {{reportData['porterCompleted']}} </span></mat-list-item>
+        </mat-list>       
+    </mat-grid-tile>
+    <mat-grid-tile class="list"> 
+        <mat-grid-tile-header id = "rep-style" style="font-weight:bold;padding-bottom: 5px; background-color: #019F96;" [ngStyle]="headercolor && {'background':headercolor}">{{"No. Of Assets In Common Area"|translate}}</mat-grid-tile-header>
+        <div class="ovi-fnt-sze30" style="font-weight:bold; margin-top: 10px;">{{reportData['commonAreaAssetCount']}}</div>        
+    </mat-grid-tile>
+    </mat-grid-list>
+<mat-grid-list class="asset-movement-summary1" cols = 2 rowHeight="300px" style="width: 100%;padding-top:10px;padding-bottom: 10px;" [ngStyle] = "{display :selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']? 'block' : 'none'}">
+    <mat-grid-tile class="list">  
+        <canvas id="assetMovementByType"></canvas>        
+    </mat-grid-tile>
+    <mat-grid-tile class="list">
+        <canvas id="assetMovementByTypeAndPorter" ></canvas> 
+    </mat-grid-tile>
+</mat-grid-list>
+<div class="list" [ngStyle] = "{display :selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+    <canvas id="assetMovement"></canvas> 
+</div>
+<div class="list" [ngStyle]="{display :selected['selectedId'] == 'asset-move' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+    <canvas id="assetHourlyMovement"></canvas> 
+</div>
+<!--ASSET GEOFENCE VIOLATION -->
+<div [ngStyle]="{display:selected['selectedId']== 'asset-geofencevio' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 500px;height: 250px;padding-bottom: 20px;">
+    <canvas id="assetGeofenceviolation"></canvas> 
+</div>
+<!-- ASSET TRANSFER REPORT -->
+<mat-grid-list class="asset-transfer-report" cols = 3 rowHeight="40px" [gutterSize] = "'10px'" *ngIf="selected['selectedId'] == 'asset-transfer' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" style="padding-top:5px;margin-bottom: 5px;padding-bottom: 10px;"[ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="list" style="width: 90%;">        
+            <mat-list  style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style=" text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Total Assets"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['totalAssets']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" style="width: 90%;">         
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Assets Moved Within Hospital"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['assettransferWithinHospital']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile  class="list" style="width: 90%;">         
+            <mat-list style="width: 100%;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -20px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Assets Moved Outside Hospital"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px; color: black;">{{reportData['assettransferOutsideHospital']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+</mat-grid-list>
+<mat-grid-list class="asset-transfer-report" cols = 2 rowHeight="250px" style="padding-bottom: 10px;padding-top: 10px;" *ngIf="selected['selectedId'] == 'asset-transfer' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" [ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="list" >
+       <canvas id='assetTransferByLocation'></canvas> 
+    </mat-grid-tile>
+    <mat-grid-tile class="list"> 
+        <canvas id='assetTransferByFacility'></canvas>
+    </mat-grid-tile>
+</mat-grid-list>
+<!-- ASSET MISPLACED REPORT -->
+<mat-grid-list class="asset-misplaced-report" cols = 2 rowHeight="40px" [gutterSize] = "'10px'" *ngIf="(selected['selectedId'] == 'asset-misplaced' || selected['selectedId'] == 'asset-missing') && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" style="padding-top:5px;width: 55%;padding-bottom: 10px;"[ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="list" style="width: 90%;">        
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item  class="ovi-fnt-sze15" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Total Assets"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['totalAssets']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list"style="width: 90%;">         
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" *ngIf="selected['selectedId'] == 'asset-misplaced'"  style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Misplaced Assets"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['misplacedAssets']}}</span></mat-list-item>
+                <mat-list-item class="ovi-fnt-sze15" *ngIf="selected['selectedId'] == 'asset-missing'" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Missed Assets"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['missingAssets']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+</mat-grid-list>
+<div class="list" [ngStyle] = "{display :(selected['selectedId'] == 'asset-misplaced'|| selected['selectedId'] == 'asset-missing') && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+    <canvas id="assetByDepartment"></canvas> 
+</div>
+<div class="list" [ngStyle] = "{display :(selected['selectedId'] == 'asset-misplaced'|| selected['selectedId'] == 'asset-missing') && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;">
+    <canvas id="assetByType"></canvas> 
+</div>
+<!-- ASSET UTILIZATION REPORT -->
+<mat-grid-list class="asset-utilization-report" cols = 4 rowHeight="40px" [gutterSize] = "'10px'" *ngIf="selected['selectedId'] == 'asset-utilz' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" style="padding-top:5px;margin-bottom: 5px;padding-bottom: 10px;"[ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="list" style="width: 90%;">        
+            <mat-list  style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Total Utilization"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['totalUtilization']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" style="width: 90%;">         
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Total Assets"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['activeAssets']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile  class="list" style="width: 90%;">         
+            <mat-list style="width: 100%;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -20px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Time Spent on Carearea"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px; color: black;">{{reportData['careArea']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile  class="list" style="width: 90%;">         
+        <mat-list style="width: 100%;">
+            <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -20px;padding-top: 10px;"><span style="font-weight: bold; color: #019F96;">{{"Time Spent on Non-Carearea"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px; color: black;">{{reportData['nonCareArea']}}</span></mat-list-item>
+        </mat-list>
+</mat-grid-tile>
+</mat-grid-list>
+<div class="list" [ngStyle] = "{display :selected['selectedId'] == 'asset-utilz' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;overflow-x: auto;">
+    <canvas id="utilByAssetType"></canvas> 
+</div>
+<div class="list" [ngStyle] = "{display :selected['selectedId'] == 'asset-utilz' && !reportData['noRecords'] && !reportData['loading']  && HCselected == reportData['prevselected']? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;overflow-x: auto;">
+    <canvas id="utilBylocation"></canvas> 
+</div>
+<!-- ASSET UTILIZATION BY LOCATION REPORT-->
+<div style="height: 60px;width: 100%;" *ngIf = "HCselected == 'asset-utiby-byid' || HCselected == 'sensor-utilz-id' || HCselected == 'sensor-water-leak'">
+    <div style="height: 100%;width: 20%;float: left;">
+        <span class="floating-label ovi-font-family ovi-fnt-sze13" style="padding-left:5px;top:2px;position: relative;">{{"Choose Asset"|translate}}</span>
+        <select class="custom-select ovi-font-family ovi-fnt-sze13" [formControl]="assetId" style="padding-top: 5px;margin-left: 5px;">
+            <option *ngFor="let i of assetSearchList; let j = index" value="{{i.tagAssociationId}}">{{i.tagAssociationName}}</option>
+        </select>
+    </div>
+    <div style="height: 100%;width: 20%;float: left;padding-left: 25px;" *ngIf = "HCselected == 'sensor-water-leak'">
+        <span class="floating-label ovi-font-family ovi-fnt-sze13" style="padding-left:5px;top:2px;position: relative;">{{"Data Frequency"|translate}}</span>
+        <select class="custom-select ovi-font-family ovi-fnt-sze13" [formControl]="frequency" style="padding-top: 5px;margin-left: 5px;">
+            <option *ngFor="let i of frequencyList; let j = index" value="{{i.value}}">{{i.code}}</option>
+        </select>
+    </div>
+</div>
+<!-- ASSET TEMPERATURE CHART-->
+<div class="list" [ngStyle] = "{display :(selected['selectedId'] == 'sensor-utilz-id' || selected['selectedId'] == 'sensor-water-leak') && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%;height: 350px;padding-bottom: 10px;overflow-x: auto;">
+    <canvas id="assetTemp" height="300" width="0"></canvas> 
+</div>
+<!-- <div class="temperatureReport" *ngIf = "selected['selectedId'] == 'asset-utiby-byid' && HCselected == reportData['prevselected'] && !reportData['noRecords']">
+    <mat-grid-list cols = 1 rowHeight = "300px" class="line-chart" style=" margin-right: 10px; margin-left: 10px;">
+        <mat-grid-tile>
+            <div class="chart-container" style="width: 100%; height: 100%; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 25px;">
+                <canvas id="asset-uti-chart"></canvas>
+            </div>
+        </mat-grid-tile>
+    </mat-grid-list>
+</div> -->
+    <div class="chart-container" [ngStyle]="{display :selected['selectedId'] == 'asset-utiby-byid' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected'] ? 'block' : 'none'}" style="width: 100%; height: 315px; position: relative; overflow-y: hidden; overflow-x: auto; margin-top: 15px;">
+        <canvas id="asset-uti-chart"></canvas>
+    </div>
+    <mat-tab-group style="height: 500px;" *ngIf="selected['selectedId'] == 'asset-utiby-byid' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']" (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+        <mat-tab label="Summary">
+            <div style="padding-top: 5px; height: calc(100% - 5px);">
+               <angular-table-component *ngIf="reportData['tableSummary']?.length" [tableData]="reportData['tableSummary']" [columns]="reportData['TableColumns']"></angular-table-component>
+               <div *ngIf="reportData['tableSummary']?.length === 0" style="width: 100%;display: flex;justify-content: center;">{{"No Summary Data Found"|translate}}!!</div>
+           </div>
+        </mat-tab>
+        <mat-tab label="Log">
+            <div style="padding-top: 5px; height: calc(100% - 5px);">
+               <angular-table-component *ngIf="reportData['tableLog']?.length" [tableData]="reportData['tableLog']" [columns]="reportData['TableColumns']"></angular-table-component>
+               <div *ngIf="reportData['tableLog']?.length === 0" style="width: 100%;display: flex;justify-content: center;">{{"No Log Data Found"|translate}}!!</div>
+           </div>
+        </mat-tab>
+    </mat-tab-group>
+<!-- ASSET LOCATION HISTORY REPORT -->
+<mat-grid-list class="asset-location-history-report" cols = 3 rowHeight="40px" [gutterSize] = "'10px'" *ngIf="HCselected == 'asset-loc-history'" style="padding-top:15px;padding-bottom: 10px;width:75%;"[ngStyle]="pagebgcolor && {'background':pagebgcolor}">
+    <mat-grid-tile class="inputid">
+        <div class="dq-filter">
+            <!-- <div id="box-left">
+                Asset Name
+            </div> -->
+            <div style="height: 100%;width: 100%;float: left;margin-left: 25px;">
+                <input [class.disabled-content]="reportData['loading']" type="text"  class="ovi-font-family  ovi-fnt-sze15" style="height: 28px;margin-top: 14px;width: 80%;" placeholder="Search Asset" (keyup)="getAssetByName($event)" [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete">
+                <mat-option *ngFor="let asset of assetList" (click)="setAssetName(asset.id)" value="{{asset.assetName}}"  (keydown.enter)="fixClick()" >
+                    {{asset.assetName}}
+                </mat-option>
+                </mat-autocomplete>
+            </div>
+            <!-- <div id="box-right" style="position: relative">
+                <input [class.disabled-content]="reportData['loading']" type="text" [formControl]="Uid" (change)="identifier = $event.target.value" style="border: none;outline: none;height: 100%;position: relative;">
+            </div> -->
+        </div>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" *ngIf="selected['selectedId'] == 'asset-loc-history' && reportData['assetId'] != null && !reportData['noRecords'] && !reportData['loading'] && !reportData['nullIdentifier'] && HCselected == reportData['prevselected']" style="width: 90%;">        
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #133F8F;">{{"Tag Serial Number"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['assetId']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+    <mat-grid-tile class="list" *ngIf="selected['selectedId'] == 'asset-loc-history' && reportData['assetName'] != null && !reportData['noRecords'] && !reportData['loading'] && !reportData['nullIdentifier'] && HCselected == reportData['prevselected']" style="width: 90%;">         
+            <mat-list style="width: 100%;padding-top: 7px;">
+                <mat-list-item class="ovi-fnt-sze15" style="text-align: left;margin-top: -15px;padding-top: 10px;"><span style="font-weight: bold; color: #133F8F;">{{"Asset Name"|translate}}:</span><span style="text-decoration: none; justify-content: right; padding-left: 5px;color: black;">{{reportData['assetName']}}</span></mat-list-item>
+            </mat-list>
+    </mat-grid-tile>
+</mat-grid-list>
+ <!-- TABLE-->
+ <div [ngStyle]="{display: selected['selectedId'] != 'asset-utiby-byid' && selected['selectedId'] != 'sensor-water-leak' && reportData['showTable'] && HCselected == reportData['prevselected']  ? 'block' : 'none'}" style="padding-top: 10px;">
+    <div id = "rep-style" class="ovi-prmry-wht-clr" *ngIf="HCselected == 'asset-summary' && selected['selectedId'] == 'asset-summary'" style="height: 33px;padding-top: 5px;padding-left: 20px;" [ngStyle]="headercolor && {'background':headercolor}">{{"Asset Details"|translate}}</div>
+    <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['TableColumns']"  [id]="HCselected"></angular-table-component>
+</div> 
+<div [ngStyle]="{display: selected['selectedId'] == 'sensor-water-leak' && reportData['showTable'] && HCselected == reportData['prevselected']  ? 'block' : 'none'}" style="padding-top: 10px;height: 85%;">
+    <angular-table-component [tableData]="reportData['Table']" [columns]="reportData['SensorTableColumns']"  [id]="HCselected"></angular-table-component>
+</div>
+<div [ngStyle]="{display: selected['selectedId'] != 'asset-utiby-byid' && selected['selectedId'] == 'asset-transfer' && !reportData['noRecords'] && !reportData['loading'] && HCselected == reportData['prevselected']  ? 'block' : 'none'}" style="padding-top: 10px;">
+    <angular-table-component [tableData]="reportData['assetTransferDetailsByFacility']" [columns]="reportData['secondTableColumns']"></angular-table-component>
+</div> 
+<div *ngIf="reportData['noRecords'] && !reportData['invalidDate'] && !reportData['nullIdentifier'] && HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"No Records"|translate}}</div>
+<div *ngIf="reportData['invalidDate'] && HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{reportData['invalidDateMessage']}}</div>
+<div *ngIf="reportData['nullIdentifier'] && HCselected == reportData['prevselected']" style="text-align: center;margin: 2% 0 0 -7%;color:#019F96;">{{"Identifier Required"|translate}}</div>

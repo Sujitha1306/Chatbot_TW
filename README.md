@@ -98,7 +98,9 @@ cp .env.example .env
 # 5. Start the backend server
 ./.venv/bin/uvicorn backend.app.main:app --port 8000 --reload
 ```
-The backend API will now be running at `http://localhost:8000`.
+*(Note: If you have `APP_PORT` configured in your `.env`, replace 8000 with that port value)*
+
+The backend API will now be running at `http://localhost:8000` (or your configured `APP_PORT`).
 
 ### 3. Setup and Run the Frontend (Angular)
 The frontend requires Node.js and npm.

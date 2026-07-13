@@ -1,0 +1,153 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div>{{"Create OT-Procedure"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: auto;height:calc(100% - 135px);">
+        <div [formGroup]="otProcedureForm">
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Health Plan"|translate}} <span
+                            class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here for Health plan'|translate" appkeyupHit
+                            (keyupHit)="getSearchUser($event)" formControlName="healthPlanId"
+                            [matAutocomplete]="healthPlan" (blur)="validateHealthPlan()">
+                        <mat-autocomplete autoActiveFirstOption
+                            [displayWith]="this.healthPlanEnabled === true ? getSurgeryList.bind(healthplan) : ''"
+                            #healthPlan="matAutocomplete">
+                            <mat-option *ngFor="let data of healthplan" [value]="data.id">{{data.name}}
+                            </mat-option>
+                        </mat-autocomplete>
+                        <mat-error *ngIf="otProcedureForm.controls.healthPlanId.invalid">
+                            <span [hidden]="!otProcedureForm.controls['healthPlanId'].errors.required">{{"Health Plan is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'name'|translate" formControlName="name">
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Specialty"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Specialty'|translate" formControlName="specialtyId"
+                            [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of specialtyList" [value]="data.id">
+                                {{data.name}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate" formControlName="description">
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Code Category"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code Category'|translate" formControlName="codeCategoryId" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of codeCategoryList" [value]="data.code">
+                                {{data.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Code Type"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code Type'|translate" formControlName="codeTypeId"
+                            [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of codeTypeList" [value]="data.code">
+                                {{data.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Code Value"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code Value'|translate" formControlName="codeValue">
+                    </mat-form-field>
+                </div> 
+                </div>
+                <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Preparation Sla (Minutes)"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Preparation Sla'|translate" formControlName="preparationSla">
+                        <mat-error *ngIf="otProcedureForm.controls.preparationSla.invalid">
+                            <span [hidden]="!otProcedureForm.controls['preparationSla'].errors.pattern">{{"Numbers only Allowed"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Preparation Sla End (Minutes)"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Preparation Sla End'|translate" formControlName="preparationSlaEnd">
+                        <mat-error *ngIf="otProcedureForm.controls.preparationSla.invalid">
+                            <span [hidden]="!otProcedureForm.controls['preparationSla'].errors.pattern">{{"Numbers only Allowed"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                </div>
+
+                <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Surgery Sla (Minutes)"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Surgery Sla'|translate" formControlName="surgerySla">
+                        <mat-error *ngIf="otProcedureForm.controls.surgerySla.invalid">
+                            <span [hidden]="!otProcedureForm.controls['surgerySla'].errors.pattern">{{"Numbers only Allowed"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Surgery Sla End (Minutes)"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Surgery Sla End'|translate" formControlName="surgerySlaEnd">
+                        <mat-error *ngIf="otProcedureForm.controls.surgerySla.invalid">
+                            <span [hidden]="!otProcedureForm.controls['surgerySla'].errors.pattern">{{"Numbers only Allowed"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                </div>
+                <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Recovery Sla (Minutes)"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recovery Sla'|translate" formControlName="recoverySla">
+                        <mat-error *ngIf="otProcedureForm.controls.recoverySla.invalid">
+                            <span [hidden]="!otProcedureForm.controls['recoverySla'].errors.pattern">{{"Numbers only Allowed"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Recovery Sla End (Minutes)"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Recovery Sla End'|translate" formControlName="recoverySlaEnd">
+                        <mat-error *ngIf="otProcedureForm.controls.recoverySla.invalid">
+                            <span [hidden]="!otProcedureForm.controls['recoverySla'].errors.pattern">{{"Numbers only Allowed"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!this.data" mat-button class="active-btn " appDebounceClick (debounceClick)="saveOtproc()" [debounceTime]="300"
+            cdkFocusInitial [disabled]="this.otProcedureForm.invalid">{{"Create"|translate}}</button>
+            <button *ngIf="this.data" mat-button class="active-btn " appDebounceClick (debounceClick)="updateOtproc()" [debounceTime]="300"
+            cdkFocusInitial>{{"Update"|translate}}</button>
+            
+    </div>
+</div>

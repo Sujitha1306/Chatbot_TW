@@ -1,0 +1,132 @@
+<div class="ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <span class="ovi-pop-hdr-name">{{"Manage Event"|translate}}</span>
+        <span class="ovi-pop-hdr-close">
+            <button mat-icon-button mat-dialog-close close-button>
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button>
+        </span>
+    </div>
+        <app-banner [type]="'new'" [bannerData]="bannerlabel">
+        </app-banner>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="height:calc(100% - 135px);overflow: auto;" [formGroup]="assetTransferForm" >
+        <div>
+            <div class="ast-styl-1 mat-tab-content" *ngIf="isAssetTable" style="margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 5px;">
+                    <mat-checkbox style="padding-right:10px;" formControlName="isExcludeParent" (change)="onChange($event)"></mat-checkbox>
+                    <mat-label class="ovi-lbl-text-size">{{"Exclude Parent"|translate}}</mat-label>
+                  </div>                                                   
+                <mat-table #table [dataSource]="dataSourceAsset" class="mat mat-tbl-styl">
+                    <ng-container matColumnDef="select">
+                        <mat-header-cell *matHeaderCellDef class="mat-tbl-styl_1">
+                            <mat-checkbox (change)="masterAssetToggle('childAsset')"
+                                          [checked]="isAllSelected('childAsset')"
+                                          [indeterminate]="!isAllSelected('childAsset') && assetSelection.hasValue()"
+                                          style="background-color: #fff;">
+                            </mat-checkbox>
+                        </mat-header-cell>
+                        <mat-cell *matCellDef="let row" class="tbl-width">
+                            <mat-checkbox (click)="$event.stopPropagation(); checkEvent('childAsset', row)"  (keydown.enter)="fixClick()"
+                                          (change)="onCheckboxChange($event, row)"
+                                          [checked]="assetSelection.isSelected(row)">
+                            </mat-checkbox>
+                        </mat-cell>
+                    </ng-container>
+                                                                                      
+                    <ng-container matColumnDef="Asset Id">
+                        <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">{{"Asset No"|translate}}</mat-header-cell>
+                        <mat-cell *matCellDef="let element" class="tbl-width">{{element.childAssetSerialNumber}}</mat-cell>
+                    </ng-container>
+                    <ng-container matColumnDef="Asset Name">
+                        <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">{{"Asset Name"|translate}} </mat-header-cell>
+                        <mat-cell *matCellDef="let element">{{element.childAssetName}}</mat-cell>
+                    </ng-container>
+                    <ng-container matColumnDef="Asset Type">
+                        <mat-header-cell *matHeaderCellDef class="mat-sort-header-button mat-tbl-styl_1">{{"Asset Type"|translate}} </mat-header-cell>
+                        <mat-cell *matCellDef="let element" class="tbl-width_1">{{element.childAssetTypeName}}</mat-cell>
+                    </ng-container>
+                    <mat-header-row *matHeaderRowDef="assetDisplayedColumns"></mat-header-row>
+                    <mat-row *matRowDef="let row; columns:assetDisplayedColumns;" (click)="selection.toggle(row)" (keydown.enter)="fixClick()"></mat-row>
+                </mat-table>
+            </div>
+            </div>
+            <div class="ovi-row-gap">
+                <div class="ovi-popup-title-text-size top-styl">{{"MANAGE ACTION"|translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                        <mat-label class="ovi-lbl-text-size">{{"Action Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="assetTransferType"
+                                (selectionChange)="getTransferType($event.value, 'transfer')">
+                                <mat-option *ngFor="let data of assetTransferTypeDetails" [value]="data.code">
+                                    {{data.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="assetTransferForm.controls.assetTransferType.errors?.required" class="error-txt-1">
+                                <span>{{"Action Type is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+            </div>
+            <div *ngIf="(this.checkTransferTypeId === 'ATT-LN' || this.checkTransferTypeId === 'ATT-TR')" fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" class="form-row">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                        <mat-label class="ovi-lbl-text-size">{{"Category"|translate}}<span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" formControlName="transferType"
+                                (selectionChange)="getTransferType($event.value, 'category')" [disabled]="data.assetTransferTypeId === 'ATT-TR'">
+                                <mat-option *ngFor="let data of transferType" [value]="data.code">{{data.value}}
+                                </mat-option>
+                            </mat-select>
+                            <mat-error *ngIf="assetTransferForm.controls.transferType.errors?.required" class="error-txt-1">
+                                <span>{{"Category is required"|translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div  class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-matfrmfld-err">
+                    <div  *ngIf="assetTransferForm.controls['transferType'].value== 'TRT-LOC'">
+                        <mat-label class="ovi-lbl-text-size">{{"Assign Location"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search'|translate" id="location"
+                            appTypeHit (typeHit)="searchLocationlist($event)" [matAutocomplete]="autoFrom">
+                            <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                                <mat-option *ngFor="let list of locationlist" value="{{list.fullName}}">
+                                    <div class="tot-wid-styl" (click)="getLocationID(list.id)" (keydown.enter)="fixClick()">
+                                        {{list.fullName}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-hint *ngIf="blankField == true">
+                                <span style="color:red;">*{{"Please choose the option"|translate}}</span>
+                            </mat-hint>
+                        </mat-form-field>
+                    </div>
+                    <div class="ovi-matfrmfld-drpdwn-top-box" *ngIf="assetTransferForm.controls['transferType'].value== 'TRT-DEP'">
+                        <mat-label class="ovi-lbl-text-size">{{"Department Name"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <mat-select formControlName="transferId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Department Name'|translate" matSelectSearch>
+                                <mat-option *ngFor="let department of departmentList" [value]="department.id">
+                                  {{ department.name }}
+                                </mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
+            <div  class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                        <mat-label class="ovi-lbl-text-size">{{"Comments"|translate}}</mat-label>
+                        <mat-form-field id="textHeight" class="ovi-row-frmfld-wdh" appearance="outline">
+                            <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Comments'|translate"
+                                formControlName="comments"></textarea>
+                        </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <div class="ovi-pop-ftr">
+            <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+            <button mat-button class="active-btn "  appDebounceClick [debounceTime]="300" cdkFocusInitial
+            [disabled]="assetTransferForm.invalid" (debounceClick)="assetTranfer()">{{"Save"|translate}}</button>
+        </div>
+    
+</div>

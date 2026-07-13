@@ -1,0 +1,135 @@
+<div class="ovi-font-family" style="height: calc(100% - 6px);">
+    <mat-toolbar class="input-header">
+        <div class="header-name">{{"Manage Location View"|translate}}</div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+            <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <div style="width: calc(100% - 15px);padding-top:5px; height: 78%;" [formGroup]="locationViewForm">
+        <div style="height: 20%;">
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="20px" style="margin: 0px 10px;">
+                <div fxFlex="33" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display: block;">{{"Select Floors:"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field  style="width: 90%;" appearance="outline">
+                        <mat-select multiple appPlaceholder [showPlaceholder]="false" [placeholderText]="'Floor'|translate" formControlName="floors"[disableOptionCentering]="true" [disabled]="!data?.enableFloorChange">
+                            <mat-option [value]="0" (click)="toggleAll('floors',0)" (keydown.enter)="fixClick()">All</mat-option>
+                            <mat-option *ngFor="let floor of floorList" [value]="floor.id">
+                                {{floor.name}}, {{floor.blockName}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="locationViewForm.controls.floors.invalid">
+                            <span  [hidden]="!locationViewForm.controls['floors'].errors.required">{{"Floor is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div fxFlex="33" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display: block;">{{"Select Type:"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field  style="width: 90%;" appearance="outline">
+                        <mat-select multiple appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="locType"[disableOptionCentering]="true">
+                            <mat-option [value]="0" (click)="toggleAll('locType',0)" (keydown.enter)="fixClick()">All</mat-option>
+                            <mat-option *ngFor="let type of locationTypes" [value]="type.id">
+                                {{type.name}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="locationViewForm.controls.locType.invalid">
+                            <span  [hidden]="!locationViewForm.controls['locType'].errors.required">{{"Location Type is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div fxFlex="33" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display: block;">{{"Select Category:"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field  style="width: 90%;" appearance="outline">
+                        <mat-select multiple appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" formControlName="category">
+                            <mat-option [value]="0" (click)="toggleAll('category',0)" (keydown.enter)="fixClick()">All</mat-option>
+                            <mat-option *ngFor="let category of categoryList" [value]="category.code">
+                                {{category.value}}
+                            </mat-option>
+                        </mat-select>
+                        <mat-error *ngIf="locationViewForm.controls.category.invalid">
+                            <span  [hidden]="!locationViewForm.controls['category'].errors.required">{{"Category is required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+        <mat-divider class="divider"></mat-divider>
+        <div style="height: 75%;margin-top: 25px;">
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="5px" style="margin: 0px 10px;">
+                <div fxFlex="50" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display: block;">{{"Polygon Color:"|translate}}</mat-label>
+                    <mat-form-field  style="width: 80%;padding-right: 10px;" appearance="outline">
+                        <input matInput type="text" [formControlName]="'color'">
+                        <button mat-icon-button matSuffix>
+                            <mat-icon (click)="colorPicker($event,'color')" class="ovi-fnt-sze-25" style="padding-top: 0px;color: blue;margin-top: -1px;" (keydown.enter)="fixClick()">edit</mat-icon>
+                        </button>
+                        <button mat-icon-button matSuffix>
+                            <mat-icon (click)="clearPolygonColor('color')" class="ovi-fnt-sze-25" style="padding-top: 0px;color: red;margin-top: -1px;" (keydown.enter)="fixClick()">highlight_off</mat-icon>
+                        </button>
+                    </mat-form-field>
+                    <mat-checkbox formControlName="colorEnable" style="width: 10%;" appTooltip [tooltipText]="locationViewForm.controls.colorEnable.value?'Enabled':'Disabled'" placement="top">
+                    </mat-checkbox>
+                </div>
+                <div fxFlex="50" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display: block;">{{"Polygon Border Color:"|translate}}</mat-label>
+                    <mat-form-field  style="width: 80%;padding-right: 10px;" appearance="outline">
+                        <input matInput type="text" [formControlName]="'fillColor'">
+                        <button mat-icon-button matSuffix>
+                            <mat-icon (click)="colorPicker($event,'fillColor')" class="ovi-fnt-sze-25" style="padding-top: 0px;color: blue;margin-top: -1px;" (keydown.enter)="fixClick()">edit</mat-icon>
+                        </button>
+                        <button mat-icon-button matSuffix>
+                            <mat-icon (click)="clearPolygonColor('fillColor')" class="ovi-fnt-sze-25" style="padding-top: 0px;color: red;margin-top: -1px;" (keydown.enter)="fixClick()">highlight_off</mat-icon>
+                        </button>
+                    </mat-form-field>
+                    <mat-checkbox formControlName="fillColorEnable" style="width: 10%;" appTooltip [tooltipText]="locationViewForm.controls.fillColorEnable.value?'Enabled':'Disabled'" placement="top">
+                    </mat-checkbox>
+                </div>
+            </div>
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="5px" style="margin: 0px 10px;">
+                <div fxFlex="50" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display: block;">{{"Font Size:"|translate}}</mat-label>
+                    <mat-form-field  style="width: 80%;padding-right: 10px;" appearance="outline">
+                        <mat-select formControlName="fontSize">
+                            <mat-option *ngFor="let size of fontSizes" [value]="size">
+                                {{ size }}
+                            </mat-option>
+                          </mat-select>
+                    </mat-form-field>
+                    <mat-checkbox formControlName="fontSizeEnable" style="width: 10%;" appTooltip [tooltipText]="locationViewForm.controls.fontSizeEnable.value?'Enabled':'Disabled'" placement="top"></mat-checkbox>
+                </div>
+                 <div fxFlex="50" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display:block;">{{"Polygon Color FillOpacity:"|translate}}</mat-label>
+                    <div style="display: flex; align-items: center; width: 90%;">
+                      <mat-slider style="width: 100%; padding-right: 10px;"
+                      [formControl]="locationViewForm.controls['fillOpacity']" [min]="0"
+                      [max]="1" [step]="0.1" thumbLabel tickInterval="1">
+                      </mat-slider>
+                      <mat-checkbox formControlName="fillOpacityEnable" style="width: 10%;"  appTooltip [tooltipText]="locationViewForm.controls.disLocLevelEnable.value ? 'Enabled' : 'Disabled'"  placement="top">
+                      </mat-checkbox>
+                    </div>
+                  </div>
+            </div>
+            <div fxLayout="row" fxLayout.lt-sm="column" fxLayoutGap="5px" style="margin: 0px 10px;">
+                <div fxFlex="50" fxFlex.lt-sm="100" class="custom-name">
+                    <mat-label class="ovi-lbl-text-size" style="display:block;"> {{"Display Label:"|translate}}</mat-label>
+                    <mat-form-field  style="width: 80%;padding-right: 10px;" appearance="outline">
+                        <mat-select [formControlName]="'disLocLevel'">
+                            <mat-option *ngFor="let zoom of zoomOptions" [value]="zoom">
+                                {{ zoom }}
+                            </mat-option>
+                        </mat-select>   
+                    </mat-form-field>
+                    <mat-checkbox formControlName="disLocLevelEnable" style="width: 10%;" appTooltip [tooltipText]="locationViewForm.controls.disLocLevelEnable.value?'Enabled':'Disabled'" placement="top">
+                    </mat-checkbox>
+                </div>
+                  
+            </div>
+        </div>
+    </div>
+    <div class="input-footer" style="margin: 2%;">
+        <div style="float: right; margin: 7px;">
+            <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+            <button mat-button class="active-btn" style="float: right; margin-right : 5px;font-weight: 600;border-radius: 8px; min-width: 88px;" appDebounceClick cdkFocusInitial  (debounceClick)="UpdateLocationView()"
+             [debounceTime]="600" [disabled]="locationViewForm.invalid">{{"Submit"|translate}}</button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,140 @@
+<div class="loading-spinner" *ngIf="isloading">
+    <div class="spinnerload">
+        <div class="spin1"></div>
+        <div class="spin2"></div>
+        <div class="spin3"></div>
+    </div>
+</div>
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.setResource">{{"Create surgical set"| translate}}</div>
+        <div *ngIf="data.setResource && data.type !== 'TW-SSV'">{{"Modify surgical set" | translate}}</div>
+        <div *ngIf="data.type === 'TW-SSV'">{{"View surgical set" | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: auto;height:calc(100vh - 150px);" [formGroup]="setresourceForm">
+        <div class="ovi-row-gap">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span
+                        class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" [disabled]="data.type === 'TW-SSV'">
+                        <mat-option *ngFor="let option of surgicalSetList" [value]="option.code">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="setresourceForm.controls.name.invalid" class="error-txt-1">
+                        <span [hidden]="!setresourceForm.controls['name'].errors.required">
+                            {{"Name is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Description"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input
+                        style="text-overflow: ellipsis;white-space: nowrap;max-width: 250px;overflow: hidden !important;"
+                        matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate"
+                        formControlName="description" autocomplete="off"  [readonly]="data.type === 'TW-SSV'">
+                </mat-form-field>
+            </div>
+            <div *ngIf="data.setResource" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Identifier"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Identifier'|translate" formControlName="identifier" autocomplete="off" readonly>
+                </mat-form-field>
+            </div>
+            <div *ngIf="data.setResource" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}} </mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="setStatus" [disabled]="data.type === 'TW-SSV'">
+                        <mat-option *ngFor="let option of statusTypelist" [value]="option.code">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </div>
+        <div class="ovi-fnt-sze14" style="display: flex;font-weight: 600;margin-top: 5px;">{{'Set Resources' | translate}}
+        </div>
+        <mat-divider></mat-divider>
+        <div class="ovi-row-gap-four-fld"
+            style="align-items: center;padding-bottom: 5px;justify-content: unset; flex-wrap: wrap;">
+            <div class="ovi-row-three-clmn ovi-matfrmfld-box-top-btm-pdg">
+                <mat-label class="ovi-lbl-text-size">{{'Asset Category' | translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Category'|translate" formControlName="category"
+                        (selectionChange)="OnResourceCatagoryChange($event.value)" [disabled]="data.type === 'TW-SSV'">
+                        <mat-option *ngFor="let option of assetcategoryList" [value]="option.code">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="setresourceForm.controls.category.invalid" class="error-txt-1">
+                        <span [hidden]="!setresourceForm.controls['category'].errors.required">
+                            {{"Asset Category is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-row-three-clmn ovi-matfrmfld-box-top-btm-pdg">
+                <mat-label class="ovi-lbl-text-size">{{'Asset Type' | translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Type'|translate" formControlName="assetType"
+                        (selectionChange)="OnResourceTypeChange($event.value)" [disabled]="data.type === 'TW-SSV'">
+                        <mat-option *ngFor="let option of assetTypeList" [value]="option.code">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="setresourceForm.controls.assetType.invalid" class="error-txt-1">
+                        <span [hidden]="!setresourceForm.controls['assetType'].errors.required">
+                            {{"Asset Type is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                <mat-label class="ovi-lbl-text-size">{{'Asset Name' | translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Name'|translate" formControlName="assetName" [disabled]="data.type === 'TW-SSV'">
+                        <mat-option *ngFor="let option of assetNameList" [value]="option.id">
+                            <div class="tot-wid-styl">{{ option.name }}</div>
+                        </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="setresourceForm.controls.assetName.invalid" class="error-txt-1">
+                        <span [hidden]="!setresourceForm.controls['assetName'].errors.required">
+                            {{"Asset Name is required"|translate}}.</span>
+                    </mat-error>
+                </mat-form-field>
+            </div>
+            <div class="ovi-matfrmfld-input-box-pdg ovi-row-three-clmn">
+                <mat-label class="ovi-lbl-text-size">{{'Quantity' | translate}}<span class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Quantity'|translate"
+                        formControlName="assetQuantity" type="number" [readonly]="data.type === 'TW-SSV'">
+                        <mat-error *ngIf="setresourceForm.controls.assetQuantity.invalid" class="error-txt-1">
+                            <span [hidden]="!setresourceForm.controls['assetQuantity'].errors.required">
+                                {{"Quantity is required"|translate}}.</span>
+                        </mat-error>
+                </mat-form-field>
+            </div>
+            <div style="margin-top: 13px;">
+                <button mat-button class="active-btn" appDebounceClick [debounceTime]="300" (debounceClick)="addResource()"
+                [disabled]="!setresourceForm.controls['category'].value || !setresourceForm.controls['assetType'].value || !setresourceForm.controls['assetName'].value || 
+                !setresourceForm.controls['assetQuantity'].value"> {{'ADD' | translate}}
+                </button>
+            </div>
+        </div>
+        <div *ngIf="dataSource.length" style="width: calc(100% - 10px);">
+            <angular-table-component [id]="'set-resource'" [type]="'ng-table'" [tableData]="dataSource"
+                [columns]="DisplayColumn" [columnData]="DataColumns" (triggerAction)="eventAction($event)"
+                [component]="'set-resource'">
+            </angular-table-component>
+        </div>
+    </div>
+    <div *ngIf="data.type !== 'TW-SSV'" class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button *ngIf="!data.setResource" mat-button class="active-btn " appDebounceClick [disabled]="!isData"
+            (debounceClick)="saveSetResource()" cdkFocusInitial [debounceTime]="1000">{{"Save"|translate}}</button>
+        <button *ngIf="data.setResource" mat-button class="active-btn " appDebounceClick
+            (debounceClick)="updateSetResource()" cdkFocusInitial [debounceTime]="1000">{{"Update"|translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,121 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;overflow: hidden;">
+    <div class="stick-close">
+        <div mat-dialog-close><mat-icon style="padding: 0;">highlight_off</mat-icon></div>
+    </div>
+    <div *ngIf="false" style="padding: 0 10px;height: calc(100vh - 135px);overflow: auto;">
+        <div class="sticker-container" style="display: flex;white-space: nowrap;gap: 10px 10px;flex-wrap: wrap;"
+            id="printData">
+            <div class="container-layout ovi-fnt-sze11"
+                style="height: fit-content;width: 280px;border: solid 1.5px;padding: 6px"
+                *ngFor="let obj of stickerData">
+                <div class="ovi-fnt-sze12"
+                    style="display: flex; flex-direction: column; align-items: center; font-weight: 600;">
+                    <div>{{"INSPECTION and PREVENTIVE"|translate}}</div>
+                    <div>{{"MAINTENANCE"|translate}}</div>
+                </div>
+                <div style="display: flex; align-items: center; padding: 5px 0;">
+                    <div class="sticker-content1" style="display: flex; flex-direction: column;width: 35%;">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 600;">{{"Done Date"|translate}}:</span>
+                            <span>{{ obj.scheduleTypeId === 'SCT-DLY' ? (obj.scheduleStartTime | date:'d MMM yyyy') : (obj.scheduleStartTime | date:'MMMM yyyy')}}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 600;">{{"Expire Date"|translate}}:</span>
+                            <span>{{ obj.scheduleTypeId === 'SCT-DLY' ? (obj.scheduleEndTime | date: 'd MMM yyyy') : (obj.scheduleEndTime | date: 'MMMM yyyy')}}</span>
+                        </div>
+                    </div>
+                    <div class="sticker-content2" style="display: flex; flex-direction: column;width: 70%;">
+                        <div style="text-align: center;">{{obj.requestIdentifier}}</div>
+                        <div class="safety-label"
+                            style="font-weight: 600;color: white;background: #00007e;padding: 0 3px;">
+                            <div style="border-bottom: solid 1.5px; white-space: nowrap;">{{"TESTED FOR ELECTRICAL SAFETY"|translate}}
+                            </div>
+                            <div><span class="ovi-fnt-sze14"
+                                    style="padding: 0 10px;text-align: center;display: inline-block;width: 65px;">{{"Pass"|translate}}</span>
+                                {{"READY FOR USE"|translate}}
+                            </div>
+                        </div>
+                        <div style="padding: 3px 0;">
+                            <span style="font-weight: 600;">{{"IPM Frequency"|translate}} :
+                                <span style="font-weight: 500;">{{obj.scheduleTypeId === 'SCT-QRY' ? '3 Months' :
+                                    obj.scheduleTypeId === 'SCT-DLY' ? '1 Day' :
+                                    obj.scheduleTypeId === 'SCT-WKY' ? '7 Days' :
+                                    obj.scheduleTypeId === 'SCT-HFY' ? '6 Months' : '1 Year'}}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="padding: 0 10px; height: calc(100vh - 135px); overflow: auto; background: #f4f4f4;">
+        <div class="sticker-container" style="display: flex; gap: 12px; flex-wrap: wrap;" id="printData">
+            <div class="container-new-layout ovi-fnt-sze11" *ngFor="let obj of stickerData" style="width: 315px;height: fit-content;border: 1px solid #000;background: #ffffff;
+                                font-family: 'Open Sans', sans-serif; display: flex; flex-direction: column;">
+                <div style="display: flex; border-bottom: 1px solid #000;">
+                    <div style="flex: 1; padding: 4px;">
+                    <div style="font-weight: 700; font-size: 13px;">
+                        {{
+                        obj.activityCategoryId === 'AC-PMS' ? 'Planned Preventive Maintenance' :
+                        obj.activityCategoryId === 'AC-AMC' ? 'Annual Maintenance Contract' :
+                        obj.activityCategoryId === 'AC-CAL' ? 'Calibration Maintenance' :
+                        obj.activityCategoryId === 'AC-COR' ? 'Corrective Maintenance' : ''
+                        }}
+                    </div>
+                    
+                    <div style="font-size: 11px;">
+                        <b *ngIf="obj.activityCategoryId === 'AC-PMS'">PMS Reference</b>
+                        <b *ngIf="obj.activityCategoryId === 'AC-AMC'">AMC Reference</b>
+                        <b *ngIf="obj.activityCategoryId === 'AC-CAL'">Calibration Reference</b>
+                        <b *ngIf="obj.activityCategoryId === 'AC-COR'">Corrective Reference</b>
+                        : {{ obj.requestIdentifier }}
+                    </div>
+                        <div style="font-size: 11px;">
+                            <b>Frequency</b> :
+                            {{
+                            obj.scheduleTypeId === 'SCT-QRY' ? '3 Months' :
+                            obj.scheduleTypeId === 'SCT-DLY' ? '1 Day' :
+                            obj.scheduleTypeId === 'SCT-WKY' ? '7 Days' :
+                            obj.scheduleTypeId === 'SCT-HFY' ? '6 Months' :
+                            '12 Months'
+                            }}
+                        </div>
+                    </div>
+                    <div style="width: 66px; border-left: 1px solid #000;display: flex; align-items: center; justify-content: center; padding: 2px;">
+                        <img [src]="hospital_logo" alt="hospital_logo"
+                            style="max-width: 55px;  max-height: 42px;object-fit: contain;" />
+                    </div>
+                </div>
+    
+    
+                <div style="display: flex;">
+                    <div style="flex: 1; padding: 3px;">
+                        <div style="background: #fff;text-align: center; font-weight: 800;font-size: 14px;padding: 4px 0; ">
+                            PASSED
+                        </div>
+                        <div style="font-size: 11px; line-height: 1.6;">
+                            <div>
+                                <b>Performed Date</b> :
+                                {{ obj?.scheduleStartTime && obj?.scheduleStartTime !== 'N/A' ? (obj.scheduleStartTime | date:'dd-MM-yyyy') : 'N/A' }}
+                            </div>
+                            <div>
+                                <b>Next Due Date</b> :
+                                 {{ obj?.scheduleEndTime && obj?.scheduleEndTime !== 'N/A' ? (obj.scheduleEndTime | date:'dd-MM-yyyy') : 'N/A' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div *ngIf="obj?.entityIdentifier" style="width: 62px; border-left: 1px solid #000; display: flex; align-items: center;justify-content: center;padding: 4px;">
+                        <qrcode [elementType]="'svg'" [qrdata]="obj?.entityIdentifier" [errorCorrectionLevel]="'M'" [width]="55" [margin]="1">
+                        </qrcode>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ovi-pop-ftr">
+        <button mat-button class="active-btn" appDebounceClick [debounceTime]="300" cdkFocusInitial
+            (debounceClick)="printPass()" id="printPass">{{"Print"|translate}}</button>
+    </div>
+</div>

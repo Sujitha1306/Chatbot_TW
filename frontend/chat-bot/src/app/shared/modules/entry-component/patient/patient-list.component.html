@@ -1,0 +1,31 @@
+<div class="mrgn-styl_ ovi-font-family">
+    <div class="popup-header">
+      Patient List
+      <img mat-dialog-close src="/assets/Alert/common_icons/close.svg"  alt="close" (click)="popupClose();"  (keydown.enter)="fixClick()">
+    </div>
+    <div class="manage-body">
+        <div class="manage-action">
+            <mat-form-field>
+              <input matInput (keyup)="applyFilter($event.target.value)" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Filter'|translate" autocomplete="off" >
+            </mat-form-field>
+        </div>
+      <div fxLayout="column" class="mat-elevation-z4 manage-component" [ngClass.xs]="'components-container-xs'"  fxLayoutGap="5px">
+        <div class="table-container mat-table-overflow">
+          <mat-table #table [dataSource]="dataSource" matSort>
+            <ng-container *ngFor = "let col of displayedData"  matColumnDef="{{col.colName}}" >
+              <mat-header-cell *matHeaderCellDef mat-sort-header class="manage-table-header"> {{col.title}} </mat-header-cell>
+              <mat-cell *matCellDef="let element">{{element[col.dataName]}}
+                  
+              </mat-cell>
+            </ng-container>
+            <mat-header-row *matHeaderRowDef="displayedColumns" class="manage-table-header-row"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns;" class="element-row"
+                (click) = patientInfo(row)  (toggleChange)="onToggleChange($event,row)"  (keydown.enter)="fixClick()">
+            </mat-row>
+          </mat-table>
+          <mat-paginator [pageSizeOptions]="[10, 15, 20, 50, 100]" showFirstLastButtons></mat-paginator>
+        </div>
+      </div>
+    </div>
+</div>
+

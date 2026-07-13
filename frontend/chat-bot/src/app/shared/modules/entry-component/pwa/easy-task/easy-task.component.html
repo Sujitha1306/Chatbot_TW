@@ -1,0 +1,66 @@
+<div class="ovi-font-family">
+    <div class="pwa-edit-min-header">
+        <div class="pwa-edit-user">
+            <div class="pwa-edit-avatar">{{ firstLetter }}</div>
+            <div>
+                <div class="pwa-edit-name">{{userName}}</div>
+                <div class="pwa-edit-sub">{{facilityName}}</div>
+            </div>
+        </div>
+        <div class="pwa-patient-highlight">
+            <span class="pickup-icon">📍</span>
+            <div style="display: flex; min-width: 244px;align-items: center; justify-content: space-between;">
+                <div style="display: flex;flex-direction: column;">
+                    <span style="font-weight: 600;opacity: 0.8;" class="pickup-text ovi-fnt-sze13">{{ 'Location' }}</span>
+                    <span class="pickup-text ovi-fnt-sze1">{{locDetail?.name | titlecase}}</span>
+                </div>
+                <div style="display: flex;align-items: center;" (click)="changePage()">
+                    <div class="ticket-toggle-checkbox">
+                        <input id="status" type="checkbox" name="switchReq" checked (click)="changePage()">
+                        <label for="status">
+                            <div class="status-switch" [attr.data-checked]="'Ticket'" [attr.data-unchecked]="'Porter'">
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="padding: 10px;">
+        <div style="padding-top: 10px;">
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <div style="font-weight: 600;">{{ "Service Categories" | translate }}</div>
+                <div style="display : flex; gap: 10px; flex-wrap: wrap;">
+                    <div *ngFor="let category of activityCategoryList"
+                        style="display: flex; height: 100px; width: 100px; cursor: pointer; border-radius: 10px; border: 2px solid var(--primary-bg-color); align-items: flex-end; text-align: center; flex-direction: column;"
+                        (click)="getActivityList(category.code)">
+                        <div
+                            style="width: 100%; justify-content: center; display: flex; text-align: center; height: 60%; align-items: center;">
+                            <mat-icon class="ovi-fnt-sze25"
+                                style="display: flex; justify-content: center; align-items: center; color: var(--primary-bg-color); margin-top: 8px; width: 100%; height: 100%; font-size: 32px !important;">assignment_add</mat-icon>
+                        </div>
+                        <div style="text-align: center; width: 100%; color: #1a1a1a; font-weight: 600; font-size: 12px;">
+                            {{category.value}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ovi-font-family" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center;" *ngIf="showPopup">
+  <div style="background: #fff; width: 320px; min-height: 250px; max-height: 600px; border-radius: 10px;">
+    <div style="height: 30px; background: var(--primary-bg-color); color: white; padding: 5px 10px; border-radius: 10px 10px 0px 0px; display: flex; align-items: center;justify-content: space-between">
+        <div style="font-size: 16px;font-weight: 600;">{{ "Services" | translate }}</div>
+        <div style="cursor: pointer; " (click)="closePopup()"><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div style="padding: 10px; max-height: 540px; overflow: auto;">
+        <div *ngFor="let activity of activityList" style="min-height: 35px;display: flex;align-items: center;border-bottom: 1px solid #cdcdcd;">
+            <div style="font-size: 14px; display: flex; gap: 10px; align-items: center; cursor: pointer; " appDebounceClick (debounceClick) = "createTask(activity)">
+                <div><mat-icon style="color: var(--primary-bg-color);">add_task</mat-icon></div>
+                <div>{{ activity.name }}</div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>

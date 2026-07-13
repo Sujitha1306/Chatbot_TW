@@ -1,0 +1,21 @@
+<lazy-loader *ngIf=loading></lazy-loader>
+<div class="manage-body">
+  <tw-header-new-component [component]="selectedTab === 'Health Checkup' ? 'health-checkup' : 'follow-up'" [permission]="null" [dateFilter]="this.selectedDate" [rowFilter]="null" [floorDetails]="floorDetails"
+    [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="true" [locationId]="null"
+    [selectedView]="matTabindex == 0 ? 'table' : null" [multiView]="matTabindex == 0" (selectedViewAction)="selectedViewAction($event)"
+    (headerEventAction)="headerEventAction($event)"></tw-header-new-component>
+  <div>
+    <mat-tab-group (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+      <mat-tab label="{{'Health Checkup'|translate}}">
+        <tw-table-component [component]="'health-checkup'" [columns]="HCdynamicDisplaycolumns" [tableData]="tableData" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [dateTimeColumns] = "HCdynamicDateTimeColumns" [dateColumns]="HCdynamicDateColumns"
+        [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize , pageStart: pageStart}]"
+        [rowDbClick]="true" (rowDbClickAction)="eventAction({ data: $event, key: 'Visit Status' })" [tableClass]="this.matTabindex ? 'tab-table-with-header' : 'tab-table'" [enableSlicing] = "true"></tw-table-component>
+      </mat-tab>
+      <mat-tab label="{{'Follow Up'|translate}}">
+        <tw-table-component [component]="'follow-up'" [columns]="followupdynamicDisplaycolumns" [tableData]="tableDataFP" [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn"  [dateColumns] ="followupdynamicDateColumns"
+        [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [applyFilter]="applyFilterValue" [permissionControl]="permissionControl" [pagination]="[{length: lengthFP, pageSize: pageSizeFP, pageStart: pageStart}]"
+        [rowDbClick]="true" (rowDbClickAction)="this.patientInfo($event)" [tableClass]="this.matTabindex ? 'tab-table-with-header' : 'tab-table'"></tw-table-component>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>

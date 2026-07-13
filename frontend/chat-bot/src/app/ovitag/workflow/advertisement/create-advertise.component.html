@@ -1,0 +1,614 @@
+<div class="input-component-holder container-fluid" style="height: 100%;">
+    <mat-toolbar class="input-header block-1" style="height: 35px; padding-right: 0px;background-color: #D61820">
+        <div *ngIf="!roId" class="header-name" style="width: calc(100% - 30px)"> {{"Release Order Entry"|translate}} </div>
+        <div *ngIf="roId" class="header-name" style="width: calc(100% - 30px)"> {{"Edit Release Order"|translate}} </div>
+        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+    </mat-toolbar>
+    <mat-tab-group class="custom-tab-group" (selectedTabChange)="tabClick($event)"
+        [selectedIndex]="selectedIndex">
+        <mat-tab *ngIf="!this.data.matrixId" label="{{'Order Details'|translate}}" [formGroup]="orderEntryForm">
+            <div class="mat-custom-form-field-box" style="height: calc(100vh - 170px);overflow: auto;">
+                <div class="form-row block-3">
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"RO.No"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'RO.No'|translate"
+                                    formControlName="roNumber" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                    <mat-error *ngIf="orderEntryForm.controls.roNumber.invalid">
+                                        <span [hidden]="!orderEntryForm.controls['roNumber'].errors.required">{{"Ro.No is
+                                            required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Sales Rep"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Sales Rep'|translate" appTypeHit
+                                    (typeHit)="getSearchUser($event)" [matAutocomplete]="auto" autocomplete="off"
+                                    formControlName="employeeId" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                <mat-autocomplete
+                                    [displayWith]="this.kynUserEnabled === true ? getUsername.bind(this) : ''"
+                                    #auto="matAutocomplete">
+                                    <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                                        {{option.name}}</mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="orderEntryForm.controls.employeeId.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['employeeId'].errors.required">{{"Sales Rep is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!orderEntryForm.controls['employeeId'].errors.requireMatch">{{"Please
+                                        select value
+                                        from the option"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Client Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Client Details'|translate" appTypeHit
+                                    (typeHit)="getClientSearch($event)" [matAutocomplete]="client" autocomplete="off"
+                                    formControlName="clientDetailId" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                <mat-autocomplete
+                                    [displayWith]="this.clientEnabled === true ? getClientName.bind(this) : ''"
+                                    #client="matAutocomplete">
+                                    <mat-option *ngFor="let option of clientList" (click)="billingClientDetails(option)"
+                                     [value]="option.id" (keydown.enter)="fixClick()">{{option.name}}</mat-option>
+                                </mat-autocomplete>
+                                <mat-error *ngIf="orderEntryForm.controls.clientDetailId.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['clientDetailId'].errors.required">{{"Client Name is
+                                        required"|translate}}.</span>
+                                    <span [hidden]="!orderEntryForm.controls['clientDetailId'].errors.requireMatch">{{"Please
+                                        select value
+                                        from the option"|translate}}</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Agency Name"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Agency Details'|translate" appTypeHit
+                                    (typeHit)="getAgentSearch($event)" [matAutocomplete]="agent" autocomplete="off"
+                                    formControlName="agencyDetailId" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                <mat-autocomplete
+                                    [displayWith]="this.agentEnabled === true ? getAgentName.bind(this) : ''"
+                                    #agent="matAutocomplete">
+                                    <mat-option *ngFor="let option of agentList" (click)="billingAgencyDetails(option)"
+                                     [value]="option.id" (keydown.enter)="fixClick()">{{option.name}}</mat-option>
+                                </mat-autocomplete>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Billing To"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Client Type'|translate" formControlName="clientTypeId"
+                                [disabled]="this.data.statusId !== 'ROS-CR'">
+                                <mat-option *ngFor="let data of clientType" [value]="data.code" (click)="clientTypes(data)"  (keydown.enter)="fixClick()">
+                                    {{data.value}}
+                                </mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Billing Details"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Details'|translate"
+                                    formControlName="billingAddress" readonly>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Billing Zone"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Zone'|translate"
+                                    formControlName="entityAddressZone" readonly>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"GST.No"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'GST'|translate"
+                                    formControlName="clientTaxNumber" readonly>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row" style="padding-top: 10px;">
+                    <div class="heading top-styl">{{"Release Order"|translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+                <div class="form-row block-3">
+                    <div class="row-field-1">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Deal Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Deal Type'|translate"  formControlName="dealTypelId"
+                                [disabled]="this.data.statusId !== 'ROS-CR'">
+                                    <mat-option *ngFor="let data of dealTypeList" [value]="data.code">
+                                        {{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="orderEntryForm.controls.dealTypelId.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['dealTypelId'].errors.required"> {{"Deal Type
+                                        is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-1">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"RO Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input  matInput [matDatepicker]="picker3" appPlaceholder [showPlaceholder]="false" [placeholderText]="'RO Date'|translate"
+                                    formControlName="roDateId" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                <mat-datepicker-toggle matSuffix [for]="picker3"></mat-datepicker-toggle>
+                                <mat-datepicker [disabled]="this.data.statusId !== 'ROS-CR'" #picker3></mat-datepicker>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-1">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Notes"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Notes'|translate" rows=2
+                                    formControlName="notes" [readonly]="this.data.statusId !== 'ROS-CR'"></textarea>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-1">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"RO Period Start Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput [ngxMatDatetimePicker]="picker" appPlaceholder [showPlaceholder]="true" [placeholderText]="'start Date'|translate"
+                                    formControlName="startDatetime" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                <ngx-mat-datetime-picker class="custom-ngx-calander" #picker [disabled]="this.data.statusId !== 'ROS-CR'"></ngx-mat-datetime-picker>
+                                <mat-error *ngIf="orderEntryForm.controls.startDatetime.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['startDatetime'].errors.required"> {{"Start
+                                        Date is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-1">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"RO Period End Date"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput [ngxMatDatetimePicker]="pickerEnd" appPlaceholder [showPlaceholder]="true" [placeholderText]="'End Date'|translate"
+                                    formControlName="endDatetime" (ngModelChange)="totalDay($event)"
+                                    [min]="this.orderEntryForm.controls.startDatetime.value"
+                                    [readonly]="this.orderEntryForm.controls.startDatetime.value
+                                    && this.data.statusId !== 'ROS-CR'">
+                                <mat-datepicker-toggle matSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+                                <ngx-mat-datetime-picker #pickerEnd  [disabled]="this.data.statusId !== 'ROS-CR'"></ngx-mat-datetime-picker>
+                                <mat-error *ngIf="orderEntryForm.controls.endDatetime.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['endDatetime'].errors.required"> {{"To Date is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-1">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Total No of Days"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input  type="number" matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Total No of Days'|translate"
+                                    formControlName="noOfDays" readonly>
+                                <span matSuffix class='count'>{{"Days"|translate}}</span>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+                <div class="form-row block-3">
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="  text-size">{{"Total Budget Cost"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input  type="number" min="1" (keyup)="numberword()" matInput
+                                    formControlName="Budget" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                <span matSuffix class='count'>{{"Rs"|translate}}</span>
+                                <mat-error *ngIf="orderEntryForm.controls.Budget.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['Budget'].errors.required">
+                                        {{"Total Budget is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                            <span class="num-words">{{budget | rupees}}</span>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size"> {{"Billing Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Type'|translate" formControlName="billingTypeId"
+                                [disabled]="this.data.statusId !== 'ROS-CR'">
+                                    <mat-option *ngFor="let data of billingList" [value]="data.code">
+                                        {{data.value}}</mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="orderEntryForm.controls.billingTypeId.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['billingTypeId'].errors.required">
+                                        {{"Billing Type is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Billing Value"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Billing Value'|translate"
+                                    formControlName="billingValueId" [readonly]="this.data.statusId !== 'ROS-CR'">
+                                    <mat-error *ngIf="orderEntryForm.controls.billingValueId.invalid">
+                                        <span [hidden]="!orderEntryForm.controls['billingValueId'].errors.required">
+                                            {{"Billing Value is
+                                            required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Payment Terms"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'terms'|translate" rows=2
+                                    formControlName="terms" [readonly]="this.data.statusId !== 'ROS-CR'"></textarea>
+                                <mat-error *ngIf="orderEntryForm.controls.terms.invalid">
+                                    <span [hidden]="!orderEntryForm.controls['terms'].errors.required">{{"Payment
+                                        Terms is
+                                        required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="false" class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status">
+                                    <mat-option *ngFor="let data of status" [value]="data.code">
+                                        {{data.value}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab *ngIf="roId && !this.data.matrixId"  label="{{'Campaign Details'|translate}}" [formGroup]="campaignForm">
+            <div class="mat-custom-form-field-box" style="height: calc(100vh - 180px)">
+                <div class="form-row block-3">
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Brand Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Brand Name'|translate" formControlName="brandName">
+                                <mat-error *ngIf="campaignForm.controls.brandName.invalid">
+                                    <span [hidden]="!campaignForm.controls['brandName'].errors.required">
+                                        {{"Brand Name is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Campaign Name"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Campaign Name'|translate" formControlName="name">
+                                <mat-error *ngIf="campaignForm.controls.name.invalid">
+                                    <span [hidden]="!campaignForm.controls['name'].errors.required">
+                                        {{"Campaign Name is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Campaign Description"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Campaign Description'|translate"
+                                    formControlName="description">
+                                    <mat-error *ngIf="campaignForm.controls.description.invalid">
+                                        <span [hidden]="!campaignForm.controls['description'].errors.required">
+                                            {{"Description is required"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <div style="display: flex; gap: 109px;">
+                            <mat-label class="ovi-lbl-text-size">{{"Campaign Budget"|translate}}</mat-label>
+                            <div matLine class="entity-title" style="display: flex; gap: 3px; font-weight: 600;">
+                                <div >{{"bal"|translate}}:</div>
+                                {{balanceCampaign}}
+                            </div>
+                            </div>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Campaign Budget'|translate" min="0" [max]="balanceCampaign"
+                                    type="number" formControlName="campaignBudget">
+                                    <mat-error *ngIf="campaignForm.controls.campaignBudget.invalid">
+                                        <span [hidden]="!campaignForm.controls['campaignBudget'].errors.required">
+                                            {{"Budget is required"|translate}}.</span>
+                                        <span [hidden]="!campaignForm.controls.campaignBudget.errors?.max">
+                                            {{"Campaign Budget exceeds available balance"|translate}}.</span>
+                                    </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Campaign Period From"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput [ngxMatDatetimePicker]="picker1" appPlaceholder [showPlaceholder]="true" [placeholderText]="'start Date'|translate"
+                                    formControlName="fromDate" [min]="data.advData.startDatetime"
+                                    [max]="data.advData.endDatetime">
+                                <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                                <ngx-mat-datetime-picker #picker1></ngx-mat-datetime-picker>
+                                <mat-error *ngIf="campaignForm.controls.fromDate.invalid">
+                                    <span [hidden]="!campaignForm.controls['fromDate'].errors.required">
+                                        {{"From Date is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Campaign Period To"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <input matInput [ngxMatDatetimePicker]="picker2" appPlaceholder [showPlaceholder]="true" [placeholderText]="'End Date'|translate"
+                                    [min]="this.campaignForm.controls.fromDate.value" formControlName="toDate"
+                                    [readonly]="this.campaignForm.controls.fromDate.value === null"
+                                    [max]="data.advData.endDatetime || endTime">
+                                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                                <ngx-mat-datetime-picker #picker2></ngx-mat-datetime-picker>
+                                <mat-error *ngIf="campaignForm.controls.toDate.invalid">
+                                    <span [hidden]="!campaignForm.controls['toDate'].errors.required">
+                                        {{"To Date is required"|translate}}.</span>
+                                </mat-error>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div class="row-field-adv">
+                        <div class="example-form">
+                            <mat-label class="ovi-lbl-text-size">{{"Remarks/Special Instructions"|translate}}</mat-label>
+                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <textarea  input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" rows=2
+                                    formControlName="remarks"></textarea>
+                            </mat-form-field>
+                        </div>
+                    </div>
+                    <div *ngIf="this.data.statusId === 'ROS-CR'" class="row-field-adv" style="padding-top: 20px;">
+                        <button mat-button *ngIf="!isEdit && balanceCampaign !== 0" class="active-btn" style="margin: 3px;background: #D61820;"
+                        appDebounceClick (debounceClick)="saveCampaign()" [debounceTime]="300"
+                            [disabled]="campaignForm.invalid">{{"Add"|translate}}</button>
+                        <button mat-button *ngIf="isEdit" class="active-btn" style="margin: 3px;background: #D61820;"
+                         appDebounceClick (debounceClick)="saveCampaign()" [debounceTime]="300"
+                            [disabled]="campaignForm.invalid">{{"Update"|translate}}</button>
+                        <button mat-button *ngIf="!isEdit" class="cancle-btn" click="reset()">{{"Clear"|translate}}</button>
+                    </div>
+                </div>
+                <div class="tw-popup-content-tbl block-7" style="padding: 15px 10px 5px 10px;">
+                    <div class="mat-elevation-z4" [ngClass.xs]="'components-container-xs'">
+                        <div class="tw-mat-table-overflow box-26" style="overflow-x: auto;">
+                            <table mat-table class="tw-table" [dataSource]="dataSource" matSort>
+
+                                <ng-container matColumnDef="brandname">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header"> {{"Brand Name"|translate}} </th>
+                                    <td mat-cell *matCellDef="let element"
+                                        style="padding-right: 20px; text-overflow: ellipsis;">
+                                        {{element.brandName}} </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="campaign Name">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header"> {{"Campaign Name"|translate}} </th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        {{element.name}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="campaignDescription">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header"> {{"Campaign Description"|translate}} </th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        {{element.description}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="instructions">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header"> {{"Remarks"|translate}} </th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        {{element.remarks}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="from Date">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header"> {{"Start Date"|translate}}</th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        {{element.startDatetime | date : "hh:mm a, d MMM"}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="to Date">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef
+                                        class="tw-manage-table-header"> {{"End Date"|translate}}</th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        {{element.endDatetime | date : "hh:mm a, d MMM"}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="campaignAmount">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header"> {{"Campaign Amount"|translate}} </th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        {{element.budgetAmount}}
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="Status">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef mat-sort-header
+                                        class="tw-manage-table-header">{{"Status"|translate}}</th>
+                                    <td mat-cell *matCellDef="let element" style="padding-right: 20px;">
+                                        <span *ngIf="element.id"
+                                            [ngStyle]="{'color': element.isActive === false? 'red' : 'blue'}">{{element.isActive
+                                            === false? 'Deleted' : 'exist'}}</span>
+                                        <span *ngIf="!element.id"
+                                            [ngStyle]="{'color': element.isActive === false? 'red' : 'green'}">{{element.isActive
+                                            === false? 'Deleted' : 'New'}}</span>
+                                    </td>
+                                </ng-container>
+
+                                <ng-container matColumnDef="Select">
+                                    <th scope="col" mat-header-cell *matHeaderCellDef
+                                        class="tw-manage-table-header">
+                                    </th>
+                                    <td mat-cell *matCellDef="let element"
+                                        style="padding-right: 20px;padding-left: 20px;">
+                                        <button mat-icon-button [matMenuTriggerFor]="menu"
+                                            [ngStyle]="{'display': element.isActive === false? 'none' : ''}">
+                                            <mat-icon class="activity-edit1">more_horiz</mat-icon>
+                                        </button>
+                                        <mat-menu #menu="matMenu">
+                                            <button *ngIf="this.data.statusId === 'ROS-CR'" mat-menu-item (click)="editCampaign(element)">
+                                                <span class="activity-edit">{{"Edit"|translate}}</span>
+                                            </button>
+                                            <button *ngIf="this.data.statusId === 'ROS-CR'" mat-menu-item (click)="deleteCampaign(element)">
+                                                <span class="activity-edit">{{"Delete"|translate}}</span>
+                                            </button>
+                                            <button *ngIf="element.id" mat-menu-item (click)="manageActivity(element)">
+                                                <span class="activity-edit">{{"Manage Activity"|translate}}</span>
+                                            </button>
+                                        </mat-menu>
+                                    </td>
+                                </ng-container>
+
+                                <tr mat-header-row *matHeaderRowDef="campaignDisplayColumn; sticky: true;"
+                                    class="tw-manage-table-header-row"></tr>
+                                <tr mat-row *matRowDef="let element; columns: campaignDisplayColumn; let i = index;">
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+        <mat-tab *ngIf="this.data.matrixId"  label="{{'Approval Matrix'|translate}}">
+            <div style="height: calc(100vh - 180px); padding-top: 5px;width: 100%;overflow-y:auto; overflow-x: hidden;
+            position: relative;" [formGroup]="matrixForm">
+                <div style="float: right;margin-top: 10px;">
+                    <button mat-mini-fab style="float:right;margin-right: 45px;" (click)="addUserForm()">+</button>
+                </div>
+                <div style="width: 60%">
+                    <div formArrayName="userList" style="width: calc(100% - 20px)">
+                        <div *ngFor="let obj of matrixForm.get('userList')['controls']; let i=index"
+                            style="padding-bottom: 5px;">
+                            <mat-divider *ngIf="false">
+                            </mat-divider>
+                            <div *ngIf="obj.value.isActive" [formGroupName]="i">
+                                <div fxLayout="row" fxLayout.lt-sm="column" style="margin: 0px 10px;width: 100%">
+                                    <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+                                        <mat-form-field style="width: calc(100% - 20px);">
+                                            <mat-select formControlName="recipientType"
+                                                appPlaceholder [showPlaceholder]="true" [placeholderText]="'Recipient Type'|translate"  required
+                                                (selectionChange)="getRecipientName($event.value, i)" readonly>
+                                                <mat-option *ngFor="let data of recipientTypeList"
+                                                    [value]="data.code">{{data.value}} </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+                                        <mat-form-field style="width: calc(100% - 20px);">
+                                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Recipient Name'|translate"
+                                                formControlName="recipientName" appTypeHit
+                                                (typeHit)="searchUserNamelist($event, i)" [matAutocomplete]="auto"
+                                                autocomplete="off">
+                                            <mat-autocomplete autoActiveFirstOption
+                                                [displayWith]="this.recipientEnabled? getUsername.bind(this) : ''"
+                                                #auto="matAutocomplete">
+                                                <mat-option *ngFor="let option of userNameList" [value]="option.id">
+                                                    <div class="alrt-wid-styl">{{option.name}}</div>
+                                                </mat-option>
+                                            </mat-autocomplete>
+                                        </mat-form-field>
+                                    </div>
+                                    <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+                                        <mat-form-field style="width: calc(100% - 20px);">
+                                            <mat-select formControlName="channelTypeId" required
+                                                appPlaceholder [showPlaceholder]="true" [placeholderText]="'channelType'|translate">
+                                                <mat-option *ngFor="let data of channelType"
+                                                    [value]="data.code">{{data.value}} </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+                                        <mat-form-field style="width: calc(100% - 20px);">
+                                            <mat-select formControlName="level" required
+                                               appPlaceholder [showPlaceholder]="true" [placeholderText]="'Level'|translate">
+                                                <mat-option *ngFor="let data of levelList"
+                                                    [value]="data.code">{{data.value}} </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25" fxFlex.sm="100">
+                                        <mat-form-field style="width: calc(100% - 20px);">
+                                            <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Approval Capacity'|translate"
+                                                formControlName="description">
+                                        </mat-form-field>
+                                    </div>
+                                    <div *ngIf="false" fxFlex.xs="30" fxFlex.gt-xs="30" fxFlex.lg="30" fxFlex.md="25"
+                                        fxFlex.sm="100">
+                                        <mat-form-field style="width: calc(100% - 20px);">
+                                            <mat-select formControlName="channelType" required 
+                                                appPlaceholder [showPlaceholder]="true" [placeholderText]="'Channel'|translate">
+                                                <mat-option *ngFor="let data of channelList"
+                                                    [value]="data.code">{{data.value}} </mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
+                                    <div style="width: 5%;">
+                                        <button mat-mini-fab style="background-color: #FC8C91;margin-top: 12px;"
+                                            (click)="removeUserDetails(i)">x</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+    <div class="input-footer" [ngStyle]="{width: selectedIndex === 0 && roId ? '420px' : '190px'}" style="float: right;">
+        <button mat-button *ngIf="selectedIndex === 0 && roId" class="active-btn margin-r-1" style="position: relative;
+        background: #ff0000; right: calc(100vw - 490px);" appDebounceClick (debounceClick)="updateReleaseOrder('reject')"
+         [debounceTime]="300">{{"Reject"|translate}}</button>
+        <button mat-button class="cancle-btn" style="margin: 5px;" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="selectedIndex === 0 && roId && !this.data.matrixId" class="active-btn margin-r-1"
+           style="background: #D61820;" appDebounceClick (debounceClick)="nextTab(1)" [debounceTime]="300">{{"Next"|translate}}>></button>
+        <button mat-button *ngIf="selectedIndex === 0 && !roId && !this.data.matrixId && this.data.statusId === 'ROS-CR'"
+            class="active-btn margin-r-1" [disabled]="orderEntryForm.invalid" appDebounceClick style="background: #D61820;"
+            (debounceClick)="saveReleaseOrder()" [debounceTime]="300">{{"Create"|translate}}</button>
+        <button mat-button *ngIf="selectedIndex === 0 && roId && this.data.statusId !== 'ROS-SH' && this.data.statusId !== 'ROS-LV'"
+        class="active-btn margin-r-1" style="background: #025202;" appDebounceClick (debounceClick)="updateReleaseOrder('approve')" [debounceTime]="300">
+        {{this.data.advData.statusName === 'Created' ? 'Created Approve' : this.data.advData.statusName === 'Senior manager approved' ? 'Manager approved' : this.data.advData.statusName}}</button>
+        <button mat-button *ngIf="selectedIndex !== 0 && roId && !this.data.matrixId && this.data.statusId === 'ROS-CR'" style="background: #D61820;"
+         class="active-btn margin-r-1" appDebounceClick (debounceClick)="updateReleaseOrder()" [debounceTime]="300">{{"Update"|translate}}</button>
+    </div>
+</div>

@@ -1,0 +1,400 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data.id">{{'Enroll Patient' | translate}}</div>
+        <div *ngIf="data.id">{{'Modify Patient' | translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div  class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 80px);" [formGroup]="infantForm">
+        <div>
+            <div class="form-row">
+                <div *ngIf="enrollType === 'mother'" class="ovi-popup-title-text-size top-styl">{{'MOTHER DETAILS' | translate}}</div>
+                <div *ngIf="enrollType === 'infant'" class="ovi-popup-title-text-size top-styl">{{'INFANT DETAILS' | translate}}</div>
+            </div>
+            <mat-divider class="divider"></mat-divider>
+            <div class="ovi-row-gap">
+                <div *ngIf="enrollType === 'mother' || this.data.isChild === false" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">UHID</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput #uhid id="uhid" appPlaceholder [showPlaceholder]="false" [placeholderText]="'UHID'|translate" formControlName="mainidentifier"
+                                (keyup)="clearUHID($event)" (keyup.enter)="getUHID($event.target.value)"
+                                autocomplete="off" [readonly]="data.id">
+                        </mat-form-field>
+                </div>
+                <div *ngIf="enrollType === 'mother' || this.data.isChild === false" class="row-field top">
+                    <button mat-button class="active-btn margin-r-1" appDebounceClick
+                        [disabled]="this.infantForm.controls.mainidentifier.value === null || data.id"
+                        (click)="getUHID(this.infantForm.controls.mainidentifier.value)" cdkFocusInitial
+                        [debounceTime]="300">{{'Search' | translate}}</button>
+                </div>
+                <div *ngIf="enrollType === 'infant' || this.data.isChild === true" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Mother' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mother'|translate" id="searchMother" appTypeHit
+                                (typeHit)="searchMotherDetails($event)" [readonly]="data?.motherName" 
+                                [matAutocomplete]="mother" formControlName="motherId">
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.motherId === null ? getMotherList.bind(motherList) : ''"
+                                #mother="matAutocomplete">
+                                <mat-option *ngFor="let option of motherList" [value]="option.patientId">
+                                    <div class="tot-wid-styl" (click)="sameMotherLoc(false)" (keydown.enter)="fixClick()">{{option.patientName | translate}},&nbsp;{{option.uhid | translate}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="infantForm.controls.motherId.invalid">
+                                <span [hidden]="!infantForm.controls['motherId'].errors.requireMatch">{{'Please select
+                                    value from the option' | translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div *ngIf="enrollType === 'infant' || this.data.isChild === true" class="ovi-row-three-clmn" style="padding-top: 30px">
+                    <div class="row-field-8 ovi-lbl-text-size" style="padding-bottom: 20px;">
+                        <mat-checkbox *ngIf="data.parentVisitStatusId !== 'VS-DC'" [disabled]="infantForm.controls['motherId'].value === null || infantForm.controls['motherId'].value === '' ||
+                        infantForm.controls.motherId.invalid"
+                        [checked]="this.isInfantBed" (change)="sameMotherLoc($event.checked)">{{'Use Mother Location' | translate}}</mat-checkbox>
+                    </div>
+                </div>
+                <div class="ovi-row-three-clmn row-hide">
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'First Name' | translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                            <input matInput minlength="3" maxlength="50" appPlaceholder [showPlaceholder]="false" [placeholderText]="'First Name'|translate" formControlName="firstName" autocomplete="off">
+                            <mat-error *ngIf="infantForm.controls.firstName.invalid">
+                                <span [hidden]="!infantForm.controls['firstName'].errors.required">{{'Name
+                                    is required' | translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Middle Name' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput [maxlength]="50" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Middle Name'|translate" formControlName="middleName" autocomplete="off">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Last Name' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput [maxlength]="50" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" formControlName="lastName" autocomplete="off">
+                        </mat-form-field>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="display: flex;gap: 10px">
+                    <div style="width: 22%;">
+                        <mat-label class="ovi-lbl-text-size">{{"Code"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" matInput
+                                formControlName="countryCode" [matAutocomplete]="countryCode">
+                            <mat-autocomplete #countryCode="matAutocomplete" panelWidth="250px">
+                                <mat-option *ngFor="let country of countryOptions | async" value={{country.code}} appTooltip
+                                    [tooltipText]="country.value" placement="bottom" (click)="getPhoneValidate(country.code, 'code')">
+                                    {{country.code}} ({{country.value}})
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="infantForm.controls.countryCode.invalid">
+                                <span [hidden]="!infantForm.controls['countryCode'].errors.required">
+                                    {{"code required"|translate}}.</span>
+                                <span [hidden]="!infantForm.controls['countryCode'].errors.pattern">{{"code (eg.
+                                    +91)"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+                    <div style='width: 75%;'>
+                        <mat-label class="ovi-lbl-text-size">{{"Mobile No"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Mobile No'|translate"
+                                formControlName="mobileNo" [errorStateMatcher]="matcher" autocomplete="off" (input)="onMobileInput()">
+                            <button mat-icon-button matSuffix (click)="phoneNumber('enable')" *ngIf="data?.id && data.mobileNo !== null">
+                            <mat-icon class="ovi-fnt-sze25"
+                                style="padding-top: 0px;color: red;margin-top: -1px;padding-right:5px;">highlight_off</mat-icon>
+                        </button>
+                        <mat-error *ngIf="infantForm.controls.mobileNo.invalid">
+                            <span [hidden]="!infantForm.controls['mobileNo'].errors.required">
+                                {{"Mobile number is required"|translate}}.
+                            </span>
+                            <span [hidden]="!infantForm.controls['mobileNo'].errors.pattern">
+                                {{"Invalid Mobile number"|translate}}
+                            </span>
+                            <span [hidden]="!infantForm.controls['mobileNo'].errors.invalidPhone">
+                                {{phoneMessage|translate}}
+                            </span>
+                        </mat-error>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'DOB' | translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                            <input matInput  [matDatepicker]="DOBpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'DOB'|translate" formControlName="birthDate" autocomplete="off"  [max]="today">
+                            <mat-datepicker-toggle matSuffix [for]="DOBpicker"></mat-datepicker-toggle>
+                            <mat-datepicker #DOBpicker></mat-datepicker>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn">
+                        <mat-label class="ovi-lbl-text-size"> {{'Gender' | translate}} </mat-label>
+                        <div class="radio-button" style="margin-left: -5px;">
+                            <mat-radio-group formControlName="gender" (change)="getGenderType($event.value)" 
+                            [disabled]="this.enrollType === 'mother' || (this.enrollType !== 'infant' && this.enrollType !== 'mother' && !this.data?.isChild)">
+                                <mat-radio-button class="cst-mgn_1" *ngFor="let o of genderList; let i = index"
+                                [checked]="infantForm.controls.gender.value === o.code"
+                                [value]="o">{{o.value | translate}}</mat-radio-button>
+                            </mat-radio-group>
+                        </div>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size"> {{'Admit Doctor' | translate}} </mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Doctor'|translate" id="searchDoctor" appTypeHit
+                                (typeHit)="searchAssociationDetails($event, 'doctor')"
+                                [matAutocomplete]="doctor" formControlName="doctorId">
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.infantDoctorId === null ? getDoctorList.bind(doctorList) : ''"
+                                #doctor="matAutocomplete">
+                                <mat-option *ngFor="let option of doctorList" [value]="option.id">
+                                    <div class="tot-wid-styl">{{option.name | translate}}</div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="infantForm.controls.doctorId.invalid">
+                                <span [hidden]="!infantForm.controls['doctorId'].errors.required">{{'Admit Doctor
+                                    is required' | translate}}.</span>
+                                <span [hidden]="!infantForm.controls['doctorId'].errors.requireMatch">{{'Please select
+                                    value from the option' | translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Visit Date' | translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput  [matDatepicker]="picker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Visit Date'|translate" formControlName="visitDate"
+                                autocomplete="off"  [min]="!this.data.id ? today : ''" (dateChange)="this.bedList=[]"
+                                [readonly]="this.data.id">
+                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                            <mat-datepicker #picker [disabled]="this.data.id"></mat-datepicker>
+                            <mat-error *ngIf="infantForm.controls.visitDate.invalid">
+                                <span [hidden]="!infantForm.controls['visitDate'].errors.required">{{'Visit Date is
+                                    required' | translate}}.</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size"> {{'Bed' | translate}} <span class="mandatory-field">*</span></mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err tw-hightlight-btn" appearance="outline">
+                            <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Bed'|translate" id="searchBed" appTypeHit
+                                (typeHit)="searchAssociationDetails($event, 'bed')" (blur)="validateEntitySelection('bed')"
+                                [matAutocomplete]="bed" formControlName="bedId"
+                                [readonly]="infantForm.controls['visitDate'].value === null">
+                                <button *ngIf="infantForm.controls.bedId?.value !== null && infantForm.controls.bedId?.value !== ''" style="height: 35px;" 
+                                    type="button" mat-button matSuffix mat-icon-button
+                                    aria-label="Clear" (click)="infantForm.controls.bedId.enable();clearChild('bedId')">
+                                    <mat-icon class="ovi-fnt-sze23" style="color: #707070;">highlight_off</mat-icon>
+                                </button>
+                            <mat-autocomplete autoActiveFirstOption
+                                [displayWith]="this.searchMotherBedId === null && this.isInfantBed === false ? getBedList.bind(bedList) : ''"
+                                #bed="matAutocomplete">
+                                <mat-option *ngFor="let option of bedList" [value]="option.bedId"
+                                    (onSelectionChange)="getMotherLocation(option.locationId)">
+                                    <div class="tot-wid-styl" (keydown.enter)="fixClick()" (click)="infantForm.controls.bedId.disable();">{{option.bedName | translate}}
+                                    <!-- <span *ngIf="option.locationName !== null">, {{option.locationName | translate}}</span> -->
+                                </div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="infantForm.controls.bedId.invalid">
+                                <span [hidden]="!infantForm.controls['bedId'].errors.required">{{'Bed is
+                                    required' | translate}}.</span>
+                                <span [hidden]="!infantForm.controls['bedId'].errors.requireMatch">{{'Please select
+                                    value from the option' | translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size">{{'Tag ID' | translate}}</mat-label>
+                        <mat-form-field *ngIf="this.enrollType == 'mother' || this.data.isChild === false" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag Id'|translate" id="searchCoster" appTypeHit
+                                (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom" (blur)="validateEntitySelection('tag-mother')"
+                                formControlName="tagSerialNumber" [readonly]="data.associatedTagSerialNumber !== null && data.id && this.tagExist">
+                            <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                                <mat-option *ngFor="let option of searchCosterlist" [value]="option.tagId" (click)="getTagTypeId(option.tagTypeId);getBatteryPercentage(option)" (keydown.enter)="fixClick()">
+                                    <div class="tot-wid-styl">{{option.tagId | translate}} {{ option.batteryPercentage ? '(' + (option.tagId != option.macId ? "#" + option.macId + ' - ' : '')+ option.batteryPercentage + '%)' : option.tagId != option.macId ? '(#' + option.macId + ')': ''}}
+                                    </div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="infantForm.controls.tagSerialNumber.invalid">
+                                <span [hidden]="!infantForm.controls['tagSerialNumber'].errors.requireMatch">{{'Please select
+                                    value from the option' | translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                        <mat-form-field *ngIf="this.enrollType == 'infant' || this.data.isChild === true" class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag Id'|translate" id="searchInfantCoster" appTypeHit
+                                (typeHit)="searchToInfantCoster($event)" [matAutocomplete]="autoFrom" (blur)="validateEntitySelection('tag-infant')"
+                                formControlName="tagSerialNumber" [readonly]="data.associatedTagSerialNumber !== null && data.id && this.tagExist">
+                            <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                                <mat-option *ngFor="let option of searchInfantlist" [value]="option.tagId">
+                                    <div class="tot-wid-styl" (click)="getTagTypeId(option.tagTypeId);getBatteryPercentage(option)" (keydown.enter)="fixClick()">{{option.tagId}} {{option.batteryPercentage ? '('+option.batteryPercentage + '%)' : ''}}
+                                    </div>
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-error *ngIf="infantForm.controls.tagSerialNumber.invalid">
+                                <span [hidden]="!infantForm.controls['tagSerialNumber'].errors.requireMatch">{{'Please select
+                                    value from the option' | translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                    <div class="ovi-lbl-text-size ovi-fnt-sze10" style="margin-left: 5px;margin-top: -5px" *ngIf="batteryPercentage !== null">{{'Battery Level' | translate}} : {{batteryPercentage}}%</div>
+                </div>
+                <div *ngIf="data.id">
+                    <button *ngIf="infantForm.controls['tagSerialNumber'].value === null || !this.tagExist"
+                    mat-button class="active-btn" style="margin-top: 25px;"
+                    (click)="saveCoaster()" cdkFocusInitial>{{'Associate' | translate}}</button>
+
+                    <button *ngIf="infantForm.controls['tagSerialNumber'].value !== null && this.tagExist"
+                    mat-button class="active-btn" style="margin-top: 25px;"
+                    (click)="disAssociateCoaster()" cdkFocusInitial>{{'Disassociate' | translate}}</button>
+                </div>
+            </div>
+
+            <div class="form-row" *ngIf="this.enrollType === 'mother' || this.data.isChild === false">
+                <div class="ovi-popup-title-text-size top-styl">{{'INFANT DETAILS' | translate}}</div>
+            <mat-divider class="divider"></mat-divider>
+                <span><button  mat-mini-fab
+                        style="float:right;margin-top: -32px;margin-right: 15px;" matTooltip="{{'Add'|translate}}"
+                        (click)="addRow(i)">+</button></span>
+            </div>
+            <div formArrayName="infantDetails" style="max-height: 340px;" *ngIf="infantForm && this.enrollType === 'mother' || this.data.isChild === false">
+                <div *ngFor="let obj of infantForm.controls.infantDetails.controls; let i=index">
+                    <br>
+                    <div class="create-shadow" *ngIf="infantForm.controls.infantDetails.controls.length > 0" [formGroupName]="i">
+                        <div class="ovi-row-gap" style="padding: 0px 10px 10px 10px;">
+                         <div style="width: 100%;">
+                            <span  class="row-field-8 ovi-lbl-text-size">
+                                <mat-checkbox [disabled]="infantForm.controls['bedId'].value === null || infantForm.controls['bedId'].value === ''
+                                || infantForm.controls.bedId.invalid" [checked]="data.id ? isMotherBedFlags[i] : isMotherBed[i]"
+                                (change)="onChange($event.checked, i)">{{'Use Mother Location' | translate}}</mat-checkbox>
+                            </span> 
+                            <span *ngIf="i >= this.data.children?.length" style="position: relative;float: right;cursor: pointer;">
+                                <span><mat-icon mat-mini-fab color="primary" matTooltip="Remove" class="ovi-fnt-sze30"
+                                        (click)="removeRow(i, 'clear')" style="color: red;height: 30px;width: 28px;" (keydown.enter)="fixClick()">highlight_off</mat-icon> 
+                                    </span>
+                                </span>
+                         </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'First Name' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                                        <input matInput [maxlength]="50" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name" autocomplete="off">
+                                        <mat-error
+                                            *ngIf="infantForm.controls.infantDetails.controls[i].get('name').hasError('required')">
+                                            {{'Name is required' | translate}} </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Middle Name' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <input matInput [maxlength]="50" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Middle Name'|translate" formControlName="middleName" autocomplete="off">
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Last Name' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <input matInput [maxlength]="50" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" formControlName="lastName" autocomplete="off">
+                                    </mat-form-field>
+                                   
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'DOB' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                                        <input matInput  [matDatepicker]="DOBInfantpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'DOB'|translate" formControlName="infantBirthDate" autocomplete="off"  [max]="today">
+                                        <mat-datepicker-toggle matSuffix [for]="DOBInfantpicker"></mat-datepicker-toggle>
+                                        <mat-datepicker #DOBInfantpicker></mat-datepicker>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn">
+                                    <mat-label class="ovi-lbl-text-size"> {{'Gender' | translate}} </mat-label>
+                                    <div class="radio-button" style="margin-left: -5px;">
+                                        <mat-radio-group formControlName="infantGender" (change)="getInfantGenderType($event.value, i)">
+                                            <mat-radio-button class="cst-mgn_1" *ngFor="let o of genderList; let i = index"
+                                            [checked]="infantForm.controls.infantDetails.value[i]?.infantGender?.value === o.code"
+                                            [value]="o.code">{{o.value | translate}}</mat-radio-button>
+                                        </mat-radio-group>
+                                </div>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Visit Date' | translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput  [matDatepicker]="Infantpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Visit Date'|translate" formControlName="infantVisitDate"
+                                            autocomplete="off"  [min]="!this.data.id ? today : ''"(dateChange)="this.bedList=[]"
+                                            [readonly]="this.data.id && this.data.children?.length > i">
+                                        <mat-datepicker-toggle matSuffix [for]="Infantpicker"></mat-datepicker-toggle>
+                                        <mat-datepicker #Infantpicker [disabled]="this.data.id && this.data.children?.length > i"></mat-datepicker>
+                                        <mat-error class="error-txt-1">
+                                            <span *ngIf="infantForm.controls.infantDetails.value[i].infantVisitDate === null ||
+                                            infantForm.controls.infantDetails.value[i].infantVisitDate === ''">{{'Visit Date is required' | translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                        
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size"> {{'Bed' | translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err tw-hightlight-btn" appearance="outline">
+                                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Bed'|translate" id="searchInfantBed" appTypeHit
+                                            (typeHit)="searchAssociationDetails($event, 'bed')"
+                                            [matAutocomplete]="bed" formControlName="infantBedId" [ngStyle]="{'color': this['isInfantBedId' + i] ? '#c2c2c2' : ''}"
+                                            [readonly]="infantForm.controls.infantDetails.value[i].infantVisitDate === null || this['isInfantBedId' + i]">
+                                            <button *ngIf="infantForm.controls.infantDetails.value[i]?.infantBedId !== null && infantForm.controls.infantDetails.value[i]?.infantBedId !== ''" style="height: 35px;" 
+                                                type="button" mat-button matSuffix mat-icon-button
+                                                aria-label="Clear" (click)="clearChild('InfantBedId', i, true);this['isInfantBedId' + i]=false">
+                                                <mat-icon class="ovi-fnt-sze23" style="color: #707070;">highlight_off</mat-icon>
+                                            </button>
+                                        <mat-autocomplete autoActiveFirstOption
+                                            [displayWith]="this.searchMotherBedId === null ? getBedList.bind(bedList) : ''"
+                                            #bed="matAutocomplete">
+                                            <mat-option *ngFor="let option of bedList" [value]="option.bedId"
+                                                (onSelectionChange)="getInfantLocation(option, i)">
+                                                <div class="tot-wid-styl" (keydown.enter)="fixClick()" (click)="this['isInfantBedId' + i]=true">{{option.bedName | translate}}
+                                                <!-- <span *ngIf="option.locationName !== null">, {{option.locationName | translate}}</span> -->
+                                                </div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error class="error-txt-1">
+                                            <span *ngIf="infantForm.controls.infantDetails.value[i].infantBedId === null ||
+                                                infantForm.controls.infantDetails.value[i].infantBedId === ''">{{'Bed is required' | translate}}.</span>
+                                            <span *ngIf="!this.bedMatch && infantForm.controls.infantDetails.value[i].infantBedId !== null &&
+                                            infantForm.controls.infantDetails.value[i].infantBedId !== ''">{{'Please select value from the option' | translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{'Tag ID' | translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Tag Id'|translate" id="searchInfantCoster" appTypeHit
+                                            (typeHit)="searchToInfantCoster($event)" [matAutocomplete]="autoFrom"
+                                            formControlName="tagId"
+                                            [readonly]="infantForm.controls.infantDetails.value[i].tag?.value !== null">
+                                        <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
+                                            <mat-option *ngFor="let option of searchInfantlist" [value]="option.tagId"
+                                            (click)="filterTagOptions(option.tagId, i);getInfantTagTypeId(option.tagTypeId, i);" (keydown.enter)="fixClick()"
+                                            [ngStyle]="{display: tagOption.indexOf(option.tagId) > -1 ? 'none' : 'block'}">
+                                                <div class="tot-wid-styl">{{option.tagId | translate}}</div>
+                                            </mat-option>
+                                        </mat-autocomplete>
+                                        <mat-error class="error-txt-1">
+                                            <span *ngIf="!this.tagMatch && infantForm.controls.infantDetails.value[i].tagId !== null &&
+                                            infantForm.controls.infantDetails.value[i].tagId !== ''">{{'Please select value from the option' | translate}}</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>      
+    </div>
+    <div class="ovi-pop-ftr">
+        <button *ngIf="activate_btn && activate_btn.indexOf('BT_DSRGE') > -1 && data.id" mat-button 
+            class="active-btn" style="float: left;" appDebounceClick (debounceClick)="discharge()"
+            [debounceTime]="300"> {{'Discharge' | translate}} </button>
+        <button mat-button class="cancle-btn" mat-dialog-close>{{'Cancel' | translate}}</button>
+        <button mat-button class="active-btn" *ngIf="!data.id" appDebounceClick
+            [disabled]="infantForm.invalid || isDisabled" (debounceClick)="saveInfant()" cdkFocusInitial
+            [debounceTime]="300">{{'Enroll' | translate}}</button>
+        <button mat-button class="active-btn" *ngIf="data.id" appDebounceClick
+            [disabled]="infantForm.invalid || isDisabled" (debounceClick)="updateInfant()" cdkFocusInitial
+            [debounceTime]="300">{{'Update' | translate}}</button>
+    </div>
+</div>

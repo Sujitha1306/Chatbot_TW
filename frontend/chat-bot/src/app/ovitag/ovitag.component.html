@@ -1,0 +1,209 @@
+<div *ngIf="showPopup" class="cookie-overlay">
+    <div class="cookie-banner">
+        <div class="cookie-message">
+        By clicking "Allow", you agree to the use of cookies to improve the site's functionality and marketing relevancy. Otherwise, we will only use strictly necessary cookies. See our Cookies Policy for details.
+        </div>
+        <div class="cookie-buttons">
+        <button id ="cookieAccept" (click)="acceptCookies()" class="allow-button">Allow</button>
+        <button id ="cookieDeny" (click)="denyCookies()" class="manage-button">Deny</button>
+        </div>
+    </div>
+</div>
+<mat-sidenav-container class="container" fullscreen>
+    <mat-sidenav [mode]="sideNavMode" class="sidenav oflw-styl view-mobile" #sidenav [opened]="sideNavOpened">
+        <!-- <mat-toolbar class="mat-elevation-z4 img-header-color">
+            <img src="./assets/images/fav.png" width="36px">
+            <h1 class="logo">Trackerwave.<span class="fnt-styl">com</span></h1>
+        </mat-toolbar> -->
+        <cdk-sidemenu [code]="code"></cdk-sidemenu>
+    </mat-sidenav>
+    <mat-sidenav-content class="sid-nav-styl">
+        <mat-drawer-container fullscreen>
+            <!-- <cdk-toolbar [sidenav]="sidenav" [drawer]="drawer" [sidebar]="sidenav2" [menuName]="menuValue" class="mt-dw-styl" [matDrawerShow]="matDrawerShow"></cdk-toolbar> -->
+            <!-- <cdk-toolbar [sidenav]="sidenav" [drawer]="drawer" [sidebar]="sidenav2" [menuName]="menuValue" class="mt-dw-styl"></cdk-toolbar> -->
+            <app-navbar *ngIf="!existPrivateUser" (menuClicked)="onNavbarClick($event)"> </app-navbar>
+            <div class="frame-size block-1" style="display: flex;">
+                <!--style added for new menu-->
+                <!-- <div class="sidenav-toggle" >
+                    <button class="toggle-button" mat-icon-button style="object-fit: contain; color: rgb(3, 0, 0);"
+                        (click)="sidenav.toggle()">
+                        <mat-icon style="line-height: 20px;width: 28px;">
+                            menu
+                        </mat-icon>
+                    </button>
+                </div> -->
+
+
+                <!-- <div *ngIf="common.menuOpen && !existPrivateUser" #sidenav2 class="side-menu-tab tb-styl" [ngStyle]="{'background': customerName === 'kyn' ? '#D61820' : ''}">  -->
+                    <!-- NEW MENU CODE START -->
+                    <!-- <div *ngFor="let menulist of menu">
+                        <div *ngIf="menulist.link === null" #hnav [id]="menulist.code"
+                                [ngClass]="{'nav-select' : menulist.id == this.parentId}" id="hnav"
+                                class="f-l men-lst-styl" (click)="menuClicked(menulist, null)">
+                            <img class="menu-img svg-styl" appTooltip [tooltipText]="menulist.name | translate" placement="bottom-right" matListIcon
+                                src="/assets/Menus/{{ menulist.iconName }}.svg">
+                        </div>
+                        <div *ngIf="menulist.link !== null" #hnav routerLinkActive="customerName === 'kyn' ? 'kyn-nav-select' : 'nav-select'"
+                        (click)="menuClicked(menulist, null);menuDetails(menulist);"
+                                [ngClass]="{'nav-select' : menulist.id == this.parentId}" id="hnav"
+                                class="f-l men-lst-styl" [routerLink]="[menulist.link]">
+                                <div class="badge-wrapper" style="position: relative;">
+                                      <div *ngIf="menulist.iconName === 'task' && taskCount > 0" class="task-badge">
+                                        <div>{{ taskCount }}</div>
+                                    </div>
+                            <img [ngClass]="menulist.iconName === 'Hazmat' ? 'menu-img svg-styl-haz' : 'menu-img svg-styl'" appTooltip [tooltipText]="menulist.name | translate" placement="bottom-right" matListIcon
+                                src="/assets/Menus/{{ menulist.iconName }}.svg"> 
+                                </div>
+                        </div>
+                    </div> -->
+                    <!-- NEW MENU CODE END -->
+                     <!-- <div class="mt-lst-styl">
+                        <mat-icon class="mt-lst-styl_1" [ngStyle]="{'background-color': customerName === 'kyn' ? '#790101' : ''}" matListIcon iconsmall (click)="closeMenu();">
+                            keyboard_arrow_left</mat-icon>
+                    </div>
+                </div>  -->        
+                <div *ngIf="common?.['facilityConfig']?.['sidebarmenuVersion'] === 2">
+                    <app-new-sidebarMenu [menu]="menu" [menuOpen]="common.menuOpen" [existPrivateUser]="existPrivateUser"
+                        [selectedAction]="selectedAction" [selectedMenuId]="selectedMenuId" [profileMenu]="profileMenu"
+                        [currentYear]="currentYear" [userName]="userName" [user]="user" [menuClickedCode]="menuClickedCode"
+                        [menuCode]="menuCode" (menuSelect)="menuClicked($event.menu, $event.parentId)"
+                        (menuDetailsSelect)="menuDetails($event)" (closeMenuPanel)="onNavbarClick(false)">
+                    </app-new-sidebarMenu>
+                </div>
+
+                <div *ngIf="((common?.['facilityConfig']?.hasOwnProperty('sidebarmenuVersion') ? common?.['facilityConfig']?.['sidebarmenuVersion'] === 3 : true))">
+                    <app-sidebar-v3 [menu]="menu" [menuOpen]="common.menuOpen" [existPrivateUser]="existPrivateUser"
+                        [selectedMenuId]="selectedMenuId" [profileMenu]="profileMenu" [iconOnlyMode]="!selectedAction"
+                        [currentYear]="currentYear" [userName]="userName" [user]="user" [menuClickedCode]="menuClickedCode"
+                        [menuCode]="menuCode" (menuSelect)="menuClicked($event.menu, $event.parentId)"
+                        (menuDetailsSelect)="menuDetails($event)" (closeMenuPanel)="closeMenuPanelV3()">
+                    </app-sidebar-v3>
+                </div>
+
+ <!-- working final code 11-04-25 without arrow-->
+                 <div *ngIf="common?.['facilityConfig']?.['sidebarmenuVersion'] === 1 && common.menuOpen && !existPrivateUser" class="sid-nav-hgt" #sidenav2 >
+                     <div style="display: flex;flex-direction: column;width: 100%;gap: 4px; max-height: calc(100% - 60px);">
+                    <div *ngFor="let menulist of menu">
+                        <div class="sid-container" #iconContainer *ngIf = "menulist.code != 'MN_ALL'">
+                            <div [ngClass]="{'sid-nav-top-ext-sdb-txt' : selectedAction,'sid-nav-icn-bg-ext-hghl': selectedAction && selectedMenuId === menulist.id }"  class="sid-nav-top">
+                                <div *ngIf="menulist.link === null" #hnav [id]="menulist.code" class="sid-nav-icn-bg-wth" (keydown.enter)="fixClick()"
+                                    [ngClass]="{
+                                        'sid-nav-icn-bg-mlt':  mouseOvermenu === menulist.id,
+                                        'sid-nav-icn-bg-mlt-clk sid-nav-icn-bg-wht':   selectedMenuId == menulist.id && mouseOvermenu !== menulist.id,
+                                        'sid-nav-icn-bg': mouseOvermenu !== menulist.id  || selectedMenuId !== menulist.id  && selectedAction,
+                                        'hover-icon': hoveredMenuId === menulist.id && selectedAction  }"
+                                    [ngStyle]="{left:  selectedMenuId == menulist.id  && mouseOvermenu !== menulist.id ? '4px' : '70px',
+                                                                                                              height: (mouseOvermenu !== menulist.id) ? 'auto' : '25px' }"
+                                    (click)="menuClicked(menulist, null)" (mouseover)="!selectedAction ? menuonHover(menulist) : null;onHoverMenu(menulist.id)"
+                                    (mouseleave)="!selectedAction ? menuonHover(null) : null;onHoverMenu(null)">
+                                    <img class="ovi-img-size-colr" [class.active]="mouseOvermenu === menulist.id " placement="bottom-right" matListIcon
+                                        src="/assets/Menus/{{ menulist.iconName }}.svg" alt="menulist" (error)="handleImgError($event)">
+                                    <div *ngIf="mouseOvermenu === menulist.id && !selectedAction" (click)="menuClicked(menulist, null)" (keydown.enter)="fixClick()">
+                                        <div matLine class="menu-hover-box ovi-font-family"> {{ menulist.name | translate }}
+                                            <span class="menu-text"> <img class="sid-nav-rgt-icn"
+                                                    src="../../assets/Alert/ovi-chevron-right.svg"  alt="chevron-right"/></span>
+                                        </div>
+                                    </div> 
+                                </div>
+                                <!-- 'nav-select': menulist.id == this.parentId,
+                                'nav-select': menulist.id === parentId, s-->
+                                <div *ngIf="menulist.link !== null" #hnav (keydown.enter)="fixClick()"
+                                    routerLinkActive="customerName === 'kyn' ? 'kyn-nav-select' : 'nav-select'" class="sid-nav-icn-bg-wth"
+                                    (click)="menuClicked(menulist, null); menuDetails(menulist);" (mouseover)="!selectedAction ? menuonHover(menulist) : null;onHoverMenu(menulist.id)"
+                                    (mouseleave)="!selectedAction ? menuonHover(null) : null;onHoverMenu(null)"
+                                    [ngClass]="{ 
+                                        'sid-nav-icn-bg-mlt':  mouseOvermenu === menulist.id,
+                                        'sid-nav-icn-bg-mlt-clk sid-nav-icn-bg-wht':  selectedMenuId == menulist.id && mouseOvermenu !== menulist.id, 
+                                        'sid-nav-icn-bg': mouseOvermenu !== menulist.id  && selectedMenuId !== menulist.id  && selectedAction,
+                                        'hover-icon': hoveredMenuId === menulist.id && selectedAction}" [routerLink]="[menulist.link]" id="hnav"
+                                    [ngStyle]="{left:  selectedMenuId == menulist.id && mouseOvermenu !== menulist.id ? '4px' : '70px',
+                                    height: (mouseOvermenu !== menulist.id) ? 'auto' : '25px' }">
+                                    <img class="ovi-img-size-colr"  placement="bottom-right"
+                                        matListIcon src="/assets/Menus/{{ menulist.iconName }}.svg"  alt="menulist" (error)="handleImgError($event)">
+                                        <div *ngIf="mouseOvermenu === menulist.id  && !selectedAction" (click)="menuClicked(menulist, null)" (keydown.enter)="fixClick()">
+                                            <div matLine class="menu-hover-box ovi-font-family"  style="justify-content: flex-start;"> {{ menulist.name | translate }}    
+                                            </div>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    <div style="display: flex; height: 50px; justify-content: flex-end; flex-direction: column;width:100%">
+                        <div class="sid-nav-btm" >
+                            <div class="sid-nav-icn-bg-btm" (click)="menuClicked(profileMenu, null)" (keydown.enter)="fixClick()"> <img class="ovi-img-size"
+                                    src="../../assets/Alert/user.svg" alt="user" /> </div>
+                         
+                        </div>
+                    </div>
+                 </div>
+
+                 <!-- extend sidebar menuname  code-->
+                <div *ngIf="((common?.['facilityConfig']?.hasOwnProperty('sidebarmenuVersion') ? common?.['facilityConfig']?.['sidebarmenuVersion'] === 1 : true)) && common.menuOpen && !existPrivateUser && selectedAction" class="sid-nav-hgt-ext-sdb" #sidenav2>
+                    <div style="display: flex;flex-direction: column;width: 100%; gap: 4px; max-height: calc(100% - 60px);">
+                        <div *ngFor="let menulist of menu">
+                            <div class="sid-container" #iconContainer *ngIf="menulist.code != 'MN_ALL'"   (mouseenter)="onHoverMenu(menulist.id)"
+                            (mouseleave)="onHoverMenu(null)">
+                                <div [ngClass]="{'sid-nav-top-ext-sdb-txt' : selectedAction,'sid-nav-icn-bg-ext-hghl': selectedAction && selectedMenuId === menulist.id }"    class="sid-nav-top-ext-sdb-txt">
+                                    <div *ngIf="selectedAction" class="sid-nav-txt-container"   (keydown.enter)="fixClick()"
+                                        (click)="menuClicked(menulist, null); menuDetails(menulist);"
+                                        [ngClass]="{ 
+                                            'sid-nav-top-ext-sdb-txt sid-nav-icn-bg-ext-hghl':  selectedMenuId == menulist.id  }"
+                                        [routerLink]="menulist.link ? [menulist.link] : null" [class.cursor-pointer]="menulist.link">
+                                        <div matLine class="ovi-font-family sid-nav-txt-name" placement="bottom"> {{ menulist.name | translate }}
+                                        </div>
+                                        <div *ngIf="menulist.link === null"> <img class="sid-nav-rgt-icn"
+                                                src="../../assets/Alert/ovi-chevron-right.svg" alt="chevron-right"  /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; height: 50px; justify-content: flex-end; flex-direction: column;width:100%">
+                        <span class="ovi-font-family ovi-cmp-lbl-txt">© {{currentYear}} Trackerwave</span>
+                        <div class="sid-nav-btm-ext-img">
+                            <div *ngIf="selectedAction" class="sid-btm-cont" (click)="menuClicked(menu[0], null)" (keydown.enter)="fixClick()">
+                                <div>
+                                    <span class="ovi-font-family sid-btm-usrnme-txt"> {{userName | titlecase}} </span> <br>
+                                    <span class="ovi-font-family sid-btm-usr-txt"> {{user}} </span>
+                                </div>
+                            </div>
+                            <div (click)="menuClicked(menu[0], null)" (keydown.enter)="fixClick()"> <img src="../../assets/Alert/ovi-chevron-right.svg" alt="chevron-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- NEW MENU CODE START -->
+                <div *ngIf="((common?.['facilityConfig']?.hasOwnProperty('sidebarmenuVersion') ? common?.['facilityConfig']?.['sidebarmenuVersion'] === 1 : true)) && menuClickedCode !== []">
+                    <div *ngFor="let menu of menuClickedCode">
+                            <cdk-sidebar-menu *ngIf="menu.code === this.menuCode" [code]="menu.code"
+                                [menName]="menu.name|translate">
+                        </cdk-sidebar-menu>
+                    </div>
+                </div>
+                <!-- NEW MENU CODE END -->
+
+                <!-- Sidebar style toggle (v1 only; v2 has its own footer button) -->
+                <div *ngIf="common?.['facilityConfig']?.['sidebarmenuVersion'] === 1 && !existPrivateUser && common.menuOpen" class="sidebar-version-toggle">
+                    <button mat-icon-button (click)="toggleSidebarVersion()" matTooltip="Switch sidebar style">
+                        <mat-icon>view_list</mat-icon>
+                    </button>
+                </div>
+
+                <div [class]="common.menuOpen ? (selectedAction ? 'menuopen menuopenwid' : 'menuopen'): 'menuclose'" [ngStyle]="existPrivateUser && {'width': '100%'}">
+                    <router-outlet></router-outlet>
+                </div>
+                <div *ngIf="!common.menuOpen"
+                    class="cc-window cc-floating cc-type-info cc-theme-block cc-bottom cc-right cc-color-override-688238583 ">
+                    <div class="en-lst-styl_3" (click)="extendMenu();" (keydown.enter)="fixClick()">
+                        <mat-icon matListIcon iconsmall pd-styl class="ovi-fnt-sze30">keyboard_arrow_right</mat-icon>
+                    </div>
+                </div>
+
+            </div>
+        </mat-drawer-container>
+    </mat-sidenav-content>
+    <mat-sidenav class="sid-nav-styl_" #sidenav2 position="end" mode="over">
+        <cdk-sidebar [sidebar]="sidenav2" (valueChange)="displayMenuName($event)"></cdk-sidebar>
+    </mat-sidenav>
+</mat-sidenav-container>
+

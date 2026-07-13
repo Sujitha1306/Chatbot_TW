@@ -1,0 +1,176 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div >{{ data ? ('Modify' | translate) : ('Create' | translate) }} {{ 'Channel Template' | translate }}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin"
+        style="overflow: auto;height:calc(100% - 135px);">
+        <div [formGroup]="channelTemplateForm">
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Channel"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Channel Id'|translate" formControlName="channelId" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of channelList" [value]="data.code">
+                                {{data.value}}
+                            </mat-option>
+                        </mat-select>
+                           <mat-error *ngIf="channelTemplateForm.controls.channelId.invalid">
+                                <span [hidden]="!channelTemplateForm.controls['channelId'].errors.required">{{"Channel is required."|translate}}</span>
+                            </mat-error>
+                    </mat-form-field>
+                </div>
+                <!-- <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Code"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" formControlName="code" [disableOptionCentering]="true">
+                            <mat-option *ngFor="let data of codeType" [value]="data.code">
+                                {{data.value}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div> -->
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Name"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" formControlName="name">
+                           <mat-error *ngIf="channelTemplateForm.controls.name.invalid">
+                                <span [hidden]="!channelTemplateForm.controls['name'].errors.required">{{"Name is required."|translate}}</span>
+                            </mat-error>
+                    </mat-form-field>
+                </div>
+                 <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Facility"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline" required>
+                        <mat-select matSelectSearch appPlaceholder [showPlaceholder]="false" [placeholderText]="'Facility Id'|translate"
+                        formControlName="facilityId" [disableOptionCentering]="true"> 
+                            <mat-option [value]="null"> ------- All ------- </mat-option>
+                            <mat-option *ngFor="let data of facilityList" [value]="data.facilityId">
+                            {{ data.displayName }}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+               
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Rule Type"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                         <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'PFRuleTypeId'|translate" formControlName="pfRuleTypeId" [disableOptionCentering]="true" >
+                            <mat-option>
+                                <ngx-mat-select-search [formControl]="ruleTypeSearch" [placeholderLabel]="'Search' | translate"
+                                    [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                            </mat-option>
+                             <mat-option [value]="null"> <---- NULL -----> </mat-option>
+                            <mat-option *ngFor="let data of ruleTypeSearchList" [value]="data.id">
+                                {{data.ruleName}}
+                            </mat-option>
+                    </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Model Name"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                             <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Id'|translate" formControlName="pfModelId" [disableOptionCentering]="true" >
+                            <mat-option>
+                                <ngx-mat-select-search [formControl]="modelSearch" [placeholderLabel]="'Search' | translate"
+                                    [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                            </mat-option>
+                             <mat-option [value]="null"> <---- NULL -----> </mat-option>
+                            <mat-option *ngFor="let data of modelSearchList" [value]="data.id">
+                                {{data.name}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Sub Type"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'SubTypeId'|translate" formControlName="subTypeId" [disableOptionCentering]="true">
+                            <!-- <mat-option *ngFor="let data of codeTypeList" [value]="data.code">
+                                {{data.value}}
+                            </mat-option> -->
+                        </mat-select>
+                    </mat-form-field>
+                </div>               
+                 <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline" required>
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status"  [disableOptionCentering]="true">
+                          <mat-option [value]="true">{{"Active"|translate}}</mat-option>
+                          <mat-option [value]="false">{{"Inactive"|translate}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+                <div style="display: flex; align-items: center;">
+                    <img src="../../../../../assets/Menus/templategif.gif" alt="WhatsApp" style="height: 25px; width: 25px;">
+                    <div class="ovi-popup-title-text-size">{{'TEMPLATES DETAILS' | translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+              <div class="ovi-row-gap">
+                <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Template Format"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput rows="4" appPlaceholder [showPlaceholder]="false" [placeholderText]="'TemplateFormat'|translate" formControlName="templateFormat"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Template Sample"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput rows="4" appPlaceholder [showPlaceholder]="false" [placeholderText]="'TemplateSample'|translate" formControlName="templateSample"></textarea>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Placeholder"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                         <textarea matInput rows="4" appPlaceholder [showPlaceholder]="false" [placeholderText]="'TemplateValue'|translate" formControlName="templateValue"></textarea>
+                    </mat-form-field>
+                    <mat-error *ngIf="channelTemplateForm.get('templateValue')?.errors?.['invalidArrayFormat']" class="ovi-fnt-sze10">{{"Input must be like [ &lt;a&gt;, &lt;b&gt; ]"|translate}}</mat-error>
+                </div>
+                
+                  <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Schema"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput rows="4" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schema'|translate" formControlName="schema"></textarea>
+                    </mat-form-field>
+                </div>
+              </div>  
+              <div style="display: flex; align-items: center;">
+                    <img src="../../../../../assets/Menus/whatsappgif.gif" alt="WhatsApp" style="height: 25px; width: 25px;">
+                    <div class="ovi-popup-title-text-size">{{'WHATSAPP DETAILS' | translate}}</div>
+                </div>
+                <mat-divider class="divider"></mat-divider>
+                <div class="ovi-row-gap">
+                  <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Vendor"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'VendorId'|translate" formControlName="vendorId">
+                    </mat-form-field>
+                  </div>
+                  <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Template Source"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'TemplateSourceId'|translate" formControlName="templateSourceId">
+                    </mat-form-field>
+                  </div>
+                   <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
+                    <mat-label class="ovi-lbl-text-size">{{"Param Count"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <input  matInput appPlaceholder type="number" [showPlaceholder]="false" [placeholderText]="'Param Count'|translate" formControlName="paramCount">
+                    </mat-form-field>
+                </div>
+                  <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"WhatsApp Payload"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
+                        <textarea matInput rows="4" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Payload'|translate" formControlName="payload"></textarea>
+                    </mat-form-field>
+                  </div>
+               </div>              
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn"  mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn " appDebounceClick (debounceClick)="saveChannelTemp()" [debounceTime]="300"
+            cdkFocusInitial [disabled]="this.channelTemplateForm.invalid">{{ data?.id ?  ('Update' | translate) : ('Create' | translate) }}</button>      
+    </div>
+</div>

@@ -1,0 +1,102 @@
+<div class="input-component-holder">
+    <mat-toolbar class="input-header block-1" style="height: 35px; padding-top: 5px;">
+        <div style="display: flex;width: 100%">
+            <div class="header-name close-align-ack"> {{"Confirmation"|translate}} </div>
+            <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
+                <mat-icon class="icon-style">highlight_off</mat-icon>
+            </button></div>
+        </div>
+    </mat-toolbar>
+    <div class="mat-custom-form-field-box popup-margin" style="height: 175px;overflow: hidden;">
+        <mat-tab-group [formGroup]="ackForm" (selectedTabChange)="tabClick($event)"
+            [selectedIndex]="selectedIndex">
+            <mat-tab label="{{'Acknowledgement'|translate}}">
+                <div style="overflow: hidden;">
+                    <div class="form-row block-3" style="width: 100%;">
+                        <div style="width: 100%;display: flex;padding-top: 60px;">
+                            <div class="remarks-label-styl" style="padding-top: 15px;">
+                                <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}}:</mat-label>
+                            </div>
+                            <div class="remarks-styl">
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <textarea  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" formControlName="comments"></textarea>
+                                    <mat-error *ngIf="ackForm.controls.comments.invalid">
+                                        <span [hidden]="!ackForm.controls['comments'].errors.required">{{"Remarks is
+                                            required"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+            <mat-tab label="{{'Assign'|translate}}" *ngIf = "false">
+                <div style="overflow: hidden;">
+                    <div class="form-row block-3" style="width: 100%;">
+                        <div style="width: 100%;display: flex;padding-top: 20px;">
+                            <div class="remarks-label-styl" style="padding-top: 15px;">
+                                <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}}:</mat-label>
+                            </div>
+                            <div class="remarks-styl">
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <textarea  matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate" formControlName="comments"></textarea>
+                                    <mat-error *ngIf="ackForm.controls.comments.invalid">
+                                        <span [hidden]="!ackForm.controls['comments'].errors.required">{{"Remarks is
+                                            required"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row block-3">
+                        <div class="row-field-5">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Assign Type"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate" formControlName="assignType"
+                                        [disableOptionCentering]="true" (selectionChange)="getAssignType($event.value)">
+                                        <mat-option *ngFor="let data of assignTypeList" [value]="data.code">
+                                            {{data.value}}</mat-option>
+                                    </mat-select>
+                                    <mat-error *ngIf="ackForm.controls.assignType.invalid">
+                                        <span [hidden]="!ackForm.controls['assignType'].errors.required">{{"Assign Type
+                                            is required"|translate}}.</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                        <div class="row-field-5">
+                            <div class="example-form">
+                                <mat-label class="ovi-lbl-text-size">{{"Assign Value"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                <mat-form-field class="example-full-width form-field" appearance="outline">
+                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="''|translate" id="assignValue"
+                                        formControlName="assignValue" appTypeHit (typeHit)="searchList($event)"
+                                        [matAutocomplete]="auto" autocomplete="off">
+                                    <mat-autocomplete autoActiveFirstOption
+                                        [displayWith]="this.assignValueEnabled === true ? getAssignValueList.bind(assignValueList) : ''"
+                                        #auto="matAutocomplete">
+                                        <mat-option *ngFor="let option of assignValueList" [value]="option.id">
+                                            <div class="act-wid-styl" (click)="getId(option)"  (keydown.enter)="fixClick()">{{option.name}}</div>
+                                        </mat-option>
+                                    </mat-autocomplete>
+                                    <mat-error *ngIf="ackForm.controls.assignValue.invalid">
+                                        <span [hidden]="!ackForm.controls['assignValue'].errors.required">{{"Assign Value
+                                            is required"|translate}}.</span>
+                                        <span [hidden]="!ackForm.controls['assignValue'].errors.requireMatch">{{"Please
+                                            select value from the option"|translate}}</span>
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+    <div class="input-footer-pad footer-height">
+        <button mat-button style=" margin-right: 10px;" class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn margin-r-1" appDebounceClick
+        (debounceClick)="saveAck(data)" [debounceTime]="300"cdkFocusInitial
+        [disabled]="this.ackForm.invalid">{{"OK"|translate}}</button>
+    </div>
+</div>
