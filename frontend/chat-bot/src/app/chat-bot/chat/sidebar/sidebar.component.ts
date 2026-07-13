@@ -16,7 +16,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   @Input() collapsed = false;
   @Output() toggle = new EventEmitter<void>();
 
-  sidebarWidth = 256; // Default width in pixels (16rem = 256px)
+  sidebarWidth = 300; // Default width in pixels
   isResizing = false;
 
   @HostBinding('style.width') get width() {

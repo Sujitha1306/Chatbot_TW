@@ -32,6 +32,7 @@ import { UserScheduleComponent } from './user-schedule/user-schedule.component';
 import { ManagePatientComponent } from './manage-patient/manage-patient.component';
 import { ChatLayoutComponent } from '../../chat-bot/chat/chat-layout/chat-layout.component';
 import { ChatThreadComponent } from '../../chat-bot/chat/chat-thread/chat-thread.component';
+import { ChatWelcomeComponent } from '../../chat-bot/chat/chat-welcome/chat-welcome.component';
 
 
 
@@ -131,7 +132,7 @@ export const routes: Routes = [{
             component: ChatLayoutComponent,
             canActivate: [AuthGuard],
             children: [
-                { path: '', component: ChatThreadComponent },
+                { path: '', component: ChatWelcomeComponent },
                 { path: ':conversationId', component: ChatThreadComponent },
             ]
         },
