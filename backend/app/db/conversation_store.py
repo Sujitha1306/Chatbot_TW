@@ -67,6 +67,7 @@ class Conversation:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str = "default"
     title: str = "New Conversation"
+    is_favorite: bool = False
     messages: List[Message] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -75,6 +76,7 @@ class Conversation:
             "id": self.id,
             "user_id": self.user_id,
             "title": self.title,
+            "is_favorite": self.is_favorite,
             "messages": [m.to_dict() for m in self.messages],
             "created_at": self.created_at.isoformat()
         }
@@ -85,6 +87,7 @@ class Conversation:
             id=d.get("id", str(uuid.uuid4())),
             user_id=d.get("user_id", "default"),
             title=d.get("title", "New Conversation"),
+            is_favorite=d.get("is_favorite", False),
             messages=[Message.from_dict(m) for m in d.get("messages", [])],
         )
         if "created_at" in d:
@@ -152,6 +155,13 @@ class ConversationStore:
     def delete(self, user_id: str, conv_id: str) -> bool:
         if conv_id in self._store[user_id]:
             del self._store[user_id][conv_id]
+            self._save()
+            return True
+        return False
+
+    def toggle_favorite(self, user_id: str, conv_id: str, is_favorite: bool) -> bool:
+        if conv_id in self._store[user_id]:
+            self._store[user_id][conv_id].is_favorite = is_favorite
             self._save()
             return True
         return False

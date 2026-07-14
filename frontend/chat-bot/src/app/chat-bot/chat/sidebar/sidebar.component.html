@@ -1,9 +1,5 @@
 <div class="sidebar-wrapper" [class.collapsed]="collapsed">
   <mat-toolbar color="primary" class="sidebar-header">
-    <div class="logo-area" *ngIf="!collapsed">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brain-circuit-icon lucide-brain-circuit"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M9 13a4.5 4.5 0 0 0 3-4"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M12 13h4"/><path d="M12 18h6a2 2 0 0 1 2 2v1"/><path d="M12 8h8"/><path d="M16 8V5a2 2 0 0 1 2-2"/><circle cx="16" cy="13" r=".5"/><circle cx="18" cy="3" r=".5"/><circle cx="20" cy="21" r=".5"/><circle cx="20" cy="8" r=".5"/></svg>
-      <span>Analytics</span>
-    </div>
     <button mat-icon-button (click)="toggle.emit()">
       <mat-icon>menu</mat-icon>
     </button>
@@ -19,7 +15,6 @@
           <mat-nav-list dense>
             <a mat-list-item *ngFor="let rec of recommendations | slice:0:5" (click)="fillRecommendation(rec)">
               <div class="custom-list-content">
-                <mat-icon>bolt</mat-icon>
                 <span class="rec-text" [title]="rec">{{ rec }}</span>
               </div>
             </a>
@@ -46,9 +41,61 @@
 
     <!-- Conversation List -->
     <div class="conv-list" *ngIf="!collapsed">
+      
+      <!-- Pinned -->
+      <ng-container *ngIf="pinned$ | async as pinned">
+        <div *ngIf="pinned.length > 0">
+          <div class="recents-header" (click)="togglePinned()">
+            <p class="section-title">Pinned</p>
+            <mat-icon>{{ showPinned ? 'expand_more' : 'chevron_right' }}</mat-icon>
+          </div>
+          <mat-nav-list *ngIf="showPinned" dense>
+            <mat-list-item *ngFor="let c of pinned; trackBy: trackByConvId" 
+                           [class.active]="chat.activeConvId === c.id"
+                           (click)="selectConv(c.id)">
+              <div class="custom-list-content">
+                <span class="conv-title" *ngIf="editingConvId !== c.id" [title]="c.title">{{ c.title }}</span>
+                
+                <div *ngIf="editingConvId === c.id" (click)="$event.stopPropagation()" class="edit-mode">
+                  <input matInput [(ngModel)]="editConvName" 
+                         (keyup.enter)="saveEditConv($event, c.id)"
+                         (keyup.escape)="cancelEditConv($event)" autoFocus>
+                  <button mat-icon-button color="primary" (click)="saveEditConv($event, c.id)"><mat-icon>check</mat-icon></button>
+                  <button mat-icon-button color="warn" (click)="cancelEditConv($event)"><mat-icon>close</mat-icon></button>
+                </div>
+
+                <div class="hover-actions" *ngIf="editingConvId !== c.id">
+                  <button mat-icon-button class="meta-action fav-action"
+                          (click)="togglePin($event, c)" title="Unpin">
+                    <mat-icon class="pin-icon crossed-pin">push_pin</mat-icon>
+                  </button>
+
+                  <button mat-icon-button class="meta-action" 
+                          [matMenuTriggerFor]="convMenu" 
+                          (click)="$event.stopPropagation()">
+                    <mat-icon>more_horiz</mat-icon>
+                  </button>
+                </div>
+                
+                <mat-menu #convMenu="matMenu">
+                  <button mat-menu-item (click)="startEditConv($event, c)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Rename</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteConv($event, c.id)">
+                    <mat-icon color="warn">delete</mat-icon>
+                    <span class="warn-text">Delete</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </mat-list-item>
+          </mat-nav-list>
+        </div>
+      </ng-container>
+
       <ng-container *ngIf="filteredConvs$ | async as filteredConvs">
         <div class="recents-header" (click)="toggleRecents()">
-          <p class="section-title">Recents ({{ filteredConvs.length }})</p>
+          <p class="section-title">Recents</p>
           <mat-icon>{{ showRecents ? 'expand_more' : 'chevron_right' }}</mat-icon>
         </div>
         
@@ -57,7 +104,6 @@
                          [class.active]="chat.activeConvId === c.id"
                          (click)="selectConv(c.id)">
             <div class="custom-list-content">
-              <mat-icon>chat_bubble_outline</mat-icon>
               
               <span class="conv-title" *ngIf="editingConvId !== c.id" [title]="c.title">{{ c.title }}</span>
               
@@ -69,13 +115,21 @@
                 <button mat-icon-button color="warn" (click)="cancelEditConv($event)"><mat-icon>close</mat-icon></button>
               </div>
 
-              <button mat-icon-button class="meta-action" *ngIf="editingConvId !== c.id" 
-                      [matMenuTriggerFor]="convMenu" 
-                      (click)="$event.stopPropagation()">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              
-              <mat-menu #convMenu="matMenu">
+                <div class="hover-actions" *ngIf="editingConvId !== c.id">
+                  <button mat-icon-button class="meta-action fav-action"
+                          (click)="togglePin($event, c)" [title]="c.is_favorite ? 'Unpin' : 'Pin'">
+                    <!-- If using outlined icons, one could use keep_outline. Since standard Material doesn't have an empty push_pin, we can just use push_pin. The screenshot shows a push_pin icon with a cross when unpinning. We can use push_pin. -->
+                    <mat-icon class="pin-icon" [class.crossed-pin]="c.is_favorite" [style.opacity]="c.is_favorite ? '1' : '0.5'">push_pin</mat-icon>
+                  </button>
+
+                  <button mat-icon-button class="meta-action" 
+                          [matMenuTriggerFor]="convMenu" 
+                          (click)="$event.stopPropagation()">
+                    <mat-icon>more_horiz</mat-icon>
+                  </button>
+                </div>
+                
+                <mat-menu #convMenu="matMenu">
                 <button mat-menu-item (click)="startEditConv($event, c)">
                   <mat-icon>edit</mat-icon>
                   <span>Rename</span>

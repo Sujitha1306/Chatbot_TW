@@ -191,6 +191,27 @@ export class ChatService {
     }
   }
 
+  async toggleFavorite(convId: string, isFavorite: boolean): Promise<void> {
+    try {
+      const headers = this.getHeaders();
+      headers['Content-Type'] = 'application/json';
+      
+      const res = await fetch(this.buildApiUrl(`chat/conversations/${convId}/favorite`), {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ is_favorite: isFavorite })
+      });
+      if (!res.ok) throw new Error('Failed to toggle favorite');
+      // Optimistically update the list
+      const updated = this.conversationsSubject.value.map(c => 
+        c.id === convId ? { ...c, is_favorite: isFavorite } : c
+      );
+      this.conversationsSubject.next(updated);
+    } catch (e) {
+      console.error('Failed to toggle favorite', e);
+    }
+  }
+
   fillInput(text: string): void {
     this.fillInputSubject.next(text);
   }

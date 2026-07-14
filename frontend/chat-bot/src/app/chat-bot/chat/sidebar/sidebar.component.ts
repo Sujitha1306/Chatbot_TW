@@ -53,6 +53,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   conversations$: Observable<Conversation[]>;
   filteredConvs$: Observable<Conversation[]>;
+  pinned$: Observable<Conversation[]>;
   recommendations$: Observable<string[]>;
 
   user$: Observable<User | null>;
@@ -61,6 +62,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   showRecents = true;
   toggleRecents() {
     this.showRecents = !this.showRecents;
+  }
+
+  showPinned = true;
+  togglePinned() {
+    this.showPinned = !this.showPinned;
   }
 
   private _searchQuery = '';
@@ -94,6 +100,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
         const q = query.toLowerCase();
         return convs.filter(c => c.title.toLowerCase().includes(q));
       })
+    );
+
+    this.pinned$ = this.filteredConvs$.pipe(
+      map(convs => convs.filter(c => c.is_favorite))
     );
 
     this.user$ = this.auth.user$;
@@ -194,6 +204,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.chat.deleteConversation(convId);
       this.showMenuConvId = null;
     }
+  }
+
+  togglePin(event: Event, conv: Conversation) {
+    event.stopPropagation();
+    const newStatus = !conv.is_favorite;
+    this.chat.toggleFavorite(conv.id, newStatus);
   }
 
   trackByConvId(_: number, c: Conversation) { return c.id; }

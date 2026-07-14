@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ChatService } from '../../services/chat.service';
 import { Subscription } from 'rxjs';
 
@@ -10,6 +10,13 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./chat-welcome.component.scss']
 })
 export class ChatWelcomeComponent implements OnInit, OnDestroy {
+  stats = [
+    { icon: 'description', value: '1,982,227', label: 'Total Requests', trend: 'All time', color: 'blue' },
+    { icon: 'check_circle_outline', value: '1,743,981', label: 'Completed Requests', trend: 'All time', color: 'green' },
+    { icon: 'trending_up', value: '87.98%', label: 'Completion Rate', trend: 'All time', color: 'purple' },
+    { icon: 'schedule', value: '28 mins', label: 'Average TAT', trend: 'All time', color: 'orange' }
+  ];
+
   suggestions = [
     { icon: 'bar_chart', title: 'Porter Performance',  subtitle: 'Show porter performance by facility',          query: 'Show porter performance by facility' },
     { icon: 'show_chart',  title: 'Assets Dashboard',    subtitle: 'Display active assets by department',         query: 'Display active assets by department' },
@@ -19,7 +26,7 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
   inputValue = '';
   private sub?: Subscription;
 
-  constructor(private chat: ChatService, private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(private chat: ChatService, private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.sub = this.chat.fillInput$.subscribe(val => {
@@ -49,6 +56,6 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
     const q = this.inputValue.trim();
     if (!q) return;
     const convId = this.chat.startConversation(q);
-    this.router.navigate(['/chat', convId]);
+    this.router.navigate(['./', convId], { relativeTo: this.route });
   }
 }

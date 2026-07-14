@@ -68,3 +68,12 @@ def rename_conversation(conv_id: str, req: RenameRequest, auth_data: dict = Depe
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
     ok = getattr(_store, "rename", lambda u, c, t: False)(user_id, conv_id, req.title)
     return {"renamed": ok}
+
+class FavoriteRequest(BaseModel):
+    is_favorite: bool
+
+@router.put("/conversations/{conv_id}/favorite")
+def toggle_favorite(conv_id: str, req: FavoriteRequest, auth_data: dict = Depends(require_api_key)):
+    user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
+    ok = getattr(_store, "toggle_favorite", lambda u, c, f: False)(user_id, conv_id, req.is_favorite)
+    return {"toggled": ok}

@@ -57,6 +57,7 @@ class HybridConversationStore:
             self._redis.hset(meta_key, mapping={
                 "user_id": conv.user_id, "title": conv.title,
                 "created_at": conv.created_at.isoformat(),
+                "is_favorite": str(conv.is_favorite)
             })
             self._redis.expire(meta_key, CACHE_TTL_SECONDS)
             self._redis.zadd(f"user:{conv.user_id}:recent", {conv.id: conv.created_at.timestamp()})
@@ -144,7 +145,10 @@ class HybridConversationStore:
                         created_str = meta.get(b'created_at') or meta.get('created_at')
                         if isinstance(created_str, bytes): created_str = created_str.decode('utf-8')
                         created_at = datetime.fromisoformat(created_str) if created_str else datetime.utcnow()
-                        conversations.append(Conversation(id=cid_str, user_id=user_id, title=title, created_at=created_at))
+                        is_fav_raw = meta.get(b'is_favorite') or meta.get('is_favorite', 'False')
+                        if isinstance(is_fav_raw, bytes): is_fav_raw = is_fav_raw.decode('utf-8')
+                        is_favorite = is_fav_raw.lower() == 'true'
+                        conversations.append(Conversation(id=cid_str, user_id=user_id, title=title, created_at=created_at, is_favorite=is_favorite))
                 return conversations
             except Exception as redis_e:
                 logger.warning(f"Redis list_conversations fallback failed: {redis_e}")
@@ -191,6 +195,19 @@ class HybridConversationStore:
                 self._redis.hset(f"conv:{conv_id}:meta", "title", new_title)
             except Exception as e:
                 logger.warning(f"Redis cache update on rename failed (non-fatal): {e}")
+        return result
+
+    def toggle_favorite(self, user_id: str, conv_id: str, is_favorite: bool) -> bool:
+        try:
+            result = self._mysql.toggle_favorite(user_id, conv_id, is_favorite)
+        except Exception as e:
+            logger.warning(f"Failed to toggle favorite in MySQL (VPN lag?): {e}")
+            result = True
+        if self._redis is not None and result:
+            try:
+                self._redis.hset(f"conv:{conv_id}:meta", "is_favorite", str(is_favorite))
+            except Exception as e:
+                logger.warning(f"Redis cache update on toggle_favorite failed (non-fatal): {e}")
         return result
 
     def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3) -> str:

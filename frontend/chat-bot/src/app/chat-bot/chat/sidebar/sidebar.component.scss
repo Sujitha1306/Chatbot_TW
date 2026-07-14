@@ -38,15 +38,24 @@
   background: transparent;
   color: #1f2937;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 0 16px;
 
   .logo-area {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-left: 12px;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+
+    .sidebar-logo {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
 
     svg {
       margin: 0;
@@ -57,6 +66,7 @@
 
   >button {
     margin-right: 9px;
+    margin-top: -8px;
     /* Offset the 40px mat-icon-button to align its 24px internal icon perfectly with the 16px right margin */
   }
 }
@@ -233,8 +243,9 @@
 
     ::ng-deep .mdc-list-item__content {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       width: 100%;
+      position: relative;
       overflow: hidden;
       padding: 0 !important;
     }
@@ -248,6 +259,7 @@
       text-overflow: ellipsis !important;
       flex: 1;
       display: block;
+      padding-right: 4px; /* small buffer */
     }
   }
 }
@@ -395,10 +407,35 @@
   }
 }
 
+.hover-actions {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  right: 8px; /* match the padding of the list item */
+  top: 0;
+  bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: #f3f4f6; /* match hover background */
+  box-shadow: -10px 0 10px -5px #f3f4f6; /* smooth fade over text */
+}
+
+.mat-list-item.active .hover-actions,
+.mat-mdc-list-item.active .hover-actions {
+  background: #e6f1fb; /* approximate rgba(1,115,213,0.1) over white */
+  box-shadow: -10px 0 10px -5px #e6f1fb;
+}
+
+/* Make hover-actions visible on hover */
+.mat-list-item:hover .hover-actions,
+.mat-mdc-list-item:hover .hover-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .meta-action {
-  margin-left: auto;
+  margin-left: 0 !important;
   margin-right: -8px !important;
-  /* Align the visual icon to the exactly 16px line */
   color: #9ca3af !important;
 
   &:hover {
@@ -406,10 +443,42 @@
   }
 }
 
+.fav-action {
+  margin-right: 0 !important;
+  
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  mat-icon.pin-icon {
+    color: inherit;
+  }
+}
+
+.crossed-pin {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    left: 45%;
+    width: 2px;
+    height: 70%;
+    background-color: currentColor;
+    transform: rotate(45deg);
+    border: 1px solid #fff; /* to create a small cutout effect around the line */
+    border-radius: 1px;
+    box-sizing: content-box;
+  }
+}
+
 .custom-list-content {
   display: flex;
   align-items: center;
   width: 100%;
+  position: relative;
 
   mat-icon {
     margin-right: 12px !important;

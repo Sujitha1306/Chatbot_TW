@@ -32,5 +32,6 @@ export interface ChatMessage {
 export interface Conversation {
   id: string;
   title: string;
+  is_favorite?: boolean;
   created_at: Date;
 }

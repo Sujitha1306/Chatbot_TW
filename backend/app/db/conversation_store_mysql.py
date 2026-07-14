@@ -125,7 +125,7 @@ class MySQLConversationStore:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(
                 """
-                SELECT id, user_id, title, created_at
+                SELECT id, user_id, title, is_favorite, created_at
                 FROM conversations
                 WHERE user_id = %s
                 ORDER BY created_at DESC
@@ -140,10 +140,22 @@ class MySQLConversationStore:
                     id=row['id'],
                     user_id=row['user_id'],
                     title=row['title'],
+                    is_favorite=bool(row.get('is_favorite', False)),
                     created_at=row['created_at']
                 )
                 convs.append(c)
             return convs
+        finally:
+            conn.close()
+
+    def toggle_favorite(self, user_id: str, conv_id: str, is_favorite: bool) -> bool:
+        conn = get_mysql_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE conversations SET is_favorite = %s WHERE id = %s AND user_id = %s", (is_favorite, conv_id, user_id))
+            toggled = cursor.rowcount > 0
+            conn.commit()
+            return toggled
         finally:
             conn.close()
 
