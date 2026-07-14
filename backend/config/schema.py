@@ -9,7 +9,7 @@ class DatabaseSchema:
     LOOKUP_TABLE = "dim_app_terms"
     
     # Asset Management
-    ASSET_TABLE = "mysql_asset"
+    ASSET_TABLE = "tw_demo.mysql_asset"
     
     # Porter Request Columns
     PORTER_COLUMNS = [
@@ -25,25 +25,9 @@ class DatabaseSchema:
     
     # Asset Management Columns
     ASSET_COLUMNS = [
-        'id', 'name', 'asset_code', 'active_tag_id', 'asset_admin_contact_no',
-        'asset_admin_email', 'invoice', 'manual', 'manufacturer', 'service_contact',
-        'sla_document', 'warranty_status', 'location_description', 'asset_status',
-        'next_amc_due', 'pms_due', 'warranty_period', 'comments', 'service_address',
-        'amc_status', 'status', 'criticality', 'prev_main_freq', 'cali_freq',
-        'commissioned_on', 'location_id', 'asset_remove_reason_id', 'service_person_email',
-        'asset_serial_number', 'facility_id', 'asset_type_id', 'cost_type_id',
-        'battery_percent', 'next_cali_date', 'end_date', 'software_version',
-        'vendor_name', 'home_location_id', 'transfer_status_id', 'asset_category_id',
-        'asset_category1_id', 'asset_category2_id', 'criteria', 'warranty_due',
-        'asset_cost', 'current_book_value', 'depreciation_percent', 'depreciation_type_id',
-        'asset_admin_department', 'owner_id', 'owner_department_id', 'assigned_department_id',
-        'parent_id', 'asset_user_id', 'cost_center_id', 'useful_life', 'po_date',
-        'is_temp', 'vendor_contact', 'vendor_email', 'service_provider_name',
-        'size', 'color', 'material', 'cycle_count', 'cycle_date', 'condition',
-        'collected_date_time', 'collected_by', 'laundry_type', 'storage_area',
-        'storage_date', 'cycle_type', 'batch_no', 'batch_start_date_time',
-        'batch_end_date_time', 'performed_by', 'created_by', 'created_on',
-        'modified_by', 'modified_on', 'is_active'
+        'id', 'name', 'is_active', 'location_id', 'facility_id',
+        'asset_serial_number', 'home_location_id', 'transfer_status_id',
+        'asset_type_id', 'status'
     ]
     
     # Combined for "all columns" queries
@@ -92,33 +76,14 @@ class DatabaseSchema:
     ASSET_COLUMN_DESCRIPTIONS = {
         'id': 'Unique asset identifier',
         'name': 'Asset name or description',
-        'asset_code': 'Asset code number',
+        'is_active': 'Active status flag (often empty, T=true, F=false)',
+        'location_id': 'Current location ID of the asset',
         'facility_id': 'Facility where asset is located (STRING with leading zeros)',
-        'asset_type_id': 'Asset type classification (e.g., AT-MD, AT-EQ)',
-        'asset_category_id': 'Primary asset category (e.g., AC-MD, AC-IT)',
-        'asset_category1_id': 'Secondary asset category',
-        'asset_category2_id': 'Tertiary asset category',
-        'location_id': 'Current location of the asset',
-        'home_location_id': 'Home/default location of the asset',
-        'status': 'Asset status (0=inactive, 1=active)',
-        'asset_status': "Current status of the asset. Common values: 'ATS-MAIN' (maintenance), 'ATS-INU' (in-use), 'ATS-ONB' (onboard), 'Active', 'ATS-REC', 'ATS-RTUS', etc. NOTE: Do NOT use 'UNDER_MAINTENANCE', use 'ATS-MAIN' instead.",
-        'criticality': "Criticality level of the asset. Values: 'CRT-CT' (critical), 'CRT-NCT' (non-critical).",
-        'warranty_due': 'Warranty expiration date',
-        'next_amc_due': 'Next Annual Maintenance Contract due date',
-        'pms_due': 'Preventive Maintenance Schedule due date',
-        'commissioned_on': 'Date when asset was commissioned',
-        'asset_cost': 'Original purchase cost of the asset',
-        'current_book_value': 'Current book value of the asset',
-        'owner_id': 'Owner user ID',
-        'owner_department_id': 'Department that owns the asset',
-        'assigned_department_id': 'Department currently assigned to use the asset',
-        'vendor_name': 'Vendor or supplier name',
-        'manufacturer': 'Asset manufacturer',
-        'created_by': 'User who created the asset record',
-        'created_on': 'Date when asset record was created',
-        'modified_by': 'User who last modified the asset record',
-        'modified_on': 'Date when asset record was last modified',
-        'is_active': 'Active status flag (1=active, 0=inactive)'
+        'asset_serial_number': 'Asset serial number',
+        'home_location_id': 'Home/default location ID of the asset',
+        'transfer_status_id': 'Transfer status identifier',
+        'asset_type_id': 'Asset type classification ID',
+        'status': 'Asset status (numeric)'
     }
     
     # Combined column descriptions
@@ -129,13 +94,7 @@ class DatabaseSchema:
         # Porter time columns
         'scheduled_time', 'start_time', 'end_time', 'assigned_time',
         'accepted_time', 'arrived_time', 'cancelled_time', 'onhold_time',
-        'inprogress_time', 'rejected_time', 'completed_time',
-        
-        # Asset time columns
-        'warranty_due', 'next_amc_due', 'pms_due', 'commissioned_on',
-        'next_cali_date', 'end_date', 'po_date', 'cycle_date',
-        'collected_date_time', 'storage_date', 'batch_start_date_time',
-        'batch_end_date_time', 'created_on', 'modified_on'
+        'inprogress_time', 'rejected_time', 'completed_time'
     ]
     
     @classmethod
@@ -207,30 +166,27 @@ Columns:
 - Average TAT formula: round(avg(dateDiff('second', scheduled_time, completed_time)/60.0), 2) AS avg_tat_minutes (DO NOT use avgIf with NULL checks, standard avg() already ignores NULLs natively)
 - Filter NULL TAT: WHERE completed_time IS NOT NULL
 
-### TABLE: ovitag_dw.mysql_asset
-Purpose: Hospital equipment inventory (NOTE: You MUST use the full ovitag_dw.mysql_asset table name since it lives in a different database)
+### TABLE: tw_demo.mysql_asset
+Purpose: Hospital equipment inventory (NOTE: You MUST use the full tw_demo.mysql_asset table name since it lives in a different database)
 Columns:
 - id (Int64): asset ID
 - name (String): equipment name
-- asset_status (String): 'ATS-MAIN' (maintenance) | 'ATS-INU' (in-use) | 'ATS-ONB' | 'Active' | 'ATS-REC' | 'ATS-RTUS' (DO NOT USE 'UNDER_MAINTENANCE', use 'ATS-MAIN')
-- criticality (String): 'CRT-CT' (critical) | 'CRT-NCT' (non-critical)
+- is_active (String): 'T' = active, 'F' = inactive (Note: often empty, prefer using status)
+- location_id (Int64, nullable): current location ID
 - facility_id (String): same string format as porter table
-- assigned_department_id (Int64, nullable)
-- owner_department_id (Int64, nullable)
-- warranty_due (Date, nullable): warranty expiry date
-- asset_cost (Float64, nullable): purchase cost in INR
-- commissioned_on (Date, nullable)
-- is_active (String): '1' = active, '0' = inactive
+- asset_serial_number (String, nullable)
+- home_location_id (Int64, nullable)
+- transfer_status_id (String, nullable)
+- asset_type_id (String, nullable)
+- status (Int64): asset status (1 = active, 0 = inactive). ALWAYS use this to check if an asset is active (WHERE status = 1).
 
 ## COLUMN-TO-TABLE OWNERSHIP — COMMON MISTAKES TO AVOID
 Each column belongs to EXACTLY ONE of the two tables. Do NOT use a column in a query against the wrong table:
 
-- assigned_department_id, owner_department_id → belong to mysql_asset ONLY. fact_porter_request has NO department column directly (porter requests are linked to facilities, not departments, in this schema).
-- criticality, asset_status, warranty_due, asset_cost → mysql_asset ONLY
 - status, request_category, scheduled_time, completed_time, porter_user_id → fact_porter_request ONLY
 - facility_id → exists in BOTH tables (this is the only shared column, used for filtering both, never for joining row-for-row — see JOIN RULES below)
 
-If a question asks about "department" in the context of PORTER requests, and no direct department column exists on fact_porter_request, either: (a) state in your SQL comments that this isn't directly available, or (b) if facility-to-department mapping is needed, this requires a query against mysql_asset's department columns filtered by facility, NOT a column lookup on fact_porter_request.
+If a question asks about "department" in the context of PORTER requests, and no direct department column exists on fact_porter_request, state in your SQL comments that this isn't directly available.
 
 ### CLICKHOUSE SQL — MANDATORY RULES:
 1. Date functions: toDate(), toMonth(), toYear(), today(), now()
@@ -250,12 +206,13 @@ If a question asks about "department" in the context of PORTER requests, and no 
 12. CONDITIONAL AGGREGATES: Use `countIf(condition)` for conditional counts, `avgIf(expr, condition)` for conditional averages, and `sumIf(expr, condition)` for conditional sums. Make sure conditions use `IS NOT NULL` instead of `isNotNull()` to avoid type Nothing errors. These compute the aggregate ONLY over rows matching `condition`.
 13. NO DIMENSION TABLE JOINS: Do NOT attempt to join dimension tables (like dim_app_terms, dim_user, dim_location) to get human-readable names. Simply SELECT the raw ID columns (e.g. facility_id, pool_name_id, requester_user_id, source_id, status, request_category). The UI presentation layer will automatically translate these raw IDs into human-readable names for the user. If the user asks for a NAME (like "pool name", "facility name", "porter name"), do NOT respond with a limitation — just select the ID column!
 23. SANITY BOUND ON DATES: This database may contain a small number of corrupted rows with scheduled_time/completed_time values far in the future (e.g. year 2084) due to a known data ingestion issue. For ANY query involving date ranges, MAX(), MIN(), or "most recent data" questions, ALWAYS add: AND scheduled_time <= now() + INTERVAL 1 DAY (and the same for completed_time where relevant). This excludes corrupted future-dated rows from results without needing to identify them individually.
-14. STABLE ORDERING WITH LIMIT: Whenever a query includes both ORDER BY and LIMIT, the ORDER BY must be fully deterministic — add a tie-breaking secondary sort column. If it is an aggregate query (GROUP BY), use one of the GROUP BY columns as the tie-breaker (e.g. ORDER BY count DESC, facility_id ASC). If it is a non-aggregate query, use the primary key or ID column. Do NOT use 'id' as a tie-breaker in GROUP BY queries unless 'id' is in the GROUP BY clause. IF the query uses LIMIT but does NOT have an ORDER BY, you MUST add an ORDER BY to ensure deterministic results.
+14. STABLE ORDERING WITH LIMIT: Whenever a query includes both ORDER BY and LIMIT, the ORDER BY must be fully deterministic — add a tie-breaking secondary sort column. If it is an aggregate query (GROUP BY), use one of the GROUP BY columns as the tie-breaker. Do NOT use 'id' as a tie-breaker in aggregate queries unless 'id' is in the GROUP BY clause. IF the query uses LIMIT but does NOT have an ORDER BY, you MUST add an ORDER BY (unless it is a global aggregate with no GROUP BY, in which case omit ORDER BY).
 24. CONSTRUCTING A DATE FROM YEAR/MONTH/DAY PARTS: Do NOT use makeDate (it does not exist in this version). Instead, construct dates using string literals like toDate('2025-02-01'). If it must be dynamic relative to the current year, use concat: toDate(concat(toString(toYear(today())), '-02-01')). For end-of-month calculations, prefer: (toStartOfMonth(date_expr) + INTERVAL 1 MONTH - INTERVAL 1 DAY). Do NOT use toLastDayOfMonth or toEndOfMonth as they do not exist in this version.
 25. DATE MATH: Do NOT use dateAdd('unit', number, date). In this ClickHouse version it throws a NUMBER_OF_ARGUMENTS_DOESNT_MATCH error. Use the native INTERVAL operator instead: date_expr + INTERVAL number HOUR (or DAY, MONTH, etc). Example: `toStartOfDay(today()) + INTERVAL number HOUR`.
 26. TYPE MATCHING: NEVER compare an integer column (like porter_user_id, id, request_detail_id) to an empty string ''. To check for valid integers, use IS NOT NULL. If you must check for "empty", use != 0 (but not !=''). Doing != '' on an Int64 causes 'Attempt to read after eof: while converting '' to Int64' errors!
 27. NESTED AGGREGATES: NEVER nest aggregate functions directly (e.g. `min(avg(...))`). This causes ILLEGAL_AGGREGATION errors. You must calculate the inner aggregate in a subquery first, and then apply the outer aggregate to the subquery result.
 28. SLA AND DELAYED ANALYSIS: When calculating SLA compliance percentage or counting delayed/met requests, NEVER put the time threshold condition in the WHERE clause (e.g. do NOT use `WHERE dateDiff(...) <= 15`). Doing so artificially excludes delayed requests, resulting in fake 100% compliance! Instead, query ALL completed requests (`WHERE status = 'RQ-CO'`) and use conditional aggregation: `countIf(dateDiff('minute', assigned_time, completed_time) <= 15)` for met, and `countIf(dateDiff('minute', assigned_time, completed_time) > 15)` for delayed.
+29. NO ALIASING RAW DIMENSIONS: When selecting dimension columns (like location_id, name, id), DO NOT alias them with AS (e.g. do NOT write `name AS asset_names` or `location_id AS loc`). Keep the original column names EXACTLY as they are in the table schema. You may only alias aggregate functions (like `count() AS active_asset_count`). Aliasing raw columns breaks the frontend display logic!
 ## DATE CONSTRUCTION EXAMPLES
 - "by end of February this year": (toStartOfMonth(toDate(concat(toString(toYear(today())), '-02-01'))) + INTERVAL 1 MONTH - INTERVAL 1 DAY)
 - "first day of last month": toStartOfMonth(today() - INTERVAL 1 MONTH)

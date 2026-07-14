@@ -40,10 +40,10 @@ class Settings(BaseSettings):
     max_query_timeout: int = 30
     
     # Target Facility Config
-    target_facility_id: str = "0039"
-    target_facility_name: str = "BLK Max Hospital"
-    target_region_id: str = "0038"
-    target_customer_id: str = "0037"
+    target_facility_id: str = "0459"
+    target_facility_name: str = "Teynampet"
+    target_region_id: str = "Chennai"
+    target_customer_id: str = "Honeywell"
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

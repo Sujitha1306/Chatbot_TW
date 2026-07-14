@@ -20,6 +20,8 @@ def _clean_column_name(col: str) -> str:
         "request_user_id": "Requester",
         "source_id": "Source",
         "destination_id": "Destination",
+        "location_id": "Location",
+        "home_location_id": "Home Location",
         "request_category": "Request Category",
         "asset_category": "Asset Category",
         "request_type_id": "Request Type",
@@ -77,7 +79,7 @@ def _resolve_display_names(df: pd.DataFrame) -> pd.DataFrame:
         if user_col in df.columns:
             df[user_col] = df[user_col].apply(user_lookup.resolve)
             
-    for loc_col in ["source_id", "destination_id", "pool_location_id"]:
+    for loc_col in ["source_id", "destination_id", "pool_location_id", "location_id", "home_location_id"]:
         if loc_col in df.columns:
             df[loc_col] = df[loc_col].apply(location_lookup.resolve)
 
@@ -86,7 +88,7 @@ def _resolve_display_names(df: pd.DataFrame) -> pd.DataFrame:
         "facility_id", "id", "customer_id", "region_id", 
         "request_id", "asset_id", "request_detail_id", 
         "porter_user_id", "requester_user_id", "request_user_id", "user_id",
-        "source_id", "destination_id", "pool_location_id"
+        "source_id", "destination_id", "pool_location_id", "location_id", "home_location_id"
     }
     for col in df.select_dtypes(include=["object", "string", "category"]).columns:
         if col not in EXCLUDED_COLS:

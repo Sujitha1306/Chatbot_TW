@@ -229,65 +229,15 @@ Return JSON:
             "reason": result.get("category", "unknown"),
         }
 
-    def _build_facility_filter_note(self, filters: dict | None) -> str:
-        if not filters:
-            return ""
-        
-        from backend.app.core.facility_lookup import get_facility_lookup
-        lookup = get_facility_lookup()
-        all_facs = lookup.list_all()
-
-        if filters.get("facility_id"):
-            valid_facs = [f for f in all_facs if f["facility_id"] == filters["facility_id"] or f["facility_name"] == filters["facility_id"]]
-            if valid_facs:
-                if len(valid_facs) == 1:
-                    return f"\nNOTE: The user has selected the facility '{valid_facs[0]['facility_name']}' in the UI filter."
-                names_list = ", ".join([f"'{f['facility_name']}'" for f in valid_facs])
-                return f"\nNOTE: The user has selected these facilities in the UI filter: {names_list}."
-        
-        valid_facs = []
-        if filters.get("region_id"):
-            valid_facs = [f for f in all_facs if f["region_id"] == filters["region_id"] or f["region_name"] == filters["region_id"]]
-        elif filters.get("customer_id"):
-            valid_facs = [f for f in all_facs if f["customer_id"] == filters["customer_id"]]
-            
-        if valid_facs:
-            names_list = ", ".join([f"'{f['facility_name']}'" for f in valid_facs])
-            return f"\nNOTE: The user has selected these facilities in the UI filter: {names_list}."
-        
-        return ""
+    def _build_facility_context(self, filters: dict | None) -> str:
+        return "\nNOTE: IGNORE the UI selection and ONLY use the 'Teynampet' facility (facility_id='0459', region='Chennai', customer='Honeywell') for BOTH PORTER and ASSET queries."
 
     def _build_facility_mandatory_filter(self, filters: dict | None) -> str:
-        if not filters:
-            return ""
-        
-        from backend.app.core.facility_lookup import get_facility_lookup
-        lookup = get_facility_lookup()
-        all_facs = lookup.list_all()
-
-        valid_ids = []
-        if filters.get("facility_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["facility_id"] == filters["facility_id"] or f["facility_name"] == filters["facility_id"]]
-        elif filters.get("region_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["region_id"] == filters["region_id"] or f["region_name"] == filters["region_id"]]
-        elif filters.get("customer_id"):
-            valid_ids = [f["facility_id"] for f in all_facs if f["customer_id"] == filters["customer_id"]]
-            
-        if not valid_ids:
-            return ""
-            
-        def _get_template(ids):
-            msg = "This applies to BOTH fact_porter_request and mysql_asset tables — whichever is used. If the query already has a WHERE clause, add this as an additional AND condition."
-            if len(ids) == 1:
-                return f"\nMANDATORY FILTER: This query MUST include a WHERE clause filtering facility_id = '{ids[0]}' (as a string, with quotes). {msg} If using GROUP BY across facilities, this filter still applies — the result will only ever show data for THIS facility."
-            id_list = ", ".join([f"'{fid}'" for fid in ids])
-            return f"\nMANDATORY FILTER: This query MUST include a WHERE clause filtering facility_id IN ({id_list}). {msg}"
-
-        return _get_template(valid_ids)
+        return "\nMANDATORY FILTER: For ALL queries against ANY table (fact_porter_request or tw_demo.mysql_asset), you MUST include a WHERE clause filtering facility_id = '0459' (as a string, with quotes). If the query already has a WHERE clause, add this as an additional AND condition. If using GROUP BY across facilities, this filter still applies — the result will only ever show data for THIS facility."
 
     # ── Call 1: Plan Analysis ─────────────────────────────────────────────
     def plan_analysis(self, question: str, history: str = "", filters: dict | None = None) -> dict:
-        facility_note = self._build_facility_filter_note(filters)
+        facility_note = self._build_facility_context(filters)
 
         prompt = f"""SCHEMA:
 {self.schema}
@@ -398,16 +348,15 @@ answered with data that actually exists in the schema. The available
 schema has:
 - Porter request records: counts, timing (TAT), status, facility,
   porter ID, request category, scheduled/completed timestamps
-- Asset records: name, status, criticality, cost, warranty dates,
-  facility
+- Asset records: name, active status, facility, location, asset type
 - Facility dimension: name, region, customer
 
 If the question primarily requires data NOT in this schema, set
 "response_format": "limitation" and describe what IS available.
 
 Questions that CANNOT be answered from this schema (examples — not exhaustive):
-- "Cost optimization insights" → financial analysis, budgets, and ROI
-  data don't exist; only raw asset_cost values per asset are available
+- "Cost optimization insights" → financial data, asset costs, and ROI
+  data don't exist; only basic asset location and status are available
 - "Root cause analysis" → causes of delays/failures aren't logged;
   only the outcomes (status codes, TAT) are available
 - "Benchmark comparisons" → industry benchmarks don't exist in the
@@ -437,15 +386,15 @@ topics don't share a natural row-level relationship (i.e. joining them
 would cause incorrect duplication or require an artificial join key).
 
 Examples:
-- "Productivity and cost optimization insights" → true. Sub-query 1
+- "Productivity and asset status insights" → true. Sub-query 1
   (porter domain): completion rate, avg TAT. Sub-query 2 (asset
-  domain): active asset costs, maintenance costs. (No shared dimension)
+  domain): active asset counts. (No shared dimension)
 - "Compare porter and asset performance" → true. Sub-query 1: porter
-  completion/TAT metrics. Sub-query 2: asset active/maintenance rates.
+  completion/TAT metrics. Sub-query 2: asset active rates.
 - "Show porter performance by facility" → false (single domain, single query)
-- "Show assets and their warranty status" → false (single domain — both
+- "Show assets and their location" → false (single domain — both
   parts are about mysql_asset, no porter/asset split needed)
-- "Compare the number of active critical assets with the number of completed porter requests by facility" → false. They share a natural aggregation dimension (facility_id), so they CAN and SHOULD be combined in ONE query using a FULL OUTER JOIN or UNION ALL with aggregation.
+- "Compare the number of active assets with the number of completed porter requests by facility" → false. They share a natural aggregation dimension (facility_id), so they CAN and SHOULD be combined in ONE query using a FULL OUTER JOIN or UNION ALL with aggregation.
 - "How many requests use which assets" → false IF there's a genuine
   row-level relationship via asset_category in fact_porter_request
   matching mysql_asset's category — only set true when NO valid join
@@ -760,8 +709,11 @@ result, not just one that merely avoids the error."""
             return coverage  # data exists, no gap concern
 
         # Result is empty or all-zero — always check max date since intent time_scope can be unreliable
-        table = "fact_porter_request" if plan.get("data_domain") != "asset" else "mysql_asset"
-        date_col = "scheduled_time" if table == "fact_porter_request" else "commissioned_on"
+        if plan.get("data_domain") == "asset":
+            return coverage # Asset table lacks reliable date columns for gap detection right now
+
+        table = "fact_porter_request"
+        date_col = "scheduled_time"
 
         try:
             table_ref = table if "." in table else f"{settings.clickhouse_database}.{table}"

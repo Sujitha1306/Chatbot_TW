@@ -381,16 +381,25 @@ class EnhancedResultFormatter:
 # regardless of their SQL data type
 DIMENSION_NAME_PATTERNS = [
     "year", "month", "day", "week", "quarter", "date", "period", "hour",
-    "facility", "region", "department", "pool",
+    "facility", "region", "department", "pool", "location", "asset",
     "status", "category", "criticality", "name", "id",
-    "porter", "requester", "source", "destination"
+    "porter", "requester", "source", "destination",
+    "tag", "group", "type", "make", "model"
+]
+
+MEASURE_NAME_PATTERNS = [
+    "count", "sum", "avg", "average", "min", "max", "total", "rate", "percent"
 ]
 
 def _is_dimension_column(col_name: str, series: "pd.Series") -> bool:
     """A column is a dimension if its NAME matches a known dimension
-    pattern, OR if it's non-numeric. Measures are numeric AND not
-    name-matched to a dimension pattern."""
+    pattern AND does not match a measure pattern, OR if it's non-numeric."""
     name_lower = col_name.lower()
+    
+    # If it has an explicit measure pattern and is numeric, it is a measure
+    if any(pattern in name_lower for pattern in MEASURE_NAME_PATTERNS):
+        return series.dtype.kind not in "iuf"
+        
     if any(pattern in name_lower for pattern in DIMENSION_NAME_PATTERNS):
         return True
     return series.dtype.kind not in "iuf"  # not int/uint/float
@@ -400,6 +409,12 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
     import pandas as pd
     from backend.app.core.display_resolution import _resolve_display_names
 
+    # Convert any unhashable columns (like lists/dicts from ClickHouse arrays) to strings
+    # so pandas functions like nunique() don't crash
+    for col in df.columns:
+        if df[col].apply(lambda x: isinstance(x, (list, dict, tuple, set))).any():
+            df[col] = df[col].astype(str)
+
     df = _resolve_display_names(df)
 
     if df.empty:
@@ -407,10 +422,6 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
 
     dimension_cols = [c for c in df.columns if _is_dimension_column(c, df[c]) and df[c].notna().any()]
     measure_cols   = [c for c in df.columns if not _is_dimension_column(c, df[c]) and df[c].notna().any()]
-
-    if len(df) == 1 and len(measure_cols) < 2:
-        # Single row, single measure — no meaningful chart.
-        return _table_only_spec(1), df
 
     if not measure_cols:
         return _table_only_spec(len(df)), df
@@ -430,7 +441,9 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
 
         primary_dim = max(time_dims, key=time_dim_score)
     else:
-        primary_dim = dimension_cols[0] if dimension_cols else None
+        # Avoid picking stringified lists/arrays as the primary dimension if we have a better choice
+        scalar_dims = [c for c in dimension_cols if not df[c].astype(str).str.match(r'^\s*\[.*\]\s*$').any()]
+        primary_dim = scalar_dims[0] if scalar_dims else (dimension_cols[0] if dimension_cols else None)
         
     if not primary_dim and len(df) == 1 and len(measure_cols) > 1:
         df["_metric_group"] = "Metrics"
@@ -584,7 +597,7 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
 
     if not recommendations or recommendations[0]["type"] == "table":
         # Nothing meaningful to chart — table only
-        return _table_only_spec(len(df)), df
+        return _table_only_spec(len(df), measure_cols), df
 
     # Honor requested chart type if valid, else use first recommendation
     intent_chart = plan.get("chart_type_hint", "auto")
@@ -615,12 +628,14 @@ def build_chart_spec(df: "pd.DataFrame", plan: dict) -> Tuple[dict, "pd.DataFram
     }, df
 
 
-def _table_only_spec(row_count: int) -> dict:
+def _table_only_spec(row_count: int, measures: list = None) -> dict:
+    is_single_value = row_count == 1 and measures and len(measures) == 1
     return {
         "recommendations": [{"type": "table", "label": "Data Table", "x": "", "y": "", "icon": "Table2"}],
         "active": "table",
         "fallback_reason": None,
-        "columns": {"dimensions": [], "measures": [], "numeric": [], "categorical": [], "date": []},
+        "single_value": is_single_value,
+        "columns": {"dimensions": [], "measures": measures or [], "numeric": measures or [], "categorical": [], "date": []},
         "row_count": row_count,
     }
 

@@ -270,6 +270,9 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             sql = await asyncio.to_thread(
                 pipeline.generate_sql, effective_question, plan, filters=req.filters, history=_store.get_recent_context(user_id, session_id)
             )
+            print("\n=== LLM SQL ===")
+            print(sql)
+            print("===============\n")
             yield _sse({"event": "sql", "sql": sql})
 
             # ── Event 3: Query executed ──
@@ -341,16 +344,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             yield _sse({"event": "summary_start"})
             coverage = await asyncio.to_thread(pipeline.check_data_coverage, df, plan)
             
-            from backend.app.core.facility_lookup import get_facility_lookup
-            facility_name = None
-            if req.filters and req.filters.get("facility_id"):
-                fac = get_facility_lookup().get(req.filters.get("facility_id"))
-                facility_name = fac["facility_name"] if fac else None
-            elif req.filters and req.filters.get("customer_id"):
-                cid = req.filters.get("customer_id")
-                from backend.app.core.facility_lookup import get_facility_lookup
-                cname = get_facility_lookup().resolve_customer(cid)
-                facility_name = f"Customer {cname}"
+            from backend.config.settings import settings
+            facility_name = settings.target_facility_name
 
             summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
             prompt_logger = logging.getLogger("prompt_debugger")
@@ -690,7 +685,9 @@ available."). This IS good news and can be stated positively, since
 we've confirmed data exists for this period and the count is genuinely 0."""
 
     stats_lines = []
-    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    
+    from backend.app.core.formatter import _is_dimension_column
+    numeric_cols = [c for c in df.select_dtypes(include="number").columns if not _is_dimension_column(c, df[c])]
 
     # Pre-compute aggregates so the LLM doesn't do unreliable math
     for col in numeric_cols[:5]:  # cap to avoid prompt bloat

@@ -74,16 +74,9 @@ export class ChartRendererComponent implements OnChanges, AfterViewInit {
     const keys = Object.keys(this.data[0]);
     if (keys.includes(col)) return col;
     
-    // Try fuzzy match: normalize both strings
-    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const normCol = normalize(col);
-    const match = keys.find(k => normalize(k) === normCol);
-    
-    // Also try checking if the key contains the column name or vice versa
-    if (!match) {
-      const partialMatch = keys.find(k => normalize(k).includes(normCol) || normCol.includes(normalize(k)));
-      return partialMatch || col;
-    }
+    // Case-insensitive exact match
+    const lowerCol = col.toLowerCase();
+    const match = keys.find(k => k.toLowerCase() === lowerCol);
     
     return match || col;
   }
@@ -168,9 +161,7 @@ export class ChartRendererComponent implements OnChanges, AfterViewInit {
   }
 
   get hasValidData(): boolean {
-    if (!this.data || this.data.length === 0) return false;
-    if (this.type === 'table') return true;
-    return true;
+    return this.data && this.data.length > 0;
   }
 
   private getSortedData(): Record<string, unknown>[] {
