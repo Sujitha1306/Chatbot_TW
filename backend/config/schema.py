@@ -27,7 +27,11 @@ class DatabaseSchema:
     ASSET_COLUMNS = [
         'id', 'name', 'is_active', 'location_id', 'facility_id',
         'asset_serial_number', 'home_location_id', 'transfer_status_id',
-        'asset_type_id', 'status'
+        'asset_type_id', 'status', 'warranty_due', 'asset_cost', 
+        'current_book_value', 'vendor_name', 'next_cali_date', 
+        'commissioned_on', 'is_radiology', 'depreciation_percent',
+        'asset_admin_department', 'owner_id', 'vendor_contact', 
+        'vendor_email', 'service_provider_name'
     ]
     
     # Combined for "all columns" queries
@@ -83,7 +87,20 @@ class DatabaseSchema:
         'home_location_id': 'Home/default location ID of the asset',
         'transfer_status_id': 'Transfer status identifier',
         'asset_type_id': 'Asset type classification ID',
-        'status': 'Asset status (numeric)'
+        'status': 'Asset status (numeric)',
+        'warranty_due': 'Date when the warranty expires',
+        'asset_cost': 'Initial cost of the asset',
+        'current_book_value': 'Current depreciated value of the asset',
+        'vendor_name': 'Name of the vendor who supplied the asset',
+        'next_cali_date': 'Date of the next scheduled calibration',
+        'commissioned_on': 'Date when the asset was commissioned',
+        'is_radiology': 'Whether the asset is a radiology device',
+        'depreciation_percent': 'Depreciation percentage',
+        'asset_admin_department': 'Department administering the asset',
+        'owner_id': 'ID of the asset owner',
+        'vendor_contact': 'Contact person at the vendor',
+        'vendor_email': 'Email of the vendor',
+        'service_provider_name': 'Name of the service provider'
     }
     
     # Combined column descriptions
@@ -179,7 +196,19 @@ Columns:
 - transfer_status_id (String, nullable)
 - asset_type_id (String, nullable)
 - status (Int64): asset status (1 = active, 0 = inactive). ALWAYS use this to check if an asset is active (WHERE status = 1).
-
+- warranty_due (DateTime, nullable): Warranty expiration date
+- asset_cost (Float32, nullable): Purchase cost
+- current_book_value (Float32, nullable): Depreciated value
+- vendor_name (String, nullable)
+- next_cali_date (DateTime, nullable): Next calibration date
+- commissioned_on (DateTime, nullable)
+- is_radiology (String, nullable)
+- depreciation_percent (String, nullable)
+- asset_admin_department (String, nullable)
+- owner_id (Int64, nullable)
+- vendor_contact (String, nullable)
+- vendor_email (String, nullable)
+- service_provider_name (String, nullable)
 ## COLUMN-TO-TABLE OWNERSHIP — COMMON MISTAKES TO AVOID
 Each column belongs to EXACTLY ONE of the two tables. Do NOT use a column in a query against the wrong table:
 
@@ -197,9 +226,9 @@ If a question asks about "department" in the context of PORTER requests, and no 
    AND toYear(scheduled_time) = toYear(today() - INTERVAL 1 MONTH)
 4. facility_id is STRING: WHERE facility_id = '0184'  (not = 0184)
 5. NULL checks: Use IS NULL and IS NOT NULL (e.g. col IS NOT NULL). Do NOT use isNotNull() or isNull() functions inside If suffixes (like avgIf) because it causes "Illegal type Nothing" errors in this ClickHouse version.
-6. String contains: LIKE '%value%'
+6. String contains: ALWAYS use case-insensitive matching `ILIKE '%value%'` instead of `LIKE` or `=` when filtering by name, category, or any string to avoid capitalization mismatch bugs.
 7. Always include LIMIT (default 500) unless user explicitly asks for all data
-8. Percentage: (count_filtered * 100.0 / count_total) — no PERCENT function. Do NOT use window functions like OVER () for percentages. Use subqueries or cross joins to get totals.
+8. Percentage: (count_filtered * 100.0 / count_total) — no PERCENT function. Do NOT use window functions like OVER () for percentages. Use CROSS JOIN (never just JOIN) to get totals, e.g. `CROSS JOIN (SELECT count() as total_count FROM ...) AS total`. Using JOIN without an ON clause causes syntax errors.
 9. GROUP BY must list all non-aggregate SELECT columns exactly
 10. NO CORRELATED SUBQUERIES: ClickHouse does not support correlated subqueries referencing the outer query. To compare periods (e.g., YoY comparison per facility), use conditional aggregation: `countIf(toYear(scheduled_time) = toYear(today()))` vs `countIf(toYear(scheduled_time) = toYear(today()) - 1)`, OR use a standard `GROUP BY facility_id, toYear(scheduled_time)`.
 11. AGGREGATIONS OVER TIME: When asked for "requests per day/month/year", always use appropriate GROUP BY along with the date function.

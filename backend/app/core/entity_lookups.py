@@ -55,7 +55,7 @@ class LocationLookup:
         try:
             db = ClickHouseConnection()
             from backend.config.settings import Config
-            df = db.client.query_df(f"SELECT id, name FROM {Config.CLICKHOUSE_DATABASE}.dim_location")
+            df = db.client.query_df("SELECT id, name FROM tw_demo.mysql_location")
             if df.empty:
                 raise ValueError("dim_location returned no rows")
 

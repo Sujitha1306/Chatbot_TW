@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     demo_user_password_hash: str = ""
 
     # CORS
-    allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:4200"]
+    allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:4200", "*"]
 
     # App
     environment: str = "development"

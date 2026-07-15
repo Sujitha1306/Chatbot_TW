@@ -26,7 +26,7 @@ class TermLookup:
     def refresh(self) -> None:
         try:
             db = ClickHouseConnection()
-            df = db.client.query_df("SELECT code, value FROM ovitag_dw.dim_app_terms")
+            df = db.client.query_df("SELECT code, value FROM ovitag_live_dw.dim_app_terms")
             if df.empty:
                 raise ValueError("dim_app_terms returned no rows")
 
@@ -47,7 +47,16 @@ class TermLookup:
 
     def resolve(self, code: str) -> str:
         """Returns the human-readable value, or the original code if unknown."""
-        return self._by_code.get(code, code)
+        val = self._by_code.get(code)
+        if val:
+            return val
+            
+        # Smart fallback for Asset Types (e.g. AT-ECGMachine -> ECG Machine)
+        if isinstance(code, str) and code.startswith("AT-"):
+            import re
+            return re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', code[3:])
+            
+        return code
 
     def resolve_many(self, codes: list[str]) -> dict[str, str]:
         return {c: self.resolve(c) for c in codes}
