@@ -62,6 +62,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   user$: Observable<User | null>;
   searchQuery$ = new BehaviorSubject<string>('');
   
+  showRecommendations = true;
+  toggleRecommendations() {
+    this.showRecommendations = !this.showRecommendations;
+  }
+  
   showRecents = true;
   toggleRecents() {
     this.showRecents = !this.showRecents;

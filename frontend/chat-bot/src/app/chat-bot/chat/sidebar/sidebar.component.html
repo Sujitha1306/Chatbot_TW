@@ -1,5 +1,9 @@
 <div class="sidebar-wrapper" [class.collapsed]="collapsed">
   <mat-toolbar color="primary" class="sidebar-header">
+    <div class="logo-area" *ngIf="!collapsed">
+      <img src="https://demo.trackerwave.com/assets/icons/AI2.svg" alt="Track GenAI Logo" class="sidebar-logo">
+      <span style="font-family: 'Open Sans', sans-serif;">Track GenAI</span>
+    </div>
     <button mat-icon-button (click)="toggle.emit()">
       <mat-icon>menu</mat-icon>
     </button>
@@ -7,22 +11,6 @@
 
   <div class="sidebar-content">
     
-    <!-- Recommendations -->
-    <ng-container *ngIf="!collapsed">
-      <ng-container *ngIf="recommendations$ | async as recommendations">
-        <div *ngIf="recommendations.length > 0" class="recommendations">
-          <p class="section-title">Frequent Questions</p>
-          <mat-nav-list dense>
-            <a mat-list-item *ngFor="let rec of recommendations | slice:0:5" (click)="fillRecommendation(rec)">
-              <div class="custom-list-content">
-                <span class="rec-text" [title]="rec">{{ rec }}</span>
-              </div>
-            </a>
-          </mat-nav-list>
-        </div>
-      </ng-container>
-    </ng-container>
-
     <!-- New Chat Action -->
     <div class="action-area">
       <button mat-flat-button color="accent" (click)="newChat()" [class.icon-only]="collapsed">
@@ -38,6 +26,25 @@
         <input matInput [(ngModel)]="searchQuery" placeholder="Search conversations...">
       </mat-form-field>
     </div>
+
+    <!-- Recommendations -->
+    <ng-container *ngIf="!collapsed">
+      <ng-container *ngIf="recommendations$ | async as recommendations">
+        <div *ngIf="recommendations.length > 0" class="recommendations">
+          <div class="recents-header" (click)="toggleRecommendations()" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;">
+            <p class="section-title" style="margin: 0;">Frequent Questions</p>
+            <mat-icon style="color: #6b7280; font-size: 1.25rem; width: 1.25rem; height: 1.25rem;">{{ showRecommendations ? 'expand_more' : 'chevron_right' }}</mat-icon>
+          </div>
+          <mat-nav-list *ngIf="showRecommendations" dense>
+            <a mat-list-item *ngFor="let rec of recommendations | slice:0:5" (click)="fillRecommendation(rec)">
+              <div class="custom-list-content">
+                <span class="rec-text" [title]="rec">{{ rec }}</span>
+              </div>
+            </a>
+          </mat-nav-list>
+        </div>
+      </ng-container>
+    </ng-container>
 
     <!-- Conversation List -->
     <div class="conv-list" *ngIf="!collapsed">
@@ -147,34 +154,7 @@
 
   </div>
 
-  <!-- Bottom: Profile -->
-  <mat-toolbar class="profile-area" [class.collapsed]="collapsed">
-    
-    <button mat-icon-button color="warn" *ngIf="collapsed" (click)="logout()">
-      <mat-icon>logout</mat-icon>
-    </button>
 
-    <div class="avatar" [class.large]="collapsed">
-      {{ (user$ | async)?.name?.[0]?.toUpperCase() || 'U' }}
-    </div>
-
-    <div class="profile-details" *ngIf="!collapsed && !editingName">
-      <span class="user-name">{{ (user$ | async)?.name || 'User' }}</span>
-      <button mat-icon-button (click)="startEditName()"><mat-icon>edit</mat-icon></button>
-    </div>
-
-    <div class="profile-edit" *ngIf="!collapsed && editingName">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <input matInput [(ngModel)]="newName" (keyup.enter)="saveName()" (keyup.escape)="cancelEditName()">
-      </mat-form-field>
-      <button mat-icon-button color="primary" (click)="saveName()"><mat-icon>check</mat-icon></button>
-      <button mat-icon-button color="warn" (click)="cancelEditName()"><mat-icon>close</mat-icon></button>
-    </div>
-
-    <button mat-icon-button color="warn" *ngIf="!collapsed" (click)="logout()">
-      <mat-icon>logout</mat-icon>
-    </button>
-  </mat-toolbar>
 </div>
 
 <div *ngIf="!collapsed" class="resizer" (mousedown)="startResize($event)" [class.resizing]="isResizing"></div>

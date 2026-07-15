@@ -21,7 +21,7 @@
 import { base_value } from './environment.base';
 
 export const environment = {
-  version : require('../../package.json').version,
+  version: require('../../package.json').version,
   base_value,
   production: false,
   localStyle: false,
@@ -39,33 +39,33 @@ export const environment = {
   // env_key: "prod",
   env_key: 'dev',
   // api_base_url_new: 'https://twwebapi.apollohospitals.com/live/',
-  // api_base_url_new: 'https://demoapi.trackerwave.com/',
+  api_base_url_new: 'https://demoapi.trackerwave.com/',
   // api_base_url_new: 'https://twdevapi.trackerwave.com/dev/',
-  api_base_url_new: 'https://hwapi.trackerwave.com/live/',
+  //api_base_url_new: 'https://hwapi.trackerwave.com/live/',
   // api_base_url_new:'https://liveapi.trackerwave.com/live/',
   /* new url for pre-prod */
   serverPdfURL: 'http://ec2-65-0-217-218.ap-south-1.compute.amazonaws.com:8000/',
   // serverPdfURL: 'http://ec2-65-0-217-218.ap-south-1.compute.amazonaws.com:9000/',
   // sk : "6Lcz-j8nAAAAACVdRx3YsnudNdHOpLKZc1itJSOm",
-  sk : "6LeLuB4nAAAAALZ77IMo8NxC5oAefAr1VyoRpQIc",
-  n8n_baseurl : 'https://wflow.demo.trackerwave.com/',
-  setCookie : false,
-  serviceWorker : false,
-  ck : "1",
-  pwd_check : false,
+  sk: "6LeLuB4nAAAAALZ77IMo8NxC5oAefAr1VyoRpQIc",
+  n8n_baseurl: 'https://wflow.demo.trackerwave.com/',
+  setCookie: false,
+  serviceWorker: false,
+  ck: "1",
+  pwd_check: false,
   fcm_Enable: false,
   idle_time_out: 4 * 60 * 60,
-  languages : [
+  languages: [
     { code: 'en', label: 'English', tooltip: 'English' },
     { code: 'hi', label: 'हिंदी', tooltip: 'Hindi' },
     { code: 'ta', label: 'தமிழ்', tooltip: 'Tamil' },
     { code: 'ar', label: 'العربية', tooltip: 'Arabic' },
     { code: 'pt', label: 'Português', tooltip: 'Portuguese' }
   ],
-  outpatient_reports : [
-    {'id': 'patient-status-op', 'name' : 'Out Patient Summary', 'code' : 'WD_AIPROP'},
-    {'id': 'out_patient_TAT', 'name' : 'TAT Report Out Patient', 'code' : 'WD_AIPROPTAT'},
-    {'id': 'geofencevio', 'name' : 'Geo Fence Violation Report', 'code' : 'WD_AIPRGV'}
+  outpatient_reports: [
+    { 'id': 'patient-status-op', 'name': 'Out Patient Summary', 'code': 'WD_AIPROP' },
+    { 'id': 'out_patient_TAT', 'name': 'TAT Report Out Patient', 'code': 'WD_AIPROPTAT' },
+    { 'id': 'geofencevio', 'name': 'Geo Fence Violation Report', 'code': 'WD_AIPRGV' }
   ],
   BLOB_URI: 'https://stagekynsrg.blob.core.windows.net/'
 };
