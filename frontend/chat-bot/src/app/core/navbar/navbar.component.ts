@@ -25,8 +25,7 @@ import { Subscription } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { locale_Json_Details } from '../../../localeJson/localeJson';
 import { LightboxOnlineMenuComponent } from '../../shared/modules/entry-component/status-tracking/status-tracking.component';
-import { AiComponent } from '../../shared/modules/entry-component/ai/ai.component';
-import { ChatThreadComponent } from '../../chat-bot/chat/chat-thread/chat-thread.component';
+import { ChatWelcomeComponent } from '../../chat-bot/chat/chat-welcome/chat-welcome.component';
 
 @Component({
     selector: 'app-navbar',
@@ -35,7 +34,7 @@ import { ChatThreadComponent } from '../../chat-bot/chat/chat-thread/chat-thread
     encapsulation: ViewEncapsulation.None
 })
 
-export class NavbarComponent implements OnInit, DoCheck {
+ export class NavbarComponent implements OnInit, DoCheck{
     public menuName = ''
     public currentMenuName = ''
     public mainMenu = '';
@@ -44,8 +43,8 @@ export class NavbarComponent implements OnInit, DoCheck {
     public customerId = null;
     public facilityId = null;
     public customerLogo = null
-    public userName = null; public user = null;
-    public isFullScreen: any;
+     public userName = null;public user = null;
+     public isFullScreen : any;
     public menuList = [];
     public activate_btn = [];
     public activateDropdown = [];
@@ -58,7 +57,7 @@ export class NavbarComponent implements OnInit, DoCheck {
     public islayout = true;
     public isDeptEnable = false;
     public subscription: Subscription;
-    layoutList: any = [];
+    layoutList: any=[];
     public layoutForm: FormGroup;
     public selectedDept: FormControl;
     locale: string;
@@ -73,16 +72,16 @@ export class NavbarComponent implements OnInit, DoCheck {
     customerLogoUrl: any;
     defaultLogoUrl: any;
     @Output() menuClicked = new EventEmitter<boolean>();
-    showsidebar: boolean = false;
-    constructor(private readonly router: Router, public commonService: CommonService, private readonly renderer: Renderer2, private readonly dialog: MatDialog,
-        public dashboardService: DashboardService, public form: FormBuilder, private readonly colorThemeService: ColorThemeService) {
+    showsidebar : boolean = false;
+    constructor(private readonly router: Router, public commonService : CommonService, private readonly renderer: Renderer2, private readonly dialog: MatDialog,
+        public dashboardService: DashboardService, public form: FormBuilder, private readonly colorThemeService : ColorThemeService) {
         this.getBreadcrumb()
         this.getRole()
         this.commonService.getMenuItems();
         this.menuList = this.commonService.getMenu();
         this.activate_btn = this.commonService.getActivePermission('button');
         this.activateDropdown = this.commonService.getActivePermission('dropdown');
-        this.renderer.listen('window', 'click', (e: Event) => {
+         this.renderer.listen('window', 'click', ( e: Event) => {
             if (e.target === this.elementRef?.nativeElement) {
                 this.fabMenuClose = true;
                 this.isOpen = true;
@@ -96,19 +95,19 @@ export class NavbarComponent implements OnInit, DoCheck {
         });
         this.selectedDept = new FormControl(null);
         let userId = localStorage.getItem(btoa('userId'));
-        if (userId) {
+        if(userId){
             this.commonService.getUserDepartmentLink(userId).subscribe(res => {
-                if (res.statusCode == 1) {
+                if(res.statusCode == 1){
                     this.deptList = res.results
-                    if (this.deptList.length && localStorage.getItem(btoa('departmentId'))) {
+                    if(this.deptList.length && localStorage.getItem(btoa('departmentId'))){
                         this.selectedDept.setValue(parseInt(localStorage.getItem(btoa('departmentId'))));
                         if (Number.isNaN(this.selectedDept.value)) {
                             this.selectedDept.setValue("null");
                         }
                     }
                     this.deptOnChange(parseInt(localStorage.getItem(btoa('departmentId'))))
-                }
-
+                    }
+                    
             });
         }
         // this.commonService.getAllDepartments().subscribe(res => {
@@ -122,10 +121,10 @@ export class NavbarComponent implements OnInit, DoCheck {
         //         }
         //         this.deptOnChange(parseInt(localStorage.getItem(btoa('departmentId'))))
         //         }
-
+                
         // });
-
-        if (!this.activateDropdown.includes('WD_AMAL')) {
+        
+        if(!this.activateDropdown.includes('WD_AMAL')){
             this.selectedDept.disable();
         }
     }
@@ -139,34 +138,34 @@ export class NavbarComponent implements OnInit, DoCheck {
         this.getCustomerLogo(true);
         let roleId = localStorage.getItem('userlevel');
         let userId = localStorage.getItem(btoa('userId'));
-        this.commonService.getUserPreference(userId, roleId);
+         this.commonService.getUserPreference(userId,roleId);
         this.dashboardService.getDashboardDetailsList(userId).subscribe(res => {
             this.layoutList = res.results.filter(val => val.linkedResourceCode == null || val.linkedResourceCode == "MN_DB");
         });
         this.subscription = this.commonService.dashboard.subscribe((dashboard) => {
             this.layoutForm.get('layout').setValue(dashboard);
             const list = this.layoutList.filter(res => res.id === dashboard);
-            if (list.length) {
+            if(list.length){
                 let config = JSON.parse(list[0]?.configValue);
                 this.isDeptEnable = config?.dynamicHeader?.enableDepartment;
             }
             this.checkLayout(list);
         });
         this.getConfigFile()
-        if (this.commonService.userPreference != null && this.commonService.userPreference.hasOwnProperty('menuEvent')) {
-            let val = JSON.parse(this.commonService.userPreference.menuEvent.value);
+        if(this.commonService.userPreference != null && this.commonService.userPreference.hasOwnProperty('menuEvent')) {
+            let val =  JSON.parse(this.commonService.userPreference.menuEvent.value);
             this.showsidebar = val.expand;
             this.onMenuClick(true);
         } else {
-            let value = { 'expand': false }
-            this.commonService.validateUserPreference('menuEvent', JSON.stringify(value));
+            let value = { 'expand' : false }
+            this.commonService.validateUserPreference('menuEvent',  JSON.stringify(value));
         }
     }
-    deptOnChange(value) {
-        if (value == 'all') {
+    deptOnChange(value){
+        if(value == 'all'){
             const deptIds = this.deptList.map(item => item.departmentId).join(',');
             this.commonService.setDashboardDept(deptIds);
-        } else {
+        }else{
             this.commonService.setDashboardDept(value);
         }
     }
@@ -174,7 +173,7 @@ export class NavbarComponent implements OnInit, DoCheck {
         this.commonService.getConfigFile('global-search').subscribe(res => {
             if (res.results != null) {
                 let config = res.results.contentObject;
-                if (config.hasOwnProperty('filterOptions')) {
+                if(config.hasOwnProperty('filterOptions')) {
                     this.globalSearchfilterOptions = config.filterOptions
                 }
             }
@@ -201,16 +200,16 @@ export class NavbarComponent implements OnInit, DoCheck {
             this.customerLogo = this.defaultLogoUrl;
             event.target.src = this.defaultLogoUrl;
         }
-    }
+}
     getCustomerLogo(isSave, globalNotification?) {
-        if (isSave) {
+         if(isSave) {
             this.customerId = localStorage.getItem('customerId')
             this.facilityId = localStorage.getItem(btoa('facilityId'))
             this.facilityLogoUrl = environment.api_base_url_new + environment.base_value.get_customer_logo + '/' + this.facilityId;
             this.customerLogoUrl = environment.api_base_url_new + environment.base_value.get_customer_logo + '/' + this.customerId;
             this.defaultLogoUrl = '/assets/Alert/common_icons/new-logo.png';
-            this.customerLogo = this.facilityLogoUrl;
-            if (globalNotification) {
+            this.customerLogo = this.facilityLogoUrl;      
+            if(globalNotification) {
                 globalNotification.refreshNotification();
             }
         }
@@ -220,15 +219,15 @@ export class NavbarComponent implements OnInit, DoCheck {
         const lang = localStorage.getItem(btoa('locale'))
         const enabledCookie = localStorage.hasOwnProperty('cookiesAccepted') ? localStorage.getItem('cookiesAccepted') : 'false';
         localStorage.clear();
-        localStorage.setItem(btoa('locale'), lang)
-        localStorage.setItem('cookiesAccepted', enabledCookie)
+        localStorage.setItem(btoa('locale'),lang)
+        localStorage.setItem('cookiesAccepted',enabledCookie)
         this.deptOnChange(null)
         if (screenfull.isFullscreen) {
             screenfull.exit();
         }
         this.router.navigate(['/login']);
     }
-    checkFullscreen() {
+     checkFullscreen(){
         screenfull.toggle();
     }
 
@@ -349,15 +348,15 @@ export class NavbarComponent implements OnInit, DoCheck {
     ngDoCheck() {
         let currentMenu = JSON.parse(localStorage.getItem('currentMenu'));
         let fid = localStorage.getItem(btoa('facilityId'))
-        if (fid != this.facilityId) {
+        if(fid != this.facilityId) {
             this.facilityId = fid;
             this.getConfigFile();
             this.commonService.getFacilityConfig();
         }
-        if (this.menuName !== window.location.pathname || (this.currentMenuName && currentMenu && currentMenu.length && this.currentMenuName.length && this.currentMenuName[0]['name'] != currentMenu[0]['name'])) {
+        if(this.menuName !== window.location.pathname || (this.currentMenuName && currentMenu && currentMenu.length && this.currentMenuName.length && this.currentMenuName[0]['name'] != currentMenu[0]['name'] )) {
             this.getBreadcrumb();
         }
-        if (screenfull.enabled) {
+         if(screenfull.enabled){
             this.isFullScreen = screenfull.isFullscreen;
         }
     }
@@ -381,33 +380,35 @@ export class NavbarComponent implements OnInit, DoCheck {
         this.commonService.setLayout(value);
     }
 
-    openedChange(isOpended) {
-        if (!isOpended) {
+      openedChange(isOpended)
+      {
+        if(!isOpended)
+        {
             this.islayout = false;
         }
-    }
-    openQRCodeDialog(data) {
-        let selectdata = { 'type': 'qrcode' }
+    } 
+    openQRCodeDialog(data){
+        let selectdata = {'type' : 'qrcode'}
         const dialog = this.dialog.open(LightboxOnlineMenuComponent, {
-            maxWidth: '100vw', width: '100vw', height: '100vh', data: selectdata, panelClass: "custom-preview-dialog-container", disableClose: true
+            maxWidth: '100vw', width: '100vw', height: '100vh', data : selectdata, panelClass: "custom-preview-dialog-container", disableClose: true
         });
         dialog.afterClosed().subscribe(result => {
         });
     }
 
     launchAI() {
-        const dialogRef = this.dialog.open(ChatThreadComponent,
-            { data: null, panelClass: ['large-popup'], disableClose: true });
+        const dialogRef = this.dialog.open(ChatWelcomeComponent,
+            { data: null, panelClass: ['medium-popup'], disableClose: true });
         dialogRef.afterClosed().subscribe(result => { });
-    }
+       }
     onMenuClick(auto?) {
 
-        if (auto == false) {
+        if(auto == false) {
             this.showsidebar = !this.showsidebar
         }
-        this.menuClicked.emit(this.showsidebar);
-        let value = { 'expand': this.showsidebar }
-        this.commonService.validateUserPreference('menuEvent', JSON.stringify(value));
+        this.menuClicked.emit(this.showsidebar); 
+        let value = { 'expand' : this.showsidebar }
+        this.commonService.validateUserPreference('menuEvent',  JSON.stringify(value));
     }
 
     fixClick() {

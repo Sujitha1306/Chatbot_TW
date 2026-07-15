@@ -1,0 +1,277 @@
+<div class="mc-wrapper">
+
+  <!-- ═══ MAP AREA (search floats inside) ═══════════════════════ -->
+  <div class="mc-map-area">
+
+    <div id="map-crop-map" class="mc-map"></div>
+
+    <!-- Settings control — bottom-left, mirrors a Leaflet control button.
+         Opens a small panel with the Map/Floor-plan toggle + block/floor pickers. -->
+    <div class="mc-settings-control" (click)="$event.stopPropagation()">
+      <button class="mc-settings-btn" [class.active]="isSettingsOpen" (click)="toggleSettingsPanel()">
+        <mat-icon>settings</mat-icon>
+      </button>
+
+      <div class="mc-settings-panel" *ngIf="isSettingsOpen">
+        <div class="mc-settings-panel-header">
+          <span>Map Settings</span>
+          <button (click)="isSettingsOpen = false"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <mat-button-toggle-group class="mc-view-toggle" [value]="viewMode" (change)="onViewModeChange($event.value)">
+          <mat-button-toggle value="map">
+            <mat-icon>public</mat-icon>&nbsp;Map View
+          </mat-button-toggle>
+          <mat-button-toggle value="floor">
+            <mat-icon>layers</mat-icon>&nbsp;Floor Plan
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+
+        <ng-container *ngIf="viewMode === 'floor'">
+          <mat-form-field appearance="outline" class="mc-filter-field">
+            <mat-label>{{ isLoadingBlocks ? 'Loading blocks…' : 'Select Block' }}</mat-label>
+            <mat-select [(value)]="selectedBlockId" (selectionChange)="onBlockChange($event.value)" [disabled]="isLoadingBlocks">
+              <mat-option [value]="null">— None —</mat-option>
+              <mat-option *ngFor="let block of blockList" [value]="block.id">{{ block.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="mc-filter-field">
+            <mat-label>{{ isLoadingFloors ? 'Loading floors…' : 'Select Floor' }}</mat-label>
+            <mat-select [(value)]="selectedFloorId" (selectionChange)="onFloorChange($event.value)" [disabled]="isLoadingFloors || floorList.length === 0">
+              <mat-option [value]="null">— None —</mat-option>
+              <mat-option *ngFor="let floor of floorList" [value]="floor.id">{{ floor.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Floating search bar — Map View only, pointer-events handled in SCSS -->
+    <div class="mc-search-overlay" *ngIf="viewMode === 'map'">
+      <div class="mc-search-box" (click)="$event.stopPropagation()">
+        <mat-icon class="mc-search-icon">search</mat-icon>
+        <input class="mc-search-input"
+               [(ngModel)]="searchQuery"
+               (keydown.enter)="searchAddress()"
+               placeholder="Search address  or  lat, lng  (e.g. 13.0827, 80.2707)" />
+        <button class="mc-search-btn"
+                (click)="searchAddress()"
+                [disabled]="isSearching || !searchQuery.trim()">
+          <mat-progress-spinner *ngIf="isSearching" diameter="16" mode="indeterminate">
+          </mat-progress-spinner>
+          <mat-icon *ngIf="!isSearching" style="font-size:18px;width:18px;height:18px">arrow_forward</mat-icon>
+        </button>
+      </div>
+
+      <!-- Autocomplete dropdown -->
+      <div class="mc-results" *ngIf="showResults && searchResults.length > 0"
+           (click)="$event.stopPropagation()">
+        <div class="mc-result-item"
+             *ngFor="let r of searchResults"
+             (click)="flyToResult(r)">
+          <mat-icon>place</mat-icon>
+          <span>{{ r.display_name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawing hint pill — appears when a draw tool is active -->
+    <div class="mc-draw-hint" *ngIf="drawHint">
+      <mat-icon>pan_tool</mat-icon>
+      <span>{{ drawHint }}</span>
+    </div>
+
+    <!-- Additional coordinates — Floor Plan mode only. Each finished polygon/rectangle
+         prompts for a label, then joins a running list saved to the floor. -->
+    <div class="mc-coords-panel" *ngIf="viewMode === 'floor' && (pendingShapeType || additionalShapes.length > 0)"
+         (click)="$event.stopPropagation()">
+
+      <div class="mc-coords-prompt" *ngIf="pendingShapeType">
+        <div class="mc-coords-prompt-title">Label this {{ pendingShapeType }}</div>
+        <div class="mc-coords-presets">
+          <button type="button"
+                  *ngFor="let preset of shapeLabelPresets"
+                  class="mc-coords-chip"
+                  [class.active]="shapeLabelInput === preset"
+                  (click)="pickLabelPreset(preset)">{{ preset }}</button>
+        </div>
+        <input class="mc-coords-input"
+               [(ngModel)]="shapeLabelInput"
+               (keydown.enter)="confirmShapeLabel()"
+               placeholder="e.g. wall, door…" />
+        <div class="mc-coords-prompt-actions">
+          <button mat-stroked-button (click)="cancelShapeLabel()">Cancel</button>
+          <button mat-flat-button color="primary" [disabled]="!shapeLabelInput.trim()" (click)="confirmShapeLabel()">Add</button>
+        </div>
+      </div>
+
+      <div class="mc-coords-list" *ngIf="additionalShapes.length > 0">
+        <div class="mc-coords-item" *ngFor="let shape of additionalShapes">
+          <span class="mc-coords-item-label">{{ shape.label }}</span>
+          <span class="mc-coords-item-type">{{ shape.type }}</span>
+          <button class="mc-coords-item-remove" (click)="removeAdditionalShape(shape.id)">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <button mat-flat-button color="accent" class="mc-coords-save"
+                [disabled]="isSavingCoordinates"
+                (click)="saveAdditionalCoordinates()">
+          <mat-icon>save</mat-icon>
+          {{ isSavingCoordinates ? 'Saving…' : 'Save Coordinates (' + additionalShapes.length + ')' }}
+        </button>
+
+        <div class="mc-coords-json" *ngIf="additionalCoordinatesJson">
+          <div class="mc-coords-json-header">
+            <span>additional_coordinates</span>
+            <button (click)="copyAdditionalCoordinatesJson()"><mat-icon>content_copy</mat-icon></button>
+          </div>
+          <pre>{{ additionalCoordinatesJson }}</pre>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /mc-map-area -->
+
+  <!-- ═══ FOOTER INFO PANEL ══════════════════════════════════════ -->
+  <div class="mc-footer" *ngIf="shapeInfo">
+
+    <!-- ── Row 1: badge · summary stats · action buttons ─────── -->
+    <div class="mc-footer-top">
+
+      <div class="mc-footer-meta">
+        <!-- Shape type badge -->
+        <span class="mc-badge mc-badge--{{ shapeInfo.type }}">
+          <mat-icon>{{ shapeInfo.type === 'circle' ? 'radio_button_unchecked'
+                      : shapeInfo.type === 'rectangle' ? 'crop_square' : 'pentagon' }}</mat-icon>
+          {{ shapeInfo.type | titlecase }}
+        </span>
+
+        <!-- Point count (not shown for circle) -->
+        <span class="mc-stat" *ngIf="shapeInfo.type !== 'circle'">
+          <mat-icon>adjust</mat-icon>
+          {{ shapeInfo.pointCount }} points
+        </span>
+
+        <!-- Area chip -->
+        <span class="mc-stat mc-stat--area">
+          <mat-icon>crop_free</mat-icon>
+          {{ formatArea(shapeInfo.area) }}
+        </span>
+
+        <!-- Perimeter / circumference -->
+        <span class="mc-stat">
+          <mat-icon>straighten</mat-icon>
+          {{ shapeInfo.type === 'circle' ? 'Circumference' : 'Perimeter' }}:
+          {{ formatDistance(shapeInfo.perimeter) }}
+        </span>
+
+        <!-- Radius (circle only) -->
+        <span class="mc-stat mc-stat--radius" *ngIf="shapeInfo.type === 'circle'">
+          <mat-icon>radio_button_unchecked</mat-icon>
+          Radius: {{ formatDistance(shapeInfo.radius) }}
+        </span>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="mc-footer-actions">
+        <button mat-flat-button color="accent"
+                (click)="openResultDialog()"
+                [disabled]="isCapturing">
+          <mat-icon>open_in_new</mat-icon>
+          {{ isCapturing ? 'Capturing…' : 'Open Details' }}
+        </button>
+        <button mat-raised-button color="primary"
+                (click)="downloadCroppedImage()"
+                [disabled]="isCapturing">
+          <mat-icon>save_alt</mat-icon>
+          Save Image
+        </button>
+        <button mat-stroked-button color="warn" (click)="clearShape()">
+          <mat-icon>delete_outline</mat-icon>
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Row 2: dimension metric cards ─────────────────────── -->
+    <div class="mc-dim-row">
+
+      <!-- Polygon / Rectangle cards -->
+      <ng-container *ngIf="shapeInfo.type !== 'circle'">
+        <div class="mc-dim-card mc-dim-card--width">
+          <div class="mc-dim-icon"><mat-icon>swap_horiz</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Width&nbsp;(E–W)</div>
+            <div class="mc-dim-value">{{ formatDistance(shapeInfo.dimensions.width) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--length">
+          <div class="mc-dim-icon"><mat-icon>height</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Length&nbsp;(N–S)</div>
+            <div class="mc-dim-value">{{ formatDistance(shapeInfo.dimensions.length) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--aspect">
+          <div class="mc-dim-icon"><mat-icon>aspect_ratio</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Aspect [W,L]</div>
+            <div class="mc-dim-value">{{ formatAspect(shapeInfo.dimensions.width, shapeInfo.dimensions.length) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--area">
+          <div class="mc-dim-icon"><mat-icon>crop_free</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Area</div>
+            <div class="mc-dim-value">{{ formatArea(shapeInfo.area) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--peri">
+          <div class="mc-dim-icon"><mat-icon>loop</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Perimeter</div>
+            <div class="mc-dim-value">{{ formatDistance(shapeInfo.perimeter) }}</div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Circle cards -->
+      <ng-container *ngIf="shapeInfo.type === 'circle'">
+        <div class="mc-dim-card mc-dim-card--length">
+          <div class="mc-dim-icon"><mat-icon>radio_button_unchecked</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Radius</div>
+            <div class="mc-dim-value">{{ formatDistance(shapeInfo.radius) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--width">
+          <div class="mc-dim-icon"><mat-icon>swap_horiz</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Diameter</div>
+            <div class="mc-dim-value">{{ formatDistance(shapeInfo.dimensions.length) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--area">
+          <div class="mc-dim-icon"><mat-icon>crop_free</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Area</div>
+            <div class="mc-dim-value">{{ formatArea(shapeInfo.area) }}</div>
+          </div>
+        </div>
+        <div class="mc-dim-card mc-dim-card--peri">
+          <div class="mc-dim-icon"><mat-icon>loop</mat-icon></div>
+          <div>
+            <div class="mc-dim-label">Circumference</div>
+            <div class="mc-dim-value">{{ formatDistance(shapeInfo.perimeter) }}</div>
+          </div>
+        </div>
+      </ng-container>
+
+    </div><!-- /mc-dim-row -->
+
+
+  </div><!-- /mc-footer -->
+
+</div>

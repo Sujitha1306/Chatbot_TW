@@ -30,6 +30,8 @@ export const environment = {
   n8n_baseurl : 'https://n8n.trackerwave.com/',
   languages : [
     { code: 'en', label: 'English', tooltip: 'English' },
+    { code: 'hi', label: 'हिंदी', tooltip: 'Hindi' },
+    { code: 'ta', label: 'தமிழ்', tooltip: 'Tamil' },
     { code: 'ar', label: 'العربية', tooltip: 'Arabic' },
     { code: 'pt', label: 'Português', tooltip: 'Portuguese' },
     { code: 'th', label: 'ไทย', tooltip: 'Thai'}

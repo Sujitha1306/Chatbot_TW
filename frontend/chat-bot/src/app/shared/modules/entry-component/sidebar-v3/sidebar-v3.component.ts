@@ -5,6 +5,7 @@ import {
 import { NavigationEnd, Router } from '@angular/router';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Subscription } from 'rxjs';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonService } from '../../..';
 
 @Component({
@@ -84,6 +85,9 @@ export class SidebarV3Component implements OnInit, OnDestroy {
   favoriteMainItems: any[] = [];
   favoriteGroups: Array<{ parent: any; subs: any[] }> = [];
 
+  // Profile avatar image (shown instead of initials once the user has uploaded one)
+  profileImage: SafeResourceUrl | null = null;
+
   // Theme
   isDarkTheme = false;
 
@@ -113,11 +117,33 @@ export class SidebarV3Component implements OnInit, OnDestroy {
   }
 
   get initials(): string {
-    if (!this.userName) { return 'U'; }
-    const parts = this.userName.trim().split(' ');
-    return parts.length >= 2
-      ? (parts[0][0] + parts[1][0]).toUpperCase()
-      : parts[0][0].toUpperCase();
+    if (!this.userName || this.userName === 'null' || this.userName === 'undefined') {
+      return 'U';
+    }
+    const nameStr = String(this.userName).trim();
+    if (!nameStr) {
+      return 'U';
+    }
+    const parts = nameStr.split(/\s+/)
+      .filter(p => p && p !== 'null' && p !== 'undefined');
+    if (parts.length === 0) {
+      return 'U';
+    }
+    if (parts.length >= 2) {
+      const firstInitial = parts[0][0] || '';
+      const middleWord = parts[Math.floor(parts.length / 2)];
+      const middleInitial = middleWord ? (middleWord[0] || '') : '';
+      return (firstInitial + middleInitial).toUpperCase();
+    } else {
+      const singleWord = parts[0];
+      if (singleWord.length >= 2) {
+        const firstLetter = singleWord[0];
+        const middleLetter = singleWord[Math.floor(singleWord.length / 2)];
+        return (firstLetter + middleLetter).toUpperCase();
+      } else {
+        return singleWord.toUpperCase();
+      }
+    }
   }
 
   get hasFavorites(): boolean {
@@ -251,11 +277,11 @@ export class SidebarV3Component implements OnInit, OnDestroy {
       const subs: any[] = [];
       for (const sub of perm.subMenus) {
         if (this.favSubCodes.has(sub.code)) {
-          subs.push({ ...sub, _level: 2 });
+          subs.push({ ...sub, _level: 2, _parentName: m.name });
         }
         for (const ss of (sub.subMenus || [])) {
           if (this.favSubCodes.has(ss.code)) {
-            subs.push({ ...ss, _level: 3, _parentName: sub.name });
+            subs.push({ ...ss, _level: 3, _parentName: m.name, _subParentName: sub.name });
           }
         }
       }
@@ -277,6 +303,9 @@ export class SidebarV3Component implements OnInit, OnDestroy {
     }
     this.rebuildFavorites();
     this.savePreferences();
+    if (this.flyoutItem?.code === 'MN_FAV') {
+      this.rebuildFavoritesFlyout();
+    }
   }
 
   toggleSubFavorite(event: { subCode: string; parentCode: string }): void {
@@ -287,7 +316,10 @@ export class SidebarV3Component implements OnInit, OnDestroy {
     }
     this.favSubCodesArray = [...this.favSubCodes];
     this.rebuildFavorites();
-    this.savePreferences();
+    this.savePreferences('isFav');
+    if (this.flyoutItem?.code === 'MN_FAV') {
+      this.rebuildFavoritesFlyout();
+    }
   }
 
   toggleTheme(): void {
@@ -374,18 +406,22 @@ export class SidebarV3Component implements OnInit, OnDestroy {
     if (top + estHeight > viewH - margin) {
       top = Math.max(margin, viewH - estHeight - margin);
     }
+    if (top > 300 && item.subMenus?.length !== 0) {
+      top = top - 100;
+    }
     this.flyoutTop = top;
   }
 
-  openFavFlyout(group: { parent: any; subs: any[] }, event: MouseEvent): void {
-    if (!this.iconOnlyMode || !group) { return; }
+  openFavoritesFlyout(event: MouseEvent): void {
+    if (!this.iconOnlyMode) { return; }
     this.cancelCloseFlyout();
     this.expandedFlyoutSubCode = null;
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     this.flyoutLeft = rect.right;
-    this.flyoutItem = group.parent;
+    this.flyoutItem = { code: 'MN_FAV', name: 'FAVORITES' };
     this.flyoutSubChildrenMap = {};
-    this.flyoutSubs = group.subs.map(s => ({ ...s, _level: 2 }));
+    
+    this.rebuildFavoritesFlyout();
 
     const margin = 8;
     const viewH = window.innerHeight;
@@ -397,6 +433,30 @@ export class SidebarV3Component implements OnInit, OnDestroy {
       top = Math.max(margin, viewH - estHeight - margin);
     }
     this.flyoutTop = top;
+  }
+
+  rebuildFavoritesFlyout(): void {
+    const subs: any[] = [];
+    for (const item of this.favoriteMainItems) {
+      subs.push({
+        code: item.code, name: item.name, iconName: item.iconName,
+        link: item.link, _level: 2, _origLevel: 1
+      });
+    }
+    for (const group of this.favoriteGroups) {
+      for (const sub of group.subs) {
+        subs.push({
+          code: sub.code, name: sub.name, iconName: sub.iconName,
+          link: sub.link, _level: 2, _origLevel: sub._level,
+          _parentName: sub._parentName, _subParentName: sub._subParentName,
+          _parentCode: group.parent.code
+        });
+      }
+    }
+    this.flyoutSubs = subs;
+    if (subs.length === 0) {
+      this.closeFlyoutNow();
+    }
   }
 
   /**
@@ -428,8 +488,10 @@ export class SidebarV3Component implements OnInit, OnDestroy {
   /** Click on the flyout header — launches the item when it has its own link. */
   flyoutTitleClick(): void {
     if (this.flyoutItem?.link) {
+      const item = this.flyoutItem;
       this.closeFlyoutNow();
-      this.router.navigateByUrl(this.flyoutItem.link);
+      this.selectLinkedMenu(item);
+      this.router.navigateByUrl(item.link);
     }
   }
 
@@ -464,7 +526,8 @@ export class SidebarV3Component implements OnInit, OnDestroy {
 
   constructor(
     private readonly router: Router,
-    public readonly common: CommonService
+    public readonly common: CommonService,
+    private readonly sanitizer: DomSanitizer
   ) {
     const permission = JSON.parse(localStorage.getItem('permission') || 'null');
     this.permissionMenus = permission?.menuItems || [];
@@ -476,6 +539,7 @@ export class SidebarV3Component implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadProfileImage();
     this.common.validateUserPreference('menuPreference');
 
     setTimeout(() => {
@@ -512,7 +576,7 @@ export class SidebarV3Component implements OnInit, OnDestroy {
   }
 
   /** Persist all sidebar preferences as one JSON object under a single key. */
-  private savePreferences(): void {
+  private savePreferences(key?: string): void {
     const data = {
       theme: this.isDarkTheme ? 'dark' : 'light',
       showFavorites: this.showFavoritesSection,
@@ -524,8 +588,12 @@ export class SidebarV3Component implements OnInit, OnDestroy {
       subMenuOrder: this.subMenuOrder,
     };
     const value = JSON.stringify(data);
-    this.common.validateUserPreference('menuPreference', value);
-    localStorage.setItem('menuPreference', value);
+    if (key == 'isFav') {
+      this.common.validateUserPreference('menuPreference', value, false);
+    } else {
+      this.common.validateUserPreference('menuPreference', value);
+      localStorage.setItem('menuPreference', value);
+    }
   }
 
   ngOnDestroy(): void {
@@ -583,6 +651,21 @@ export class SidebarV3Component implements OnInit, OnDestroy {
 
   handleImgError(event: Event): void {
     (event.target as HTMLImageElement).src = '/assets/Menus/transperant.jpg';
+  }
+
+  private loadProfileImage(): void {
+    this.common.getCurrentUser().subscribe(res => {
+      const userId = res?.results?.id;
+      if (!userId) { return; }
+      this.common.getUserLocationById(userId).subscribe(userRes => {
+        const imageUrl = userRes?.results?.imageUrl;
+        this.profileImage = imageUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(imageUrl) : null;
+      });
+    });
+  }
+
+  handleAvatarImgError(): void {
+    this.profileImage = null;
   }
 
   trackByCode(_index: number, item: any): any { return item?.code ?? _index; }

@@ -309,6 +309,9 @@ export class EditLocationMappingComponent implements OnInit {
     const capacityValue = this.newCapacityControl.value || 1;
 
     const control = <FormArray>this.locationMapForm.controls['testLocations'];
+    if(control.value[0]?.locationId == null) {
+      control.removeAt(0);
+    }
     control.push(this.form.group({
       locationId: [locationValue],
       queueLength: [queueValue],
@@ -492,6 +495,7 @@ export class EditLocationMappingComponent implements OnInit {
         this.tableData = locations;
         this.loading = false;
       } else {
+        this.loading = false;
         this.addLocation();
       }
     });  

@@ -24,13 +24,14 @@ import { environment } from '../environments/environment';
 import { messaging } from '../config/firebase.config';
 import { DatePipe } from '@angular/common';
 import { FireBaseServiceService } from './shared/services/fire-base-service.service';
+import { Router } from '@angular/router';
 
 @Injectable()
 
 export class Http_Interceptor implements HttpInterceptor {
   fcmToken = null;
 
-  constructor(public commonService: CommonService, private readonly http: HttpClient, @Inject(LOCALE_ID) private readonly localeId: string,
+  constructor(private readonly router: Router, public commonService: CommonService, private readonly http: HttpClient, @Inject(LOCALE_ID) private readonly localeId: string,
   public datepipe: DatePipe,private firebaseService :FireBaseServiceService) { }
 
   // Description : Get the refresh token using interceptor and added the header details
@@ -145,6 +146,9 @@ export class Http_Interceptor implements HttpInterceptor {
             }
           ));
         }
+      } else if (err.status === 403 && err.hasOwnProperty('path')) {
+        localStorage.clear();
+        this.router.navigate(['/login']);
       }
       return observableThrowError(err);
     }));

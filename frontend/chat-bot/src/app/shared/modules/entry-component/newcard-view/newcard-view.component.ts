@@ -7,6 +7,7 @@ import { CommonService } from '../../../services/common.service';
 import { ConfigurationService } from '../../../services/configuration.service';
 import { TaskManagmentComponent } from '../task-managment/task-managment.component';
 import { AcknowledgementComponent } from '../acknowledgement/acknowledgement.component';
+import { NotificationAlertPopupComponent } from '../notification-alert-popup/notification-alert-popup.component';
 
 @Component({
   selector: 'app-newcard-view',
@@ -27,6 +28,7 @@ export class NewcardViewComponent {
   public subscription: Subscription;
   public locationId = 'All';
   public facilityId = null;
+  public showPatientName = false;
 
   public count: any = [];
   public alertPatientId: any = [];
@@ -36,14 +38,16 @@ export class NewcardViewComponent {
     { 'code': 'CE-BI', 'label': 'Billing', 'color': '#00d100' },
     { 'code': 'CE-FD', 'label': 'Food', 'color': '#ff1bff' },
     { 'code': 'CE-HK', 'label': 'Housekeeping', 'color': '#1843ff' },
-    { 'code': 'CE-CL', 'label': 'Call', 'color': '#f00' }
+    { 'code': 'CE-CL', 'label': 'Call', 'color': '#f00' },
+    { 'code': 'CE-PC', 'label': 'Patient Care', 'color': '#4a93f2' }
   ]
   public legendJson: any = {
     'CE-PR': '#ffffff',
     'CE-BI': '#00d100',
     'CE-FD': '#ff1bff',
     'CE-HK': '#1843ff',
-    'CE-CL': '#f00'
+    'CE-CL': '#f00',
+    'CE-PC': '#4a93f2'
   }
   
   constructor(public dialog: MatDialog, public commonService: CommonService, private readonly configurationServices: ConfigurationService) { };
@@ -71,6 +75,7 @@ export class NewcardViewComponent {
       console.log(res.results);
       if(res.statusCode == 1) {
         let obj = res.results.contentObject;
+        this.showPatientName = obj?.showPatientName;
         if(obj?.legends) {
           this.legends = [];
           this.legends = obj.legends;
@@ -185,9 +190,10 @@ export class NewcardViewComponent {
         (alert.identifyingValue === 'CE-SO' ||
           alert.identifyingValue === 'CE-AD' ||
           alert.identifyingValue === 'CE-CL' ||
-          alert.identifyingValue === 'CE-HK' 
+          alert.identifyingValue === 'CE-HK' ||
+          alert.identifyingValue === 'CE-PC'
         )) {
-        if (this.view == null || (this.view?.type === 'location' && (alert.identifyingValue === 'CE-CL' || alert.identifyingValue === 'CE-HK' || alert.identifyingValue === 'CE-SO'))) {
+        if (this.view == null || (this.view?.type === 'location' && (alert.identifyingValue === 'CE-CL' || alert.identifyingValue === 'CE-HK' || alert.identifyingValue === 'CE-SO' || alert.identifyingValue === 'CE-PC'))) {
           const patient = msg['data'][0]['IotAlertDetail'].filter(
             (val) => val.identifyingType === 'Patient'
           );
@@ -329,36 +335,69 @@ export class NewcardViewComponent {
 
   eventTrigger(key, data, patientId) {
     if (this.view['type'] == 'location') {
-      let patientDetails = patientId
-      if(data) {
-        data['patientId'] = patientDetails['patientId'];
-      }
-      if (data == null || (data.hasOwnProperty('ackDatetime') && data.ackDatetime)) {
-        if(data == null) {
-          data = {};
-          data['patientId'] = patientDetails['patientId'];
-        }
-        data['requestedType'] = 'RQT-TASK';
-        data['description'] = data?.message;
-        data['destinationName'] = patientDetails['bedNo'] + ', ' + patientDetails['locationName'];
-        data['contextType'] = 'PR-PA';
-        data['destinationId'] = patientDetails['bedId']
-        data['type'] = 'patient';
-        data['page'] = 'nurseCall';
-        const dialogRef = this.dialog.open(TaskManagmentComponent, {
-          data: data, panelClass: ['large-popup'], disableClose: true
+      let patientDetails = patientId;
+      if (data && data.eventCode === 'CE-PC') {
+        const alertObj = {
+          id: data.iotAlertId,
+          configName: data.eventName || 'Patient Care',
+          message: data.message || 'Patient Care Alert',
+          sentDatetime: data.message.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/)?.[0],
+          alertTypeId: 'AT-AL',
+          ruleTypeId: 'CE-PC',
+          identifyingType: 'Patient',
+          identifyingId: patientDetails.patientId,
+          alertDetails: [
+            { identifyingType: 'Location', identifyingValue: patientDetails.locationId || patientDetails.wardId },
+            { identifyingType: 'Tag', identifyingValue: patientDetails.tagId },
+            { identifyingType: 'Patient', identifyingValue: patientDetails.patientId, identifyingValueName: patientDetails.patientName }
+          ]
+        };
+        const dialogRef = this.dialog.open(NotificationAlertPopupComponent, {
+          data: {
+            selectedAlert: alertObj,
+            allAlerts: [],
+            ruleFilterList: [],
+            hideCamera: true,
+            hideSidebar: true,
+            patientDetails: patientDetails
+          },
+          panelClass: ['medium-popup'],
+          disableClose: true
         });
         dialogRef.afterClosed().subscribe(result => {
           this.eventAction.emit({ key: 'refresh', data: null, patientId: null });
         });
       } else {
-        const dialogRef = this.dialog.open(AcknowledgementComponent, {
-          width: '600px', height: '300px', panelClass: 'pop-up-margin',
-          data: data
-        });
-        dialogRef.afterClosed().subscribe(result => {
-          this.eventAction.emit({ key: 'refresh', data: null, patientId: null });
-        });
+        if (data) {
+          data['patientId'] = patientDetails['patientId'];
+        }
+        if (data == null || (data.hasOwnProperty('ackDatetime') && data.ackDatetime)) {
+          if (data == null) {
+            data = {};
+            data['patientId'] = patientDetails['patientId'];
+          }
+          data['requestedType'] = 'RQT-TASK';
+          data['description'] = data?.message;
+          data['destinationName'] = patientDetails['bedNo'] + ', ' + patientDetails['locationName'];
+          data['contextType'] = 'PR-PA';
+          data['destinationId'] = patientDetails['bedId']
+          data['type'] = 'patient';
+          data['page'] = 'nurseCall';
+          const dialogRef = this.dialog.open(TaskManagmentComponent, {
+            data: data, panelClass: ['large-popup'], disableClose: true
+          });
+          dialogRef.afterClosed().subscribe(result => {
+            this.eventAction.emit({ key: 'refresh', data: null, patientId: null });
+          });
+        } else {
+          const dialogRef = this.dialog.open(AcknowledgementComponent, {
+            width: '600px', height: '300px', panelClass: 'pop-up-margin',
+            data: data
+          });
+          dialogRef.afterClosed().subscribe(result => {
+            this.eventAction.emit({ key: 'refresh', data: null, patientId: null });
+          });
+        }
       }
     } else {
       this.eventAction.emit({ key, data, patientId });

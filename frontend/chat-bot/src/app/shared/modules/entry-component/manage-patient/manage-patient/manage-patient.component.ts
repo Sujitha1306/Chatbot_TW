@@ -155,6 +155,7 @@ export class ManagePatientComponent implements OnInit {
   checkedData = null;
   selectedTabIndex: number = 0;
   minDateTime = this.today.toISOString().slice(0, 16); 
+  isenable : boolean = false;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any, public form: FormBuilder, public toastr: AppToastService, private readonly commonService: CommonService, private readonly _dateFormat: DatePipe,
     public thisDialogRef: MatDialogRef<ManagePatientComponent>, private readonly dateAdapter: DateAdapter<Date>,public dialog: MatDialog,private readonly workflowService: WorkflowService, 
@@ -263,7 +264,7 @@ export class ManagePatientComponent implements OnInit {
         this.assetNameData = res.results;
       }
     });
-    this.commonService.getAllUser().subscribe(res => {
+    this.commonService.getAllUserSearch(null, 0, 5000).subscribe(res => {
       if(res.statusCode){
         this.staffNameData = res.results;
       }
@@ -708,8 +709,8 @@ export class ManagePatientComponent implements OnInit {
         }
       } else if (entityType.code === 'SE-UR' && data.entityId) {
         this.departmentList = this.roleList;
-        entityId = this.departmentList?.filter(x => x.code === entityNameStaff[0].roles[0].roleCode);
-        this.managePatientForm.get('entityId').setValue(entityId[0].code);
+        entityId = this.departmentList?.filter(x => x.code === entityNameStaff[0]?.roleCode);
+        this.managePatientForm.get('entityId').setValue(entityId[0]?.code);
       } else {
         this.departmentList = this.roleList;
         const roleInFo = this.departmentList.find(f => f.name === data.roleCategory);
@@ -1462,6 +1463,11 @@ export class ManagePatientComponent implements OnInit {
 
   onMainTabChange(event){
     this.selectedTabIndex = event?.index;
+    if (event?.tab?.textLabel === 'Schedule') {
+      this.isenable = true;
+    } else if (event?.tab?.textLabel === 'Patient Details' && this.isCanbeDisabled) {
+      this.isenable = false;
+    }
   }
 
   getUHID(value) {
@@ -2345,6 +2351,10 @@ export class ManagePatientComponent implements OnInit {
         this.phoneMessage = res.message;
       }
     });
+  }
+  Changeftrbtn() {
+    this.isenable = true
+    this.onMainTabChange({ index: 1 })
   }
 
 }

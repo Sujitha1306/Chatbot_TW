@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, Inject, Input, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { CommonService } from '../../../services';
+import { CommonService, ConfigurationService } from '../../../services';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
@@ -54,7 +54,7 @@ export class CreateUserScheduleComponent {
   public scheduleDeletepool: any[] = [];
 
   constructor(public form: FormBuilder, public datepipe: DatePipe, public commonService: CommonService, @Inject(MAT_DIALOG_DATA) public data: any,
-    public toastr: AppToastService, public thisDialogRef: MatDialogRef<CreateUserScheduleComponent>) { }
+    public toastr: AppToastService, public thisDialogRef: MatDialogRef<CreateUserScheduleComponent>, public configurationService: ConfigurationService) { }
 
   ngOnInit(): void {
     this.getAppTermsData();
@@ -100,10 +100,10 @@ export class CreateUserScheduleComponent {
       }
     });
 
-    this.commonService.getAllUser().subscribe(res => {
+    this.configurationService.getRoleUser(null, null, null).subscribe(res => {
       this.isloading = false;
       if (res.statusCode === 1) {
-        this.userListInfo = res.results?.map(item => ({ code: item.id, value: item.fullName }));
+        this.userListInfo = res.results?.map(item => ({ code: item.id, value: item.name }));
       }
     })
   }
@@ -225,8 +225,7 @@ export class CreateUserScheduleComponent {
   }
 
   createSchedule() {
-
-    const userNameData = !this.data?.entityId ? (this.scheduleForm.get('userName')?.value && this.data?.selectedEntityId) ? this.data?.selectedEntityId :  this.scheduleForm.get('userName')?.value : this.data?.entityId;
+    const userNameData = this.data?.entityId ? this.data.entityId : (this.scheduleForm.get('userName')?.value && this.data?.selectedEntityId) ? this.scheduleForm.get('userName')?.value : this.data.selectedEntityId;
     const userNameValue = this.userListInfo.find(obj => obj.code === userNameData);
     const shiftValue = this.shiftList.find(obj => obj.code === this.scheduleForm.get('shiftId')?.value);
     const scheduleFromDate = this.scheduleForm.get('fromDate')?.value;

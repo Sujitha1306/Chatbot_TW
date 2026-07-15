@@ -18,7 +18,7 @@ import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
 import { Observable,  } from 'rxjs';
 
-import { CommonService, WorkflowService } from '../../shared';
+import { CommonService, ConfigurationService, WorkflowService } from '../../shared';
 import { CookieService } from 'ngx-cookie-service';
 
 /*
@@ -362,5 +362,15 @@ export class LocationManagementNewResolver implements Resolve<Observable<any>> {
   constructor(private readonly commonService: CommonService) {}
   resolve(): Observable<any> {
     return this.commonService.getAllLocationList(this.pageStart, this.pageSize, null, ['Active', 'Inactive'], null);
+  }
+}
+
+@Injectable()
+export class FacilityManagementResolver implements Resolve<Observable<any>> {
+  public currentDate: any = new Date();
+  public selectedDate = this.datepipe.transform(this.currentDate, 'yyyy-MM-dd');
+  constructor(private readonly configurationService: ConfigurationService, public datepipe: DatePipe) {}
+  resolve(): Observable<any> {
+    return this.configurationService.getFacilityTransferDetails(true, false, 0, 10, null, this.selectedDate, null);
   }
 }

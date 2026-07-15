@@ -59,6 +59,7 @@ import { BarCodeComponent} from './bar-code/bar-code.component';
 import { NgxBarcode6Module } from "ngx-barcode6";
 import { QRCodeModule } from "angularx-qrcode";
 import { BrokerComponent, CreateBrokerComponent } from './broker/broker.component';
+import { PoeInjectorComponent, CreatePoeInjectorComponent } from './poe-injector/poe-injector.component';
 import { CreateServerComponent, ServerComponent } from './server-management/server.component';
 import { ConfigComponent } from './config/config.component';
 import { ManageConfigComponent } from './config/manage-config/manage-config.component';
@@ -137,7 +138,7 @@ import { CctvLocationPickerComponent } from './asset/cctv-location-picker/cctv-l
                     HealthTestComponent, HealthTestRuleComponent, CreateHealthTestComponent, ResourceComponent, CreateResourceComponent,
                     ReaderConfigComponent, ActivitiesComponent, RoutineComponent, CreateActivityComponent, CreatePackageComponent, LayoutComponent, FormManagementComponent, SchedulerComponent,
                     DataItemComponent, CreateDataitem, FormBuilderComponent, AppTermsComponent, ManageApptermsComponent,BarCodeComponent,
-                    BrokerComponent, CreateBrokerComponent, ServerComponent, CreateServerComponent, ConfigComponent, ManageConfigComponent, CreateNewAlertConfigComponent,  DynamicCreateAlertConfigComponent,
+                    BrokerComponent, CreateBrokerComponent, PoeInjectorComponent, CreatePoeInjectorComponent, ServerComponent, CreateServerComponent, ConfigComponent, ManageConfigComponent, CreateNewAlertConfigComponent,  DynamicCreateAlertConfigComponent,
                     CdkDetailRowDirective, HolidayComponent, HolidaySchedulerComponent, ManageHolidayComponent, PermissionComponent, RoleManagementComponent, MobilescannerComponent,
                     MobilescannerComponent,
                     CreatescannerdetailsComponent,

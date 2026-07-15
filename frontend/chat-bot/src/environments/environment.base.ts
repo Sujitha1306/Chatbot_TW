@@ -14,9 +14,10 @@
  * ======================================================================================================
 ******************************************************************************/
 export const base_value = {
-  geminiApiKey : 'AIzaSyD499v-A4T5LV8pdu1v597eEti-uJvlIXw',
+  geminiApiKey : '',
   topic_sw_update: 'tw/web/ota',
   topic_gw_cache: 'tw/reader/location',
+  chatbotApiUrl: 'https://gen.trackerwave.com/',
 
   lockingTimeout: 10000, /* <----- locking Timeout  (10 seconds) */
   idle_time_out: 14400, /* <----- Idle Time Out  (default : 14400 = 4 hours) */
@@ -62,6 +63,9 @@ export const base_value = {
   get_broker: 'api/pf-gateway/gw-mqtt-broker',
   create_broker: 'api/pf-gateway/create-broker',
   update_broker: 'api/pf-gateway/update-broker',
+  get_poe_injector: 'api/injector/injectors',
+  create_poe_injector: 'api/injector/create-injector',
+  update_poe_injector: 'api/injector/update-injector',
   create_server: 'api/pf-gateway/create-server',
   publish_mqtt:'api/all/utility/publish-mqtt',
   get_gateway_reader: 'api/pf-gateway/gateway-reader-filter',
@@ -152,6 +156,7 @@ export const base_value = {
   // // READERS
 
   get_all_reader: 'api/reader/reader-devices',
+  get_all_injector: 'api/injector/injectors',
   get_all_v2_reader : 'api/reader/v2/reader-devices',
   save_reader: 'api/reader/reader-devices',
   edit_reader: 'api/reader/reader-devices',
@@ -246,6 +251,7 @@ export const base_value = {
   get_warranty_routines:'api/routine-management/warranty-routines',
   get_asset_Overview:'api/asset/asset-overview',
   import_bulk_inventory:'api/item-master/inventories',
+  get_facility_transfer_details:'api/asset/facility-transfers',
 
   // entity WorkFlows
   get_entity_workFlows:'api/entity/entity-workflows',
@@ -418,6 +424,8 @@ export const base_value = {
   get_user_v2: 'api/user/v2/get-all-users',
   get_user_list: 'api/user/users-list',
   get_user_count:'api/request/mustering/user-counts',
+  get_mustering_users:'api/request/mustering-users',
+  get_current_active_users: 'api/user/current-active-users',
   get_login_user: 'api/login/login-users',
   user_logout: 'api/user/logout',  
   import_bulk_user: 'api/user/save-bulk-users',

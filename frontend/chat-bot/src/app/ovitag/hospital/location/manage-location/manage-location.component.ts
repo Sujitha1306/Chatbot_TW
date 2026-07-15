@@ -548,19 +548,18 @@ export class ManageLocationComponent implements OnInit {
     let mapData = this.parentDetail;
     if (this.selectedRow == null || this.level == 0 || (this.level == 1 && !this.showChild) || (locTypeId == 23 || this.parentDetail?.locationTypeId == 23)
     || locTypeId == 26 || locTypeId == 27 ||(locTypeId == 2 && this.isMapView)) {
-      let mapUrl: any = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-      mapUrl = 'http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+      const mapUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
       this.floorMap = L.map(this.mapRef, {
         center: new L.LatLng(45.78771148665357, 15.967683792394526),
-        minZoom: this.mapControl.minZoom / 10 <= 22 ? this.mapControl.minZoom / 10 : 22,
-        maxZoom: this.mapControl.maxZoom / 10 <= 22 ? this.mapControl.maxZoom / 10 : 22,
-        zoom: this.mapControl.defaultZoom / 10 <= 22 ? this.mapControl.defaultZoom / 10 : 22,
+        minZoom: this.mapControl.minZoom / 10 <= 19 ? this.mapControl.minZoom / 10 : 19,
+        maxZoom: this.mapControl.maxZoom / 10 <= 19 ? this.mapControl.maxZoom / 10 : 19,
+        zoom: this.mapControl.defaultZoom / 10 <= 19 ? this.mapControl.defaultZoom / 10 : 19,
         zoomControl: true, attributionControl: false
       });
       if (true) {
         L.tileLayer(mapUrl, {
-          maxZoom: 22,
-          subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+          maxZoom: 19,
+          subdomains: 'abc'
         }).addTo(this.floorMap);
       } else if (false) {
         const customTileLayer = L.TileLayer.extend({
@@ -704,7 +703,11 @@ export class ManageLocationComponent implements OnInit {
         });
         layer.addTo(this.floorMap);
       }
-      const provider = new OpenStreetMapProvider();
+      const provider = new class extends OpenStreetMapProvider {
+        endpoint({ query }) {
+          return super.endpoint({ query, protocol: 'https:' });
+        }
+      };
       const searchControl = new GeoSearchControl({
         provider: provider,
         position: 'topleft'

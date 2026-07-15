@@ -1,0 +1,83 @@
+<div class="dc" [class.dc-range]="mode === 'range'" [class.dc-year]="mode === 'year'">
+  <!-- Blue calendar icon — clicking cycles single -> range -> year -> single -->
+  <button type="button" class="dc-toggle" [disabled]="!supportRange && !supportYear" (click)="toggleMode()"
+    (keydown.enter)="toggleMode()" appTooltip
+    [tooltipText]="(mode === 'single' ? (supportRange ? 'Switch to date range' : 'Switch to yearly view') : (mode === 'range' ? (supportYear ? 'Switch to yearly view' : 'Switch to single date') : 'Switch to single date')) | translate"
+    placement="bottom">
+    <mat-icon *ngIf="mode === 'single'">calendar_month</mat-icon>
+    <span class="dc-cal-stack" *ngIf="mode === 'range'">
+      <mat-icon class="dc-cal-back">calendar_month</mat-icon>
+      <mat-icon class="dc-cal-front">calendar_month</mat-icon>
+    </span>
+    <mat-icon *ngIf="mode === 'year'">calendar_today</mat-icon>
+  </button>
+
+  <!-- Single date -->
+  <div class="dc-cell dc-group" *ngIf="mode === 'single'" (click)="singlePicker.open()" tabindex="0" role="button"
+    (keydown.enter)="singlePicker.open()">
+    <span class="dc-label">{{ 'Date' | translate }}</span>
+    <span class="dc-text">{{ fromText }}</span>
+  </div>
+
+  <!-- Single mode up/down arrows -->
+  <div class="dc-cell dc-arrows" *ngIf="mode === 'single'">
+    <button type="button" class="dc-arrow-btn" (click)="onNextClick($event)" aria-label="Next date">
+      <mat-icon>arrow_drop_up</mat-icon>
+    </button>
+    <button type="button" class="dc-arrow-btn" (click)="onPrevClick($event)" aria-label="Previous date">
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+  </div>
+
+  <!-- Year selection -->
+  <div class="dc-cell dc-group" *ngIf="mode === 'year'" style="flex-direction: row; align-items: center; gap: 8px;">
+    <span class="dc-label" style="margin-bottom: 0;">{{ 'Year' | translate }}</span>
+    <mat-select [value]="date" (selectionChange)="onYearChange($event.value)" [disableOptionCentering]="true"
+      class="dc-year-select ovi-font-family">
+      <mat-option *ngFor="let yr of yearList" [value]="yr">{{ yr }}</mat-option>
+    </mat-select>
+  </div>
+
+  <!-- Date range -->
+  <ng-container *ngIf="mode === 'range'">
+    <div class="dc-cell dc-group" (click)="openRange()" tabindex="0" role="button" (keydown.enter)="openRange()">
+      <span class="dc-label">{{ 'From' | translate }}</span>
+      <span class="dc-text">{{ fromText }}</span>
+    </div>
+    <div class="dc-cell dc-arrow">
+      <mat-icon>arrow_right_alt</mat-icon>
+    </div>
+    <div class="dc-cell dc-group" (click)="openRange()" tabindex="0" role="button" (keydown.enter)="openRange()">
+      <span class="dc-label">{{ 'To' | translate }}</span>
+      <span class="dc-text">{{ toText }}</span>
+    </div>
+  </ng-container>
+
+  <!-- Hidden input that the single-mode datepicker anchors to -->
+  <input class="dc-hidden" [matDatepicker]="singlePicker" [formControl]="fromCtrl" [max]="max" [min]="min"
+    (dateChange)="onFromChange($event.value)" readonly>
+  <mat-datepicker #singlePicker></mat-datepicker>
+
+  <!-- Unified two consecutive-month range calendar (click start, then end, anywhere) -->
+  <div class="dc-backdrop" *ngIf="rangeOpen" (click)="closeRange()"></div>
+  <div class="dc-popup" *ngIf="rangeOpen">
+    <div class="dc-popup-header">
+      <span class="dc-range-label">{{ rangeLabel }}</span>
+      <span class="dc-nav-group">
+        <button type="button" class="dc-pn" (click)="shiftMonths(-1)" aria-label="Previous month">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button type="button" class="dc-today" (click)="goToday()">{{ 'Today' | translate }}</button>
+        <button type="button" class="dc-pn" (click)="shiftMonths(1)" aria-label="Next month">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </span>
+    </div>
+    <div class="dc-popup-cals">
+      <mat-calendar class="dc-cal" [selected]="selectedRange" [startAt]="month1" [minDate]="minDate" [maxDate]="maxDate"
+        (selectedChange)="onRangePick($event)"></mat-calendar>
+      <mat-calendar class="dc-cal" [selected]="selectedRange" [startAt]="month2" [minDate]="minDate" [maxDate]="maxDate"
+        (selectedChange)="onRangePick($event)"></mat-calendar>
+    </div>
+  </div>
+</div>

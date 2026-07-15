@@ -23,7 +23,7 @@ import { CommonService } from '../../../services/common.service';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { connect } from 'mqtt';
-// import { AgmInfoWindow } from "@agm/core"
+import { AgmInfoWindow } from "@agm/core"
 import { DatePipe } from '@angular/common';
 
 @Injectable({ providedIn: 'root' })
@@ -180,7 +180,7 @@ export class GoogleMapComponent implements OnInit, OnDestroy {
       }
       this.map.on('click', this.getLatLong.bind(this, 'd') );
       this.mapLatLong(this.data.searchText);
-      // this.initAutocomplete();      
+      this.initAutocomplete();      
       if(this.data.hasOwnProperty('searchLatLng') && this.data.searchLatLng !== null) {
         this.searchedLatLng = this.data.searchLatLng;
         this.getLatLong(null, this.data.searchLatLng);
@@ -376,57 +376,57 @@ export class GoogleMapComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     clearInterval(this.interval);
   }
-  // initAutocomplete(): void {
-  //   this.googleMapsLoader.load(this.googleKey).then(() => {
-  //   const input = document.getElementById('autocomplete') as HTMLInputElement;
-  //   const autocompleteOptions: any = {};
-  //   if (this.data && this.data.biasLatLng) {
-  //     const biasLatLng = new google.maps.LatLng(this.data.biasLatLng.lat, this.data.biasLatLng.lng);
-  //     autocompleteOptions.bounds = new google.maps.Circle({
-  //       center: biasLatLng,
-  //       radius: 200000
-  //     }).getBounds();
-  //   }
-  //   const autocomplete = new google.maps.places.Autocomplete(input, autocompleteOptions);
-  //   autocomplete.addListener('place_changed', () => {
-  //     const place = autocomplete.getPlace();
-  //     if (!place.geometry || !place.geometry.location) {
-  //       alert('No details available for input: ' + place.name);
-  //       return;
-  //     }
-  //     const lat = place.geometry.location.lat();
-  //     const lng = place.geometry.location.lng();
-  //     if(this.selectLatLng) {
-  //       this.map.removeLayer(this.selectLatLng);
-  //       this.map.removeLayer(this.selectCircle);
-  //     }
-  //     this.commitLatLong = [lat, lng];
-  //     this.searchLatLang = {'latlng':{'lat': lat,'lng': lng, 'label': place.formatted_address}}
-  //     this.formattedAddress = place.formatted_address;
-  //     this.selectLatLng = L.marker(this.commitLatLong).addTo(this.map);
-  //     this.map.setView(this.commitLatLong, 15);
-  //     this.selectCircle = L.circle(this.commitLatLong, {
-  //       color: "red",
-  //       fillColor: "#f03",
-  //       fillOpacity: 0.5,
-  //       radius: parseFloat(this.threshold)
-  //     }).addTo(this.map);
-  //     this.selectCircle.on('click', (e: any) => {
-  //       const currentZoom = this.map.getZoom();
-  //       this.getLatLong('d', {
-  //         latlng: e.latlng,
-  //         type: 'click'
-  //       });
-  //       setTimeout(() => {
-  //         this.map.setZoom(currentZoom);
-  //       },0);
-  //     });
-  //     this.map.setView([lat, lng], 13);
+  initAutocomplete(): void {
+    this.googleMapsLoader.load(this.googleKey).then(() => {
+    const input = document.getElementById('autocomplete') as HTMLInputElement;
+    const autocompleteOptions: any = {};
+    if (this.data && this.data.biasLatLng) {
+      const biasLatLng = new google.maps.LatLng(this.data.biasLatLng.lat, this.data.biasLatLng.lng);
+      autocompleteOptions.bounds = new google.maps.Circle({
+        center: biasLatLng,
+        radius: 200000
+      }).getBounds();
+    }
+    const autocomplete = new google.maps.places.Autocomplete(input, autocompleteOptions);
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (!place.geometry || !place.geometry.location) {
+        alert('No details available for input: ' + place.name);
+        return;
+      }
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      if(this.selectLatLng) {
+        this.map.removeLayer(this.selectLatLng);
+        this.map.removeLayer(this.selectCircle);
+      }
+      this.commitLatLong = [lat, lng];
+      this.searchLatLang = {'latlng':{'lat': lat,'lng': lng, 'label': place.formatted_address}}
+      this.formattedAddress = place.formatted_address;
+      this.selectLatLng = L.marker(this.commitLatLong).addTo(this.map);
+      this.map.setView(this.commitLatLong, 15);
+      this.selectCircle = L.circle(this.commitLatLong, {
+        color: "red",
+        fillColor: "#f03",
+        fillOpacity: 0.5,
+        radius: parseFloat(this.threshold)
+      }).addTo(this.map);
+      this.selectCircle.on('click', (e: any) => {
+        const currentZoom = this.map.getZoom();
+        this.getLatLong('d', {
+          latlng: e.latlng,
+          type: 'click'
+        });
+        setTimeout(() => {
+          this.map.setZoom(currentZoom);
+        },0);
+      });
+      this.map.setView([lat, lng], 13);
       
-  //     this.selectLatLng.setLatLng([lat, lng]).bindPopup(place.formatted_address).openPopup();
-  //   });
-  //   });
-  // }
+      this.selectLatLng.setLatLng([lat, lng]).bindPopup(place.formatted_address).openPopup();
+    });
+    });
+  }
   getLocationDetail(threshold) {
 
     if (this.fixed_latlong.length > 0) {
@@ -736,7 +736,7 @@ export class GoogleMapMarkerComponent implements OnInit, OnDestroy{
   renderOptions: any;
   markerOptions = null;
   client: any;
-  // public infoWindow: AgmInfoWindow = undefined
+  public infoWindow: AgmInfoWindow = undefined
   set1: any=[];
   set2: any=[];
   directions=[];

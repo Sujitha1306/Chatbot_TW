@@ -88,6 +88,7 @@ export class CommonService {
     this.dynamicTableMenu.next(data)
   }
   getFacilityConfig() {
+    this.facilityConfig = null;
     this.apiService.get(environment.base_value.config_url + '/' + 'facility-config')
     .toPromise().then(res => {
       if(res.results){
@@ -1501,11 +1502,23 @@ export class CommonService {
     }
   }
 
-  getUserCounts(requestId: string | number, facilityId: string | number): Observable<any> {
+  getUserCounts(requestId: string | number, facilityId: string | number, fromDate: string): Observable<any> {
   return this.apiService.get(
-    `${environment.base_value.get_user_count}?requestId=${requestId}&facilityId=${facilityId}`
+    `${environment.base_value.get_user_count}?fromDate=${fromDate}&facilityId=${facilityId}&requestId=${requestId}`
   );
 }
+
+  getMusteringUsers(requestId: string | number, facilityId: string | number): Observable<any> {
+    return this.apiService.get(
+      `${environment.base_value.get_mustering_users}?requestId=${requestId}&facilityId=${facilityId}`
+    );
+  }
+
+  getCurrentActiveUsers(facilityId: string | number, locationId: string | number = null, pageStart: number = 0, pageSize: number = 0): Observable<any> {
+    let url = `${environment.base_value.get_current_active_users}?facilityId=${facilityId}&pageStart=${pageStart}&pageSize=${pageSize}`;
+    if (locationId != null) url += `&locationId=${locationId}`;
+    return this.apiService.get(url);
+  }
 
  getPatientUserList(pageStart: number, pageSize: number, search: string = '',id?) {
   if(id){
@@ -2084,8 +2097,8 @@ export class CommonService {
     return this.apiService.post(environment.base_value.cencel_patient_visits, data);
   }
 
-  getAllUserSearch(name?: any) {
-    const params = { name };
+  getAllUserSearch(name?: any, pageStart?, pageSize?) {
+    const params = { name, pageStart, pageSize };
     const url = this.urlBuilder.buildUrl(environment.base_value.get_user_list, params);
     return this.apiService.get(url);
   }
@@ -2245,7 +2258,7 @@ export class CommonService {
     }
     return this.apiService.get(environment.base_value.sensor_summary + sensorDetails);
   }
-  getItemSearch(id, modelNo, name) {
+  getItemSearch(id, modelNo, name?) {
     let params = new URLSearchParams();
     if (id != null) {
       params.append('assetTypeId', id);
@@ -2254,7 +2267,9 @@ export class CommonService {
     if (modelNo != null) {
       params.append('modelNumber', modelNo);
     }
-    params.append('sText', name);
+    if (name != null) {
+      params.append('sText', name);
+    }
     const url = `${environment.base_value.get_item_search}?${params.toString()}`;
     return this.apiService.get(url);
   }
@@ -2393,6 +2408,18 @@ export class CommonService {
 
   getTasksByRequestId(requestId: any) {
     return this.apiService.get(environment.base_value.get_all_new_task + '?requestId=' + requestId);
+  }
+
+  // Facility-scoped "is a mustering currently open" check (facility itself is resolved
+  // server-side from the session, same as the other mustering calls in this service) —
+  // used on load so an active mustering (started before a logout, or from another
+  // session/device) can be restored even when musteringState isn't in localStorage.
+  getOpenMusteringTask(fromDate: string) {
+    return this.apiService.get(
+      environment.base_value.get_all_new_task +
+      '?requestType=RQT-TASK&statusList=RQ-CR&routineTypes=TAC-SFE&fromDate=' + fromDate +
+      '&pageStart=0&pageSize=50'
+    );
   }
   getHistoryTask(id, type, date, pageSize, pageStart) {
     if (date !== null) {
@@ -2660,14 +2687,14 @@ export class CommonService {
     return this.apiService.put(environment.base_value.user_logout, {});
   }
 
-  validateUserPreference(key, value ?: any) {
+  validateUserPreference(key, value ?: any, isFacility: Boolean = true) {
     if (key != null && value != null) {
       const postData = {
         'key': key,
         'roleId': localStorage.getItem('userlevel'),
         'userId': localStorage.getItem(btoa('userId')),
         'value': value,
-        'facilityId': localStorage.getItem(btoa('facilityId'))
+        'facilityId': isFacility ? localStorage.getItem(btoa('facilityId')) : null
       };
       if (this.userPreference != null && key != null && this.userPreference.hasOwnProperty(key)) {
         if (this.userPreference[key]['value'] !== value) {

@@ -13,11 +13,11 @@
  * www.trackerwave.com, Traceability and Change log maintained in Source Code Control System}
  * ======================================================================================================
 ******************************************************************************/
-import {Directive, OnDestroy, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewContainerRef} from '@angular/core';
+import {Directive, OnDestroy, OnInit, EventEmitter, HostBinding, HostListener, Input, Output, TemplateRef, ViewContainerRef} from '@angular/core';
 @Directive({
   selector: '[cdkDetailRow]'
 })
-export class CdkDetailRowDirective implements OnDestroy {
+export class CdkDetailRowDirective implements OnInit, OnDestroy {
   private row: any;
   private tRef: TemplateRef<any>;
   private opened: boolean;
@@ -43,9 +43,17 @@ export class CdkDetailRowDirective implements OnDestroy {
     }
   }
 
+  @Input() cdkDetailRowExpanded = false;
+
   @Output() toggleChange = new EventEmitter<CdkDetailRowDirective>();
 
   constructor(public vcRef: ViewContainerRef) { }
+
+  ngOnInit(): void {
+    if (this.cdkDetailRowExpanded && !this.opened) {
+      this.toggle();
+    }
+  }
 
   @HostListener('click')
   onClick(): void {

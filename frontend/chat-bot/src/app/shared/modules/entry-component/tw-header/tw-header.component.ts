@@ -151,6 +151,9 @@ export class TwHeaderNewComponent implements OnChanges, AfterViewInit {
   @Input() dateType: boolean;
   @Input() enableCloseButton :boolean = false;
   @Input() multiClickFilterActive: boolean;
+  @Input() moreMenu: boolean = false;   
+  @Input() maxDateLimit: any = null;
+  @Input() minDateLimit: any = null;
   @Output() headerEventAction = new EventEmitter<any>();
   @Output() selectedViewAction = new EventEmitter<any>();
   public filterOption: any;
@@ -264,7 +267,7 @@ export class TwHeaderNewComponent implements OnChanges, AfterViewInit {
     if (changes.groupFilter) {
       this.initializeSelectedValues();
     }
-    console.log(this.optAll)
+    // console.log(this.optAll)
     if(this.optAll === false){
       this.All = this.optAll;
     }
@@ -427,6 +430,11 @@ export class TwHeaderNewComponent implements OnChanges, AfterViewInit {
     if(!isOpended) {
       this.headerEventTrigger('manageWorklist', this.worklistForm.get('defaultWorkList').value, '')
     }
+  }
+
+  // Single <-> Range <-> Year toggle from <app-date-control>; mirrors the original calendar-icon click.
+  onDateModeToggle(mode: 'single' | 'range' | 'year') {
+    this.toggleDateMode(mode === 'range' ? 'multi' : mode);
   }
   locationMulti(value) {
     if (value === 'All') {

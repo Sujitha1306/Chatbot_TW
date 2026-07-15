@@ -44,6 +44,7 @@ export class CommonDialogComponent implements OnInit {
   public tagType = null;
   public popupType = '';
   public selectedLoc: any;
+  public porterReqTagList: any[] = [];
   public type = "popup";
   public reqDetail: any = null;
   public reqType: any = null;
@@ -126,6 +127,10 @@ export class CommonDialogComponent implements OnInit {
           this.selectedFloor = performerList[0].floorId
         }
       }
+      this.porterReqTagList = [
+        ...this.reqDetail.nonPerformer.filter((val: any) => val.tagAssociationTypeId != 'LOC'),
+        ...this.reqDetail.performer.filter((val: any) => val.status != 'RQ-NR' && val.status != 'RQ-RJ' && val.tagAssociationTypeId != 'LOC')
+      ];
     } else{
     this.selectedFloor = parseInt(this.data.floorId);
     this.tagId = this.data.tagSerialNumber;
@@ -134,6 +139,8 @@ export class CommonDialogComponent implements OnInit {
     }
     if(this.data.tagTypeId != null){
       this.tagType = this.data.tagTypeId;
+    } if(this.data.tagAssociationTypeId != null){
+      this.tagType = this.data.tagAssociationTypeId;
     } else if(this.data.tagTypeId == null){
       if(this.data.category == 'Asset' || this.data.tagType == 'Asset'){
         this.tagType = 'TAT-AS';
@@ -153,6 +160,33 @@ export class CommonDialogComponent implements OnInit {
       this.contextOptions.show.mobileView = false;
     }
   }
+  getFriendlyRequestType(): string {
+    if (!this.reqDetail) return '';
+
+    const category = this.reqDetail.requestCategory;
+    if (!category) return '';
+
+    const mapping: Record<string, string> = {
+      'PR-AT': 'asset',
+      'PR-LC': 'location',
+      'PR-PA': 'patient',
+      'PR-GN': 'general',
+      'PR-OT': 'other'
+    };
+
+    if (mapping[category]) {
+      return mapping[category];
+    }
+
+    const friendlyName = this.reqDetail.requestCategoryName || this.reqDetail.requestTypeName || category;
+    const lower = friendlyName.toLowerCase();
+    if (lower.includes('patient')) return 'patient';
+    if (lower.includes('asset')) return 'asset';
+    if (lower.includes('location')) return 'location';
+    if (lower.includes('general')) return 'general';
+    return lower;
+  }
+
   reportHeaderAction(event) {
     if(this.layoutInfo) {
       this.layoutInfo.inputAction = null;
@@ -291,4 +325,9 @@ export class CommonDialogComponent implements OnInit {
       }
     })
   }
+  onSelectMonitorTag(tag: any) {
+    this.tagId = tag.tagId;
+    this.tagType = tag.tagAssociationTypeId;
+  }
+  fixClick() {}
 }

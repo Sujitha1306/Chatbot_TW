@@ -138,7 +138,7 @@
                                                                       'ovi-prmry-bg-clr': customerName !== 'kyn' && !(selectedName == null && customerName == null) }">
             <img src="/assets/Alert/IP/notepad.png"   alt="notepad" style="width:14px;height:14px">
           </mat-label>
-          <mat-select  class="ip-select02 actionw ovi-font-family"  formControlName="selectDropdown" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action'|translate"
+          <mat-select  class="ip-select01 actionw ovi-font-family"  formControlName="selectDropdown" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action'|translate"
              (selectionChange)="headerEventTrigger('manageAction', $event.value, selectedName)">
             <!-- <mat-option *ngFor="let obj of manageAction;" [disabled]="this.selectedName == null" [value]="obj.id">
               {{obj.value}}</mat-option> -->
@@ -156,7 +156,7 @@
           </mat-select>
           <mat-label *ngIf="component === 'porter' || component === 'task' || component === 'hazmat-training-list' || component === 'ambulance' ||
             component === 'broker' || this.component === 'server'"
-            class="ip-label02 ovi-font-family" (click)="headerEventTrigger('manageAction', this.worklistForm.controls.selectDropdown.value, selectedName)" (keydown.enter)="fixClick()">
+            class="ip-label01 ovi-font-family" (click)="headerEventTrigger('manageAction', this.worklistForm.controls.selectDropdown.value, selectedName)" (keydown.enter)="fixClick()">
             <img src="/assets/Alert/IP/go-action.png"   alt="action" style="width:16px;height:16px;cursor: pointer;">
           </mat-label>
         </div>
@@ -176,7 +176,7 @@
           <span *ngIf="component !== 'nursecall-view' && component !== 'daily-management'" style="display: flex ;height:30px">
           <button  mat-button style="line-height: 30%;padding: 0px;" class="toggle-btn2" [disabled]="!this.multiView" *ngIf="clickedView === 'new card'"
             [ngClass]="selectedView == 'new card' ? 'select-view' : 'unselect-card-view'"
-            (click)="selectedViewEvent('table');headerEventTrigger('manageView', '', '')"><em class="material-icons  ovi-fnt-sze18" appTooltip tooltipText="{{'New Card View'|translate}}" placement="bottom"
+            (click)="selectedViewEvent(component === 'nursecall-view' ? 'card' : 'table');headerEventTrigger('manageView', '', '')"><em class="material-icons  ovi-fnt-sze18" appTooltip tooltipText="{{'New Card View'|translate}}" placement="bottom"
               style="padding: 0px;">view_stream</em></button>
           </span>
         </div>
@@ -193,84 +193,40 @@
   </div>
 </div>
 
-<div *ngIf="type === 'new'" class="tw-header block-1 bottom-margin ovi-font-family"
-[ngStyle]="{'border-bottom': component === 'calendar' || component === 'apptermsLink' ? 'none' : ''}" style="padding-bottom: 5px;">
+<div *ngIf="type === 'new'" class="tw-header block-1 bottom-margin ovi-font-family tw-header-new"
+[ngStyle]="{'border-bottom': component === 'calendar' || component === 'apptermsLink' ? 'none' : ''}">
   <div class="row-field">
-    <div style="display: flex; padding-top: 2px; align-items: center;">
-      <span class="tw-filter-new search-align" [ngStyle]="{'display': component === 'calendar' || component === 'apptermsLink' || (component === 'asset-maintenance' && selectedView === 'calendarView') || 
+    <div style="display: flex; padding-top: 2px; align-items: center; gap: 12px;">
+      <span class="tw-filter-new search-align" [ngStyle]="{'display': component === 'calendar' || component === 'apptermsLink' || (component === 'asset-maintenance' && selectedView === 'calendarView') ||
                 (component === 'User-Schedule' && selectedView === 'calendarView') || selectedView === 'queue' ? 'none' : ''}">
-          <form autocomplete="off">
-            <input matInput #filter [(ngModel)]="this.filterValue"  [ngModelOptions]="{ standalone: true }"  style="padding: 5px;"
+          <form autocomplete="off" class="tw-search-box">
+            <mat-icon class="tw-search-icon">search</mat-icon>
+            <input matInput #filter [(ngModel)]="this.filterValue"  [ngModelOptions]="{ standalone: true }"
               (keyup)="headerEventTrigger('applyFilter', $event.target.value, '')" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate">
           </form>
       </span>
-      <span *ngIf="this.dateFilter !== null" style="display: flex; height: 30px;">
-        <span class="multi-date-switch" [ngStyle]="{'cursor' : multiDateEnable ? 'pointer' : ''}">
-         <img *ngIf="!multiDateEnable && !multiYear" height="16px" width="16px" style="filter: invert(1);" src="../../../../../assets/icons/calendar-day.svg" alt="calander-day" appTooltip tooltipText="{{'Date'| translate}}"/>
-         <img *ngIf="multiDateEnable && !multiYear" height="16px" width="16px" style="filter: invert(1);"  alt="calendar"  [src]=" (!isMultiDate && isDateType) || (isMultiDate && !isDateType) ? '../../../../../assets/icons/calendar-to.svg' : '../../../../../assets/icons/calendar-day.svg'"
-          appTooltip [tooltipText]="(!isMultiDate && isDateType) || (isMultiDate && !isDateType) ? ('Multi date' | translate) : ('Single date' | translate)" (click)="multiDateEnable && !isDateType ? headerEventTrigger('multiDate', isMultiDate, '') :  multiDateEnable && isDateType ? headerEventTrigger('multiDate', isDateType && !isMultiDate ? true : false , '') : null; isMultiDate = !isMultiDate;"  (keydown.enter)="fixClick()"/>
-          <!-- <img *ngIf="multiYear" height="16px" width="16px" style="filter: invert(1);" alt="calendar" [src]="getCalendarIcon()" appTooltip [tooltipText]="getTooltipText()" (click)="toggleDateMode()" (keydown.enter)="fixClick()" /> -->
-        <mat-form-field *ngIf="multiYear" appearance="file" class="date-mode-dropdown">
-          <mat-select #dateModeSelect [(value)]="dateMode" (selectionChange)="toggleDateMode($event.value, dateModeSelect)">
-            <mat-option value="single"> <img height="16" width="16" style="position: relative; top: 3px;"
-                src="assets/icons/calendar-day.svg" alt="single-date">
-              <span style="position: relative; left: 5px;">Date</span>
-            </mat-option>
-            <mat-option value="multi"> <img height="16" width="16" style="position: relative; top: 3px;"
-                src="assets/icons/calendar-to.svg" alt="multi-date">
-              <span style="position: relative; left: 5px;">Range</span>
-            </mat-option>
-            <mat-option value="year"><img height="16" width="16" style="position: relative; top: 3px;"
-                src="assets/icons/calendar-years.png" alt="year-view">
-              <span style="position: relative; left: 5px;">Year</span>
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-        </span>
-        <span [formGroup]="dateForm" class="tw-header-mat-custom-form-field-box">
-          <mat-form-field class="tw-date-picker datepicker" [class.active]="isMultiDate" appearance="none" *ngIf="this.dateFilter !== null && !isYearly">
-            <input matInput  [matDatepicker]="picker" class="tw-input-date" appPlaceholder [showPlaceholder]="true" [placeholderText]="'From Date'|translate"
-             [max]="toDateFilter !== null && toDateFilter !== undefined ? today : null"
-              (dateChange)="headerEventTrigger('dateFilter', $event.target.value, dateMode)" formControlName="fromDate"
-              readonly [min]="component === 'porter' ? this.minDate : null"/>
-            <mat-datepicker-toggle matSuffix [for]="picker" style="padding-right:2px;"></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
-          </mat-form-field>
-          <span *ngIf="isYearly" class="tw-header-mat-custom-form-field-box">
-            <mat-form-field  class="tw-date-picker datepicker" style="width: 70px !important;" appearance="outline">
-              <mat-select formControlName="fromDate" (selectionChange)="headerEventTrigger('yearFilter', $event.value, '')">
-                <mat-option *ngFor="let year of yearList" [value]="year">
-                  {{ year }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-          </span>
-        </span>
-        <span *ngIf="((!isMultiDate && !isDateType) || (isMultiDate && isDateType)) && !isYearly" class="date-arrow-box">
-          <span class="dateFilter-up-down">
-            <mat-icon class="tw-dateArrow-right" (click)="changeDate('next')" (keydown.enter)="fixClick()">arrow_right</mat-icon>
-          </span>
-          <span  class="dateFilter-up-down">
-            <mat-icon class="tw-dateArrow-left" (click)="changeDate('previous')" (keydown.enter)="fixClick()">arrow_left</mat-icon>
-          </span>
-        </span>
-      </span>
-  
-      <span *ngIf="toDateFilter !== null && toDateFilter !== undefined && !isYearly" class="date-to-text">to</span>
-      
-      <span *ngIf="!isYearly" style="display: flex; height: 30px;">
-        <span [formGroup]="dateForm" class="tw-header-mat-custom-form-field-box">
-          <mat-form-field class="tw-date-picker datepicker" [class.activeTo]="isMultiDate" appearance="none" *ngIf="this.toDateFilter !== null && toDateFilter !== undefined">
-            <input matInput  [matDatepicker]="picker" class="tw-input-date" appPlaceholder [showPlaceholder]="true" [placeholderText]="'To Date'|translate"
-               [min]="dateFilter" (dateChange)="headerEventTrigger('toDateFilter', $event.target.value, '')" formControlName="toDate" readonly />
-            <mat-datepicker-toggle matSuffix [for]="picker" style="padding-right:2px;"></mat-datepicker-toggle>
-            <mat-datepicker #picker></mat-datepicker>
-          </mat-form-field>
-        </span>
-      </span>
+      <!-- ===== NEW date control (single + range) — replaces the old workflow datecontrol.
+           Backup of the original markup is kept (commented) at the END of this file. ===== -->      <app-date-control *ngIf="this.dateFilter !== null"
+        [date]="dateForm.controls['fromDate'].value"
+        [toDate]="dateForm.controls['toDate'].value"
+        [mode]="isYearly ? 'year' : (isMultiDate ? 'range' : 'single')"
+        [supportRange]="multiDateEnable"
+        [supportYear]="multiYear"
+        [yearList]="yearList"
+        [max]="maxDateLimit"
+        [min]="minDateLimit !== null ? minDateLimit : (component === 'porter' ? minDate : null)"
+        (dateChange)="headerEventTrigger('dateFilter', $event, dateMode)"
+        (toDateChange)="headerEventTrigger('toDateFilter', $event, '')"
+        (modeChange)="onDateModeToggle($event)"
+        (yearChange)="headerEventTrigger('yearFilter', $event, '')"
+        (prev)="changeDate('previous')"
+        (next)="changeDate('next')">
+      </app-date-control>
+
       <span *ngIf="component === 'infant' && iotAlertCount?.length" class="infant-alert-cards" style="display: flex; gap: 6px; margin-left: 8px; align-items: center;">
         <span *ngFor="let card of iotAlertCount" class="alert-stat-card" style="display: flex; align-items: center; gap: 6px; padding: 2px 12px; border-radius: 20px; height: 24px; font-size: 12px; font-weight: 600; white-space: nowrap;"
-          [ngStyle]="{'background': card.code === 'CE-TAM' ? '#fff4e5' : '#e8f5e9', 'color': card.code === 'CE-TAM' ? '#e65100' : '#2e7d32', 'border': card.code === 'CE-TAM' ? '2px solid #ffcc80' : '2px solid #a5d6a7'}">
+          [ngStyle]="{'background': card.code === 'CE-TAM' ? '#fff4e5' : card.code === 'CE-WRP' ? '#ff757526' : '#e8f5e9', 'color': card.code === 'CE-TAM' ? '#e65100' : card.code === 'CE-WRP' ? '#ff3131' : '#2e7d32', 
+          'border': card.code === 'CE-TAM' ? '2px solid #ffcc80' : card.code === 'CE-WRP' ? '2px solid #ff3131' : '2px solid #a5d6a7'}">
           <img *ngIf="card.icon" [src]="card.icon" alt="{{card.name}}" style="height: 16px; width: 16px;">
           <span>{{card.name}}</span>
           <span style="font-weight: 700; margin-left: 2px;">{{card.count}}</span>
@@ -316,48 +272,27 @@
     </span>
   </div>
 
-  <div [formGroup]="worklistForm" class="row-field">
+  <div [formGroup]="worklistForm" class="row-field tw-action-rowfield">
     <div class="tw-new-action-container">
           <button *ngIf="component === 'door-controller' && enableCloseButton" style="width: 120px;border: 1px solid var(--primary-bg-color);height: 30px;background: var(--primary-bg-color);color: var(--primary-bg-hghl-color);border-radius: 3px;" appDebounceClick (debounceClick)="closeGeofence()" [debounceTime]="300">Switch Off Bulb</button>
-      <div *ngIf="excel" class = "excel-button" style= width:35px >
+      <div *ngIf="excel && !moreMenu" class = "excel-button" style= width:35px >
         <img src="/assets/Alert/common_icons/excel_icon.png"   alt="excel_icon"  appTooltip tooltipText="{{'Download as excel sheet'|translate}}" 
         (click)="headerEventTrigger('downloadExcel', '', '')" style="cursor: pointer;" (keydown.enter)="fixClick()">
-      </div>
-      <div *ngIf="manageAction != null" style="width: auto">
-        <div style="display: flex;">
-          <mat-label class="ip-label002"
-            [ngClass]="{'ovi-grey-clr': selectedName == null && customerName == null,'ovi-prmry-bg-clr': !(selectedName == null && customerName == null) }">
-            <img src="/assets/Alert/IP/notepad.png" alt="notepad" style="width:14px; height:14px">
+      </div>      <div *ngIf="manageAction != null" style="width: auto">
+        <div style="display: flex; height: 34px; align-items: stretch;">
+          <mat-label class="ip-label002 tw-action-label">
+            <mat-icon class="tw-action-add">add</mat-icon>
           </mat-label>
           <mat-select  class="actionw" [ngClass]="component === 'manageRoutine' ? 'popup-ip-select02' : 'ip-select02'" formControlName="selectDropdown" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Action'|translate"
             (selectionChange)="headerEventTrigger('manageAction', $event.value, selectedName)">
             <mat-option  *ngFor="let obj of manageAction"
               [disabled]="this.selectedName == null || obj.disabled == true" [value]="obj.id">
               {{obj.value | translate}}
-              <!-- {obj.value, select, Enroll {{{"Enroll"|translate}}} Merge {"Merge"|translate} Create Request {{{'Create Request'| translate}}} modify { {{"Modify"|translate}} } 
-              Modify Request {{{"Modify Request"|translate}}} Porter Request {{{"Porter Request"|translate}}} Capture {{{"Capture"|translate}}}
-              Manage Routine {{{"Manage Routine"|translate}}} Create Task {{{"Create Task"|translate}}} Modify {{{"Modify"|translate}}} Enroll OT {{{"Enroll OT"|translate}}} 
-              Manage Alarm {{{"Manage Alarm"|translate}}} Gatepass {{{"Gatepass"|translate}}} Create {{{"Create"|translate}}}
-              Service {{{"Service"|translate}}} Manage {{{"Manage"|translate}}} Compose {{{"Compose"|translate}}} Enroll Mother {{{"Enroll Mother"|translate}}} 
-              Enroll Infant {{{"Enroll Infant"|translate}}} Create Form {{{"Create Form"|translate}}} Create Ticket {{{"Create Ticket"|translate}}}
-              Modify Ticket {{{"Modify Ticket"|translate}}} Upgrade Version {{{"Upgrade Version"|translate}}} Group {{{"Group"|translate}}} Kit Group {{{"Kit Group"|translate}}} 
-              Sync {{{"Sync"|translate}}} Connectivity {{{"Connectivity"|translate}}} Threshold Settings {{{"Threshold Settings"|translate}}}
-              Change Floor {{{"Change Floor"|translate}}} Approval Matrix {{{"Approval Matrix"|translate}}} Delete {{{"Delete"|translate}}} 
-              Manage Global {{{"Manage Global"|translate}}} Manage Facility {{{"Manage Facility"|translate}}} Clear Cache {{{"Clear Cache"|translate}}}
-              Send Ack {{{"Send Ack"|translate}}}
-              Manage Authorized Movement {{{"Manage Authorized Movement"|translate}}} Post {{{"Post"|translate}}} Notices {{{"Notices"|translate}}} TeleKast {{{"TeleKast"|translate}}}
-              Klips {{{"Klips"|translate}}} Create new request {{{"Create new request"|translate}}}
-              Kyn User {{{"Kyn User"|translate}}} Reported User {{{"Reported User"|translate}}} Live Stream {{{"Live Stream"|translate}}} Create Hazmat {{{"Create Hazmat"|translate}}}
-              Manage Location {{{"Manage Location"|translate}}} Add Break{{{"Add Break"|translate}}} Training Scheduler {{{"Training Scheduler"|translate}}}
-              Generate QR Code{ {{"Generate QR Code"|translate}}} Generate Bar Code{{{"Generate Bar Code"|translate}}} Manage Audit{{{"Manage Audit"|translate}}} Audit {{{"Audit" | translate}}}
-              Map{{{"Map"|translate}}} Create Group {{{"Create Group"|translate}}} Download Schedule Template{{{"Download Schedule Template"|translate}}} Download Patient Details{{{"Download Patient Details"|translate}}}
-              Manage Transfer{{{"Manage Transfer" | translate}}} Modify Asset{{{"Modify Asset" | translate}}}  Cancel Request {{{"Cancel Request" | translate}}} Print Sticker {{{"Print Sticker" | translate}}} Open {{{"Open"}}} Close{{{"Close"}}} Manage Maintenance {{{"Manage Maintenance" | translate}}} -->
-              <!-- Create Routine {{{"Create Routine" | translate}}} Magic Form {{{"Magic Form" | translate}}}} -->
             </mat-option>
           </mat-select>
-          <mat-label *ngIf="component === 'porter' || component === 'task' || component === 'hazmat-training-list' || component === 'ambulance' ||
-           component === 'broker' || this.component === 'server'" class="ip-label02 ovi-font-family" (click)="headerEventTrigger('manageAction', this.worklistForm.controls.selectDropdown.value, selectedName)" (keydown.enter)="fixClick()">
-            <img src="/assets/Alert/IP/go-action.png" alt="action" style="width:16px;height:16px;cursor: pointer;">
+          <mat-label *ngIf="(component === 'porter' || component === 'task' || component === 'hazmat-training-list' || component === 'ambulance' ||
+           component === 'broker' || this.component === 'server')" class="ip-label02 ovi-font-family tw-action-go-btn" (click)="headerEventTrigger('manageAction', this.worklistForm.controls.selectDropdown.value, selectedName)" (keydown.enter)="fixClick()">
+            <mat-icon class="tw-action-go-icon">arrow_forward</mat-icon>
           </mat-label>
         </div>
       </div>
@@ -399,18 +334,33 @@
               style="padding: 0px;">calendar_today</em></button>
         </div>
       </div>
-      <div class="tw-refresh-icon" *ngIf="component !== 'musteringHistory'"  style="float:right" [ngStyle]="{'display': component === 'calendar' || component === 'apptermsLink'  ? 'none' : ''}">
-        <span><i class="material-icons" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
-            (click)="headerEventTrigger('refreshPage', '', '');filterValue=null;" (keydown.enter)="fixClick()"
-            style="cursor: pointer; float: right;">autorenew</i>
-        </span>
+      <div class="tw-icon-btn" *ngIf="component !== 'musteringHistory'" appTooltip tooltipText="{{'Refresh'|translate}}" placement="bottom"
+        [ngStyle]="{'display': component === 'calendar' || component === 'apptermsLink'  ? 'none' : ''}"
+        (click)="headerEventTrigger('refreshPage', '', '');filterValue=null;" (keydown.enter)="fixClick()" tabindex="0" role="button">
+        <i class="material-icons">autorenew</i>
       </div>
-      <div *ngIf="groupFilter.length" class="tw-filter-action" appTooltip tooltipText="{{'Group Filter'|translate}}" [matMenuTriggerFor]="menu">
-        <span class="material-icons  ovi-fnt-sze17" style=" padding-top: 2px; color: #fff;">filter_alt</span>
+      <div *ngIf="groupFilter.length" class="tw-icon-btn" appTooltip tooltipText="{{'Group Filter'|translate}}" [matMenuTriggerFor]="menu">
+        <span class="material-icons  ovi-fnt-sze17">filter_alt</span>
         <span *ngIf="shouldShowSpan" class="group-filter-indicator">
           <span class="sub-indicator"></span>
         </span>
       </div>
+      <div *ngIf="moreMenu" class="tw-icon-btn" appTooltip tooltipText="{{'More options'|translate}}" placement="bottom" [matMenuTriggerFor]="moreOptionsMenu">
+        <span class="material-icons  ovi-fnt-sze18">more_vert</span>
+      </div>
+      <mat-menu #moreOptionsMenu="matMenu" class="tw-more-menu ovi-font-family" panelClass="tw-header-more-menu">
+        <button mat-menu-item (click)="headerEventTrigger('downloadExcel', '', '')">
+          <span class="tw-hed-menu-icon">
+            <img src="/assets/Alert/common_icons/excel_icon.png" alt="excel" style="width: 18px; height: 18px;">
+            <span>{{'Export to Excel'|translate}}</span>
+          </span>
+        </button>
+        <!-- <button mat-menu-item (click)="headerEventTrigger('downloadCsv', '', '')"><mat-icon>description</mat-icon><span>{{'Export to CSV'|translate}}</span></button>
+        <button mat-menu-item (click)="headerEventTrigger('print', '', '')"><mat-icon>print</mat-icon><span>{{'Print'|translate}}</span></button>
+        <button mat-menu-item (click)="headerEventTrigger('copy', '', '')"><mat-icon>content_copy</mat-icon><span>{{'Copy'|translate}}</span></button>
+        <button mat-menu-item (click)="headerEventTrigger('downloadReport', '', '')"><mat-icon>download</mat-icon><span>{{'Download Report'|translate}}</span></button>
+        <button mat-menu-item (click)="headerEventTrigger('preferences', '', '')"><mat-icon>settings</mat-icon><span>{{'Preferences'|translate}}</span></button> -->
+      </mat-menu>
       <mat-menu #menu="matMenu" class="filter-menu ovi-font-family" (closed)="onMenuClosed()">
         <div *ngIf="filterHit" class="group-filter-container">
           <span class="ovi-fnt-sze14" style="padding: 0px 15px 10px; font-weight: 600; display: flex; align-items: center; gap: 3px;">{{"Filter"|translate}}</span>

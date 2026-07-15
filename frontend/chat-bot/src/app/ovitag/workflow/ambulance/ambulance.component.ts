@@ -741,20 +741,26 @@ export class AmbulanceComponent implements OnInit, OnDestroy {
     if(value.performer.length !== 0 && value.performer[0].hasOwnProperty('tagId') &&
       value.performer[0].tagId !== null) {
         this.tagId = value.performer[0].tagId;
-      this.commonService.getGeoLocation(value.performer[0].tagId).subscribe(res => {
-        if(res.results.data.length !== 0) {
-          this.latLng = res.results.data;
-          this.geo = this.latLng[0];
-          this.googleMapWayPoints = this.geo.lat + ',' + this.geo.lng;
-        }
-        this.getMap(value);
-      });
+        const fetchGeo = (openMap?: boolean) => {
+          this.commonService.getGeoLocation(value.performer[0].tagId).subscribe(res => {
+            if(res.results.data.length !== 0) {
+              this.latLng = res.results.data;
+              this.geo = this.latLng[this.latLng.length - 1];
+              this.googleMapWayPoints = this.geo.lat + ',' + this.geo.lng;
+            }
+            console.log(openMap)
+            if (openMap) {
+              this.getMap(value, this.geo);
+            }
+          });
+        };
+        fetchGeo(true);
     }
   }
-  getMap(value?) {
+  getMap(value?, lastGeo?) {
     clearInterval(this.porterInterval);
       let data = {"googleDirectioAPI" : this.googleDirectionAPI, origin: this.googleMapOrigin, destination: this.googleMapDestination, waypoints: this.googleMapWayPoints, tagId: this.tagId, 
-      reqStatus : value.status, reqDetail : value};
+      reqStatus : value.status, reqDetail : value, lastGeoData: lastGeo};
 
       const dialogRef = this.dialog.open(GoogleDirectionsComponent,{
       data: data, panelClass: ['medium-popup'], disableClose: true });

@@ -1,0 +1,225 @@
+<div class="mcrd-dialog">
+
+  <!-- ═══ HEADER ════════════════════════════════════════════════ -->
+  <div class="mcrd-header mcrd-header--{{ data.shapeInfo.type }}">
+    <div class="mcrd-header-left">
+      <mat-icon class="mcrd-header-icon">
+        {{ data.shapeInfo.type === 'circle' ? 'radio_button_unchecked'
+           : data.shapeInfo.type === 'rectangle' ? 'crop_square' : 'pentagon' }}
+      </mat-icon>
+      <span class="mcrd-title">Crop Preview</span>
+    </div>
+    <button mat-icon-button class="mcrd-close-btn" (click)="dialogRef.close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- ═══ SCROLLABLE BODY ═══════════════════════════════════════ -->
+  <div class="mcrd-body">
+
+    <!-- ── Top grid: preview | apply-to-floor ──────────────────── -->
+    <div class="mcrd-top-grid">
+
+      <!-- ── Preview image ───────────────────────────────────── -->
+      <div class="mcrd-image-section">
+        <div class="mcrd-image-label">
+          <mat-icon>map</mat-icon> Map Preview
+        </div>
+        <div class="mcrd-image-frame" *ngIf="data.imageDataUrl; else noImage">
+          <img [src]="data.imageDataUrl" alt="Cropped map preview" class="mcrd-preview-img" />
+        </div>
+        <ng-template #noImage>
+          <div class="mcrd-image-placeholder">
+            <mat-icon>camera_off</mat-icon>
+            <span>Preview not available</span>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- ── Apply to floor ───────────────────────────────────── -->
+      <div class="mcrd-floor-section">
+        <div class="mcrd-image-label">
+          <mat-icon>layers</mat-icon> Apply to Floor
+        </div>
+
+        <mat-form-field appearance="outline" class="mcrd-floor-select">
+          <mat-label>{{ isLoadingFloors ? 'Loading floors…' : 'Select Floor' }}</mat-label>
+          <mat-select [(value)]="selectedFloorId" (selectionChange)="onFloorChange($event.value)" [disabled]="isLoadingFloors">
+            <mat-option>
+              <ngx-mat-select-search [formControl]="floorSearchControl"
+                                     (ngModelChange)="filterFloors($event)"
+                                     placeholderLabel="Search floor…"
+                                     noEntriesFoundLabel="No matching floors">
+              </ngx-mat-select-search>
+            </mat-option>
+            <mat-option [value]="null">— None —</mat-option>
+            <mat-option *ngFor="let floor of filteredFloorList" [value]="floor.id">{{ floor.blockName }} — {{ floor.name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <ng-container *ngIf="selectedFloor">
+          <div class="mcrd-compare">
+            <span class="mcrd-compare-tag mcrd-compare-tag--current">Current</span>
+            <div class="mcrd-compare-frame">
+              <img *ngIf="getFloorImageUrl(selectedFloor) as floorImg; else noFloorImage"
+                   [src]="floorImg" alt="Current floor image" />
+              <ng-template #noFloorImage>
+                <mat-icon>image_not_supported</mat-icon>
+              </ng-template>
+            </div>
+            <span class="mcrd-compare-caption mcrd-compare-caption--current">Aspect {{ selectedFloor.aspects || '—' }}</span>
+
+            <mat-icon class="mcrd-compare-arrow">arrow_forward</mat-icon>
+
+            <span class="mcrd-compare-tag mcrd-compare-tag--new">New</span>
+            <input #floorImageInput type="file" accept="image/*" hidden (change)="onImageFileSelected($event)" />
+            <div class="mcrd-compare-frame mcrd-compare-frame--upload" (click)="floorImageInput.click()">
+              <img *ngIf="uploadedImageDataUrl" [src]="uploadedImageDataUrl" alt="New floor image preview" />
+              <ng-container *ngIf="!uploadedImageDataUrl">
+                <mat-icon>add_photo_alternate</mat-icon>
+                <span>Choose Image</span>
+              </ng-container>
+            </div>
+            <span class="mcrd-compare-caption mcrd-compare-caption--new mcrd-compare-caption--editable">
+              Aspect
+              <input type="text" class="mcrd-aspect-input" [(ngModel)]="editableAspect" spellcheck="false" />
+            </span>
+            <span class="mcrd-compare-filename" *ngIf="uploadedFileName">
+              {{ uploadedFileName }}
+              <mat-icon (click)="removeUploadedImage()">close</mat-icon>
+            </span>
+          </div>
+
+          <div class="mcrd-floor-coord-block">
+            <span class="mcrd-floor-current-label">New Coordinates (editable)</span>
+            <textarea class="mcrd-floor-coord mcrd-floor-coord-input" [(ngModel)]="editableCoordinates" spellcheck="false"></textarea>
+          </div>
+        </ng-container>
+      </div>
+
+    </div><!-- /mcrd-top-grid -->
+
+    <!-- ── Metrics row ───────────────────────────────────────── -->
+    <div class="mcrd-metrics">
+
+      <!-- Polygon / Rectangle -->
+      <ng-container *ngIf="data.shapeInfo.type !== 'circle'">
+        <div class="mcrd-metric mcrd-metric--width">
+          <mat-icon>swap_horiz</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Width (E–W)</div>
+            <div class="mcrd-metric-value">{{ formatDistance(data.shapeInfo.dimensions.width) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--length">
+          <mat-icon>height</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Length (N–S)</div>
+            <div class="mcrd-metric-value">{{ formatDistance(data.shapeInfo.dimensions.length) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--aspect">
+          <mat-icon>aspect_ratio</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Aspect [W, L]</div>
+            <div class="mcrd-metric-value">{{ formatAspect(data.shapeInfo.dimensions.width, data.shapeInfo.dimensions.length) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--area">
+          <mat-icon>crop_free</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Area</div>
+            <div class="mcrd-metric-value">{{ formatArea(data.shapeInfo.area) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--peri">
+          <mat-icon>loop</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Perimeter</div>
+            <div class="mcrd-metric-value">{{ formatDistance(data.shapeInfo.perimeter) }}</div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Circle -->
+      <ng-container *ngIf="data.shapeInfo.type === 'circle'">
+        <div class="mcrd-metric mcrd-metric--length">
+          <mat-icon>radio_button_unchecked</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Radius</div>
+            <div class="mcrd-metric-value">{{ formatDistance(data.shapeInfo.radius) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--width">
+          <mat-icon>swap_horiz</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Diameter</div>
+            <div class="mcrd-metric-value">{{ formatDistance(data.shapeInfo.dimensions.length) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--area">
+          <mat-icon>crop_free</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Area</div>
+            <div class="mcrd-metric-value">{{ formatArea(data.shapeInfo.area) }}</div>
+          </div>
+        </div>
+        <div class="mcrd-metric mcrd-metric--peri">
+          <mat-icon>loop</mat-icon>
+          <div class="mcrd-metric-body">
+            <div class="mcrd-metric-label">Circumference</div>
+            <div class="mcrd-metric-value">{{ formatDistance(data.shapeInfo.perimeter) }}</div>
+          </div>
+        </div>
+      </ng-container>
+
+    </div><!-- /mcrd-metrics -->
+
+    <!-- ── Full JSON viewer (collapsible) ──────────────────────── -->
+    <div class="mcrd-json-section">
+      <div class="mcrd-json-header" (click)="toggleJson()">
+        <div class="mcrd-json-title">
+          <mat-icon class="mcrd-json-chevron" [class.mcrd-json-chevron--open]="jsonExpanded">chevron_right</mat-icon>
+          <mat-icon>data_object</mat-icon>
+          <span>Full Shape JSON</span>
+        </div>
+        <button mat-flat-button
+                class="mcrd-copy-btn"
+                [class.mcrd-copy-btn--copied]="copied"
+                (click)="copyJson(); $event.stopPropagation()">
+          <mat-icon>{{ copied ? 'check' : 'content_copy' }}</mat-icon>
+          {{ copied ? 'Copied!' : 'Copy JSON' }}
+        </button>
+      </div>
+      <div class="mcrd-json-body" *ngIf="jsonExpanded">
+        <p class="mcrd-json-str">{{ data.formattedJson }}</p>
+      </div>
+    </div>
+
+  </div><!-- /mcrd-body -->
+
+  <!-- ═══ FOOTER ════════════════════════════════════════════════ -->
+  <div class="mcrd-footer">
+    <button mat-raised-button
+            class="mcrd-download-btn"
+            *ngIf="data.imageDataUrl"
+            (click)="downloadImage()">
+      <mat-icon>save_alt</mat-icon>
+      Download Image
+    </button>
+    <span class="mcrd-footer-spacer"></span>
+    <button mat-raised-button
+            class="mcrd-update-btn"
+            *ngIf="selectedFloor"
+            [disabled]="isUpdating || !uploadedImageDataUrl"
+            matTooltip="{{ !uploadedImageDataUrl ? 'Choose a new floor image first' : '' }}"
+            (click)="updateFloor()">
+      <mat-icon>{{ isUpdating ? 'hourglass_empty' : 'cloud_upload' }}</mat-icon>
+      {{ isUpdating ? 'Updating…' : 'Update Floor' }}
+    </button>
+    <button mat-flat-button color="primary" (click)="dialogRef.close()">
+      Close
+    </button>
+  </div>
+
+</div>

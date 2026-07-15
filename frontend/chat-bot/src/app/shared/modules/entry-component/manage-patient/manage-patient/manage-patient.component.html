@@ -14,7 +14,7 @@
     </div>
     <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: hidden;padding-bottom: 3px;" [formGroup]="managePatientForm"
             [ngStyle]="{'height' : !['TW-AOT'].includes(scheduleInputData.statusKey) ? 'calc(100vh - 150px)' : ' calc(100vh - 255px)' }">
-        <mat-tab-group *ngIf="!data?.otDelayTime" [ngClass]="!['TW-AOT'].includes(scheduleInputData.statusKey) ? (selectedTabIndex === 0 ? 'ovi-patient-tab-1 show-tab-header' : 'ovi-patient-tab show-tab-header'): 'hide-tab-header'" #tabGroup (selectedTabChange)="onMainTabChange($event)">
+        <mat-tab-group *ngIf="!data?.otDelayTime" [ngClass]="!['TW-AOT'].includes(scheduleInputData.statusKey) ? (selectedTabIndex === 0 ? 'ovi-patient-tab-1 show-tab-header' : 'ovi-patient-tab show-tab-header'): 'hide-tab-header'" #tabGroup [selectedIndex]="selectedTabIndex" (selectedTabChange)="onMainTabChange($event)">
             <mat-tab *ngIf="!['TW-AOT'].includes(scheduleInputData.statusKey)" label="{{ 'Patient Details' | translate}}">
                 <div style="height: calc(100vh - 200px);">
                      <div *ngIf="isEnabledTable === true" fxLayout="column" class="mat-elevation-z4 manage-component"
@@ -470,6 +470,14 @@
                                     </mat-menu>
                                 </div>
                                 <div *ngIf="isActiveTable && dataSource?.length > 0" style="width: calc(100% - 10px);padding-top: 10px;">
+                                    <div style="display: flex;justify-content: flex-end;gap: 5px; position: relative; right: 6px;">
+                                        <span style="display: flex;font-size: 10px;"><mat-icon
+                                                style="color: #ff0000;font-size:14px;padding-top: 0;height: 18px;width: 15px">event</mat-icon>Unavailable</span>
+                                        <span style="display: flex;font-size: 10px;"><mat-icon
+                                                style="color: #ffa500;font-size:14px;padding-top: 0;height: 18px;width: 15px">event</mat-icon>Overlapping</span>
+                                        <span style="display: flex;font-size: 10px;"><mat-icon
+                                                style="color: #008000;font-size:14px;padding-top: 0;height: 18px;width: 15px">event</mat-icon>Available</span>
+                                    </div>
                                     <angular-table-component [id]="'schedule'" [type]="'ng-table'" [tableData]="dataSource"
                                         [columns]="DisplayColumn" [columnData]="DataColumns" [menuButton]="menuOption" (triggerAction)="eventAction($event)">
                                     </angular-table-component>
@@ -732,12 +740,14 @@
 
     <div class="ovi-pop-ftr">
         <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
-        <button *ngIf="!this.data?.id || ispastDatainfo && !data?.otDelayTime" mat-button class="active-btn " appDebounceClick (debounceClick)="savePatient()"
+        <button *ngIf="(!this.data?.id || ispastDatainfo && !data?.otDelayTime) && isenable" mat-button class="active-btn " appDebounceClick (debounceClick)="savePatient()"
          cdkFocusInitial [debounceTime]="1000"  [disabled]="managePatientForm.invalid || !locEntityBooking || isCanbeDisabled">{{"Save"|translate}}</button>
         <button *ngIf="this.data.id && !ispastDatainfo && !data?.otDelayTime" mat-button class="active-btn " appDebounceClick  (debounceClick)="updatePatient()"
          cdkFocusInitial [debounceTime]="1000" [disabled]="managePatientForm.invalid || !locEntityBooking || isCanbeDisabled">{{'Update' | translate}}</button>
          <button *ngIf="data?.otDelayTime" mat-button class="active-btn " appDebounceClick  (debounceClick)="updatePatient('timeDelay')"
          cdkFocusInitial [debounceTime]="1000" [disabled]="managePatientForm.invalid">{{'Save' | translate}}</button>
-    </div>
+         <button *ngIf="!this.data?.id && !isenable && activate_btn.includes('BT_OTS') && otScheduleConfig" mat-button class="active-btn " appDebounceClick (debounceClick)= "Changeftrbtn()"
+         cdkFocusInitial [debounceTime]="1000"  [disabled]="managePatientForm.invalid || !locEntityBooking ">{{'Next' | translate}}</button>
+        </div>
 </div>
 

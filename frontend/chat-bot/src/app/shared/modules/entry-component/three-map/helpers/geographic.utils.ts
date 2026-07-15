@@ -37,22 +37,27 @@ export function getTileBounds(xtile: number, ytile: number, zoom: number): {
 
 /**
  * Build a map tile URL for the given provider type.
- * tileType values: 'google_road' | 'google_satellite' | 'google_hybrid' | 'google_terrain' | 'osm'
+ * tileType values: 'osm'
  */
 export function getTileUrl(xtile: number, ytile: number, zoom: number, tileType: string = 'osm'): string {
-    const sub = (xtile + ytile) % 4; // 0-3 load-balance across Google tile servers
+    // const sub = (xtile + ytile) % 4; // 0-3 load-balance across Google tile servers
     switch (tileType) {
+        /*
         case 'google_satellite':
             return `https://mt${sub}.google.com/vt/lyrs=s&x=${xtile}&y=${ytile}&z=${zoom}`;
         case 'google_hybrid':
             return `https://mt${sub}.google.com/vt/lyrs=y&x=${xtile}&y=${ytile}&z=${zoom}`;
         case 'google_terrain':
             return `https://mt${sub}.google.com/vt/lyrs=p&x=${xtile}&y=${ytile}&z=${zoom}`;
+        */
         case 'osm':
+        default:
             return `https://tile.openstreetmap.org/${zoom}/${xtile}/${ytile}.png`;
+        /*
         case 'google_road':
         default:
             return `https://mt${sub}.google.com/vt/lyrs=r&x=${xtile}&y=${ytile}&z=${zoom}`;
+        */
     }
 }
 

@@ -88,6 +88,10 @@
                     </button>
                 </div>
             </div>
+            <div class="map-view-toggle">
+                <span class="toggle-option" [class.active]="mapViewMode === '2D'" (click)="toggleMapViewMode('2D')">2D</span>
+                <span class="toggle-option" [class.active]="mapViewMode === '3D'" (click)="toggleMapViewMode('3D')">3D</span>
+            </div>
             <button  *ngIf="!blockView.active && activate_btn && activate_btn.includes('BT_FPET')" mat-icon-button appTooltip tooltipText="{{'Edit Mode'|translate}}" [class.active]="isEditPolygon"
                 class="filter-btns" (click)="actionEvent('editPolygon',!isEditPolygon)">
                 <span class="material-icons  ovi-fnt-sze15"
@@ -285,10 +289,10 @@
                     </div>
                 </div>
             </div>
-            <div style="float: right;width: 25px;" (click)="isOpen = !isOpen" class="tlbr-styl"
-                *ngIf="navConfig['legend']['show']" (keydown.enter)="fixClick()">
-                <img src="/assets/Alert/common_icons/map-legend.svg" alt="Map" style="padding-top: 10px; height: 30px;width: 34px;">
-            </div>
+            <button mat-icon-button class="filter-btns" [class.active]="isOpen" appTooltip tooltipText="{{'Map Legend'|translate}}"
+                *ngIf="navConfig['legend']['show']" (click)="isOpen = !isOpen" (keydown.enter)="fixClick()">
+                <span class="material-icons ovi-fnt-sze16" style="padding: 0; color: #fff;">legend_toggle</span>
+            </button>
             <mat-menu #allFilter="matMenu" class="filter-menu ovi-font-family">
                 <div>
                     <div *ngFor="let filter of allMapFilter" class="all-filter-container" (click)="$event.stopPropagation()" (keydown.enter)="fixClick()">
@@ -546,8 +550,8 @@
                 <div class="filter-box" *ngFor="let filter of mapOptionFilter"
                     (click)="onFilterClick(filter, 'mapFilter')" (keydown.enter)="fixClick()"
                     [class.active]="selectedTagFilters.includes(filter.code)" [class.disabled]="filter.disabled">
-                    <span>
-                        <mat-icon *ngIf="filter.icon">{{filter.url}}</mat-icon>
+                    <span  [ngStyle]="{ 'padding-top': filter.name === 'CCTV' ? '5px' : '0' }" >
+                        <mat-icon *ngIf="filter.icon" >{{filter.url}}</mat-icon>
                         <img *ngIf="filter.img" height="16px" width="16px" [src]="filter.url" alt="filter"/>
                         <span *ngIf="filter.mIcon" class="material-icons ovi-fnt-sze16"
                             style="display: block; padding: 0;">{{filter.url}}</span>
@@ -629,7 +633,7 @@
                     <mat-tab label="{{tab.name}} {{i == selectedIndex ? '('+ tabData.length+ ')': ''}}"
                         *ngFor="let tab of tabValue;let i= index">
                         <div *ngIf="options.show.navBlkList">
-                            <div *ngFor="let patient of tabData"
+                            <div *ngFor="let patient of tabData; trackBy: trackByTid"
                                 [ngStyle]="{background : (tagOptions.selectedTag && (tagOptions.selectedTag.tid == patient.tid)) ? '#cecece' : 'white'}"
                                 style="padding: 0px 5px;width: calc(100% - 10px);height: 35px; border-bottom: 1px solid #ededed;"
                                 (click)="highlightTag(patient)" (keydown.enter)="fixClick()">
@@ -960,12 +964,12 @@
         </div>
         <div class="floorMap-container" id="floorMap-container-pdf"
             [ngClass]="(reqType && ['porter', 'track'].includes(reqType)) ? 'floorMap-container' : 'floorMap-container1'"
-            *ngIf="!blockView['active']">
+            *ngIf="!blockView['active'] && mapViewMode === '2D'">
             <div id="{{leafRef+'_'+floorId.value}}" class="floorMap-img"></div>
         </div>
         <div class="floorMap-container"
             [ngClass]="(reqType && ['porter', 'track'].includes(reqType)) ? 'floorMap-container' : 'floorMap-container1'"
-            *ngIf="blockView['active']">
+            *ngIf="blockView['active'] && mapViewMode === '2D'">
             <mat-grid-list [cols]="blockView['col']" rowHeight="{{floorList.length == 1 ? '100%' : '50%'}}">
                 <mat-grid-tile *ngFor="let floor of floorList">
                     <div
@@ -977,6 +981,11 @@
                     </div>
                 </mat-grid-tile>
             </mat-grid-list>
+        </div>
+        <div class="floorMap-container"
+            [ngClass]="(reqType && ['porter', 'track'].includes(reqType)) ? 'floorMap-container' : 'floorMap-container1'"
+            *ngIf="mapViewMode === '3D'" style="height: calc(100% - 40px); position: relative;">
+            <app-map-viewer [initialFloorId]="floorId?.value" [compactUi]="false" [isFloorPlanPage]="true" (floorChanged)="on3DFloorChanged($event)" (blockChanged)="on3DBlockChanged($event)"></app-map-viewer>
         </div>
         <div *ngIf="isEditPolygon" class="fab-container">
             <div *ngFor="let item of EditPolygonOptions; let i = index" class="fab-option"

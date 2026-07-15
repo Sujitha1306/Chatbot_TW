@@ -5,12 +5,12 @@
         <div class="spin3"></div>
     </div>
 </div>
-<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+<div class="input-component-holder ovi-font-family create-template-dialog" style="height:100% ;width:100%;overflow: hidden;">
     <div class="ovi-pop-hdr">
         <div *ngIf="data.type != 'modify'" > 
             <span>{{ data.requestedType !== 'RQT-WRK' ? this.selectedRoutineTypeId === 'TAC-TKT'?"Create Ticket" :'Create Task' : "Create Workorder" |translate}}</span>
-            <span *ngIf="data.type === 'asset'" style="font-weight: 400;">( Asset : {{data.entityDetail.assetName}} -
-                {{data.entityDetail.assetSerialNumber}} )</span>
+            <!-- <span *ngIf="data.type === 'asset'" style="font-weight: 400;">( Asset : {{data.entityDetail.assetName}} -
+                {{data.entityDetail.assetSerialNumber}} )</span> -->
             <span *ngIf="data.type === 'location'" style="font-weight: 400;">( Location : {{data.entityDetail.name}}
                 )</span>
         </div>
@@ -39,7 +39,7 @@
         <div mat-dialog-close (click)="onDialogClose()" (keydown.enter)="fixClick()"><mat-icon>highlight_off</mat-icon></div>
     </div>
     <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 80px);overflow-x: hidden">
-        <div style="padding: 0 0 5px 0;" [formGroup]="taskForm">
+        <div style="padding: 0px;" [formGroup]="taskForm">
             <div *ngIf="data.type !== 'modify' && data.type !== 'asset' && data.type !== 'location' && data.type !== 'patient'"
                 style="display: flex; gap: 15px; padding: 5px 3px;">
                 <div *ngFor="let option of contestList" class="tab-buttons"
@@ -63,10 +63,13 @@
                 <div class="toggle-thumb"></div>
                 </div>
             </div>
+            <div *ngIf="data.type === 'asset'" style="width: 99%; margin-top: 5px;">
+                <app-banner style="width: 100%;" [type]="'new'" [bannerData]="bannerlabel"></app-banner>
+            </div>
             <div *ngIf="!isGridView">
             <div class="ovi-row-gap" style="display: flex; gap: 15px; padding: 5px 3px;">
                 <div *ngIf="data.type != 'modify'" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Category"|translate}}<span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Category"|translate}}&nbsp;<span
                             class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Category'|translate" 
@@ -83,13 +86,13 @@
                     </mat-form-field>
                 </div>
                 <div *ngIf="data.type == 'modify'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{"Category"|translate}}<span class="mandatory-field">*</span></mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Category"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput appPlaceholder [showPlaceholder]="false" [disabled]="true" [value]="taskData?.activityCategoryName">
                     </mat-form-field>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Task"|translate}}<span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Task"|translate}}&nbsp;<span
                             class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Task'|translate"  formControlName="taskId"
@@ -105,7 +108,7 @@
                     </mat-form-field>
                 </div>
                 <!-- <div *ngIf="data.type == 'modify' && ['PR-AT', 'PR-LC', 'PR-PA'].includes(selectedTask)" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{selectedTask == 'PR-LC' ? 'Location' : selectedTask == 'PR-AT' ? 'Asset' : 'Patient'|translate}}<span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{selectedTask == 'PR-LC' ? 'Location' : selectedTask == 'PR-AT' ? 'Asset' : 'Patient'|translate}}<span
                         class="mandatory-field">*</span></mat-label>
                     <mat-form-field *ngIf="data.type == 'modify'" class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput style="text-overflow: ellipsis;" appPlaceholder [showPlaceholder]="false" [disabled]="true" [value]="taskData?.nonPerformerName">
@@ -113,7 +116,7 @@
                 </div> -->
                 <div *ngIf="selectedTask == 'PR-LC'"
                     class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{"Location"|translate}}
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Location"|translate}}&nbsp;
                         <span class="mandatory-field" *ngIf="data.type != 'modify'">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location'|translate" id="locationSearch"
@@ -138,7 +141,7 @@
                 </div>
                 <div *ngIf="selectedTask == 'PR-AT'"
                     class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{"Asset"|translate}}<span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Asset"|translate}}&nbsp;<span
                             class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset'|translate" id="assetSearch"
@@ -166,7 +169,7 @@
                     </mat-form-field>
                 </div>
                 <div *ngIf="selectedTask == 'PR-PA'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{"Patient"|translate}}<span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Patient"|translate}}&nbsp;<span
                             class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Patient'|translate" id="patientSearch"
@@ -191,7 +194,7 @@
                 <div *ngIf="selectedTask == 'PR-GN' || (taskData && taskData.title)"
                     class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
                     <div class="example-form">
-                        <mat-label  class="ovi-lbl-text-size">{{"Name"|translate}}</mat-label>
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Name"|translate}}</mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                             <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Name'|translate" 
                                 formControlName="general" />
@@ -200,14 +203,14 @@
                     </div>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Status"|translate}}</mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="statusId" (selectionChange)="statusBasedAcknowledge(taskData?.statusId, $event.value)"
                             [disableOptionCentering]="true">
                             <mat-option *ngFor="let data of actualStatusList"
                                 [value]="data.code">{{data.value}}</mat-option>
                         </mat-select>
-                        <mat-hint *ngIf="taskData && (taskData.openedWorkOrders || taskData.openForms)"class="ovi-lbl-text-size approval-msg" style="font-size:12px !important;width:100% !important;white-space:normal">
+                        <mat-hint *ngIf="taskData && (taskData.openedWorkOrders || taskData.openForms)"class="ovi-lbl-text-size  ovi-field-labelapproval-msg" style="font-size:12px !important;width:100% !important;white-space:normal">
                             {{ 'Open:' | translate }}
                             <ng-container *ngIf="taskData.openedWorkOrders">
                                 Work Order - {{ taskData.openedWorkOrders }}
@@ -221,7 +224,7 @@
                     </mat-form-field>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Assign Type"|translate}} <span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Assign Type"|translate}}&nbsp;<span
                             class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign Type'|translate" 
@@ -237,7 +240,7 @@
                     </mat-form-field>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{"Assign To"|translate}} <span
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Assign To"|translate}}&nbsp;<span
                             class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assign To'|translate" id="taskIncharge"
@@ -261,7 +264,7 @@
                     </mat-form-field>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-textarea-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Description"|translate}}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('description') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))"class="mandatory-field">*</span></mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Description"|translate}}&nbsp;<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('description') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))"class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <textarea input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Description'|translate"
                             formControlName="description" rows=2></textarea>
@@ -272,7 +275,7 @@
                     </mat-form-field>
                 </div>
                 <div *ngIf="selectedTask != 'PR-LC'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label  class="ovi-lbl-text-size">{{"Location"|translate}} <span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('destinationId') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))" class="mandatory-field">*</span></mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Location"|translate}}&nbsp;<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('destinationId') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))" class="mandatory-field">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Location Name'|translate" id="locationSearch"
                             formControlName="destinationId" appTypeHit (typeHit)="searchLocationList($event)"
@@ -295,7 +298,7 @@
                     </mat-form-field>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Priority"|translate}}</mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Priority"|translate}}</mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Priority'|translate"  formControlName="priorityLevelId"
                             [disableOptionCentering]="true">
@@ -305,7 +308,7 @@
                     </mat-form-field>
                 </div>
                 <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                <mat-label  class="ovi-lbl-text-size">{{"Schedule Type"|translate}}<span
+                <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Schedule Type"|translate}}&nbsp;<span
                         class="mandatory-field">*</span></mat-label>
                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                     <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Schedule Type'|translate"
@@ -316,15 +319,15 @@
                 </mat-form-field>
             </div>
             <div class="ovi-row-four-clmn ovi-matfrmfld-type-datetime-local">
-                <mat-label *ngIf="activityScheduleType != 'SAT-ATM'"  class="ovi-lbl-text-size">{{"Schedule Start"|translate}}</mat-label>
-                <mat-label *ngIf="activityScheduleType == 'SAT-ATM'"  class="ovi-lbl-text-size">{{"Schedule Date"|translate}}</mat-label>
+                <mat-label *ngIf="activityScheduleType != 'SAT-ATM'"  class="ovi-lbl-text-size ovi-field-label">{{"Schedule Start"|translate}}</mat-label>
+                <mat-label *ngIf="activityScheduleType == 'SAT-ATM'"  class="ovi-lbl-text-size ovi-field-label">{{"Schedule Date"|translate}}</mat-label>
                 <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                     <input matInput [attr.type]="isDateTime ? 'datetime-local' : 'date'" id="datepicker"
                         [min]="isDateTime ? (currentDate | date:'yyyy-MM-ddTHH:mm') : (currentDate | date:'yyyy-MM-dd')" formControlName="startDate" (change)="getDateValue($event, activityScheduleType)" />
                 </mat-form-field>
             </div>
             <div *ngIf="activityScheduleType !== 'SAT-ATM'" class="ovi-row-four-clmn ovi-matfrmfld-type-datetime-local">
-                <mat-label  class="ovi-lbl-text-size">{{"Schedule End"|translate}}</mat-label>
+                <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Schedule End"|translate}}</mat-label>
                 <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                     <input matInput [attr.type]="isDateTime ? 'datetime-local' : 'date'" id="datepicker"
                        [attr.min]="isDateTime ? (activityScheduleType !== 'SAT-BTM' ? (tomorrowDate | date:'yyyy-MM-ddTHH:mm') : (currentDate | date:'yyyy-MM-ddTHH:mm')) : 
@@ -334,7 +337,7 @@
             </div>
             <div class="ovi-row-gap" style="gap: 15px;">
                 <div *ngIf="!(hideRemarks  && (selectedRoutineTypeId === 'TAC-TKT' || selectedRoutineTypeId === 'TAC-TASK') && (!taskData || taskData?.openedWorkOrders > 0))" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Action Type"|translate}}</mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Action Type"|translate}}</mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Action Type'|translate" formControlName="actionTypeId"
                             [disableOptionCentering]="true">
@@ -344,7 +347,7 @@
                     </mat-form-field>
                 </div>
                 <div *ngIf="!(hideRemarks  && (selectedRoutineTypeId === 'TAC-TKT' || selectedRoutineTypeId === 'TAC-TASK') && (!taskData || taskData?.openedWorkOrders > 0))" class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box">
-                    <mat-label  class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Remarks"|translate}}</mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                         <textarea input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate"
                             formControlName="comments" maxlength="250" rows=2></textarea>
@@ -356,15 +359,15 @@
                         </mat-error>
                     </mat-form-field>
                 </div>
-                <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="displayAcknowledge && (taskData?.acknowledgedById != null || activate_btn?.includes('BT_TMOP')) && (selectedRoutineTypeId === 'TAC-TKT' ||selectedRoutineTypeId === 'TAC-TASK')"style="padding-right:5px">
-                    <mat-checkbox class="ovi-lbl-text-size"   [(ngModel)]="isAcknowledge" [ngModelOptions]="{ standalone: true }" [disabled]="true">
+                <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="displayAcknowledge && (taskData?.acknowledgedById != null || activate_btn?.includes('BT_TMOP')) && (selectedRoutineTypeId === 'TAC-TKT' ||selectedRoutineTypeId === 'TAC-TASK')"style="padding-left:5px">
+                    <mat-checkbox class="ovi-lbl-text-size ovi-field-label"   [(ngModel)]="isAcknowledge" [ngModelOptions]="{ standalone: true }" [disabled]="true">
                      {{taskData?.routineTypeId === 'TAC-TKT'? ('Acknowledge Current Ticket' | translate): ('Acknowledge Current Task' | translate)}}
                     </mat-checkbox>
                 </div>
             </div>
           </div>
         </div>
-        <mat-tab-group *ngIf="!isGridView" #tabGroup (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex">
+        <mat-tab-group *ngIf="!isGridView" #tabGroup (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex" class="template-mat-tab">
             <mat-tab *ngIf="data.type ==='modify' && !tabRemove?.includes('History')" label="{{'History'|translate}}" [disabled]="tabDisable?.includes('History')">
                 <ng-template mat-tab-label>{{"History"|translate}}</ng-template>
                 <div *ngIf="selectedTab === 'History' && enableHistory" style='padding-top:10px'>
@@ -391,7 +394,7 @@
                 <ng-template mat-tab-label>{{"Forms"|translate}}{{ taskData?.openForms? ' (' + taskData.openForms + ')' : '' }}</ng-template>
                 <div class="ovi-row-gap " [formGroup]="taskForm">
                     <div class="ovi-row-four-clmn  ovi-matfrmfld-drpdwn-top-box">
-                        <mat-label  class="ovi-lbl-text-size">{{"Select Form"|translate}}</mat-label>
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Select Form"|translate}}</mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline" style="width: 100%;">
                             <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Select'|translate"  formControlName="formTemplateId" matSelectSearch>
                                 <mat-option *ngFor="let form of formTemplate" [value]="form.id">
@@ -400,9 +403,9 @@
                             </mat-select>
                         </mat-form-field>
                     </div>
-                    <div class="ovi-row-four-clmn " style="margin-top: 20px;">
+                    <div class="ovi-row-four-clmn " style="margin-top: 16px;">
                         <button  mat-button [disabled]="taskForm.controls['formTemplateId'].value === null"
-                            class="active-btn" appDebounceClick (debounceClick)="getFormTemplateInfo();"
+                            class="ovi-btn-primary" appDebounceClick (debounceClick)="getFormTemplateInfo();"
                             [debounceTime]="300">{{"Add"|translate}}</button>
                     </div>
                 </div>
@@ -423,34 +426,25 @@
                 <ng-template mat-tab-label>{{'Parts/Services'|translate}}</ng-template>
                 <div class="ovi-row-gap" [formGroup]="itemForm">
                     <div class="ovi-matfrmfld-input-box-pdg" style="width: 200px;">
-                        <mat-label  class="ovi-lbl-text-size">{{"Item Search"|translate}}<span
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Item Search"|translate}}&nbsp;<span
                                 class="mandatory-field">*</span></mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-                            <input matInput autofocus appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item Name'|translate"  appTypeHit
-                                (typeHit)="getItemSearch($event)" [matAutocomplete]="auto" autocomplete="off"
-                                formControlName="itemMasterId" [readonly]="editInventory === true">
-                            <mat-autocomplete
-                                [displayWith]="this.itemLinked === true ? getItemName.bind(itemList) : null"
-                                #auto="matAutocomplete">
-                                <div *ngIf="itemLinked">
-                                    <mat-option class="option-bor" *ngFor="let option of itemList" [value]="option.id"
-                                        (click)="getBatchList(option.id)" (keydown.enter)="fixClick()">
-                                        {{option.name}}
-                                    </mat-option>
-                                </div>
-                            </mat-autocomplete>
+                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Item Name'|translate"  matSelectSearch
+                                formControlName="itemMasterId" [disabled]="editInventory === true">
+                                <mat-option *ngFor="let item of itemList" [value]="item.id"
+                                (click)="getBatchList(item.id)" (keydown.enter)="fixClick()">
+                                    {{ item.name }}
+                                </mat-option>
+                            </mat-select>
                             <mat-error *ngIf="itemForm.controls.itemMasterId.invalid">
                                 <span  [hidden]="!itemForm.controls['itemMasterId'].errors.required">
                                     {{"Item name is required"|translate}}.</span>
-                                <span *ngIf="itemForm.get('itemMasterId').hasError('invalidItemSelection')">
-                                    {{"Please select a valid item name from the list"|translate}}.
-                                </span>
                             </mat-error>
                         </mat-form-field>
                     </div>
 
                     <div class="ovi-row-five-clmn ovi-matfrmfld-drpdwn-top-box ovi-mat-hint" style="width: 200px;" *ngIf="!this.isServiceType">
-                        <mat-label  class="ovi-lbl-text-size">{{"Batch ID"|translate}}<span
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Batch ID"|translate}}&nbsp;<span
                                 class="mandatory-field">*</span></mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                             <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Batch Id'|translate" 
@@ -471,11 +465,15 @@
                     </div>
 
                     <div class="ovi-row-five-clmn ovi-matfrmfld" style="width: 200px;" *ngIf="!this.isServiceType">
-                        <mat-label  class="ovi-lbl-text-size">{{"Quantity"|translate}}</mat-label>
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Quantity"|translate}}</mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                             <input matInput type="number" formControlName="quantity" min="1" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Enter Quantity'|translate" />
                             <mat-error *ngIf="itemForm.controls.quantity.invalid">
-                                <span  [hidden]="itemForm.controls['quantity'].errors.maxlength">
+                                <span *ngIf="itemForm.controls['quantity'].errors?.required">
+                                    {{"Quantity is required"|translate}}</span>
+                                <span *ngIf="itemForm.controls['quantity'].errors?.min">
+                                    {{"Minimum quantity is 1"|translate}}</span>
+                                <span *ngIf="itemForm.controls['quantity'].errors?.max">
                                     {{"Maximum allowed only"|translate}} {{this.availableQuantity}}
                                     {{"quantities"|translate}} </span>
                             </mat-error>
@@ -483,21 +481,21 @@
                     </div>
 
                     <div class="ovi-row-five-clmn ovi-matfrmfld" style="width: 200px;" *ngIf="!this.isServiceType">
-                        <mat-label  class="ovi-lbl-text-size">{{"Cost"|translate}}</mat-label>
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Cost"|translate}}</mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                             <input matInput type="text" formControlName="cost"   appPlaceholder [showPlaceholder]="false"
                              [placeholderText]="'Cost'|translate" [readonly]="!isServiceType"/>
                         </mat-form-field>
                     </div>
                     <div class="ovi-row-five-clmn ovi-matfrmfld" style="width: 200px;" *ngIf="this.isServiceType">
-                        <mat-label  class="ovi-lbl-text-size">{{"Service Cost"|translate}}</mat-label>
+                        <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Service Cost"|translate}}</mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                             <input matInput type="text" formControlName="serviceCost"  appPlaceholder [showPlaceholder]="true"
                              [placeholderText]="'Service Cost'|translate"/>
                         </mat-form-field>
                     </div>
                     <div class="ovi-row-five-clmn ovi-matfrmfld-textarea-top-box" style="width: 200px;" *ngIf="this.isServiceType">
-                    <mat-label  class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label>
+                    <mat-label  class="ovi-lbl-text-size ovi-field-label">{{"Remarks"|translate}}</mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                         <textarea input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate"
                             formControlName="comments" rows=2></textarea>
@@ -505,10 +503,10 @@
             </div>
 
                     <div style="padding-top:15px">
-                        <button *ngIf="this.editInventory === true"  mat-button class="active-btn"
+                        <button *ngIf="this.editInventory === true"  mat-button class="ovi-btn-primary"
                             style="margin: 5px; float: right;" [debounceTime]="500" appDebounceClick
                             (debounceClick)="resetItemForm()">{{"Cancel"|translate}}</button>
-                        <button  mat-button class="active-btn" style="margin: 5px; float: right;"
+                        <button  mat-button class="ovi-btn-primary" style="margin: 5px; float: right;"
                             [debounceTime]="500" [disabled]="itemForm.invalid" appDebounceClick
                             (debounceClick)="saveItem()">{{ editInventory ? ('Update'|translate) : ('Add'|translate)
                             }}</button>
@@ -612,21 +610,21 @@
                 <div class="grid-form-panel" *ngIf="taskForm.get('taskId')?.value">
                     <div class="ovi-row-gap" style="padding: 10px" [formGroup]="taskForm">
                         <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">Category <span class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Category"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                 <input matInput [value]="getCategoryName(taskForm.get('categoryId')?.value)" readonly>
                             </mat-form-field>
                         </div>
         
                         <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">Task <span class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Task"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                 <input matInput [value]="getTaskName(taskForm.get('taskId')?.value)" readonly>
                             </mat-form-field>
                         </div>
         
                         <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">Status <span class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Status"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <mat-select formControlName="statusId">
                                     <mat-option *ngFor="let data of actualStatusList" [value]="data.code">{{ data.value
@@ -640,7 +638,7 @@
                         </div>
         
                         <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{ getDynamicFieldLabel() }} <span class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{ getDynamicFieldLabel() }}&nbsp;<span class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 
                                 <!-- Asset field -->
@@ -717,7 +715,7 @@
                         </div>
         
                         <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">Assign Type <span class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Assign Type"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <mat-select formControlName="assignType" (selectionChange)="getTaskIncharge($event.value)">
                                     <mat-option *ngFor="let data of assignTypeList" [value]="data.code">{{ data.value
@@ -731,7 +729,7 @@
                         </div>
         
                         <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">Assign To <span class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Assign To"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <input matInput formControlName="assignId" appTypeHit (typeHit)="searchTaskUserNamelist($event)"
                                     [matAutocomplete]="assignAuto">
@@ -746,7 +744,7 @@
                         </div>
         
                         <div *ngIf="selectedTask !== 'PR-LC'" class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">Location<span *ngIf="gridMandatoryEnabled && mandatoryFields?.length > 0 && mandatoryFields?.includes('destinationId') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))" class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Location"|translate}}&nbsp;<span *ngIf="gridMandatoryEnabled && mandatoryFields?.length > 0 && mandatoryFields?.includes('destinationId') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))" class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <input matInput formControlName="destinationId" appTypeHit
                                     (typeHit)="searchLocationList($event)" [matAutocomplete]="destLoc">
@@ -766,7 +764,7 @@
                         </div>
         
                         <div class="ovi-row-two-clmn ovi-matfrmfld-textarea-top-box full-width">
-                            <mat-label class="ovi-lbl-text-size">Description<span *ngIf="gridMandatoryEnabled && mandatoryFields?.length > 0 && mandatoryFields?.includes('description') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))" class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Description"|translate}}&nbsp;<span *ngIf="gridMandatoryEnabled && mandatoryFields?.length > 0 && mandatoryFields?.includes('description') &&(['TAC-TASK','TAC-TKT','TAC-WOR','ROU-ASM'].includes(this.selectedRoutineTypeId))" class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <textarea matInput rows="2" formControlName="description"></textarea>
                                 <mat-error *ngIf="taskForm.controls.description.invalid" style="margin-top:3px">
@@ -781,8 +779,8 @@
             </div>
         </div>
     </div>
-    <div class="ovi-pop-ftr" [ngStyle]="data.type == 'modify' ? {'display':'flex','justify-content':'space-between'} : null">
-       <div class="ovi-lbl-text-size approval-msg"*ngIf="data.type == 'modify'; else emptyDiv">
+    <div class="ovi-pop-ftr" [ngStyle]="data.type == 'modify' ? {'display':'flex','justify-content':'space-between'} : null" style="margin-top: -10px;">
+       <div class="ovi-lbl-text-size  ovi-field-labelapproval-msg"*ngIf="data.type == 'modify'; else emptyDiv">
                 <span *ngIf="!isSubmit && approvalMsg; else waitingBlock" appTooltip tooltipText="{{approvalMsg ? approvalMsg : ' '}}" placement="top" >
                     {{ approvalMsg }}
                 </span>
@@ -800,21 +798,21 @@
             <div class="ovi-lbl-text-size"></div>
         </ng-template>
         <div style="display: flex;">
-        <button  mat-button class="cancle-btn" style=" margin-right: 5px;" (click)="onDialogClose()"
+        <button  mat-button class="ovi-btn-outline" style=" margin-right: 5px;" (click)="onDialogClose()"
             mat-dialog-close>{{"Cancel"|translate}}</button>
-        <button *ngIf="data.type != 'modify'"  mat-button class="active-btn" appDebounceClick [debounceTime]="600"
+        <button *ngIf="data.type != 'modify'"  mat-button class="ovi-btn-primary" appDebounceClick [debounceTime]="600"
             (debounceClick)="saveTask()" [disabled]="taskForm.invalid || isReminderFormValid" cdkFocusInitial>{{"Create"|translate}}
         </button>
-        <button *ngIf="data.type == 'modify' && (!isSubmit ||! taskForm.controls.statusId.disabled) "  mat-button class="active-btn" style=" margin-right: 5px;" appDebounceClick [debounceTime]="600"
+        <button *ngIf="data.type == 'modify' && (!isSubmit ||! taskForm.controls.statusId.disabled) "  mat-button class="ovi-btn-primary" style=" margin-right: 5px;" appDebounceClick [debounceTime]="600"
             (debounceClick)="editTask()" [disabled]="taskForm.invalid || isReminderFormValid" cdkFocusInitial>{{"Update"|translate}}
         </button>
-        <button *ngIf="data.type == 'modify' && isSubmit && taskForm.controls.statusId.disabled && matchedWorkflowLevel?.options?.status?.['RQ-RJ']" mat-button class="active-btn" style=" margin-right: 5px;background: #ff1212;"  appDebounceClick [debounceTime]="600"
+        <button *ngIf="data.type == 'modify' && isSubmit && taskForm.controls.statusId.disabled && matchedWorkflowLevel?.options?.status?.['RQ-RJ']" mat-button class="ovi-btn-primary" style=" margin-right: 5px;background: #ff1212;"  appDebounceClick [debounceTime]="600"
             (debounceClick)="editTask(null,null,'RQ-RJ')" [disabled]="taskForm.invalid || isReminderFormValid" cdkFocusInitial> {{"Reject"|translate}}
         </button>
-        <button *ngIf="data.type == 'modify' && isSubmit && taskForm.controls.statusId.disabled && matchedWorkflowLevel?.options?.status?.['RQ-RTN']"mat-button class="active-btn"  style=" margin-right: 5px;background: #ff1212;" appDebounceClick [debounceTime]="600"
+        <button *ngIf="data.type == 'modify' && isSubmit && taskForm.controls.statusId.disabled && matchedWorkflowLevel?.options?.status?.['RQ-RTN']"mat-button class="ovi-btn-primary"  style=" margin-right: 5px;background: #ff1212;" appDebounceClick [debounceTime]="600"
             (debounceClick)="editTask(null,null,'RQ-RTN')" [disabled]="taskForm.invalid || isReminderFormValid" cdkFocusInitial>{{"Return"|translate}}
         </button>
-        <button *ngIf="data.type == 'modify' && isSubmit && taskForm.controls.statusId.disabled" mat-button class="active-btn"  appDebounceClick [debounceTime]="600"
+        <button *ngIf="data.type == 'modify' && isSubmit && taskForm.controls.statusId.disabled" mat-button class="ovi-btn-primary"  appDebounceClick [debounceTime]="600"
             (debounceClick)="editTask(null,null,true)" [disabled]="taskForm.invalid || isReminderFormValid" cdkFocusInitial>{{"Approve"|translate}}
         </button>
         </div>

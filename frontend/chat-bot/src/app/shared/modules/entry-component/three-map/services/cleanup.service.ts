@@ -7,31 +7,73 @@ import { RoomMesh } from '../models';
 })
 export class CleanupService {
     /**
+     * Recursively disposes of all child objects, geometries, materials, and textures
+     */
+    private disposeObjectDeep(obj: THREE.Object3D): void {
+        if (!obj) return;
+
+        // Depth-first recursive disposal of children
+        while (obj.children.length > 0) {
+            const child = obj.children[0];
+            obj.remove(child);
+            this.disposeObjectDeep(child);
+        }
+
+        if (obj instanceof THREE.Mesh) {
+            if (obj.geometry) {
+                try {
+                    obj.geometry.dispose();
+                } catch (e) {
+                    console.warn('Failed to dispose geometry:', e);
+                }
+            }
+            if (obj.material) {
+                const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+                for (const mat of materials) {
+                    if (mat) {
+                        // Dispose of any textures assigned to material properties (e.g., map, lightMap, normalMap, etc.)
+                        for (const key of Object.keys(mat)) {
+                            const val = (mat as any)[key];
+                            if (val && typeof val.dispose === 'function') {
+                                try {
+                                    val.dispose();
+                                } catch (e) {
+                                    console.warn(`Failed to dispose material property '${key}':`, e);
+                                }
+                            }
+                        }
+                        try {
+                            mat.dispose();
+                        } catch (e) {
+                            console.warn('Failed to dispose material:', e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Clear all map objects from the scene
      */
     clearMapObjects(scene: THREE.Scene): void {
         const toRemove: THREE.Object3D[] = [];
 
-        scene.traverse((child) => {
-            if (child instanceof THREE.Mesh || child instanceof THREE.Group || child.name === 'label') {
-                if (child.type !== 'Scene' && !(child instanceof THREE.Light)) {
-                    toRemove.push(child);
-                }
+        // Collect top-level objects to remove (ignoring scene itself and lights)
+        for (let i = scene.children.length - 1; i >= 0; i--) {
+            const child = scene.children[i];
+            if (!(child instanceof THREE.Light) && child.type !== 'Scene') {
+                toRemove.push(child);
             }
-        });
+        }
 
         toRemove.forEach(obj => {
-            if (obj.parent) obj.parent.remove(obj);
-            if (obj instanceof THREE.Mesh) {
-                if (obj.geometry) obj.geometry.dispose();
-                if (obj.material) {
-                    if (Array.isArray(obj.material)) {
-                        obj.material.forEach(m => m.dispose());
-                    } else {
-                        obj.material.dispose();
-                    }
-                }
+            if (obj.parent) {
+                obj.parent.remove(obj);
+            } else {
+                scene.remove(obj);
             }
+            this.disposeObjectDeep(obj);
         });
     }
 
@@ -47,11 +89,6 @@ export class CleanupService {
         } else {
             scene.remove(group);
         }
-        group.traverse(child => {
-            if (child instanceof THREE.Mesh) {
-                child.geometry.dispose();
-                (child.material as THREE.Material).dispose();
-            }
-        });
+        this.disposeObjectDeep(group);
     }
 }

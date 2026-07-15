@@ -41,11 +41,19 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
   customMarker = null
   lat = null;
   lng = null;
+  lastMqttUpdateTime: Date | null = null;
   private _client: MqttClient;
   requestDetails : any;
   origin: string = '13.0827, 80.2707';
   destination: string = '13.0500, 80.2824';
   completedWayPoints = [];
+  geoLocationInterval: any;
+  public ambulanceIcon = 'assets/Alert/common_icons/small-circle-ambulance-green.png';
+  public hospitalIcon = 'assets/Alert/common_icons/hospital-marker.png';
+  public patientIcon = 'assets/Alert/common_icons/patient-marker.png';
+  mqttWatchdogInterval: any;
+  lastRouteRequestTime = 0;
+  minRouteRefreshInterval = 15000; // ms — min gap between Directions API recomputes
 
   constructor(public thisDialogRef: MatDialogRef<any>, @Inject(MAT_DIALOG_DATA) public data: any,
     private readonly commonService: CommonService, public datepipe: DatePipe,
@@ -95,34 +103,93 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
     this.directionsRenderer.setMap(this.map);
     if(this.data) {
       if (this.data.reqStatus === 'RQ-CO') {
-        let actualTime = this.datepipe.transform(this.data.reqDetail.startedDatetime, 'yyyy-MM-dd HH:mm');
-        let actualDropTime = this.datepipe.transform(this.data.reqDetail.endTime, 'yyyy-MM-dd HH:mm');
-        this.commonService.getCompletedPath(actualTime, actualDropTime, this.data.reqDetail.ambulanceId).subscribe(res=> {
-          if(res.results.statusCode === 200) {
-            this.completedWayPoints = res.results?.data?.set1;
-            if (this.completedWayPoints?.length >= 2) {
-              this.drawCompletedRoute();
-            } else {
-              this.googleDirection();
-            }
-          } else {
-            this.googleDirection();
-          }
-        });
+    let actualTime = this.datepipe.transform(this.data.reqDetail.startedDatetime, 'yyyy-MM-dd HH:mm');
+    let actualDropTime = this.datepipe.transform(this.data.reqDetail.endTime, 'yyyy-MM-dd HH:mm');
+    this.commonService.getCompletedPath(actualTime, actualDropTime, this.data.reqDetail.ambulanceId).subscribe(res=> {
+      if(res.results.statusCode === 200) {
+        this.completedWayPoints = res.results?.data?.set1;
+        if (this.completedWayPoints?.length >= 2) {
+          this.drawCompletedRoute();
+        } else {
+          this.googleDirection();
+        }
       } else {
         this.googleDirection();
       }
+    });
+      } else {
+        this.googleDirection();
+        this.startMqttWatchdog();
+      }
+    }
+  }
+
+  isMqttStale(): boolean {
+    if (!this.lastMqttUpdateTime) return true;
+
+    const diff = Date.now() - this.lastMqttUpdateTime.getTime();
+    return diff > 20 * 1000;
+  }
+
+  startMqttWatchdog() {
+    this.mqttWatchdogInterval = setInterval(() => {
+      if (this.data.reqStatus === 'RQ-CO') {
+        this.stopGeoPolling();
+        return;
+      }
+
+      if (this.isMqttStale()) {
+        this.startGeoPolling();
+      } else {
+        this.stopGeoPolling();
+      }
+    }, 5000);
+  }
+
+  startGeoPolling() {
+    if (this.geoLocationInterval) return; 
+    this.geoLocationInterval = setInterval(() => {
+      this.commonService.getGeoLocation(this.data.reqDetail.tagId).subscribe(res => {
+        if (res.results.data.length !== 0) {
+          let latLng = res.results.data;
+          let geo = latLng[latLng.length - 1];
+          console.log(geo)
+          this.lat = geo.lat;
+          this.lng = geo.lng;
+          // const now = Date.now();
+          // if (now - this.lastRouteRequestTime < this.minRouteRefreshInterval) {
+          //   return; // throttled — skip this recompute, next tick will use latest lat/lng
+          // }
+          // this.lastRouteRequestTime = now;
+          this.addCustomMarker(this.lat, this.lng);
+        }
+      });
+    }, 30000);
+  }
+
+  stopGeoPolling() {
+    if (this.geoLocationInterval) {
+      clearInterval(this.geoLocationInterval);
+      this.geoLocationInterval = null;
     }
   }
 
   googleDirection() {
     let src = this.data.origin;
     let dest = this.data.destination;
-    if(this.data.waypoints) {
+    if(this.isMqttStale() && this.data?.lastGeoData && this.data.reqStatus !== 'RQ-CO') {
+      this.lat = this.data.lastGeoData.lat;
+      this.lng = this.data.lastGeoData.lng;
+      this.lastRouteRequestTime = Date.now();
+      this.getDirections(src, dest, { lat: this.lat, lng: this.lng });
+      return;
+    } else if(this.data.waypoints) {
       [this.lat, this.lng] = this.data.waypoints.split(',').map(Number);
-    this.addCustomMarker(this.lat, this.lng)
+      this.lastRouteRequestTime = Date.now();
+      this.getDirections(src, dest, { lat: this.lat, lng: this.lng });
+      return;
     }
-    this.getDirections(src, dest)
+    this.getDirections(src, dest);
   }
 
   drawCompletedRoute() {
@@ -311,7 +378,7 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
           position: origin,
           map: this.map,
           icon: {
-            url: 'assets/Alert/common_icons/small-circle-ambulance-green.png',
+            url: this.ambulanceIcon,
             scaledSize: new google.maps.Size(40, 40)
           }
         });
@@ -329,7 +396,11 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
         const midMarker = new google.maps.Marker({
           position: midPoint,
           map: this.map,
-          label: 'A'
+          // label: 'A'
+          icon: {
+            url: this.data?.reqDetail?.sourceGeoCoordinate?.hasOwnProperty('landmark') ? this.patientIcon : this.hospitalIcon,
+            scaledSize: new google.maps.Size(40, 40)
+          }
         });
         midMarker.addListener('mouseover', () => {
           infoWindow.setContent(`<div style="font-size:11px;padding:2px 5px;white-space: nowrap;">${this.data.reqDetail?.sourceAddress}</div>`);
@@ -345,7 +416,10 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
         const destinationMarker = new google.maps.Marker({
           position: destination,
           map: this.map,
-          label: 'B'
+          icon: {
+            url: this.data?.reqDetail?.destinationGeoCoordinate?.hasOwnProperty('landmark') ? this.patientIcon : this.hospitalIcon,
+            scaledSize: new google.maps.Size(40, 40)
+          }
         });
         destinationMarker.addListener('mouseover', () => {
           infoWindow.setContent(`<div style="font-size:11px;padding:2px 5px;white-space: nowrap;">${this.data.reqDetail?.destinationAddress}</div>`);
@@ -382,9 +456,30 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
     return nearest;
   }
 
+  // addCustomMarker(lat, lng) {
+  //   this.removeCustomMarker();
+  //   const position = new google.maps.LatLng(lat, lng);
+  //   this.customMarker = new google.maps.Marker({
+  //     position: position,
+  //     map: this.map,
+  //     title: this.data.reqDetail.tagId,
+  //     icon: {
+  //       url: 'assets/Alert/common_icons/small-circle-ambulance-green.png',
+  //       scaledSize: new google.maps.Size(40, 40), // Optional: resize icon
+  //     }
+  //   });
+    
+  // }
+
   addCustomMarker(lat, lng) {
-    this.removeCustomMarker();
+    this.lat = lat;
+    this.lng = lng;
     const position = new google.maps.LatLng(lat, lng);
+    this.placeAmbulanceMarker(position);
+  }
+
+  placeAmbulanceMarker(position: any) {
+    this.removeCustomMarker();
     this.customMarker = new google.maps.Marker({
       position: position,
       map: this.map,
@@ -394,8 +489,8 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
         scaledSize: new google.maps.Size(40, 40), // Optional: resize icon
       }
     });
-    
   }
+
   removeCustomMarker() {
     if (this.customMarker) {
       this.customMarker.setMap(null);
@@ -403,7 +498,7 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getDirections(src?, dest?) {
+  getDirections(src?, dest?, waypointPos?: { lat: number, lng: number }) {
     let origin = null;
     let destination = null;
     if (src == null) {
@@ -417,14 +512,51 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
       origin = new google.maps.LatLng(originLat, originLng);
       destination = new google.maps.LatLng(destLat, destLng);
     }
-    const request = {
+
+    const request: any = {
       origin,
       destination,
       travelMode: google.maps.TravelMode.DRIVING,
     };
+
+    if (waypointPos) {
+      request.waypoints = [{
+        location: new google.maps.LatLng(waypointPos.lat, waypointPos.lng),
+        stopover: true
+      }];
+      request.optimizeWaypoints = false;
+    }
+
     this.directionsService.route(request, (result: any, status: any) => {
         if (status === 'OK') {
+          const zoom = this.map.getZoom();
+          const center = this.map.getCenter();
+
           this.directionsRenderer.setDirections(result);
+
+          this.map.setCenter(center);
+          this.map.setZoom(zoom);
+          new google.maps.Marker({
+            position: origin,
+            map: this.map,
+            icon: {
+              url: this.data?.reqDetail?.sourceGeoCoordinate?.hasOwnProperty('landmark') ? this.patientIcon : this.hospitalIcon,
+              scaledSize: new google.maps.Size(40, 40)
+            }
+          });
+          new google.maps.Marker({
+            position: destination,
+            map: this.map,
+            icon: {
+              url: this.data?.reqDetail?.destinationGeoCoordinate?.hasOwnProperty('landmark') ? this.patientIcon : this.hospitalIcon,
+              scaledSize: new google.maps.Size(40, 40)
+            }
+          });
+
+          if (waypointPos) {
+            const snappedAmbulancePos = result.routes[0].legs[0].end_location;
+            this.placeAmbulanceMarker(snappedAmbulancePos);
+          }
         } else {
         alert('Failed to get route: ' + status);
         }
@@ -459,8 +591,11 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
         let tagData = JSON.parse('[' + msg + ']')
         tagData = tagData[0];
         if (tagData.tag_id == this.tagId && this.data.reqStatus !== 'RQ-CO') {
-          if (tagData.lat?.toFixed(3) !== this.lat?.toFixed(3) || tagData.lng?.toFixed(3) !== this.lng?.toFixed(3)) {
-            [this.lat, this.lng] = [tagData.lat, tagData.lng]
+          this.lastMqttUpdateTime = new Date();
+          this.stopGeoPolling();
+          if (tagData.lat?.toFixed(5) !== this.lat?.toFixed(5) || tagData.lng?.toFixed(5) !== this.lng?.toFixed(5)) {
+            this.lat = tagData.lat;
+            this.lng = tagData.lng;
             this.addCustomMarker(this.lat, this.lng)
             
           }
@@ -471,6 +606,10 @@ export class GoogleDirectionsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if(this._client) {
       this._client.end(true);
+    }
+    this.stopGeoPolling();
+    if (this.mqttWatchdogInterval) {
+      clearInterval(this.mqttWatchdogInterval);
     }
   }
   

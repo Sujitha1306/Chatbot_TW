@@ -4,6 +4,12 @@ export interface LocationData {
 
     name: string;
 
+    displayName?: string;
+
+    mapLabel?: string;
+
+    regionalName?: string;
+
     coordinates: string;
 
     polygonStyle: string | null;
@@ -19,4 +25,5 @@ export interface LocationData {
     aspects: string | null;
     disLocLevel?: number | null;
     labelStyle?: string | null;
+    additionalCoordinates?: string | null;
 }

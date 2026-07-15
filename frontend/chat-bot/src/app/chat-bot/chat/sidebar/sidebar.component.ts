@@ -14,7 +14,10 @@ import { map } from 'rxjs/operators';
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   @Input() collapsed = false;
+  @Input() embedded = false;
   @Output() toggle = new EventEmitter<void>();
+  @Output() conversationSelect = new EventEmitter<string>();
+  @Output() newChatClick = new EventEmitter<void>();
 
   sidebarWidth = 300; // Default width in pixels
   isResizing = false;
@@ -159,7 +162,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   newChat() {
     this.chat.newConversation();
-    this.router.navigate(['.'], { relativeTo: this.route });
+    if (this.embedded) {
+      this.newChatClick.emit();
+    } else {
+      this.router.navigate(['.'], { relativeTo: this.route });
+    }
   }
 
   fillRecommendation(rec: string) {
@@ -167,7 +174,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   selectConv(id: string) {
-    this.router.navigate([id], { relativeTo: this.route });
+    if (this.embedded) {
+      this.chat.selectConversation(id);
+      this.conversationSelect.emit(id);
+    } else {
+      this.router.navigate([id], { relativeTo: this.route });
+    }
   }
 
   toggleMenu(event: Event, convId: string) {

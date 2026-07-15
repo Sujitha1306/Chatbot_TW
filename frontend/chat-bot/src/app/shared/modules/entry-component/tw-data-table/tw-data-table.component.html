@@ -59,14 +59,14 @@
           </ng-container>
 
           <ng-container *ngIf="col.headerIcon?.src">
-            <img class="tdt-header-img"
+            <img class="tdt-header-img" [ngStyle]="{filter: col?.key === 'Device' ? 'invert(1)' : ''}"
                  [src]="col.headerIcon.src"
                  [alt]="col.header ?? col.key"
                  [title]="col.headerIcon.tooltip ?? col.header ?? col.key">
           </ng-container>
 
           <ng-container *ngIf="!col.headerIcon && col.key != 'select'">
-            {{ col.header ?? col.key | translate }}
+            {{ col.header ?? col.key | translate | titlecase}}
           </ng-container>
         </th>
 
@@ -109,14 +109,21 @@
                 {{ row[col.key] ? 'Active' : 'Inactive' | translate }}
               </span>
 
-              <span *ngSwitchCase="'cellColor'" [style.color]="col.colorCellMap?.[row[col.key]] || 'inherit'">
-                {{ row[col.key] }}
-              </span>
+              <ng-container *ngSwitchCase="'cellColor'">
+                <span *ngIf="row[col.key] != null && row[col.key] !== ''" class="tw-grid-status-badge" [style.color]="col.colorCellMap?.[row[col.key]]"
+                  [style.borderColor]="col.colorCellMap?.[row[col.key]]"
+                  [style.background]="'rgba(' + hexToRgb(col.colorCellMap?.[row[col.key]]) + ',0.10)'"
+                  [style.--badge-color]="col.colorCellMap?.[row[col.key]]">
+                  {{ row[col.key] | translate}}
+                </span>
+              </ng-container>
 
               <!-- Badge pill -->
-              <span *ngSwitchCase="'badge'" class="tdt-badge" [ngStyle]="getBadgeStyle(col, row)">
-                {{ row[col.key] }}
-              </span>
+              <ng-container *ngSwitchCase="'badge'">
+                <span *ngIf="row[col.key] != null && row[col.key] !== ''" class="tdt-badge" [ngStyle]="getBadgeStyle(col, row)">
+                  {{ row[col.key] }}
+                </span>
+              </ng-container>
 
               <!-- Inline bar -->
               <ng-container *ngSwitchCase="'bar'">

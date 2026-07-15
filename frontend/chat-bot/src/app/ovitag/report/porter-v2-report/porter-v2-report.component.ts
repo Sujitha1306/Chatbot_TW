@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, AfterViewInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef, NgZone } from '@angular/core';
+﻿import { Component, OnInit, AfterViewInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef, NgZone, Input } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { CommonService, ExcelService } from '../../../shared';
 import html2canvas from 'html2canvas';
@@ -73,10 +73,11 @@ function shadeColor(hex: string, pct: number): string {
   selector: 'app-porter-v2-report',
   templateUrl: './porter-v2-report.component.html',
   styleUrls: ['./porter-v2-report.component.scss'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  standalone: false
 })
 export class PorterV2ReportComponent  implements OnInit, AfterViewInit, OnDestroy {
-
+  @Input() showHeader: any = false;
   filterInputs: any[] = [];
   reportList:   any[] = [];
   reportData:   any   = {};
@@ -85,6 +86,8 @@ export class PorterV2ReportComponent  implements OnInit, AfterViewInit, OnDestro
   aiPeriodType = 'Date';
   aiDateFrom   = '';
   aiDateTo     = '';
+  // Today's data isn't available yet — latest selectable date is yesterday.
+  maxSelectableDate = new Date(new Date().setDate(new Date().getDate() - 1));
 
   // Keep these as computed getters so all existing fetch methods work unchanged
   get fromDateTime(): string { return this.aiDateFrom; }
@@ -480,12 +483,19 @@ export class PorterV2ReportComponent  implements OnInit, AfterViewInit, OnDestro
   ) {}
 
   ngOnInit() {
-    const now  = new Date();
-    const from = new Date(now); from.setDate(from.getDate() - 1);
-    // Both default to yesterday (same day range)
-    this.aiDateFrom = from.toISOString().slice(0, 10);
-    this.aiDateTo   = from.toISOString().slice(0, 10);
+    if(this.showHeader){
+       const now = new Date();
+      const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      this.aiDateFrom   = localToday;
+      this.aiDateTo     = localToday;
+      this.fetchV4()
+    }else{
+    const d = this.maxSelectableDate;
+    const localYesterday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    this.aiDateFrom   = localYesterday;
+    this.aiDateTo     = localYesterday;
     this.aiPeriodType = 'Date';
+    }
   }
 
   // ── AI Date Selector handler ──────────────────────────────────────────────
@@ -1280,9 +1290,9 @@ export class PorterV2ReportComponent  implements OnInit, AfterViewInit, OnDestro
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const map   = new Map(rows.map(r => [r.hour, r.count]));
     this.v4TrendOpt = {
-      tooltip: { trigger: 'axis', formatter: (p: any) => `${p[0].name}:00 â€” ${p[0].value} requests` },
+      tooltip: { trigger: 'axis', formatter: (p: any) => `${p[0].name} â€” ${p[0].value} requests` },
       grid: { left: '3%', right: '3%', top: '8%', bottom: '12%', containLabel: true },
-      xAxis: { type: 'category', data: hours.map(h => `${String(h).padStart(2,'0')} AM`),
+      xAxis: { type: 'category', data: hours.map(h => `${String(h).padStart(2,'0')}:00`),
         boundaryGap: false, axisLine: { lineStyle: { color: '#e5e7eb' } }, axisLabel: { color: '#6b7280' } },
       yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#f3f4f6' } },
         axisLabel: { color: '#6b7280' } },
@@ -1559,7 +1569,7 @@ export class PorterV2ReportComponent  implements OnInit, AfterViewInit, OnDestro
     this.v5YoySummary   = d.yoy_summary    || [];
     this.v5PeriodLabels = d.period_labels  || {};
     this.buildV5MonthlyTrend(d.monthly_trend   || []);
-    this.buildV5DeptBar(d.dept_comparison       || []);
+    this.buildV5DeptBar(d.poolwise_comparison   || []);
     this.buildV5StatusDonut(d.status_donut      || {});
     this.buildV5TimeSlot(d.time_slot            || []);
     this.buildV5YoyInsights(this.v5KpiCards);
@@ -1589,7 +1599,8 @@ export class PorterV2ReportComponent  implements OnInit, AfterViewInit, OnDestro
   private buildV5DeptBar(rows: any[]) {
     const curLabel  = this.v5PeriodLabels.current  || 'Current';
     const prevLabel = this.v5PeriodLabels.previous || 'Previous';
-    const depts = rows.map(r => r.dept);
+    rows = rows.slice(0, 10);
+    const depts = rows.map(r => r.poolName);
     this.v5DeptBarOpt = {
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       legend: { data: [curLabel, prevLabel], bottom: 0 },

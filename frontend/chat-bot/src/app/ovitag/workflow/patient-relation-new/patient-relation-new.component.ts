@@ -21,7 +21,15 @@ export class PatientRelationNewComponent implements OnInit {
   tableData: any[] = [];
   selectedName: any = null;
   selectDropdown: any;
-  searchText = null; 
+  searchText = null;
+
+  // ── Grid config (grid-config-patientrelation) ──
+  displayedColumns: string[] = [];
+  columnData: string[] = [];
+  iconColumn = [];
+  iconHeader = [];
+  eventColumn = [];
+
   // ── Sorting ──
   sortColumn: string = null;
   sortDirection: 'asc' | 'desc' = 'asc';
@@ -40,7 +48,27 @@ export class PatientRelationNewComponent implements OnInit {
   constructor(public dialog: MatDialog, public commonService: CommonService) {}
 
   ngOnInit() {
-    this.loadPage();
+    this.getDynamicTableColumn();
+  }
+
+  getDynamicTableColumn() {
+    this.commonService.getDynamicTableColumn('patientrelation').subscribe((res) => {
+      if (res.statusCode === 1) {
+        const dynamicColumns = res.results.contentObject;
+        this.displayedColumns = dynamicColumns.displayedColumns;
+        this.columnData = dynamicColumns.columns;
+        this.iconColumn = dynamicColumns.iconColumn;
+        this.iconHeader = dynamicColumns.iconHeader;
+        this.eventColumn = dynamicColumns.eventColumn;
+        if (dynamicColumns.pageSize) {
+          this.prnPageSize = dynamicColumns.pageSize;
+        }
+        if (dynamicColumns.pageSizeOptions) {
+          this.prnPageSizeOptions = dynamicColumns.pageSizeOptions;
+        }
+      }
+      this.loadPage();
+    });
   }
 
   loadPage() {

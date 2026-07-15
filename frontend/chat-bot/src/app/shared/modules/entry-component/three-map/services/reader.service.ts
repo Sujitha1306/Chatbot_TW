@@ -9,6 +9,7 @@ import { ConfigurationService } from '../../../../services';
 export class ReaderService {
     private readers: ReaderData[] = [];
     private iconCache = new Map<string, THREE.Texture>();
+    private readersLoadedPromise: Promise<void> | null = null;
 
     private iconLoadingMap: Record<string, string> = {
         'WiFi Reader': 'assets/three-js/icons/wifi-reader.svg',
@@ -20,21 +21,29 @@ export class ReaderService {
 
     constructor(private configurationServices : ConfigurationService) { }
 
-    public async loadReaders(): Promise<void> {
-        try {
-            // const response = await fetch('assets/three-js/readers.json');
-            // /* JSON to API Migration Example:
-            // const response = await fetch('https://your-api.com/api/v1/readers');
-            // */
-            // if (!response.ok) throw new Error('Failed to load readers.json');
-            // this.readers = await response.json();
-            this.configurationServices.getAllReaders().subscribe(res => {
-                this.readers = res.results.filter(val => val.readerTypeId != 'RT-DS');
-            });
-            console.log(`Loaded ${this.readers.length} readers.`);
-        } catch (error) {
-            console.error('Error loading readers:', error);
+    public loadReaders(): Promise<void> {
+        if (this.readersLoadedPromise) {
+            return this.readersLoadedPromise;
         }
+        this.readersLoadedPromise = new Promise<void>((resolve) => {
+            try {
+                this.configurationServices.getAllReaders().subscribe({
+                    next: (res) => {
+                        this.readers = res?.results?.filter(val => val.readerTypeId !== 'RT-DS') || [];
+                        console.log(`Loaded ${this.readers.length} readers.`);
+                        resolve();
+                    },
+                    error: (error) => {
+                        console.error('Error loading readers:', error);
+                        resolve(); // Resolve to avoid blocking map initialization
+                    }
+                });
+            } catch (error) {
+                console.error('Sync error in loadReaders:', error);
+                resolve();
+            }
+        });
+        return this.readersLoadedPromise;
     }
 
     public createReadersForFloor(
@@ -51,6 +60,12 @@ export class ReaderService {
             const sprite = this.createReaderSprite(data, yOffset, xOffset, zOffset);
             if (sprite) {
                 parent.add(sprite);
+                const parentScale = new THREE.Vector3(1, 1, 1);
+                parent.getWorldScale(parentScale);
+                const px = parentScale.x || 1;
+                const py = parentScale.y || 1;
+                const pz = parentScale.z || 1;
+                sprite.scale.set(1.4 / px, 1.4 / py, 1 / pz);
                 sprites.push(sprite);
             }
         });

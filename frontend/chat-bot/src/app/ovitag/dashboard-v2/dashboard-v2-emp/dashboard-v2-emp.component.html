@@ -1,0 +1,257 @@
+<div class="dashboard-v2-container" [ngStyle]="{height: externalDashboardData ? '100%' : (maxHeight + 'px')}" style="overflow:auto; background:#edf4f7;">
+
+  <!-- GridStack layout — fills page width; column count matches saved layout extent -->
+  <div class="grid-stack" #gridEl style="width:100%;">
+    <div *ngFor="let wid of clayout; trackBy: trackByCode"
+         class="grid-stack-item"
+         [attr.gs-id]="wid.code"
+         [attr.gs-x]="wid.x"
+         [attr.gs-y]="wid.y"
+         [attr.gs-w]="wid.cols"
+         [attr.gs-h]="wid.rows">
+      <div class="grid-stack-item-content" style="overflow:hidden;">
+
+        <!-- Widget header -->
+        <app-widget-header
+          *ngIf="dashboardDetails[wid.code] && dashboardDetails[wid.code]['type'] !== 'header'"
+          [title]="wid.widgetName"
+          [headerStyle]="dashboardDetails[wid.code]?.styles"
+          [filters]="dashboardDetails[wid.code]?.filters"
+          [navigate]="dashboardDetails[wid.code]?.redirect"
+          (childToParentAction)="null"
+          (getWidgetFilter)="null">
+        </app-widget-header>
+
+        <!-- ECharts (bar / hbar / line / pie / chart) -->
+        <div *ngIf="dashboardDetails[wid.code]?.type === 'echart' && dashboardDetails[wid.code]?.show"
+             class="echart-wrap">
+
+          <!-- Settings gear (top-right) -->
+          <button mat-icon-button class="widget-settings-btn"
+                  [matMenuTriggerFor]="cfgMenu"
+                  (click)="$event.stopPropagation()"
+                  matTooltip="Chart options">
+            <mat-icon>settings</mat-icon>
+          </button>
+          <mat-menu #cfgMenu="matMenu" class="v2-cfg-menu">
+            <button mat-menu-item (click)="$event.stopPropagation(); toggleSetting(wid.code, 'legend')">
+              <mat-icon>{{ chartSettings[wid.code]?.legend ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+              <span>Legend</span>
+            </button>
+            <button mat-menu-item (click)="$event.stopPropagation(); toggleSetting(wid.code, 'labels')">
+              <mat-icon>{{ chartSettings[wid.code]?.labels ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+              <span>Data Labels</span>
+            </button>
+            <button mat-menu-item (click)="$event.stopPropagation(); toggleSetting(wid.code, 'tooltip')">
+              <mat-icon>{{ chartSettings[wid.code]?.tooltip ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+              <span>Tooltips (values on hover)</span>
+            </button>
+            <button mat-menu-item (click)="$event.stopPropagation(); toggleSetting(wid.code, 'title')">
+              <mat-icon>{{ chartSettings[wid.code]?.title ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+              <span>Chart Title</span>
+            </button>
+            <ng-container *ngIf="!isPie(wid.code)">
+              <button mat-menu-item (click)="$event.stopPropagation(); toggleSetting(wid.code, 'gridLines')">
+                <mat-icon>{{ chartSettings[wid.code]?.gridLines ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+                <span>Grid Lines</span>
+              </button>
+              <button mat-menu-item (click)="$event.stopPropagation(); toggleSetting(wid.code, 'axisLabels')">
+                <mat-icon>{{ chartSettings[wid.code]?.axisLabels ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+                <span>Axis Labels</span>
+              </button>
+              <mat-divider></mat-divider>
+              <button mat-menu-item
+                      (click)="$event.stopPropagation(); setChartType(wid.code, chartSettings[wid.code]?.type === 'bar' ? 'line' : 'bar')">
+                <mat-icon>{{ chartSettings[wid.code]?.type === 'bar' ? 'show_chart' : 'bar_chart' }}</mat-icon>
+                <span>Switch to {{ chartSettings[wid.code]?.type === 'bar' ? 'Line' : 'Bar' }}</span>
+              </button>
+            </ng-container>
+            <mat-divider></mat-divider>
+            <button mat-menu-item (click)="maximize(wid.code)">
+              <mat-icon>fullscreen</mat-icon><span>Maximize</span>
+            </button>
+            <button mat-menu-item (click)="downloadChart(wid.code, 'svg')">
+              <mat-icon>download</mat-icon><span>Download SVG</span>
+            </button>
+            <button mat-menu-item (click)="downloadChart(wid.code, 'png')">
+              <mat-icon>image</mat-icon><span>Download PNG</span>
+            </button>
+            <button mat-menu-item (click)="downloadChart(wid.code, 'csv')">
+              <mat-icon>table_view</mat-icon><span>Download CSV</span>
+            </button>
+          </mat-menu>
+
+          <div echarts
+               [options]="dashboardDetails[wid.code].echartsOption"
+               [initOpts]="getChartInitOpts(wid)"
+               [autoResize]="true"
+               (chartInit)="onChartInit(wid.code, $event)"
+               style="width:100%;height:100%;">
+          </div>
+        </div>
+
+        <!-- Header widget (WT-HDR) -->
+        <div *ngIf="dashboardDetails[wid.code]?.type === 'header' && dashboardDetails[wid.code]?.show"
+             style="width:100%;height:100%;">
+          <div style="width:100%;height:100%;display:flex;align-items:center;"
+               [ngStyle]="{background: dashboardDetails[wid.code]['detail'][0]['bg-color'],
+                           'border-radius': dashboardDetails[wid.code]['detail'][0]['borderRadius'],
+                           'justify-content': dashboardDetails[wid.code]['detail'][0]['justify']}">
+
+            <!-- HTML content template (placeholders filled from model), shown only when non-empty -->
+            <div *ngIf="dashboardDetails[wid.code]['content']"
+                 style="width:100%;padding:0 16px;"
+                 [innerHTML]="dashboardDetails[wid.code]['content']"></div>
+
+            <!-- Styled title (icon + text) — always rendered when there is no content template -->
+            <img *ngIf="!dashboardDetails[wid.code]['content'] && dashboardDetails[wid.code]['detail'][0].icon"
+                 [src]="dashboardDetails[wid.code]['detail'][0].icon"
+                 [width]="dashboardDetails[wid.code]['detail'][0].iconWidth"
+                 style="object-fit:contain;margin:0 12px;" alt="header-icon">
+            <span *ngIf="!dashboardDetails[wid.code]['content']"
+                  [ngStyle]="{color: dashboardDetails[wid.code]['detail'][0]['fontColor'],
+                              'font-size': dashboardDetails[wid.code]['detail'][0]['fontSize'],
+                              'font-weight': dashboardDetails[wid.code]['detail'][0]['fontWeight'],
+                              'padding': '0 16px'}">
+              {{ dashboardDetails[wid.code]['detail'][0].title }}
+            </span>
+          </div>
+        </div>
+         <!-- TABLE widget (WT-TABLE) -->
+<div *ngIf="dashboardDetails[wid.code]?.type === 'table' && dashboardDetails[wid.code]?.show"
+     style="height:calc(100% - 5px);">
+  <angular-table-component
+    [title]="dashboardDetails[wid.code]['text'] || wid.widgetName"
+    [headerStyle]="dashboardDetails[wid.code]['styles']"
+    [tableData]="dashboardDetails[wid.code]['data']"
+    [columns]="dashboardDetails[wid.code]['column']"
+    [id]="'dashWid'"
+    [tableLabel]="dashboardDetails[wid.code]['label']"
+    [tableStyle]="dashboardDetails[wid.code]['tableStyle']"
+    [styles]="dashboardDetails[wid.code]['styles']"
+    [page]="dashboardDetails[wid.code]['pagination']"
+    [pageSizeOptions]="dashboardDetails[wid.code]['pageSizeOptions']"
+    [enableExcel]="dashboardDetails[wid.code]['enableExcel']"
+    [filters]="dashboardDetails[wid.code]['filters']"
+    [kpi]="dashboardDetails[wid.code]['kpiRules']">
+  </angular-table-component>
+</div>
+
+<!-- CARD widget (WT-CARD) -->
+<div *ngIf="dashboardDetails[wid.code]?.type === 'card' && dashboardDetails[wid.code]?.show"
+     style="width:100%;height:100%;border-radius:5px;">
+  <!-- HTML content / repeatable template -->
+  <div *ngIf="dashboardDetails[wid.code]['content']"
+       style="width:100%;height:100%;"
+       [innerHTML]="dashboardDetails[wid.code]['content']">
+  </div>
+  <!-- Style-driven card -->
+  <div *ngIf="!dashboardDetails[wid.code]['content'] && dashboardDetails[wid.code]['cardStyle']">
+    <div [ngStyle]="dashboardDetails[wid.code]['cardStyle']['header']">
+      {{ dashboardDetails[wid.code]['detail'][0].title }}
+    </div>
+    <div [ngStyle]="dashboardDetails[wid.code]['cardStyle']['content']">
+      <div [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-label']">
+        <div *ngFor="let d of dashboardDetails[wid.code]['detail'][0].data.data; let i = index">
+          <span *ngIf="dashboardDetails[wid.code]['detail'][0].data.label[i] !== ''">{{ dashboardDetails[wid.code]['detail'][0].data.label[i] }}</span>
+          <span *ngIf="d !== ''">{{ d }}</span>
+        </div>
+      </div>
+      <div *ngIf="dashboardDetails[wid.code]['cardStyle']['con-icon-name']"
+           [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-icon']">
+        <span *ngIf="dashboardDetails[wid.code]['cardStyle']['con-icon-name']['img']"
+              [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-circle']">
+          <img [src]="dashboardDetails[wid.code]['cardStyle']['con-icon-name']['img']"
+               alt="icon" [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-inner-icon']">
+        </span>
+        <span *ngIf="dashboardDetails[wid.code]['cardStyle']['con-icon-name']['icon']"
+              [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-circle']">
+          <mat-icon [ngStyle]="dashboardDetails[wid.code]['cardStyle']['con-inner-icon']">
+            {{ dashboardDetails[wid.code]['cardStyle']['con-icon-name'].icon }}
+          </mat-icon>
+        </span>
+      </div>
+    </div>
+    <div *ngIf="dashboardDetails[wid.code]['cardStyle']['footer']?.text"
+         [ngStyle]="dashboardDetails[wid.code]['cardStyle']['footer']">
+      {{ dashboardDetails[wid.code]['cardStyle']['footer']['text'] }}
+    </div>
+  </div>
+</div>
+        <!-- Placeholder for not-yet-implemented widget types -->
+        <div *ngIf="dashboardDetails[wid.code]?.type === 'placeholder'" class="v2-placeholder">
+          <mat-icon>bar_chart</mat-icon>
+          <p>{{ dashboardDetails[wid.code].placeholderLabel || dashboardDetails[wid.code].placeholderType }}</p>
+          <span class="coming-soon">Coming Soon</span>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="dashboardDetails[wid.code]?.loading && !dashboardDetails[wid.code]?.show"
+             class="v2-state-msg">
+          <mat-icon class="spin">autorenew</mat-icon> Loading...
+        </div>
+
+        <!-- No data -->
+        <div *ngIf="dashboardDetails[wid.code] && !dashboardDetails[wid.code]?.show
+                    && !dashboardDetails[wid.code]?.loading
+                    && dashboardDetails[wid.code]?.type !== 'placeholder'"
+             class="v2-state-msg">
+          No records available
+        </div>
+
+      </div>
+    </div> 
+  </div>
+
+  <!-- Floating edit FAB -->
+  <div *ngIf="enableEditDashboard" class="fab-menu" [class.open]="isOpen">
+    <button mat-fab color="primary" class="fab-toggle" (click)="isOpen = !isOpen">
+      <mat-icon>{{ isOpen ? 'close' : 'settings' }}</mat-icon>
+    </button>
+    <div class="fab-actions" *ngIf="isOpen">
+      <button mat-mini-fab matTooltip="Refresh" (click)="refreshLayout()">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-mini-fab [matTooltip]="isAutoRefresh ? 'Auto Refresh On' : 'Auto Refresh Off'"
+              [style.opacity]="isAutoRefresh ? 1 : 0.5"
+              (click)="autoRefresh(!isAutoRefresh)">
+        <mat-icon>update</mat-icon>
+      </button>
+      <button mat-mini-fab matTooltip="Manage Widgets" (click)="editWidget()" #widgetsBtn>
+        <mat-icon>widgets</mat-icon>
+      </button>
+      <button mat-mini-fab matTooltip="Align Widgets" (click)="alignGrid()">
+        <mat-icon>grid_on</mat-icon>
+      </button>
+      <button mat-mini-fab [matTooltip]="screenLock ? 'Unlock Layout' : 'Lock Layout'"
+              (click)="toggleLock()">
+        <mat-icon>{{ screenLock ? 'lock' : 'lock_open' }}</mat-icon>
+      </button>
+      <button mat-mini-fab matTooltip="Reset Layout" (click)="resetLayout()">
+        <mat-icon>restart_alt</mat-icon>
+      </button>
+      <button mat-mini-fab matTooltip="Save Layout"
+              [disabled]="!isLayoutChanged"
+              [style.opacity]="isLayoutChanged ? 1 : 0.4"
+              (click)="saveWidgets(layout, true)">
+        <mat-icon>save</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fullscreen overlay for a maximized chart -->
+  <div *ngIf="maximizedCode" class="v2-maximize-overlay" (click)="closeMaximize()">
+    <div class="v2-maximize-panel" (click)="$event.stopPropagation()">
+      <div class="v2-maximize-head">
+        <span>{{ dashboardDetails[maximizedCode]?.text || dashboardDetails[maximizedCode]?.widgetName }}</span>
+        <button mat-icon-button (click)="closeMaximize()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div echarts
+           [options]="dashboardDetails[maximizedCode].echartsOption"
+           [autoResize]="true"
+           class="v2-maximize-chart">
+      </div>
+    </div>
+  </div>
+
+</div>

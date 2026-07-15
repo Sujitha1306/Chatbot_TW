@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as THREE from 'three';
 import { LocationData, RoomMesh } from '../models';
-import { shrinkPolygon, parseColor, createLabel, createLabelIconSprite, createFloorMesh, createExtrudedFloorMesh, createWallsFromCoordinates, getTileGrid, latLonToMeters } from '../helpers';
+import { shrinkPolygon, parseColor, parseColorOpacity, createLabel, createLabelIconSprite, createFloorMesh, createExtrudedFloorMesh, createWallsFromCoordinates, getTileGrid, latLonToMeters } from '../helpers';
 import {
     POLYGON_SHRINK_OFFSET,
     FLOOR_IMAGE_OPACITY,
@@ -10,6 +10,7 @@ import {
     BUILDING_LONGITUDE,
     OSM_ZOOM_LEVEL,
     WALL_THICKNESS,
+    WALL_HEIGHT,
     LABEL_HEIGHT,
     CORRIDOR_KEYWORDS
 } from '../constants/map.constants';
@@ -21,6 +22,16 @@ import { environment } from '../../../../../../environments/environment';
     providedIn: 'root'
 })
 export class FloorPlanService {
+    private tileTextureCache = new Map<string, THREE.Texture>();
+    private cachedFacilityId: string | null = null;
+
+    private getFacilityId(): string | null {
+        try {
+            return localStorage.getItem(btoa('facilityId'));
+        } catch (e) {
+            return null;
+        }
+    }
 
     /**
      * Build floor plan from location data and return room meshes
@@ -36,10 +47,12 @@ export class FloorPlanService {
         includeSurroundings: boolean = true,
         foundationColor: string = '#f5f5f5',
         wallWidth: number = WALL_THICKNESS,
+        wallHeight: number = WALL_HEIGHT,
         labelHeight: number = LABEL_HEIGHT,
         labelScale: number = 1.0,
         showCorridorWalls: boolean = true,
-        mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], buildingLat?: number, buildingLng?: number, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string }, mapTileType?: string } = { skipLocByCat: [], skipLocCatByCat: [] }
+        mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], threeDHeight?: Record<string, number>, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string }, mapTileType?: string } = { skipLocByCat: [], skipLocCatByCat: [] },
+        onTextureLoaded?: () => void
     ): {
 
         roomMeshes: RoomMesh[];
@@ -63,18 +76,37 @@ export class FloorPlanService {
         const roomMeshes: RoomMesh[] = [];
         const doorMeshes: THREE.Group[] = [];
 
-        const collectCoords = (loc: LocationData) => {
+        const collectCoords = (loc: LocationData, isFloor: boolean) => {
             if (loc.coordinates) {
                 try {
                     const data = JSON.parse(loc.coordinates);
-                    const coords = this.normalizeCoordinates(data.geometry.coordinates);
-                    allCoords.push(...coords);
+                    // If we have geo alignment, the floor's own coordinates are in lat/lng,
+                    // whereas child room coordinates are in local units (pixels/meters).
+                    // We must not mix them in allCoords because it skews the calculated center,
+                    // causing misalignment between room meshes and the floor image.
+                    const isGeoAlignedFloor = isFloor && this.hasGeoAlignment(loc);
+                    if (!isGeoAlignedFloor) {
+                        const coords = this.normalizeCoordinates(data.geometry.coordinates);
+                        allCoords.push(...coords);
+                    }
                 } catch (e) { }
             }
-            if (loc.children) loc.children.forEach(collectCoords);
+            if (loc.children) {
+                loc.children.forEach(c => collectCoords(c, false));
+            }
         };
 
-        collectCoords(floorData);
+        collectCoords(floorData, true);
+
+        // Fallback: If no coordinates were collected (e.g. no child rooms/locations),
+        // use the floor's own coordinates.
+        if (allCoords.length === 0 && floorData.coordinates) {
+            try {
+                const data = JSON.parse(floorData.coordinates);
+                const coords = this.normalizeCoordinates(data.geometry.coordinates);
+                allCoords.push(...coords);
+            } catch (e) { }
+        }
 
         let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
         allCoords.forEach(([x, z]) => {
@@ -122,9 +154,7 @@ export class FloorPlanService {
                     if (cx >= -180 && cx <= 180 && cy >= -90 && cy <= 90 && spanX > 0 && spanX < 1.0 && spanY > 0 && spanY < 1.0) {
                         hasGeoAlign = true;
                         floorGeoPolygon = pts;
-                        const anchorLat = mapConfig.buildingLat ?? BUILDING_LATITUDE;
-                        const anchorLng = mapConfig.buildingLng ?? BUILDING_LONGITUDE;
-                        const [anchorX, anchorY] = latLonToMeters(anchorLat, anchorLng);
+                        const [anchorX, anchorY] = latLonToMeters(cy, cx);
                         const scenePoints = floorGeoPolygon.map(pt => {
                             const [ptX, ptY] = latLonToMeters(pt[1], pt[0]);
                             return { x: ptX - anchorX, z: anchorY - ptY };
@@ -133,14 +163,23 @@ export class FloorPlanService {
                         geoCenterX = (Math.min(...scenePoints.map(p => p.x)) + Math.max(...scenePoints.map(p => p.x))) / 2;
                         geoCenterZ = (Math.min(...scenePoints.map(p => p.z)) + Math.max(...scenePoints.map(p => p.z))) / 2;
                         // Rotation from polygon's longest edge: aligns floor plan +X with building primary axis
-                        let longestLen = 0;
-                        for (let i = 0; i < floorGeoPolygon.length - 1; i++) {
-                            const [p0X, p0Y] = latLonToMeters(floorGeoPolygon[i][1], floorGeoPolygon[i][0]);
-                            const [p1X, p1Y] = latLonToMeters(floorGeoPolygon[i + 1][1], floorGeoPolygon[i + 1][0]);
-                            const edgeLen = Math.sqrt((p1X - p0X) ** 2 + (p1Y - p0Y) ** 2);
-                            if (edgeLen > longestLen) {
-                                longestLen = edgeLen;
-                                geoRotationY = Math.atan2(p1Y - p0Y, p1X - p0X);
+                        // If it is a map crop or image overlay (indicated by unit === 'latlng'), the first edge
+                        // (from point 0 to point 1) always represents the horizontal top edge of the image bounds.
+                        // We compute rotation directly from this first edge so it aligns with Leaflet's rotation.
+                        if (gd.unit === 'latlng') {
+                            const [p0X, p0Y] = latLonToMeters(floorGeoPolygon[0][1], floorGeoPolygon[0][0]);
+                            const [p1X, p1Y] = latLonToMeters(floorGeoPolygon[1][1], floorGeoPolygon[1][0]);
+                            geoRotationY = Math.atan2(p1Y - p0Y, p1X - p0X);
+                        } else {
+                            let longestLen = 0;
+                            for (let i = 0; i < floorGeoPolygon.length - 1; i++) {
+                                const [p0X, p0Y] = latLonToMeters(floorGeoPolygon[i][1], floorGeoPolygon[i][0]);
+                                const [p1X, p1Y] = latLonToMeters(floorGeoPolygon[i + 1][1], floorGeoPolygon[i + 1][0]);
+                                const edgeLen = Math.sqrt((p1X - p0X) ** 2 + (p1Y - p0Y) ** 2);
+                                if (edgeLen > longestLen) {
+                                    longestLen = edgeLen;
+                                    geoRotationY = Math.atan2(p1Y - p0Y, p1X - p0X);
+                                }
                             }
                         }
                         // Project geo polygon into building-group local axes and compute scale to fit exactly
@@ -164,11 +203,14 @@ export class FloorPlanService {
             } catch (e) {}
         }
 
+        const referenceCenterX = floorData.aspects ? (floorWidth / 2) : center[0];
+        const referenceCenterZ = floorData.aspects ? (floorHeight / 2) : center[1];
+
         // When geo-aligned: center rooms at local origin so buildingGroup rotation/position work correctly.
         // buildingGroup.position will be set to geoCenterX/Z by the component.
         // When not geo-aligned: keep original xOffset/zOffset (no change to existing behaviour).
-        const adjustedXOffset = hasGeoAlign ? (xOffset - center[0]) : xOffset;
-        const adjustedZOffset = hasGeoAlign ? (zOffset - center[1]) : zOffset;
+        const adjustedXOffset = hasGeoAlign ? (xOffset - referenceCenterX) : xOffset;
+        const adjustedZOffset = hasGeoAlign ? (zOffset - referenceCenterZ) : zOffset;
 
         if (floorData.children && floorData.children.length > 0) {
             // Collect ALL child polygon coordinates with metadata
@@ -200,26 +242,76 @@ export class FloorPlanService {
 
         // Calculate image center: use aspects if available for absolute alignment,
         // fallback to coordinate bounding box center.
-        let imageCenterX = center[0];
-        let imageCenterZ = center[1];
-
-        if (floorData.aspects) {
-            imageCenterX = floorWidth / 2;
-            imageCenterZ = floorHeight / 2;
-        }
+        let imageCenterX = referenceCenterX;
+        let imageCenterZ = referenceCenterZ;
 
         const floorImageMesh = includeFloorImage
-            ? this.createFloorImage(imageCenterX, imageCenterZ, floorWidth, floorHeight, parent, adjustedXOffset, adjustedZOffset, yOffset, floorData.id)
+            ? this.createFloorImage(imageCenterX, imageCenterZ, floorWidth, floorHeight, parent, adjustedXOffset, adjustedZOffset, yOffset, floorData.id, onTextureLoaded)
             : null;
 
+        if (!floorImageMesh && onTextureLoaded) {
+            onTextureLoaded();
+        }
+
         const surroundingsMesh = (isMainBuilding && includeSurroundings)
-            ? this.createSurroundingsMap(parent, yOffset, mapConfig.buildingLat, mapConfig.buildingLng, floorGeoPolygon, mapConfig.mapTileType ?? 'osm')
+            ? this.createSurroundingsMap(parent, yOffset, floorGeoPolygon, mapConfig.mapTileType ?? 'osm')
             : null;
 
         // Create an opaque foundation to mask OSM streets under the building (only for base floor)
         const foundationMesh = (isMainBuilding)
             ? this.createFoundation(imageCenterX, imageCenterZ, floorWidth, floorHeight, parent, adjustedXOffset, adjustedZOffset, yOffset, foundationColor)
             : null;
+
+        // Generate walls from additionalCoordinates of the floor
+        let additionalCoords: any = null;
+        if (floorData.additionalCoordinates) {
+            try {
+                additionalCoords = typeof floorData.additionalCoordinates === 'string'
+                    ? JSON.parse(floorData.additionalCoordinates)
+                    : floorData.additionalCoordinates;
+            } catch (e) {
+                console.error('Error parsing additionalCoordinates:', e);
+            }
+        }
+
+        const wallGeometries = additionalCoords?.wall || additionalCoords?.walls || [];
+        const level = floorData.locationTypeLevel || 0;
+        const allAdditionalWalls: THREE.Mesh[] = [];
+
+        if (wallGeometries && wallGeometries.length > 0) {
+            wallGeometries.forEach((wallGeo: any) => {
+                if (wallGeo && wallGeo.coordinates) {
+                    const rawCoords = this.normalizeCoordinates(wallGeo.coordinates);
+                    if (rawCoords.length >= 2) {
+                        const walls = createWallsFromCoordinates(rawCoords, [], wallWidth, wallHeight);
+                        walls.forEach(wall => {
+                            wall.position.x += adjustedXOffset;
+                            wall.position.z += adjustedZOffset;
+                            wall.position.y += yOffset + (level * 0.01);
+                            parent.add(wall);
+                            allAdditionalWalls.push(wall);
+                        });
+                    }
+                }
+            });
+        }
+
+        // If walls were created, bundle them in a dummy RoomMesh so visibility toggles work seamlessly
+        if (allAdditionalWalls.length > 0) {
+            const mockFloor = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial());
+            mockFloor.visible = false;
+            parent.add(mockFloor);
+            roomMeshes.push({
+                id: -999,
+                name: 'Additional Walls',
+                floor: mockFloor,
+                walls: allAdditionalWalls,
+                originalColor: 0,
+                data: { id: -999, name: 'Additional Walls' } as any,
+                label: undefined,
+                labelIcon: undefined
+            });
+        }
 
         return {
             roomMeshes,
@@ -228,8 +320,8 @@ export class FloorPlanService {
             floorHeight: floorHeight,
             // When geo-aligned the world center is the geo polygon center (used for env decoration placement).
             // When not geo-aligned the world center is the local bounding-box center.
-            center: hasGeoAlign ? [geoCenterX, geoCenterZ] as [number, number] : center,
-            rawCenter: center,
+            center: hasGeoAlign ? [geoCenterX, geoCenterZ] as [number, number] : [referenceCenterX, referenceCenterZ] as [number, number],
+            rawCenter: [referenceCenterX, referenceCenterZ] as [number, number],
             hasGeoAlign,
             floorImageMesh,
             surroundingsMesh,
@@ -243,13 +335,38 @@ export class FloorPlanService {
         };
     }
 
-    private processLocation(location: LocationData, parent: THREE.Object3D, roomMeshes: RoomMesh[], xOffset: number = 0, zOffset: number = 0, yOffset: number = 0, neighborPolygons: { coords: number[][], isCorridor: boolean }[] = [], wallWidth: number = WALL_THICKNESS, labelHeight: number = LABEL_HEIGHT, labelScale: number = 1.0, showCorridorWalls: boolean = true, mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string } } = { skipLocByCat: [], skipLocCatByCat: [] }): any[] {
+    private processLocation(location: LocationData, parent: THREE.Object3D, roomMeshes: RoomMesh[], xOffset: number = 0, zOffset: number = 0, yOffset: number = 0, neighborPolygons: { coords: number[][], isCorridor: boolean }[] = [], wallWidth: number = WALL_THICKNESS, labelHeight: number = LABEL_HEIGHT, labelScale: number = 1.0, showCorridorWalls: boolean = true, mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], threeDHeight?: Record<string, number>, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string } } = { skipLocByCat: [], skipLocCatByCat: [] }): any[] {
         const locCatId = location.locationCategoryId ?? '';
         if (mapConfig.skipLocByCat.includes(locCatId)) return [];
         if (!location.coordinates) return [];
         const skipIcon = mapConfig.skipLocCatByCat.includes(locCatId);
         const skipName = (mapConfig.skipLocNameByCat ?? []).includes(locCatId);
         const is3DFloor = (mapConfig.threeDFloorByCat ?? []).includes(locCatId);
+        
+        let locHeight = FLOOR_3D_EXTRUDE_HEIGHT;
+        const heightConfig = mapConfig.threeDHeight;
+        if (is3DFloor && heightConfig && typeof heightConfig === 'object') {
+            let matchVal: any = undefined;
+            if (heightConfig[locCatId] !== undefined) {
+                matchVal = heightConfig[locCatId];
+            } else if (location.name && heightConfig[location.name] !== undefined) {
+                matchVal = heightConfig[location.name];
+            } else {
+                const trimmedCatId = locCatId.trim().toLowerCase();
+                const trimmedName = location.name ? location.name.trim().toLowerCase() : '';
+                const matchedKey = Object.keys(heightConfig).find(key => {
+                    const k = key.trim().toLowerCase();
+                    return k === trimmedCatId || (trimmedName && k === trimmedName);
+                });
+                if (matchedKey) {
+                    matchVal = heightConfig[matchedKey];
+                }
+            }
+            if (matchVal !== undefined && !isNaN(Number(matchVal))) {
+                locHeight = Number(matchVal);
+            }
+        }
+
         const collectedDoors: THREE.Group[] = [];
 
         try {
@@ -257,21 +374,29 @@ export class FloorPlanService {
             let rawCoordinates = this.normalizeCoordinates(coordData.geometry.coordinates);
             let coordinates = shrinkPolygon(rawCoordinates, POLYGON_SHRINK_OFFSET);
 
-            let color = parseColor(location.polygonStyle);
-            let floorOpacity: number | undefined;
+            let polygonFill: string | null = location.polygonStyle;
+            let strokeColorStr: string | null = null;
+            let floorOpacity = parseColorOpacity(location.polygonStyle);
+
             if (location.labelStyle) {
                 try {
                     const ls = typeof location.labelStyle === 'string' ? JSON.parse(location.labelStyle) : location.labelStyle;
                     const poly = ls?.polygon;
                     if (poly) {
-                        // if (poly.fillColor) color = parseColor(poly.fillColor);
+                        if (poly.fillColor) polygonFill = poly.fillColor;
+                        if (poly.color) strokeColorStr = poly.color;
                         if (typeof poly.fillOpacity === 'number') floorOpacity = poly.fillOpacity;
                     }
                 } catch (e) { }
             }
+
+            const defaultColor = "#E8E8E8";
+            const color = parseColor(polygonFill ?? defaultColor);
+            const strokeColor = parseColor(strokeColorStr ?? polygonFill ?? defaultColor);
+
             const floor = is3DFloor
-                ? createExtrudedFloorMesh(coordinates, color)
-                : createFloorMesh(coordinates, color, floorOpacity);
+                ? createExtrudedFloorMesh(coordinates, color, locHeight)
+                : createFloorMesh(coordinates, color, floorOpacity, strokeColor);
 
             if (floor) {
                 const wallsGroup = new THREE.Group();
@@ -324,9 +449,10 @@ export class FloorPlanService {
                 }
 
                 let walls: THREE.Mesh[] = [];
-                if (!is3DFloor && (showCorridorWalls || !isCorridor)) {
-                    walls = createWallsFromCoordinates(coordinates, gaps, wallWidth);
-                }
+                // Disabled room boundary wall generation since walls should be created from additionalCoordinates only.
+                // if (!is3DFloor && (showCorridorWalls || !isCorridor)) {
+                //     walls = createWallsFromCoordinates(coordinates, gaps, wallWidth);
+                // }
 
                 roomMeshes.push({
                     id: location.id,
@@ -339,13 +465,15 @@ export class FloorPlanService {
                     labelIcon: undefined
                 });
 
+                const level = location.locationTypeLevel || 0;
                 floor.position.x += xOffset;
                 floor.position.z += zOffset;
-                floor.position.y += yOffset;
+                floor.position.y += yOffset + (level * 0.01);
+                floor.renderOrder = 4 + level;
                 walls.forEach(wall => {
                     wall.position.x += xOffset;
                     wall.position.z += zOffset;
-                    wall.position.y += yOffset;
+                    wall.position.y += yOffset + (level * 0.01);
                     parent.add(wall);
                 });
                 parent.add(floor);
@@ -354,16 +482,17 @@ export class FloorPlanService {
                 const centerVec = new THREE.Vector3();
                 box.getCenter(centerVec);
 
-                // For 3D extruded rooms the top face is at FLOOR_3D_EXTRUDE_HEIGHT above ground,
+                // For 3D extruded rooms the top face is at locHeight above ground,
                 // so labels and icons must be lifted above it.
-                const textY = (is3DFloor ? FLOOR_3D_EXTRUDE_HEIGHT + labelHeight : labelHeight) + yOffset;
+                const textY = (is3DFloor ? locHeight + labelHeight : labelHeight) + yOffset;
                 const iconSize = 2.2;
                 const iconY = textY; // same height as the combined label sprite
 
                 // Place text on whichever side of the room centroid has more horizontal space.
                 const textSide: 'right' | 'left' = (box.max.x - centerVec.x) >= (centerVec.x - box.min.x) ? 'right' : 'left';
 
-                const label = createLabel(skipName ? '' : location.name, centerVec.x, centerVec.z, parent, skipIcon ? null : (location.locationCategoryId ?? null), textY, labelScale, location.disLocLevel ?? null, mapConfig.categoryColors, mapConfig.categoryIcons, textSide);
+                const labelText = location.mapLabel ?? location.displayName ?? location.name;
+                const label = createLabel(skipName ? '' : labelText, centerVec.x, centerVec.z, parent, skipIcon ? null : (location.locationCategoryId ?? null), textY, labelScale, location.disLocLevel ?? null, mapConfig.categoryColors, mapConfig.categoryIcons, textSide);
                 roomMeshes[roomMeshes.length - 1].label = label;
                 label.visible = false;
 
@@ -405,9 +534,11 @@ export class FloorPlanService {
         xOffset: number = 0,
         zOffset: number = 0,
         yOffset: number = 0,
-        floorId?: number
+        floorId?: number,
+        onLoad?: () => void
     ): THREE.Mesh {
         const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
         const geometry = new THREE.PlaneGeometry(width, height);
         const material = new THREE.MeshBasicMaterial({
             transparent: true,
@@ -418,6 +549,7 @@ export class FloorPlanService {
         mesh.name = 'floorplan-image';
         mesh.rotation.x = -Math.PI / 2;
         mesh.position.set(x + xOffset, yOffset + 0.05, z + zOffset);
+        mesh.renderOrder = 3;
         parent.add(mesh);
 
         // Dynamic URL based on floorId
@@ -426,8 +558,13 @@ export class FloorPlanService {
             : 'assets/three-js/floor-plan.jpg';
 
         loader.load(url, (texture) => {
+            texture.colorSpace = THREE.SRGBColorSpace;
             material.map = texture;
             material.needsUpdate = true;
+            if (onLoad) onLoad();
+        }, undefined, (err) => {
+            console.warn('Failed to load floor image texture', err);
+            if (onLoad) onLoad();
         });
 
         return mesh;
@@ -438,16 +575,14 @@ export class FloorPlanService {
         const material = new THREE.MeshBasicMaterial({
             color: new THREE.Color(color),
             transparent: true,
-            opacity: 0.5,
-            side: THREE.BackSide // Only visible from top
+            opacity: 0.0,
+            side: THREE.DoubleSide
         });
-
-        // Use DoubleSide to ensure it masks correctly regardless of camera angle
-        material.side = THREE.DoubleSide;
 
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = 'building-foundation-mask';
         mesh.rotation.x = -Math.PI / 2;
+        mesh.renderOrder = 2;
 
         // Positioned slightly below floors (yOffset) but above OSM map (-0.2)
         mesh.position.set(x + xOffset, yOffset, z + zOffset);
@@ -456,15 +591,36 @@ export class FloorPlanService {
         return mesh;
     }
 
-    private createSurroundingsMap(parent: any, yOffset: number, lat: number = BUILDING_LATITUDE, lng: number = BUILDING_LONGITUDE, geoPolygon?: number[][], tileType: string = 'google_road'): any {
+    private createSurroundingsMap(parent: any, yOffset: number, geoPolygon?: number[][], tileType: string = 'osm'): any {
         const surroundingsGroup = new THREE.Group();
         surroundingsGroup.name = 'osm-surroundings-group';
         // NOT added to parent here — caller adds directly to scene so buildingGroup rotation doesn't affect OSM tiles
+
+        // Derive center lat/lng from the floor's own geo polygon bounding box
+        const lngs = (geoPolygon ?? []).map(p => p[0]);
+        const lats = (geoPolygon ?? []).map(p => p[1]);
+        const lat = lats.length ? (Math.min(...lats) + Math.max(...lats)) / 2 : BUILDING_LATITUDE;
+        const lng = lngs.length ? (Math.min(...lngs) + Math.max(...lngs)) / 2 : BUILDING_LONGITUDE;
 
         const tiles = getTileGrid(lat, lng, OSM_ZOOM_LEVEL, tileType);
         const [buildingX, buildingY] = latLonToMeters(lat, lng);
 
         const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
+
+        // Check facility change and evict cache if necessary
+        const currentFacilityId = this.getFacilityId();
+        if (this.cachedFacilityId !== currentFacilityId) {
+            this.tileTextureCache.forEach(texture => {
+                try {
+                    texture.dispose();
+                } catch (e) {
+                    console.error('Error disposing cached texture', e);
+                }
+            });
+            this.tileTextureCache.clear();
+            this.cachedFacilityId = currentFacilityId;
+        }
 
         tiles.forEach(tile => {
             const geometry = new THREE.PlaneGeometry(tile.bounds.width, tile.bounds.height);
@@ -477,6 +633,7 @@ export class FloorPlanService {
             const mesh = new THREE.Mesh(geometry, material);
             mesh.name = `osm-tile-${tile.x}-${tile.y}`;
             mesh.rotation.x = -Math.PI / 2;
+            mesh.renderOrder = 1;
 
             const posX = tile.bounds.centerX - buildingX;
             const posZ = buildingY - tile.bounds.centerY;
@@ -484,11 +641,19 @@ export class FloorPlanService {
             mesh.position.set(posX, yOffset - 0.5, posZ);
             surroundingsGroup.add(mesh);
 
-            loader.load(tile.url, (texture) => {
-                texture.anisotropy = 16;
-                material.map = texture;
+            if (this.tileTextureCache.has(tile.url)) {
+                const cachedTexture = this.tileTextureCache.get(tile.url);
+                material.map = cachedTexture;
                 material.needsUpdate = true;
-            });
+            } else {
+                loader.load(tile.url, (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.anisotropy = 16;
+                    material.map = texture;
+                    material.needsUpdate = true;
+                    this.tileTextureCache.set(tile.url, texture);
+                });
+            }
         });
 
         // Draw floor geographic polygon on the OSM plane
@@ -541,6 +706,26 @@ export class FloorPlanService {
         return center;
     }
 
+    hasGeoAlignment(floorData: any): boolean {
+        if (!floorData || !floorData.coordinates) return false;
+        try {
+            const gd = JSON.parse(floorData.coordinates);
+            if (!gd || !gd.geometry || !gd.geometry.coordinates) return false;
+            const pts = this.normalizeCoordinates(gd.geometry.coordinates);
+            if (pts.length >= 3) {
+                const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+                const spanX = Math.max(...xs) - Math.min(...xs);
+                const spanY = Math.max(...ys) - Math.min(...ys);
+                const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
+                const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+                if (cx >= -180 && cx <= 180 && cy >= -90 && cy <= 90 && spanX > 0 && spanX < 1.0 && spanY > 0 && spanY < 1.0) {
+                    return true;
+                }
+            }
+        } catch (e) {}
+        return false;
+    }
+
     private normalizeCoordinates(coords: any): number[][] {
         if (!Array.isArray(coords) || coords.length === 0) return [];
         if (Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
@@ -549,3 +734,4 @@ export class FloorPlanService {
         return coords;
     }
 }
+

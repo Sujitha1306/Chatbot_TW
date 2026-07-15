@@ -8,10 +8,10 @@
                     <div id="ip"[ngClass]="card?.hasCritical ? 'tw-newcard-blink-border' : 'tw-newcard-header'"
                         (click)="alertPatientId?.indexOf(card.patientId) > -1 ? stopAudioAction(card.patientId, 'card') : ''">
                         <div class="tw-newcard-title">
-                            <div class="tw-newcard-title-fnt">
-                                <span *ngIf="component != 'nursecall-view'"> {{ card?.patientName | titlecase }}  <span
+                            <!-- <div class="tw-newcard-title-fnt">
+                                <span *ngIf="(component != 'nursecall-view' || showPatientName)"> {{ card?.patientName | titlecase }}  <span
                                         class="tw-newcard-title-row-5 tw-newcard-title-row-3 tw-newcard-title-row-6" (click)="patientInfo(card)">({{ card?.uhid }})</span> </span>
-                                <div *ngIf="card?.gender && component != 'nursecall-view'" style="padding-top: 2px;">
+                                <div *ngIf="card?.gender && (component != 'nursecall-view' || showPatientName)" style="padding-top: 2px;">
                                     <img *ngIf="card.gender === 'Male'" style="width:11px;"
                                         src="/assets/icons/gender-male.svg" alt="Male" class="w-4 h-4" 
                                         appTooltip [tooltipText]="card.gender" placement="bottom" />
@@ -27,11 +27,31 @@
                                 <div *ngIf="card?.age && component != 'nursecall-view'" class="tw-newcard-title-row-3">
                                     {{card.age ? card.age + 'yrs' : ''}}
                                 </div>
-                            </div>
+                            </div> -->
                             <div class="tw-newcard-title-row-2">
-                                <div class="tw-newcard-title-row-3">
+                                <div class="tw-newcard-title-row-3" *ngIf="(component != 'nursecall-view' || !showPatientName)">
                                     <span class="tw-newcard-title-row-4">IP No :  </span> <span
                                         class="tw-newcard-title-row-5">{{card?.visitIdentifier}}</span>
+                                </div>
+                                <div class="tw-newcard-title-fnt" *ngIf="(component != 'nursecall-view' || showPatientName)">
+                                    <span *ngIf="(component != 'nursecall-view' || showPatientName)"> {{ card?.patientName | titlecase }}  <span
+                                            class="tw-newcard-title-row-5 tw-newcard-title-row-3 tw-newcard-title-row-6" (click)="patientInfo(card)">({{ card?.uhid }})</span> </span>
+                                    <div *ngIf="card?.gender && (component != 'nursecall-view' || showPatientName)" style="padding-top: 2px;">
+                                        <img *ngIf="card.gender === 'Male'" style="width:11px;"
+                                            src="/assets/icons/gender-male.svg" alt="Male" class="w-4 h-4" 
+                                            appTooltip [tooltipText]="card.gender" placement="bottom" />
+
+                                        <img *ngIf="card.gender === 'Female'" style="width:9px;"
+                                            src="/assets/icons/gender-female.svg" alt="Female" class="w-4 h-4"
+                                            appTooltip [tooltipText]="card.gender" placement="bottom" />
+
+                                        <img *ngIf="card.gender === 'Others'" style="width:9px;"
+                                            src="/assets/Alert/IP/other.png" alt="Others" class="w-4 h-4" 
+                                            appTooltip [tooltipText]="card.gender" placement="bottom" />
+                                    </div>
+                                    <div *ngIf="card?.age && component != 'nursecall-view'" class="tw-newcard-title-row-3">
+                                        {{card.age ? card.age + 'yrs' : ''}}
+                                    </div>
                                 </div>
                                 <div style="display: flex; align-items: center;gap: 10px;">
                                     <div class="tw-newcard-title-row-5 tw-newcard-title-row-3 tw-newcard-title-row-6">
@@ -86,12 +106,17 @@
 
                                             <img *ngIf="alert.eventCode === 'CE-MD'" style="width:18px;cursor: pointer;"
                                                 (click)="eventTrigger(alert, 'nurse-call', card?.patientId)" alt="nurse-call" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+
+                                            <img *ngIf="alert.eventCode === 'CE-PC'" style="width:18px;cursor: pointer;filter: brightness(0) invert(1)"
+                                                (click)="eventTrigger(alert, 'nurse-call', card?.patientId)" alt="nurse-call" src="/assets/Alert/user.svg"
+                                                (keydown.enter)="fixClick()">
                                         </span>
                                         <span>
                                             <span *ngIf="view['type'] === 'location'" class="tw-newcard-icon-circle" appTooltip [tooltipText]="alert?.ackDatetime ? ('Acknowledged Time : ' + (alert?.ackDatetimeTz | date:'hh:mm a, d MMM YYYY') + '&#10;'+ alert?.message): alert?.message"
                                             (click)="eventTrigger('nurse-call', alert, card)"   [ngStyle]="{ background: legendJson[alert.eventCode]}"
                                                 (keydown.enter)="fixClick()">
                                                 <mat-icon *ngIf="alert.ackDatetime && alert.ackDatetime !== null" [ngStyle]="{ color: alert?.eventCode === 'CE-PR' ? '#181616' : '#ffffff' }">done</mat-icon>
+                                                <mat-icon *ngIf="(!alert.ackDatetime || alert.ackDatetime === null) && alert.eventCode === 'CE-PC'"  style="color: #ffffff;padding-top: 0px;padding-right:1px;font-size: 22px;">person_check</mat-icon>
                                             </span>
                                         </span>
                                         <span *ngIf="!alert.eventCode">

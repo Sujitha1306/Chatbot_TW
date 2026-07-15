@@ -10,7 +10,7 @@ export const RENDERER_PIXEL_RATIO_MAX = 2;
 
 export const CONTROLS_DAMPING_FACTOR = 0.05;
 export const CONTROLS_MAX_POLAR_ANGLE = Math.PI / 2.1;
-export const CONTROLS_MAX_DISTANCE = 1500;
+export const CONTROLS_MAX_DISTANCE = 3000;
 export const CONTROLS_MIN_DISTANCE = 10;
 
 export const AMBIENT_LIGHT_COLOR = 0xFFFBF0;  // Warm White Tint
@@ -69,10 +69,10 @@ export const MARKER_BOB_HEIGHT = 1.0;
 // ============================================================================
 // HIGHLIGHT COLORS - Dark colors for bright theme
 // ============================================================================
-export const HIGHLIGHT_SELECTED_COLOR = 0x4F46E5;          // Rich Indigo (Indigo 600)
+export const HIGHLIGHT_SELECTED_COLOR = 0x93C5FD;          // Soft Light Blue (Blue 300)
 export const HIGHLIGHT_SELECTED_INTENSITY = 1.0;
 export const HIGHLIGHT_SELECTED_WALL_INTENSITY = 0.8;
-export const HIGHLIGHT_HOVER_COLOR = 0x1D4ED8;             // Deeper Blue (Blue 700)
+export const HIGHLIGHT_HOVER_COLOR = 0xCFFAFE;             // Soft Ice Blue
 export const HIGHLIGHT_HOVER_INTENSITY = 1.0;
 export const HIGHLIGHT_HOVER_WALL_INTENSITY = 1.0;
 export const HIGHLIGHT_START_COLOR = 0x10B981;             // Emerald 500 (Start)
@@ -178,7 +178,7 @@ export const COMPASS_PIVOT_SENSITIVITY = 1.0;
 export const COMPASS_DAMPING_FACTOR = 0.08;
 
 // Floor Scaling
-export const FLOOR_MAX_DISTANCE_MULTIPLIER = 2.5;
+export const FLOOR_MAX_DISTANCE_MULTIPLIER = 5.0;
 export const FLOOR_MIN_DISTANCE_MULTIPLIER = 0.05;
 export const FLOOR_MIN_DISTANCE_ABSOLUTE = 10;
 

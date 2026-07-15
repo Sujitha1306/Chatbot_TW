@@ -49,6 +49,7 @@ import { ErrorStateMatcherService } from "../../../shared/services/error-state-m
 import { EntityRoutineActivityComponent } from "../../../shared/modules/entry-component/entity-routine-activity/entity-routine-activity.component";
 import { debounceTime } from "rxjs/operators";
 import { AppToastService } from "../../../shared/services/toaster.service";
+import { NotificationAlertPopupComponent } from '../../../shared/modules/entry-component/notification-alert-popup/notification-alert-popup.component';
 
 @Component({
   selector: "app-inpatient",
@@ -781,7 +782,42 @@ export class InpatientComponent implements OnInit, OnDestroy, AfterViewInit {
     if (event.key === "Patient Name") {
       this.registerPatient(event.data.patientVisitId, null, event.data.uhid);
     } else if (event.key === "nurse-call" || event.key === "fall-risk") {
-      this.cancelAlert(event.data, event.key, event.patientId);
+      if (event.data && (event.data.eventCode === 'CE-PC' || event.data.alertCode === 'RU-GO')) {
+        const patientDetails = this.infiniteScrollIPInfo?.find((p: any) =>
+          p.patientId === event.patientId || p.id === event.patientId
+        ) || event.data;
+        const alertObj = {
+          id: event.data.iotAlertId,
+          configName: event.data.eventName || 'Patient Care',
+          message: event.data.message || 'Patient Care Alert',
+          sentDatetime: event.data.message?.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/)?.[0],
+          alertTypeId: 'AT-AL',
+          ruleTypeId: 'CE-PC',
+          identifyingType: 'Patient',
+          identifyingId: patientDetails?.patientId || event.patientId,
+          alertDetails: [
+            { identifyingType: 'Location', identifyingValue: patientDetails?.locationId || patientDetails?.wardId },
+            { identifyingType: 'Tag', identifyingValue: patientDetails?.tagId },
+            { identifyingType: 'Patient', identifyingValue: patientDetails?.patientId, identifyingValueName: patientDetails?.patientName }
+          ]
+        };
+        clearInterval(this.patientInterval);
+        const dialogRef = this.dialog.open(NotificationAlertPopupComponent, {
+          data: {
+            selectedAlert: alertObj,
+            allAlerts: [],
+            ruleFilterList: [],
+            hideCamera: true,
+            hideSidebar: true,
+            patientDetails: patientDetails
+          },
+          panelClass: ['medium-popup'],
+          disableClose: true
+        });
+        dialogRef.afterClosed().subscribe(() => { this.refreshPage(); });
+      } else {
+        this.cancelAlert(event.data, event.key, event.patientId);
+      }
     } else if (event.key === "Task") {
       this.manageAction("DD_IPMR", event.data)
     } else if (event.key === "Record ID") {

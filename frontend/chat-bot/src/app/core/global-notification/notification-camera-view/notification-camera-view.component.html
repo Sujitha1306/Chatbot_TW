@@ -47,10 +47,10 @@
     <!-- Video player (shown when a camera is selected) -->
     <div *ngIf="selectedCamera" class="ncv-video-container">
 
-      <!-- LIVE badge -->
-      <div class="live-badge">
+      <!-- LIVE / REPLAY badge -->
+      <div class="live-badge" [class.replay-badge]="isReplayMode">
         <span class="pulse-dot"></span>
-        <span class="live-label">LIVE</span>
+        <span class="live-label">{{ (isReplayMode ? 'REPLAY' : 'LIVE') | translate }}</span>
       </div>
 
       <!-- Loading overlay -->
@@ -65,11 +65,28 @@
         <div class="ncv-error-text">{{ errorMessage }}</div>
       </div>
 
-      <video #videoPlayer autoplay playsinline [class.ncv-hidden]="isLoading || !!errorMessage"></video>
+      <!-- No recording overlay -->
+      <div *ngIf="noRecordingMessage && !isLoading" class="ncv-error-overlay ncv-no-recording-overlay">
+        <span class="material-icons ncv-error-icon">movie_filter</span>
+        <div class="ncv-error-text">{{ noRecordingMessage | translate }}</div>
+        <button class="ncv-go-live-btn" (click)="goLive()">{{ 'Go Live' | translate }}</button>
+      </div>
 
-      <!-- Progress bar -->
-      <div class="progress-wrap">
-        <div class="progress-fill"></div>
+      <video #videoPlayer autoplay playsinline [class.ncv-hidden]="isLoading || !!errorMessage || !!noRecordingMessage"
+        (ended)="onReplayEnded()" (timeupdate)="onVideoTick()"></video>
+
+      <!-- DVR Seek Bar -->
+      <div class="seek-bar-row" [class.active]="isSeekDragging || isSeekHovering">
+        <div class="seek-tooltip" *ngIf="isSeekDragging || isSeekHovering"
+          [style.left.%]="(isSeekDragging ? dragPreviewFraction : hoverPreviewFraction) * 100">
+          <span class="seek-tooltip-time">{{ formatClock(isSeekDragging ? dragPreviewTime : hoverPreviewTime) }}</span>
+          <span class="seek-tooltip-arrow"></span>
+        </div>
+        <div #seekTrack class="seek-track" (pointerdown)="onSeekPointerDown($event)"
+          (pointermove)="onSeekHoverMove($event)" (pointerleave)="onSeekHoverLeave()">
+          <div class="seek-progress" [style.width.%]="seekThumbFraction * 100"></div>
+          <div class="seek-thumb" [style.left.%]="seekThumbFraction * 100"></div>
+        </div>
       </div>
 
       <!-- Controls -->
@@ -96,7 +113,12 @@
 
           <input class="vol-slider" type="range" min="0" max="100" value="75" (input)="setVolume($event)" />
 
-          <span class="time-display">{{ timeDisplay }}</span>
+          <span class="time-display">{{ isReplayMode ? formatClock(seekThumbTime) : timeDisplay }}</span>
+
+          <button *ngIf="isReplayMode" class="player-pill go-live-btn" (click)="goLive()">
+            <span class="pill-live-dot"></span>
+            <span>{{ 'Go Live' | translate }}</span>
+          </button>
         </div>
 
         <div class="ctrl-right">

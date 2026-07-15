@@ -63,7 +63,8 @@ import {
   SupplierResolver,
   InventoryResolver,
   IntendResolver,
-  LocationManagementNewResolver
+  LocationManagementNewResolver,
+  FacilityManagementResolver
 } from '../../shared/services/workflow.resolver';
 import { MonitorComponent } from "../../shared/modules/entry-component/monitor/monitor.component";
 import { EmergencyCareComponent } from "./emergency-care/emergency-care.component";
@@ -104,6 +105,8 @@ import { SampleMovementComponent } from "./sample-movement/sample-movement.compo
 import { PatientRelationNewComponent } from "./patient-relation-new/patient-relation-new.component";
 import { ManageChatBotComponent } from "./manage-chat-bot/manage-chat-bot.component";
 import { StaffMusteringV2Component } from "./staff-mustering/staff-mustering-v2/staff-mustering-v2.component";
+import { FacilityManagementComponent } from "./facility-management/facility-management.component";
+import { LocationTrackComponent } from "./location-track/location-track.component";
 
 export const routes: Routes = [
   {
@@ -262,6 +265,11 @@ export const routes: Routes = [
       {
         path: "linen-track",
         component: LinenTrackingComponent,
+        canActivate: [AuthGuard],
+      },
+      {
+        path: "location-track",
+        component: LocationTrackComponent,
         canActivate: [AuthGuard],
       },
       {
@@ -427,6 +435,12 @@ export const routes: Routes = [
         path: "msg-conversation",
         component: ManageChatBotComponent,
         canActivate: [AuthGuard],
+      },
+      {
+        path: "facility-management",
+        component: FacilityManagementComponent,
+        canActivate: [AuthGuard],
+        resolve: { facilityManagement: FacilityManagementResolver },
       }
     ],
   },

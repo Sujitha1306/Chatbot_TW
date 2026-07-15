@@ -1,0 +1,386 @@
+<div class="ai-stmust-wrapper ovi-font-family" [class.ai-stmust-popup-mode]="isPopup">
+
+  <!-- Popup header (history tab drill-down) — stays fixed; only the content below scrolls -->
+  <div class="ovi-pop-hdr" *ngIf="isPopup">
+    <div>{{ reportTitle || 'Mustering Event Report' }}</div>
+    <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+  </div>
+
+  <div class="ai-stmust-content">
+
+  <!-- Top bar: Date selector + Activity dropdown + Get Insights -->
+  <div class="ai-top-bar" *ngIf="!isPopup">
+    <mustering-dateselector
+      [periodType]="aiPeriodType"
+      [initialFrom]="aiDateFrom"
+      [initialTo]="aiDateTo"
+      (dateChange)="onAiDateChange($event)">
+    </mustering-dateselector>
+
+    <div class="ai-activity-select" *ngIf="selectedLayout === 'mustering-events'">
+      <label>Mustering Activity</label>
+      <select [(ngModel)]="selectedActivityId" (change)="onActivityChange()"
+              [disabled]="eventsLoading || !activities.length">
+        <option *ngIf="eventsLoading" [ngValue]="''">Loading events…</option>
+        <option *ngIf="!eventsLoading && !activities.length" [ngValue]="''">No mustering events</option>
+        <option *ngFor="let a of activities" [value]="a.id">{{ a.label }}</option>
+      </select>
+    </div>
+
+    <button class="ai-get-btn" (click)="getReports()">
+      <i class="material-icons">insights</i> Get Insights
+    </button>
+
+    <div class="layout-selector">
+      <span class="layout-label">Layout</span>
+      <select class="layout-select" [(ngModel)]="selectedLayout" (ngModelChange)="onLayoutChange($event)">
+        <option *ngFor="let l of layouts" [value]="l.key">{{l.label}}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-spinner" *ngIf="reportData.loading">
+    <div class="spinnerload"><div class="spin1"></div><div class="spin2"></div><div class="spin3"></div></div>
+  </div>
+
+  <!-- No records -->
+  <div *ngIf="reportData.noRecords && !reportData.loading"
+       style="text-align:center;margin:4% 0;color:#019F96;font-size:16px;">No Records Found</div>
+
+  <!-- ════════════════════════════ Dashboard ════════════════════════════ -->
+  <!-- ════════════════════════════ Mustering Summary ════════════════════════════ -->
+  <div *ngIf="selectedLayout === 'mustering-summary' && summaryDataReady" class="smry-dashboard">
+
+    <!-- KPI row -->
+    <div class="smry-kpi-row">
+      <div class="kpi-card" *ngFor="let card of summaryKpiCards">
+        <div class="kpi-icon" [ngClass]="card.iconClass"><i class="material-icons">{{card.icon}}</i></div>
+        <div class="kpi-body">
+          <div class="kpi-label">{{card.label}}</div>
+          <div class="kpi-value" [ngClass]="card.valueClass">{{card.value}}</div>
+          <div class="kpi-sub">{{card.sub}}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Events bar + Status donut -->
+    <div class="smry-row">
+      <div class="smry-card smry-flex-2">
+        <div class="widget-header">Mustering Events Frequency <span class="muted">(by day)</span></div>
+        <div class="echart-wrap" style="height:360px;padding:10px 8px 8px;">
+          <div echarts [options]="summaryEventsBarOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+      <div class="smry-card smry-flex-1">
+        <div class="widget-header">Overall Status Distribution</div>
+        <div class="summary-body" style="height:360px;padding:12px 8px;">
+          <div class="echart-wrap summary-chart" style="flex:1;min-width:0;">
+            <div echarts [options]="summaryStatusDonutOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="donut-legend">
+            <div class="donut-legend-item" *ngFor="let s of summaryStatusLegend">
+              <span class="dl-left"><i class="dl-dot" [style.background]="s.color"></i>{{s.name}}</span>
+              <span><span class="dl-count">{{s.value}}</span><span class="dl-pct">({{s.pct}}%)</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Zone perf bar + Compliance trend -->
+    <div class="smry-row">
+      <div class="smry-card smry-flex-1">
+        <div class="widget-header">Avg Zone Mustering Time <span class="muted">(across all events)</span></div>
+        <div class="echart-wrap" style="height:480px;padding:10px 8px 8px;">
+          <div echarts [options]="summaryZonePerfOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+      <div class="smry-card smry-flex-1">
+        <div class="widget-header">Mustering Compliance Trend <span class="muted">(% mustered per event)</span></div>
+        <div class="echart-wrap" style="height:480px;padding:10px 8px 8px;">
+          <div echarts [options]="summaryComplianceOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Activity summary table -->
+    <div class="smry-card">
+      <div class="widget-header">
+        All Mustering Activities
+        <span class="muted" style="margin-left:auto;">{{summaryActivityRows.length}} total</span>
+      </div>
+      <div class="table-wrap smry-activity-wrap">
+        <table class="ai-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Activity</th>
+              <th>Date</th>
+              <th>Personnel</th>
+              <th>Mustered</th>
+              <th>Efficiency</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of summaryPagedRows; let i = index">
+              <td class="td-num">{{summaryStartRow + i}}</td>
+              <td class="td-strong">{{row.name}}</td>
+              <td>{{row.date}}</td>
+              <td>{{row.personnel}}</td>
+              <td>{{row.mustered}}</td>
+              <td>
+                <span class="eff-badge"
+                  [class.eff-high]="row.efficiency >= 85"
+                  [class.eff-mid]="row.efficiency >= 70 && row.efficiency < 85"
+                  [class.eff-low]="row.efficiency < 70">
+                  {{row.efficiency}}%
+                </span>
+              </td>
+              <td class="td-strong">{{row.duration}}</td>
+            </tr>
+            <tr *ngIf="!summaryActivityRows.length">
+              <td colspan="7" class="no-data">No activities found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer" *ngIf="summaryActivityRows.length">
+        <span class="page-info">Showing {{summaryStartRow}}–{{summaryEndRow}} of {{summaryActivityRows.length}}</span>
+        <div class="smry-pagination">
+          <button class="page-btn" [disabled]="summaryPage === 1" (click)="goToSummaryPage(summaryPage - 1)">
+            <i class="material-icons" style="font-size:14px;">chevron_left</i>
+          </button>
+          <ng-container *ngFor="let p of summaryPageNumbers">
+            <button *ngIf="p !== '...'" class="page-btn" [class.active]="p === summaryPage" (click)="goToSummaryPage(p)">{{p}}</button>
+            <span *ngIf="p === '...'" class="page-ellipsis">…</span>
+          </ng-container>
+          <button class="page-btn" [disabled]="summaryPage === summaryTotalPages" (click)="goToSummaryPage(summaryPage + 1)">
+            <i class="material-icons" style="font-size:14px;">chevron_right</i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div *ngIf="selectedLayout === 'mustering-events' && !reportData.noRecords && !reportData.loading && dataReady" class="ai-stmust-grid grid-stack">
+
+    <!-- KPI cards -->
+    <div class="grid-stack-item" gs-w="9" gs-h="2" gs-x="3" gs-y="0" gs-no-resize="true">
+      <div class="grid-stack-item-content kpi-shell">
+        <div class="kpi-row">
+          <div class="kpi-card" *ngFor="let card of kpiCards">
+            <div class="kpi-icon" [ngClass]="card.iconClass"><i class="material-icons">{{card.icon}}</i></div>
+            <div class="kpi-body">
+              <div class="kpi-label">{{card.label}}</div>
+              <div class="kpi-value" [ngClass]="card.valueClass" [class.small]="card.small">{{card.value}}</div>
+              <span *ngIf="card.badge" class="kpi-badge" [ngClass]="card.badgeClass">{{card.badge}}</span>
+              <div *ngIf="card.sub" class="kpi-sub">{{card.sub}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mustering replay (3D floor plan) -->
+    <div class="grid-stack-item gs-floorplan-item" gs-w="8" gs-h="9" gs-x="0" gs-y="5">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">
+          Mustering Replay (3D Floor Plan)
+          <span class="muted" *ngIf="reportSub">{{reportSub}}</span>
+        </div>
+        <div class="floorplan-replay">
+          <app-live-tracking [requestId]="selectedActivityId" [requestType]="'mustering'"></app-live-tracking>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mustering Summary (donut + legend) -->
+    <div class="grid-stack-item" gs-w="5" gs-h="3" gs-x="3" gs-y="2">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Mustering Summary</div>
+        <div class="summary-body">
+          <div class="echart-wrap summary-chart">
+            <div echarts [options]="statusDonutOpt" [initOpts]="io3" [autoResize]="true"
+                 (chartInit)="onChartInit('statusDonut',$event)" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="donut-legend">
+            <div class="donut-legend-item" *ngFor="let s of statusLegend">
+              <span class="dl-left"><i class="dl-dot" [style.background]="s.color"></i>{{s.name}}</span>
+              <span><span class="dl-count">{{s.value}}</span><span class="dl-pct">({{s.pct}}%)</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Timeline -->
+    <div class="grid-stack-item" gs-w="4" gs-h="4" gs-x="8" gs-y="10">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Event Timeline</div>
+        <div class="timeline-list">
+          <div class="tl-item" *ngFor="let t of timeline">
+            <div class="tl-icon" [ngClass]="t.type"><i class="material-icons">{{t.icon}}</i></div>
+            <div class="tl-body">
+              <div class="tl-time">{{t.time}}</div>
+              <div class="tl-label">{{t.label}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personnel Mustering Details table (50/50 with Safe Zone Population chart above) -->
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="6" gs-y="19">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">
+          Personnel Mustering Details
+          <div class="table-search">
+            <i class="material-icons">search</i>
+            <input type="text" placeholder="Search personnel…" [(ngModel)]="searchTerm" />
+            <i *ngIf="searchTerm" class="material-icons clear-search" (click)="searchTerm=''">close</i>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="ai-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th *ngFor="let col of personnelCols" class="sortable" (click)="sortBy(col.key)">
+                  <span class="th-inner">
+                    {{col.label}}
+                    <i class="material-icons sort-ico" [class.active]="sortKey === col.key">{{ sortIcon(col.key) }}</i>
+                  </span>
+                </th>
+                <th>Reached Assembly</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of filteredPersonnel; let i = index">
+                <td class="td-num">{{ i + 1 }}</td>
+                <td *ngFor="let col of personnelCols" [ngSwitch]="col.key">
+                  <span *ngSwitchCase="'emp_id'" class="td-uhid">{{ row.emp_id }}</span>
+                  <span *ngSwitchCase="'name'" class="td-strong">{{ row.name }}</span>
+                  <span *ngSwitchCase="'zone'" class="td-room">{{ row.zone }}</span>
+                  <span *ngSwitchCase="'muster_time'" class="td-strong">{{ row.muster_time }}</span>
+                  <span *ngSwitchCase="'status'" class="status-badge" [ngClass]="statusClass(row.status)">{{ statusDot(row.status) }} {{ row.status }}</span>
+                  <span *ngSwitchDefault>{{ row[col.key] }}</span>
+                </td>
+                <td class="td-center">
+                  <i class="material-icons reach-ico"
+                     [class.reached]="row.status === 'Mustered' || row.status === 'Visitors'"
+                     [class.not-reached]="row.status === 'Not Reached'">
+                    {{ row.status === 'Not Reached' ? 'cancel' : 'check_circle' }}
+                  </i>
+                </td>
+              </tr>
+              <tr *ngIf="!filteredPersonnel.length">
+                <td [attr.colspan]="personnelCols.length + 2" class="no-data">No personnel found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Count footer -->
+        <div class="table-footer" *ngIf="filteredPersonnel.length">
+          <span class="page-info">Showing {{filteredPersonnel.length}} of {{personnelRows.length}} entries</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone Performance (Avg Mustering Time) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="0" gs-y="14">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Zone Performance <span class="muted">(Avg Time)</span></div>
+        <div class="echart-wrap">
+          <div *ngIf="!zoneEmpty" echarts [options]="zonePerfOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('zonePerf',$event)" style="width:100%;height:100%;"></div>
+          <div *ngIf="zoneEmpty" class="no-chart-data">No completed mustering by zone</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mustering Route Analysis (Flow / Sankey) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="4" gs-y="14">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Mustering Route Analysis <span class="muted">(Flow)</span></div>
+        <div class="echart-wrap">
+          <div echarts [options]="routeFlowOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('routeFlow',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Details (top-left, tall) -->
+    <div class="grid-stack-item" gs-w="3" gs-h="5" gs-x="0" gs-y="0">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Incident Details</div>
+        <div class="incident-list">
+          <div class="incident-row" *ngFor="let it of incidentRows">
+            <span class="inc-label">{{ it.label }}</span>
+            <span class="inc-value" [ngClass]="it.valueClass">{{ it.value }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safe Zone Population Over Time (50/50 with Personnel table below) -->
+    <div class="grid-stack-item" gs-w="6" gs-h="5" gs-x="0" gs-y="19">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Safe Zone Population Over Time</div>
+        <div class="echart-wrap">
+          <div *ngIf="!populationEmpty" echarts [options]="populationTrendOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('populationTrend',$event)" style="width:100%;height:100%;"></div>
+          <div *ngIf="populationEmpty" class="no-chart-data">No mustered timeline for this event</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mustering Efficiency (gauge) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="14">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Mustering Efficiency</div>
+        <div class="echart-wrap">
+          <div echarts [options]="efficiencyOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('efficiency',$event)" style="width:100%;height:100%;"></div>
+        </div>
+        <div class="efficiency-caption" *ngIf="efficiencyLabel">{{ efficiencyLabel }}</div>
+      </div>
+    </div>
+
+    <!-- Most Congested Zones (moved into the top strip beside Mustering Summary) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="3" gs-x="8" gs-y="2">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Most Congested Zones <span class="muted">(Density)</span></div>
+        <div class="congest-list">
+          <div class="congest-item" *ngFor="let c of congestedZones">
+            <div class="congest-top">
+              <span class="congest-zone">{{c.zone}}</span>
+              <span class="congest-lvl" [ngClass]="c.levelClass">{{c.level}}</span>
+            </div>
+            <div class="congest-bar">
+              <div class="congest-fill" [ngClass]="c.levelClass" [style.width.%]="c.density * 100"></div>
+            </div>
+            <div class="congest-val">{{ c.density.toFixed(2) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mustering Funnel (moved into Mustering Summary's old spot, next to the floor plan) -->
+    <div class="grid-stack-item" gs-w="4" gs-h="5" gs-x="8" gs-y="5">
+      <div class="grid-stack-item-content">
+        <div class="widget-header">Mustering Funnel</div>
+        <div class="echart-wrap">
+          <div echarts [options]="funnelOpt" [initOpts]="io5" [autoResize]="true"
+               (chartInit)="onChartInit('funnel',$event)" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  </div>
+</div>

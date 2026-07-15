@@ -15,10 +15,18 @@
         <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
     </div>
 
-    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;" [ngStyle]="{'height': selectedTabName === 'Permission' ? 'calc(100% - 95px)' : (selectedTabName === 'Schedule' ? 'calc(100% - 100px)' : 'calc(100% - 138px)')}"    [formGroup]="userForm" >
-        <mat-tab-group *ngIf="this.customerName === null" style="height: 100%;" [selectedIndex]=selectedTab (selectedTabChange)="tabClick($event)">
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;" [ngStyle]="{'height': selectedTabName === 'Permission' ? 'calc(100% - 95px)' : (selectedTabName === 'Schedule' ? 'calc(100% - 100px)' : 'calc(100% - 140px)')}"    [formGroup]="userForm" >
+        <div id="tab-loader" class="loading-spinner" *ngIf="spinLoader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 1000;">
+            <div class="spinnerload" style="margin: 0;">
+                <div class="spin1"></div>
+                <div class="spin2"></div>
+                <div class="spin3"></div>
+            </div>
+        </div>
+        <mat-tab-group *ngIf="this.customerName === null" class="cust-tab" [selectedIndex]="selectedTab" #tabGroup (selectedIndexChange)="tabClick($event)">
             <mat-tab label="{{'Summary'|translate}}">
-                <div class="ovi-row-gap">
+                <div style="overflow: auto;height: calc(100% - 1px);">
+                <div class="ovi-row-gap" *ngIf="!spinLoader">
                     <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"  *ngIf="data.type !== 'student' && data.type !== 'staff'">
                             <mat-label class="ovi-lbl-text-size">{{"Select Customer"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
@@ -454,12 +462,77 @@
                         </mat-form-field>
                 </div>
                 </div>
+                </div>
             </mat-tab>
             <mat-tab *ngIf="data.userId && (data.type === 'student' || data.type === 'staff')" label="{{'Movement History'|translate}}">
-                <app-movement-history *ngIf="data.userId && (data.type === 'student' || data.type === 'staff') &&  selectedTabName === 'Movement History'"  [historyData]="this.historyData"></app-movement-history>
+                <app-movement-history *ngIf="data.userId && (data.type === 'student' || data.type === 'staff') && selectedTabName === 'Movement History' && !spinLoader"  [historyData]="this.historyData"></app-movement-history>
+            </mat-tab>
+            <mat-tab *ngIf="data.userId && data.type === 'staff'" label="{{'Alert History'|translate}}">
+                <ng-container *ngIf="selectedTabName === 'Alert History' && !spinLoader">
+                    <div class="top-style" *ngIf="noData" style="text-align: center; margin-top: 100px;">
+                        {{"No Alert History Available "|translate}}!!
+                    </div>
+                    <div *ngIf="!noData" style="margin-top: 10px;">
+                        <div fxLayout="column" class="mat-elevation-z4 tw-manage-component table-h-50">
+                            <div class="tw-mat-table-overflow" style="max-height: calc(100vh - 250px);">
+                                <table mat-table [dataSource]="AHdataSource">
+                                    <ng-container matColumnDef="Alert">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header" style="padding:0px 20px; width: 35px;"></th>
+                                        <td mat-cell *matCellDef="let element">
+                                            <mat-icon *ngIf="element.ruleTypeId !== 'RU-NC'" class="icon-style"
+                                                [ngClass]="element.ruleTypeId === 'RU-FA' ? 'fall-risk' : element.ruleTypeId === 'RU-MO' ? 'patient-away' : element.ruleTypeId === 'RU-MI' ? 'patient-missing' : element.ruleTypeId === 'RU-GO' ? 'geofence' : element.ruleTypeId === 'RU-SE' ? 'sensor' : none">
+                                            </mat-icon>
+                                            <mat-icon *ngIf="element.ruleTypeId === 'RU-NC'" class="icon-style"
+                                                [ngClass]="element.event === 'CE-MD' ? 'medicine' : element.event === 'CE-HK' ? 'housekeeping' : element.event === 'CE-AD' ? 'aid' : element.event === 'CE-SO' ? 'sos' : element.event === 'CE-FD' ? 'food' : element.event === 'CE-CL' ? 'call' : element.event === 'CE-TAM' ? 'tamper' : none">
+                                            </mat-icon>
+                                        </td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="AlertName">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header" style="width: 100px;">{{"Alert"|translate}}</th>
+                                        <td mat-cell *matCellDef="let element">{{element.pfAlertConfigName}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="Start Time">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header">{{"Alert Time"|translate}}</th>
+                                        <td mat-cell *matCellDef="let element">{{element.alertDatetime | date: "hh:mm a, d MMM"}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="End Time">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header">{{"Close Time"|translate}}</th>
+                                        <td mat-cell *matCellDef="let element">{{element.closedDatetime | date: "hh:mm a, d MMM"}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="Message">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header">{{"Message"|translate}}</th>
+                                        <td mat-cell [matTooltip]="element.message" *matCellDef="let element" style="width: 40%;padding-right: 10px;">{{element.message}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="Comments">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header">{{"Comments"|translate}}</th>
+                                        <td mat-cell [matTooltip]="element.comments" *matCellDef="let element">{{element.comments}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="pfRuleName">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header" style="width: 100px;">{{"Rule Name"|translate}}</th>
+                                        <td mat-cell *matCellDef="let element">{{element.pfRuleName}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="Event">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header" style="width: 100px;">{{"Event"|translate}}</th>
+                                        <td mat-cell *matCellDef="let element">{{element.eventName}}</td>
+                                    </ng-container>
+                                    <ng-container matColumnDef="Status">
+                                        <th mat-header-cell *matHeaderCellDef class="alert-table-header">{{"Status"|translate}}</th>
+                                        <td mat-cell *matCellDef="let element">{{element.isActive ? 'Created' : 'Closed'}}</td>
+                                    </ng-container>
+                                    <tr mat-header-row *matHeaderRowDef="HCDisplayedColumns; sticky: true;" class="manage-table-header-row"></tr>
+                                    <tr mat-row *matRowDef="let data; columns: HCDisplayedColumns;"></tr>
+                                </table>
+                            </div>
+                            <mat-paginator #AHPaginator [length]="this.AHLength" [pageSizeOptions]="[10, 15, 20, 50, 100]"
+                                showFirstLastButtons class="tw-paginator-sticky" style="border-radius: 5px;">
+                            </mat-paginator>
+                        </div>
+                    </div>
+                </ng-container>
             </mat-tab>
             <mat-tab *ngIf="data && data.type !== 'student' && data.type !== 'staff'" label="{{'User Pool'|translate}}">
-                <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" [formGroup]="userPoolForm">
+                <div style="height: calc(100% - 25px);overflow: auto;">
+                <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" [formGroup]="userPoolForm" *ngIf="!spinLoader">
                     <div class="form-row" style="margin-top: 10px;">
                         <div class="ovi-popup-title-text-size top-styl">{{"USER POOL DETAILS"|translate}}</div>
                     </div>
@@ -506,9 +579,11 @@
                         </angular-table-component>
                     </div>
                 </div>
+                </div>
             </mat-tab>
             <mat-tab *ngIf="data && data.type !== 'student' && data.type !== 'staff'" label="{{'User Location'|translate}}">
-                <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" [formGroup]="userPoolLocationForm">
+                 <div style="height: calc(100% - 25px);overflow: auto;">
+                <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" [formGroup]="userPoolLocationForm" *ngIf="!spinLoader">
                     <div class="form-row" style="margin-top: 10px;">
                         <div class="ovi-popup-title-text-size top-styl">{{"USER LOCATION DETAILS"|translate}}</div>
                     </div>
@@ -541,135 +616,138 @@
                             </angular-table-component>
                         </div>
                 </div>
+                </div>
             </mat-tab>
             <mat-tab *ngIf="data && data.type !== 'student' && data.type !== 'staff'" [formGroup]="userShiftForm" label="{{'Schedule'|translate}}">
-               <app-manage-scheduler *ngIf="data && data.type !== 'student' && data.type !== 'staff' && selectedTabName === 'Schedule' && schedulePermission"  [scheduleInput]="scheduleManagement" ></app-manage-scheduler>
-                <div *ngIf="data && data.type !== 'student' && data.type !== 'staff' && selectedTabName === 'Schedule' && !schedulePermission" style="height: 100%; width: 100%;">
+               <app-manage-scheduler *ngIf="data && data.type !== 'student' && data.type !== 'staff' && selectedTabName === 'Schedule' && schedulePermission && !spinLoader"  [scheduleInput]="scheduleManagement" ></app-manage-scheduler>
+                <div *ngIf="data && data.type !== 'student' && data.type !== 'staff' && selectedTabName === 'Schedule' && !schedulePermission && !spinLoader" style="height: 100%; width: 100%;">
                     <app-create-user-schedule [scheduleInputData]="scheduleManagement"></app-create-user-schedule>
                </div>
             </mat-tab>
             <mat-tab label="{{'Parent Details'|translate}}" *ngIf="parentDetTabEnabled && studentRoleSelect">
-                <div style="display: block;">
-                    <button mat-mini-fab style="float:right;margin-right: 10px;" (click)="addInputs()" [disabled]="parentDetailsForm.invalid">+</button>
-                </div>
-                <div [formGroup]="parentDetailsForm" class="ovi-row-gap">
-                    <div class="ovi-row-gap" style="margin: 10px;">
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"First Name"|translate}}<span class="mandatory-field">*</span></mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'First Name'|translate" formControlName="firstName" autocomplete="off">
-                                    <mat-error *ngIf="parentDetailsForm.controls.firstName.invalid">
-                                        <span [hidden]="!parentDetailsForm.controls['firstName'].errors.required">{{"First name is required"|translate}}.</span>
-                                    </mat-error>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Last Name"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" formControlName="lastName" autocomplete="off">
-                                    <mat-error *ngIf="parentDetailsForm.controls.lastName.invalid">
-                                        <span [hidden]="!parentDetailsForm.controls['lastName'].errors.required">{{"Last name is required"|translate}}.</span>
-                                    </mat-error>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
-                                <mat-label class="ovi-lbl-text-size">{{"Relation"|translate}}<span class="mandatory-field">*</span></mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Relation'|translate" formControlName="userTypeId"
-                                    [disableOptionCentering]="true">
-                                        <mat-option *ngFor="let user of userList" [value]="user.code">
-                                            {{user.value}}
-                                        </mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
-                                <mat-label class="ovi-lbl-text-size">{{"Gender"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gender'|translate" formControlName="gender"[disableOptionCentering]="true">
-                                        <mat-option *ngFor="let gender of genderList" [value]="gender.code">
-                                            {{gender.value}}
-                                        </mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Address"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Address'|translate" formControlName="address" autocomplete="off">
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Email"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Email'|translate" formControlName="email" autocomplete="off">
-                                    <mat-error *ngIf="parentDetailsForm.controls.email.invalid">
-                                        <span [hidden]="!parentDetailsForm.controls['email'].errors.email">
-                                            {{"Invalid E-mail"|translate}}
-                                        </span>
-                                    </mat-error>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ovi-mat-hint">
-                                <mat-label class="ovi-lbl-text-size">{{"Birth Date (DD/MM/YYYY)"|translate}}</mat-label>
-                                <mat-form-field hintLabel="{{'e.g. 30/10/1990'|translate}}" class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <input matInput [matDatepicker]="picker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Birth Date (DD/MM/YYYY)'|translate"
-                                        formControlName="birthDate" [max]="today" [errorStateMatcher]="matcher" autocomplete="off">
-                                    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                                    <mat-datepicker #picker></mat-datepicker>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
-                                <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status" [disableOptionCentering]="true"
-                                    [errorStateMatcher]="matcher">
-                                        <mat-option *ngFor="let status of statusList" [value]="status.value">
-                                            {{status.value}}
-                                        </mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Phone No"|translate}} <span class="mandatory-field">*</span></mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone No'|translate" formControlName="phoneNumber" autocomplete="off">
-                                    <mat-error *ngIf="parentDetailsForm.controls.phoneNumber.invalid">
-                                        <span [hidden]="!parentDetailsForm.controls['phoneNumber'].errors.required">{{"phoneNumber is required"|translate}}.</span>
-                                        <span [hidden]="!parentDetailsForm.controls['phoneNumber'].errors.pattern">
-                                            {{"Invalid Phone number"|translate}}
-                                        </span>
-                                    </mat-error>
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"User Name"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'UserName'|translate" formControlName="userName" autocomplete="off">
-                                </mat-form-field>
-                        </div>
-                        <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Password"|translate}}</mat-label>
-                                <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
-                                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Password'|translate" formControlName="password" autocomplete="off">
-                                </mat-form-field>
-                        </div>
+                <div *ngIf="!spinLoader">
+                    <div style="display: block;">
+                        <button mat-mini-fab style="float:right;margin-right: 10px;" (click)="addInputs()" [disabled]="parentDetailsForm.invalid">+</button>
                     </div>
-                    <mat-divider class="divider"></mat-divider>
+                    <div [formGroup]="parentDetailsForm" class="ovi-row-gap">
+                        <div class="ovi-row-gap" style="margin: 10px;">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"First Name"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'First Name'|translate" formControlName="firstName" autocomplete="off">
+                                        <mat-error *ngIf="parentDetailsForm.controls.firstName.invalid">
+                                            <span [hidden]="!parentDetailsForm.controls['firstName'].errors.required">{{"First name is required"|translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Last Name"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Last Name'|translate" formControlName="lastName" autocomplete="off">
+                                        <mat-error *ngIf="parentDetailsForm.controls.lastName.invalid">
+                                            <span [hidden]="!parentDetailsForm.controls['lastName'].errors.required">{{"Last name is required"|translate}}.</span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Relation"|translate}}<span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Relation'|translate" formControlName="userTypeId"
+                                        [disableOptionCentering]="true">
+                                            <mat-option *ngFor="let user of userList" [value]="user.code">
+                                                {{user.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Gender"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Gender'|translate" formControlName="gender"[disableOptionCentering]="true">
+                                            <mat-option *ngFor="let gender of genderList" [value]="gender.code">
+                                                {{gender.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Address"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Address'|translate" formControlName="address" autocomplete="off">
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Email"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Email'|translate" formControlName="email" autocomplete="off">
+                                        <mat-error *ngIf="parentDetailsForm.controls.email.invalid">
+                                            <span [hidden]="!parentDetailsForm.controls['email'].errors.email">
+                                                {{"Invalid E-mail"|translate}}
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg ovi-mat-hint">
+                                    <mat-label class="ovi-lbl-text-size">{{"Birth Date (DD/MM/YYYY)"|translate}}</mat-label>
+                                    <mat-form-field hintLabel="{{'e.g. 30/10/1990'|translate}}" class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <input matInput [matDatepicker]="picker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Birth Date (DD/MM/YYYY)'|translate"
+                                            formControlName="birthDate" [max]="today" [errorStateMatcher]="matcher" autocomplete="off">
+                                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                        <mat-datepicker #picker></mat-datepicker>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                                    <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status" [disableOptionCentering]="true"
+                                        [errorStateMatcher]="matcher">
+                                            <mat-option *ngFor="let status of statusList" [value]="status.value">
+                                                {{status.value}}
+                                            </mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Phone No"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Phone No'|translate" formControlName="phoneNumber" autocomplete="off">
+                                        <mat-error *ngIf="parentDetailsForm.controls.phoneNumber.invalid">
+                                            <span [hidden]="!parentDetailsForm.controls['phoneNumber'].errors.required">{{"phoneNumber is required"|translate}}.</span>
+                                            <span [hidden]="!parentDetailsForm.controls['phoneNumber'].errors.pattern">
+                                                {{"Invalid Phone number"|translate}}
+                                            </span>
+                                        </mat-error>
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"User Name"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'UserName'|translate" formControlName="userName" autocomplete="off">
+                                    </mat-form-field>
+                            </div>
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size">{{"Password"|translate}}</mat-label>
+                                    <mat-form-field class="ovi-row-frmfld-wdh "appearance="outline">
+                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Password'|translate" formControlName="password" autocomplete="off">
+                                    </mat-form-field>
+                            </div>
+                        </div>
+                        <mat-divider class="divider"></mat-divider>
+                    </div>
+                    <div style="padding: 10px;" >
+                        <angular-table-component [id]="'formBuilder'" [type]="'ng-table'" [tableData]="formBuilderSource"
+                        [columns]="['First Name', 'Last Name','Address','Gender','Email','Phone No']"
+                        [columnData]="['firstName', 'lastName', 'address','gender','email','phoneNumber']">
+                        </angular-table-component>
+                    </div>
                 </div>
-                <div style="padding: 10px;" >
-                    <angular-table-component [id]="'formBuilder'" [type]="'ng-table'" [tableData]="formBuilderSource"
-                    [columns]="['First Name', 'Last Name','Address','Gender','Email','Phone No']"
-                    [columnData]="['firstName', 'lastName', 'address','gender','email','phoneNumber']">
-                    </angular-table-component>
-              </div>
             </mat-tab>
             <mat-tab *ngIf="mapData && mapData.type === 'user' && activate_btn.includes('BT_US_VP')" label="{{'Permission'|translate}}">
                 <ng-template mat-tab-label >{{'Permission'|translate}}</ng-template>
-                <app-resource-map  *ngIf="mapData && mapData?.type === 'user' && selectedTabName === 'Permission'"  [inputData]="mapData"></app-resource-map>
+                <app-resource-map  *ngIf="mapData && mapData?.type === 'user' && selectedTabName === 'Permission' && !spinLoader"  [inputData]="mapData"></app-resource-map>
             </mat-tab>
             <mat-tab *ngIf="data?.type === 'user'" label="{{'Department'|translate}}">
-               <app-user-location *ngIf="selectedTabName === 'Department'" [entityData]="data?.id" [type]="'user'"></app-user-location>
+               <app-user-location *ngIf="selectedTabName === 'Department' && !spinLoader" [entityData]="data?.id" [type]="'user'"></app-user-location>
             </mat-tab>
         </mat-tab-group>
         <div *ngIf="this.customerName === 'kyn'">

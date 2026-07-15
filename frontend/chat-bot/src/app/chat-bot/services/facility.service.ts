@@ -16,7 +16,7 @@ export class FacilityService {
 
   async loadFacilities(): Promise<void> {
     try {
-      const res = await fetch(`${environment.chatbotApiUrl}facilities`, {
+      const res = await fetch(`${environment.base_value.chatbotApiUrl}facilities`, {
         headers: { 'Authorization': `Bearer ${this.auth.getToken()}` },
       });
       const data = await res.json();

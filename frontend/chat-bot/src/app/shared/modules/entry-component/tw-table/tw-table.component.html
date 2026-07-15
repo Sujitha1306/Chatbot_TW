@@ -387,7 +387,7 @@ fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="t
                         >{{element[col] | slice:0:1}}
                     </span>
                     <span *ngIf="col === 'Patient Type'">
-                        <img *ngIf="element[col] == 'Ambulance'" style="width:20px" src="/assets/Alert/common_icons/amb.svg" alt="amb_img" appTooltip [tooltipText]=col|translate  placement="top">
+                        <img *ngIf="element[col] == 'Ambulance'" style="width:20px" src="/assets/Alert/common_icons/amb.svg" alt="amb_img" appTooltip [tooltipText]=element[col]|translate  placement="top">
                     </span>
                     <span *ngIf="col === 'Icons' && component === 'ot'">
                         <span *ngIf="element['surgeryTypeId']== 'SGT-EM'" appTooltip [tooltipText]="'Emergency'| translate" placement="bottom">
@@ -431,7 +431,7 @@ fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="t
                         {{element.assetTransferTypeName}} {{element.transferEventStatus}}
                     </span>
                     <span *ngIf="col === 'Audit Status'">{{element.isAudit === true ? 'Audited' : 'Non-Audited'}}</span>
-                    <span *ngIf="col === 'Open Task' && component === 'manageRoutine' && element.noOfOpenTasks != null && element.noOfOpenTasks > 0" class="open-badge"
+                    <span *ngIf="col === 'Open Task' && component === 'manageRoutine' && element.noOfOpenTasks != null && element.noOfOpenTasks > 0" class="open-badge"  appDebounceClick (debounceClick)="eventTrigger(col,element)"
                       appTooltip [tooltipText]="((element.noOfOpenTasks === 1 ? (element.noOfOpenTasks + ' Open Task')  : (element.noOfOpenTasks + ' Open Tasks'))) | translate">
                     {{ element.noOfOpenTasks > 99 ? '99+' : element.noOfOpenTasks }}
                     </span>
@@ -576,6 +576,11 @@ fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="t
                             appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
                         <img *ngIf="alert.eventCode === 'CE-MD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', alert, element['patientId'])" alt="nurse-call"
                             appTooltip [tooltipText]="alert.message" placement="top" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                        <span *ngIf="alert.eventCode === 'CE-PC'" class="pc-alert-container"
+                              (click)="eventTrigger('nurse-call', alert, element['patientId'])" (keydown.enter)="fixClick()"
+                              appTooltip [tooltipText]="alert.message" placement="top">
+                             <mat-icon style="color: #ffffff;padding: 0px;">person_check</mat-icon>
+                        </span>
                         </span>
                         </span>
                     </span>
@@ -820,7 +825,7 @@ fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="t
                                 style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
                             <img *ngIf="alerts.alertCode === 'RU-MI'" appTooltip [tooltipText]="alerts.message" placement="top"
                                 style="width:18px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
-                            <img *ngIf="alerts.alertCode === 'RU-GO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                            <img *ngIf="alerts.alertCode === 'RU-GO'" (click)="eventTrigger('fall-risk', alerts, element['patientId'])" appTooltip [tooltipText]="alerts.message" placement="top"
                                 style="width:18px;margin-right:5px" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
                             <img *ngIf="alerts.alertCode === 'RU-SE'" appTooltip [tooltipText]="alerts.message" placement="top"
                                 style="width:18px;margin-right:5px" src="/assets/Alert/IP/sensor.svg" alt="patient-sensor">
@@ -829,36 +834,38 @@ fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="t
                     </span>
                     <span *ngIf="col === 'Alert' && (component === 'staffRoutine' || component === 'student')" >
                         <span *ngFor="let alerts of element['alerts']">
-                        <span *ngIf="!alerts.eventCode">
-                            <img *ngIf="alerts.alertCode === 'RU-MO'" appTooltip [tooltipText]="alerts.message" placement="top"
-                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
-                            <img *ngIf="alerts.alertCode === 'RU-FA'" alt="fall-risk" appTooltip [tooltipText]="alerts.message" placement="top"
-                                style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
-                            <img *ngIf="alerts.alertCode === 'RU-MI'" appTooltip [tooltipText]="alerts.message" placement="top"
-                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
-                            <img *ngIf="alerts.alertCode === 'RU-GO'" appTooltip [tooltipText]="alerts.message" placement="top"
-                                style="width:18px;margin-right:5px" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                            <span *ngIf="!alerts.eventCode">
+                                <img *ngIf="alerts.alertCode === 'RU-MO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                    style="width:18px;margin-right:5px" src="/assets/Alert/IP/Moved-out-icon.svg" alt="Moved-out-icon">
+                                <img *ngIf="alerts.alertCode === 'RU-FA'" alt="fall-risk" appTooltip [tooltipText]="alerts.message" placement="top"
+                                    style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/fall.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="alerts.alertCode === 'RU-MI'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                    style="width:18px;margin-right:5px" src="/assets/Alert/IP/patient-missing.svg" alt="patient-missing">
+                                <img *ngIf="alerts.alertCode === 'RU-GO'" appTooltip [tooltipText]="alerts.message" placement="top"
+                                    style="width:18px;margin-right:5px" (click)="eventTrigger('fall-risk', alerts)" src="/assets/Alert/IP/geofence.svg" alt="patient-geofence">
+                            </span>
                         </span>
-                        <span *ngIf="alerts.eventCode" style="cursor: pointer;">
-                            <img *ngIf="events.eventCode === 'CE-CL'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
-                            appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/nurse-call.svg" (keydown.enter)="fixClick()">
-                            <img *ngIf="events.eventCode === 'CE-AD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
-                            <img *ngIf="events.eventCode === 'CE-FD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/food.svg" (keydown.enter)="fixClick()"> 
-                            <img *ngIf="events.eventCode === 'CE-HK'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/housekeeping.svg" (keydown.enter)="fixClick()"> 
-                            <img *ngIf="events.eventCode === 'CE-SO'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
-                            <img *ngIf="events.eventCode === 'CE-MD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
-                            <img *ngIf="events.eventCode === 'CE-INS'" style="width:18px;margin-right:5px;cursor:pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-INS"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/CE-INS.svg" (keydown.enter)="fixClick()">
-                            <img *ngIf="events.eventCode === 'CE-TAM'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-TAM"
-                                appTooltip [tooltipText]="events.message" placement="top"  src="/assets/Alert/CE-TAM.svg" (keydown.enter)="fixClick()">
-                            <img *ngIf="events.eventCode === 'CE-WRP'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-WRP"
-                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/CE-WRP.svg" (keydown.enter)="fixClick()">
-                        </span>
+                        <span *ngFor="let events of element['events']">
+                            <span *ngIf="events.eventCode" style="cursor: pointer;">
+                                <img *ngIf="events.eventCode === 'CE-CL'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/nurse-call.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="events.eventCode === 'CE-AD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/aid.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="events.eventCode === 'CE-FD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/food.svg" (keydown.enter)="fixClick()"> 
+                                <img *ngIf="events.eventCode === 'CE-HK'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/housekeeping.svg" (keydown.enter)="fixClick()"> 
+                                <img *ngIf="events.eventCode === 'CE-SO'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/sos.svg" (keydown.enter)="fixClick()"> 
+                                <img *ngIf="events.eventCode === 'CE-MD'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="nurse-call"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/IP/medicine.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="events.eventCode === 'CE-INS'" style="width:18px;margin-right:5px;cursor:pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-INS"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/CE-INS.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="events.eventCode === 'CE-TAM'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-TAM"
+                                    appTooltip [tooltipText]="events.message" placement="top"  src="/assets/Alert/CE-TAM.svg" (keydown.enter)="fixClick()">
+                                <img *ngIf="events.eventCode === 'CE-WRP'" style="width:18px;margin-right:5px;cursor: pointer;" (click)="eventTrigger('nurse-call', events)" alt="CE-WRP"
+                                    appTooltip [tooltipText]="events.message" placement="top" src="/assets/Alert/CE-WRP.svg" (keydown.enter)="fixClick()">
+                            </span>
                         </span>
                     </span>
 
@@ -1260,14 +1267,14 @@ fxLayoutGap="5px" *ngIf="showTable" [style.--tableSize]="tableSize" [ngClass]="t
                     </span>
                     <span *ngIf="col === 'Assigned To' && ['task'].includes(component)" style="display: flex; align-items: center; gap: 4px;">
                         <span *ngIf="element.performerType" class="icon-cover" [ngStyle]="{'background': element.performerType === 'RT-RO' ? '#F4ECF7' : 
-                            element.performerType === 'RT-US' ? '#EDF4FD' : '#ECF7F6'}" appTooltip [tooltipText]="element.performerType === 'RT-US' ? 'User' : 
+                            ['RT-US','TAT-US'].includes(element.performerType) ? '#EDF4FD' : '#ECF7F6'}" appTooltip [tooltipText]="['RT-US','TAT-US'].includes(element.performerType) ? 'User' : 
                             element.performerType === 'RT-RO' ? 'Role' : 'Department'">
                             <img style="transform: scale(1.08); opacity: 0.95;" [ngStyle]="{
-                            height: element.performerType === 'RT-US' ? '13px' : '16px',
-                            width:  element.performerType === 'RT-US' ? '13px' : '16px'}" alt="task"
+                            height: ['RT-US','TAT-US'].includes(element.performerType)  ? '13px' : '16px',
+                            width:  ['RT-US','TAT-US'].includes(element.performerType) ? '13px' : '16px'}" alt="task"
                             [src]="element.performerType === 'RT-RO' ? '/assets/Menus/SMC_role.svg' :
                             element.performerType === 'RT-DT' ? '/assets/Menus/SMC_department.svg' :
-                            element.performerType === 'RT-US' ? '/assets/Alert/user.svg' : ''" />
+                            ['RT-US','TAT-US'].includes(element.performerType)  ? '/assets/Alert/user.svg' : ''" />
                         </span>
                         {{element[col]}}
                     </span>

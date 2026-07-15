@@ -14,12 +14,12 @@
  * ======================================================================================================
  ******************************************************************************/
 
-import { Component, OnInit,  ViewEncapsulation,  Input, OnDestroy, ViewChild, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit,  ViewEncapsulation,  Input, OnDestroy, ViewChild, HostListener, ElementRef, ChangeDetectorRef, NgZone } from '@angular/core';
 import { FormBuilder, FormControl } from '@angular/forms';
 import { connect,  MqttClient } from 'mqtt';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, bufferTime } from 'rxjs/operators';
 import { Subject, Subscription } from 'rxjs';
 import DijkstraModel from '../../../../shared/model/dijkstra.model';
 import GraphModel from '../../../../shared/model/graph.model';
@@ -49,6 +49,7 @@ import { CreateAssetComponent } from '../../../configuration/asset/asset.compone
 import { EnrollInfantComponent } from '../../../../shared/modules/entry-component/enroll-patient/enroll-patient.component';
 import { CreateUserComponent } from '../../../../shared/modules/entry-component/create-user/create-user.component';
 import { FilterOptions, MapFilter, MapLayers, SearchFilter, TagOptions } from './common-leaflet.model';
+import { NotificationCameraViewComponent } from '../../../../core/global-notification/notification-camera-view/notification-camera-view.component';
 @Component({
     selector: 'tw-common-leaflet',
     templateUrl: './common-leaflet.component.html',
@@ -92,6 +93,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     public availablePorterList = [];
     public porters = {};
     public floorDetail = null;
+    public mapViewMode: '2D' | '3D' = '2D';
     blockId = new FormControl();
     floorId = new FormControl();
     fromLocation = new FormControl();
@@ -115,6 +117,10 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     public isAddLayerAll = {}    
     public blockExist : boolean = true;
     public isSubEnabled : boolean = false;
+    private isMqttMessageBound: boolean = false;
+    private tagMessage$: Subject<any> = new Subject();
+    private tagMessageSub: Subscription = null;
+    private navIndex: { [facilityId: string]: Map<string, number> } = {};
 
     public nodes = null;
     public subject : Subject<any> = new Subject();
@@ -141,6 +147,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     public isSpiderfy = false;
     public spiderfiedMarkers = [];
     public clusterRadius = 20;
+    public clusterListThreshold = 5;
     public clusterPopup = [];
     public isAddLayer = true;
     public tagInfo = {};
@@ -181,6 +188,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     public tabValue = [];
     public tabData = [];
     public previousTag = null;
+    private tagIdHighlighted = false;
     public navigationHeatData = [];
     public floorData = {};
     public porterReqTagList = [];
@@ -280,8 +288,13 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         },
     ];
 
+    readonly assetIconConfig: Record<string, string> = {
+        CCTV: '/assets/Menus/cctv-icon.png'
+    };
+
     public mapOptionFilter = [
         { name: 'Readers', icon: false, img: true, mIcon: false, url: './../../../../../../assets/Menus/SMC_reader.svg', code: 'readers', disabled: false },
+        { name: 'CCTV', icon: false, img: true, mIcon: false, url: '/assets/Menus/cctv-icon.png', code: 'cctv', disabled: false },
         { name: 'Dispenser', icon: false, img: true, mIcon: false, url: './../../../../../../assets/Menus/dispenser.svg', code: 'dispenser', disabled: false },
         { name: 'Heat Map', icon: false, img: false, mIcon: true, url: 'local_fire_department', code: 'heatMap', disabled: false },
         { name: 'Map Path', icon: false, img: false, mIcon: true, url: 'route', code: 'mapPath', disabled: false },
@@ -309,7 +322,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     activeOptionCode = 'applyAll';
    
     constructor(private readonly styleLoader: StyleLoaderService,public form: FormBuilder, private readonly hospitalService: HospitalService, public datepipe: DatePipe,public dialog: MatDialog, private readonly cdr: ChangeDetectorRef,
-       private readonly commonService: CommonService, private readonly workflowService: WorkflowService,private readonly activeRoute : ActivatedRoute, private readonly configurationServices: ConfigurationService, public toastr: AppToastService,public hazmatPdfService: HazmatPdfService,public hosipitalService:HospitalService){  
+       private readonly commonService: CommonService, private readonly workflowService: WorkflowService,private readonly activeRoute : ActivatedRoute, private readonly configurationServices: ConfigurationService, public toastr: AppToastService,public hazmatPdfService: HazmatPdfService,public hosipitalService:HospitalService, private readonly ngZone: NgZone){
         this.searchFilter = new SearchFilter();
         this.filterOptions = new FilterOptions();
         this.mapFilter = new MapFilter();
@@ -329,6 +342,13 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.checkUserPreference();
         this.subject.pipe(debounceTime(500)).subscribe(searchTextValue => {
             this.searchLocation(searchTextValue);
+        });
+        this.ngZone.runOutsideAngular(() => {
+            this.tagMessageSub = this.tagMessage$.pipe(bufferTime(150)).subscribe(batch => {
+                if(batch.length) {
+                    this.processTagMessageBatch(batch);
+                }
+            });
         });
         this.resizeListener = () => this.updateContainerWidth();
         window.addEventListener('resize', this.resizeListener);
@@ -660,7 +680,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                     let floor = this.blockList.find(resValue => resValue.id == this.blockSelect)
                     this.floorList = floor.children.filter(resValue => resValue.imageUrl != null || resValue.locationTypeId == 23);
                     }
-                }else if(this.blockSelect == null && this.floorSelect != null && this.blockList?.some(x => x.children > 0)){
+                }else if(this.blockSelect == null && this.floorSelect != null){
                 let findBlk = this.blockList.find(res => res.children.find(resValue => resValue.id == this.floorSelect));
                 this.blockId.setValue(findBlk.id);
                 this.floorList = findBlk.children.filter(resValue => resValue.imageUrl != null || resValue.locationTypeId == 23);
@@ -707,6 +727,12 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                 this.getSoundSensor('check');
             });
         }
+        if(this.mapFilter.injectorList.length == 0){
+            this.configurationServices.getAllInjectors().subscribe(res => {
+                this.mapFilter.injectorList = res.results || [];
+                this.getInjectorcoord('check');
+            });
+        }
     }
     onBlockChange(blockid){
         // console.log(blockid)
@@ -740,6 +766,42 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.floorId.setValue(floorSelect)
         this.getLocationsByFloor(floorSelect)
         // this.isExpanded= false;
+    }
+    toggleMapViewMode(mode: '2D' | '3D') {
+        this.mapViewMode = mode;
+        if (mode === '3D') {
+            // Remove existing Leaflet maps to free up resources and avoid DOM query issues
+            let floors = Object.keys(this.allFloorMap);
+            for(let i in floors) {
+                if (this.allFloorMap[floors[i]]) {
+                    try {
+                        this.allFloorMap[floors[i]].remove();
+                    } catch (e) {
+                        console.error('Error removing map:', e);
+                    }
+                    delete this.allFloorMap[floors[i]];
+                }
+            }
+        } else if (mode === '2D') {
+            // Wait for DOM to render the 2D container element, then re-initialize map
+            setTimeout(() => {
+                if (this.floorId && this.floorId.value) {
+                    this.getLocationsByFloor(this.floorId.value);
+                }
+            }, 100);
+        }
+    }
+    on3DFloorChanged(floorId: number) {
+        if (this.floorId.value !== floorId) {
+            this.floorId.setValue(floorId);
+            this.onFloorChange(floorId);
+        }
+    }
+    on3DBlockChanged(blockId: number) {
+        if (this.blockId.value !== blockId) {
+            this.blockId.setValue(blockId);
+            this.onBlockChange(blockId);
+        }
     }
     getGraphNodePoints(){
         this.commonService.getAllNodePoints().subscribe(res => {
@@ -1054,6 +1116,10 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.filterOptions.tagINFilter = false;
         this.filterOptions.distFilter = false;
         this.filterOptions.labelFilter = false;
+        this.filterOptions.cctvFilter = false;
+        this.maps.cctv_points = [];
+        this.maps.injector_points = [];
+        this.maps.injector_wires = {};
         this.polylinePoints = [];
         this.distPolyline = {};
         this.maps.tooltip_polygon[floorid] = {};
@@ -1063,13 +1129,16 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.lastFilter = null;
         this.tagOptions.selectedTag = null;
         this.tagOptions.lastTag = null;
+        this.tagIdHighlighted = false;
         if(this.reqType != 'track' && this.navType == 'location_nav') {
             if(!this.blockView.active) {
             this.getReadercoord('check');
-            this.getSoundSensor('check');            
+            this.getInjectorcoord('check');
+            this.getSoundSensor('check');
             this.getDispensercoord('check');
             this.getBedspacing('check');
             this.getPath('check');
+            this.loadCctvAssets(floorid);
             }
         }
         this.isShowTag = {"TAT-DAT" : false, "TAT-PA" : false,"TAT-AS" : false,"TAT-IN" : false};
@@ -1211,6 +1280,14 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
             this.allMarkerCluster[floorid].on('clustermouseover', this.getMarkersOnOver.bind(this, floorid))
             this.allMarkerCluster[floorid].on('clustermouseout', this.hideMarkersOnOut.bind(this, floorid))
             this.allOms[floorid].addListener('spiderfy' , (markers) => {
+                // Spreading 5+ overlapping icons around a point clutters the map. Above the
+                // threshold, collapse straight back and show the cluster's tags as a list
+                // popup instead; below it, keep the existing spread-out-icons behavior.
+                if(markers.length >= this.clusterListThreshold){
+                    this.allOms[floorid].unspiderfy();
+                    this.showClusterTagList(markers, floorid);
+                    return;
+                }
                 this.allSpiderfiedMarkers[floorid] = markers;
                 for(let i in this.allClusterPopup[floorid]){
                     this.allFloorMap[floorid].removeLayer(this.allClusterPopup[floorid][i])
@@ -1749,46 +1826,65 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.allFloorMap[floorid].addControl(this.allMapZoomCntrl[floorid]);
     }
     getTagOnInit(floorData){
-        for(let i=0; i < floorData.length ; i++){
-            const epochNow = Math.floor((new Date().getTime())/1000);
-            const epochBfor = Math.floor(floorData[i].fromtime);
-            let res = Math.abs(epochNow - epochBfor);
-            let icon;
-            // if(floorData[i].tagtype == 'TAT-AS' && floorData[i].assetType == 'AT-MR') {
-            //     floorData[i].tagtype = 'TAT-MR'
-            // }
-            if(floorData[i].tagtype == 'TAT-US' && floorData[i].hasOwnProperty('userTypeId')) {
-                floorData[i].tagtype = floorData[i].userTypeId == 'UT_STUDENT' ? 'TAT-STD' : floorData[i].userTypeId == 'UT_STAFF' ? 'TAT-STF' : 'TAT-US'
+        // The initial tag load can be hundreds/thousands of records. Processing them all
+        // synchronously in one loop (each going through the full bindTag pipeline) is what
+        // used to freeze the tab on first paint. Chunking + yielding to the browser between
+        // chunks (via requestAnimationFrame) keeps the tab responsive while it populates, and
+        // deferring the tabData/isShowTag recompute to once-per-chunk (instead of once per
+        // record) cuts that part of the work by roughly the chunk size.
+        const CHUNK_SIZE = 100;
+        let i = 0;
+        const processChunk = () => {
+            const end = Math.min(i + CHUNK_SIZE, floorData.length);
+            for(; i < end; i++){
+                const epochNow = Math.floor((new Date().getTime())/1000);
+                const epochBfor = Math.floor(floorData[i].fromtime);
+                let res = Math.abs(epochNow - epochBfor);
+                let icon;
+                if(floorData[i].tagtype == 'TAT-US' && floorData[i].hasOwnProperty('userTypeId')) {
+                    floorData[i].tagtype = floorData[i].userTypeId == 'UT_STUDENT' ? 'TAT-STD' : floorData[i].userTypeId == 'UT_STAFF' ? 'TAT-STF' : 'TAT-US'
+                }
+                if(res > 300){
+                    icon = floorData[i].tagtype + '-OLD';
+                } else{
+                    icon = floorData[i].tagtype + '-IDL';
+                }
+                let tagData = {
+                    'fid' : floorData[i].facility_id,
+                    'ctm' : floorData[i].fromtime,
+                    'etm' : floorData[i].fromtime,
+                    'edt' : floorData[i].event_dt,
+                    'tid' : floorData[i].tagid,
+                    'ttp' : floorData[i].tagtype,
+                    'tvl' : floorData[i].tag_value,
+                    'cxy' : [floorData[i]['x'],floorData[i]['y']],
+                    'blk' : floorData[i].blockId,
+                    'bln' : floorData[i].blockName,
+                    'flr' : floorData[i].floor_id,
+                    'lid' : floorData[i].location_id,
+                    'lnm' : floorData[i].location_name,
+                    'fln' : floorData[i].floorName,
+                    'tan' : floorData[i].tagAssociatedName,
+                    'sat' : floorData[i].assetType,
+                    'ust' : floorData[i].userTypeId,
+                    'asi' : floorData[i].identifier ? floorData[i].identifier : null,
+                    'icon' : icon
+                };
+                this.checkTag(tagData, true);
             }
-            if(res > 300){
-                icon = floorData[i].tagtype + '-OLD';
-            } else{
-                icon = floorData[i].tagtype + '-IDL';
+            this.refreshTagVisibility();
+            this.cdr.markForCheck();
+            if(i < floorData.length){
+                requestAnimationFrame(processChunk);
+            } else {
+                this.getCurrentTags();
             }
-            let tagData = {
-                'fid' : floorData[i].facility_id,
-                'ctm' : floorData[i].fromtime,
-                'etm' : floorData[i].fromtime,
-                'edt' : floorData[i].event_dt,
-                'tid' : floorData[i].tagid,
-                'ttp' : floorData[i].tagtype,
-                'tvl' : floorData[i].tag_value,
-                'cxy' : [floorData[i]['x'],floorData[i]['y']],
-                'blk' : floorData[i].blockId,
-                'bln' : floorData[i].blockName,
-                'flr' : floorData[i].floor_id,
-                'lid' : floorData[i].location_id,
-                'lnm' : floorData[i].location_name,
-                'fln' : floorData[i].floorName,
-                'tan' : floorData[i].tagAssociatedName,
-                'sat' : floorData[i].assetType,
-                'ust' : floorData[i].userTypeId,
-                'asi' : floorData[i].identifier ? floorData[i].identifier : null,
-                'icon' : icon
-            };
-            this.checkTag(tagData);
+        };
+        if(floorData.length){
+            processChunk();
+        } else {
+            this.getCurrentTags();
         }
-        this.getCurrentTags()
     }
     getCurrentTags() {
         if(this.navConfig.triggerPublish) {
@@ -1857,105 +1953,196 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
             }
             // this.client.subscribe(['tw/tag/location_nav/' + localStorage.getItem(btoa('facilityId')) + '/#', 'tw/cache/gw/+' + localStorage.getItem(btoa('facilityId'))]);
             this.client.subscribe(topicName);
-            this.client.on('message', (topic, message, packet) => {
-            if(topic.includes('tw/tag/' + this.navType + '/')){
-                // console.log(packet)
-                let msg = message.toString();
-                let tagData = JSON.parse('[' + msg + ']')
-                tagData = tagData[0]
-                let nowTime = new Date().getTime()/1000
-                let checkTime =  (nowTime) - tagData['ctm'] 
-                if(this.allFloorMap.hasOwnProperty(tagData.flr)) {
-                if(this.blockId.value === tagData.blk && checkTime <= 120) {
-                if(tagData.flr != this.floorId.value){
-                    if(!(tagData.flr in this.tagMarkerList)){
-                        this.tagMarkerList[tagData.flr] = {}
-                    }
-                    let floorList = Object.keys(this.tagMarkerList);
-                    for(let i in floorList) {
-                        if(this.tagMarkerList[floorList[i]] && tagData.tid in this.tagMarkerList[floorList[i]] && this.allFloorMap.hasOwnProperty(floorList[i])){
-                            let tagMarker = this.tagMarkerList[floorList[i]][tagData.tid];
-                            if(tagData.flr != floorList[i]) {
-                                this.allFloorMap[floorList[i]].closePopup();
+            if(!this.isMqttMessageBound) {
+                this.isMqttMessageBound = true;
+                // Parsing + queueing happens outside Angular's zone so a burst of MQTT
+                // messages doesn't trigger a change-detection pass per message; the
+                // queued batch is drained (and CD triggered once) in processTagMessageBatch.
+                this.ngZone.runOutsideAngular(() => {
+                    this.client.on('message', (topic, message, packet) => {
+                        if(topic.includes('tw/tag/' + this.navType + '/')){
+                            let msg = message.toString();
+                            let tagData = JSON.parse('[' + msg + ']')
+                            tagData = tagData[0]
+                            let nowTime = new Date().getTime()/1000
+                            let checkTime =  (nowTime) - tagData['ctm']
+                            if(this.allFloorMap.hasOwnProperty(tagData.flr) && this.blockId.value === tagData.blk && checkTime <= 120) {
+                                this.tagMessage$.next(tagData);
                             }
-                            this.allFloorMap[floorList[i]].removeLayer(tagMarker);
-                            delete this.tagMarkerList[floorList[i]][tagData.tid]
-                            let index = this.navigationData[this.facilityId].findIndex(res => res.tid == tagData.tid)
-                            this.navigationData[this.facilityId].splice(index,1)
-                        } 
-                    }
-                    if(this.blockView.active) {
-                        this.checkTag(tagData)
-                        if (this.filterValue !=null){
-                            this.applyFilter(this.filterValue)
                         }
-                    } else {
-                        if (this.tagId == tagData.tid && this.tagType == tagData.ttp) {
-                            this.previousTag = tagData;
-                            this.onFloorChange(tagData.flr)
-                        }
-                    }
-                } 
-                else if(this.blockView.active || tagData.flr == this.floorId.value) {
-                    let floorList = Object.keys(this.tagMarkerList);
-                    for(let i in floorList) {
-                        if(this.tagMarkerList[floorList[i]] && tagData.tid in this.tagMarkerList[floorList[i]] && this.allFloorMap.hasOwnProperty(floorList[i])){
-                            if(tagData.flr != floorList[i]) {
-                                let tagMarker = this.tagMarkerList[floorList[i]][tagData.tid];
-                                if(tagData.flr != floorList[i]) {
-                                    this.allFloorMap[floorList[i]].closePopup();
-                                }
-                                this.allFloorMap[floorList[i]].removeLayer(tagMarker)
-                                delete this.tagMarkerList[floorList[i]][tagData.tid]
-                                let index = this.navigationData[this.facilityId].findIndex(res => res.tid == tagData.tid)
-                                this.navigationData[this.facilityId].splice(index,1)
-                            }
-                        } 
-                    }
-                    // console.log(msg)
-                    this.checkTag(tagData)
-                    if (this.filterValue !=null){
-                        this.applyFilter(this.filterValue)
-                    }
-                }
-                }
-                }
+                        // else if(topic.includes('tw/cache/gw/')){
+                        //     let msg = message.toString();
+                        //     let subsData = JSON.parse(msg)
+                        //     console.log(subsData)
+                        //     if(subsData.ctx == 'Tag' && subsData.operation == 'inactive'){
+                        //         for(let i in subsData.data){
+                        //             let index = this.navigationData[this.facilityId].findIndex(res => res.tid == subsData.data[i].tagId && res.tvl == subsData.event.associateId && res.ttp == subsData.event.associateTypeId)
+                        //             if(index != -1){
+                        //                 for(let i in this.tagMarkerList){
+                        //                     if(this.tagMarkerList[i][this.navigationData[this.facilityId][index].tid] != undefined){
+                        //                         this.floorMap.removeLayer(this.tagMarkerList[i][this.navigationData[this.facilityId][index].tid])
+                        //                         delete this.tagMarkerList[i][this.navigationData[this.facilityId][index].tid]
+                        //                         this.navigationData[this.facilityId].splice(index,1)
+                        //                     }
+                        //                 }
+                        //             }
+                        //         }
+                        //     }
+                        // }
+                    });
+                });
             }
-            // else if(topic.includes('tw/cache/gw/')){
-            //     let msg = message.toString();
-            //     let subsData = JSON.parse(msg)
-            //     console.log(subsData)
-            //     if(subsData.ctx == 'Tag' && subsData.operation == 'inactive'){
-            //         for(let i in subsData.data){
-            //             let index = this.navigationData[this.facilityId].findIndex(res => res.tid == subsData.data[i].tagId && res.tvl == subsData.event.associateId && res.ttp == subsData.event.associateTypeId)
-            //             if(index != -1){
-            //                 for(let i in this.tagMarkerList){
-            //                     if(this.tagMarkerList[i][this.navigationData[this.facilityId][index].tid] != undefined){
-            //                         this.floorMap.removeLayer(this.tagMarkerList[i][this.navigationData[this.facilityId][index].tid])
-            //                         delete this.tagMarkerList[i][this.navigationData[this.facilityId][index].tid]
-            //                         this.navigationData[this.facilityId].splice(index,1)
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-            });
         }
     }
-    checkTag(tagData){
+    // Drains a buffered window (~150ms) of live MQTT tag messages in one pass instead of
+    // reacting to each message individually. Within the window only the latest message per
+    // tag id is kept (superseded positions don't need to be rendered), and the expensive
+    // tabData/isShowTag recompute + filter reapply happen once for the whole batch instead of
+    // once per tag - this is what prevents O(n) recompute x n-messages-per-second from
+    // freezing the tab when there are hundreds/thousands of tags reporting.
+    processTagMessageBatch(batch){
+        let latestByTid = new Map();
+        for(let i=0; i < batch.length; i++){
+            latestByTid.set(batch[i].tid, batch[i]);
+        }
+        latestByTid.forEach(tagData => {
+            if(tagData.flr != this.floorId.value){
+                if(!(tagData.flr in this.tagMarkerList)){
+                    this.tagMarkerList[tagData.flr] = {}
+                }
+                let floorList = Object.keys(this.tagMarkerList);
+                for(let i in floorList) {
+                    if(this.tagMarkerList[floorList[i]] && tagData.tid in this.tagMarkerList[floorList[i]] && this.allFloorMap.hasOwnProperty(floorList[i])){
+                        let tagMarker = this.tagMarkerList[floorList[i]][tagData.tid];
+                        if(tagData.flr != floorList[i]) {
+                            this.allFloorMap[floorList[i]].closePopup();
+                        }
+                        this.allFloorMap[floorList[i]].removeLayer(tagMarker);
+                        delete this.tagMarkerList[floorList[i]][tagData.tid]
+                        this.navRemoveByTid(this.facilityId, tagData.tid)
+                    }
+                }
+                if(this.blockView.active) {
+                    this.checkTag(tagData, true)
+                } else {
+                    if (this.tagId == tagData.tid && this.tagType == tagData.ttp) {
+                        this.previousTag = tagData;
+                        this.onFloorChange(tagData.flr)
+                    }
+                }
+            }
+            else if(this.blockView.active || tagData.flr == this.floorId.value) {
+                let floorList = Object.keys(this.tagMarkerList);
+                for(let i in floorList) {
+                    if(this.tagMarkerList[floorList[i]] && tagData.tid in this.tagMarkerList[floorList[i]] && this.allFloorMap.hasOwnProperty(floorList[i])){
+                        if(tagData.flr != floorList[i]) {
+                            let tagMarker = this.tagMarkerList[floorList[i]][tagData.tid];
+                            this.allFloorMap[floorList[i]].closePopup();
+                            this.allFloorMap[floorList[i]].removeLayer(tagMarker)
+                            delete this.tagMarkerList[floorList[i]][tagData.tid]
+                            this.navRemoveByTid(this.facilityId, tagData.tid)
+                        }
+                    }
+                }
+                this.checkTag(tagData, true)
+            }
+        });
+        this.ngZone.run(() => {
+            this.refreshTagVisibility();
+            if(this.filterValue != null){
+                this.applyFilter(this.filterValue)
+            }
+            this.cdr.markForCheck();
+        });
+    }
+    checkTag(tagData, suppressRecompute: boolean = false){
         if(this.reqType == 'porter'){
             if((this.porterReqTagList.findIndex(res => res.tagId == tagData.tid) != -1) && (this.porterReqTagList.findIndex(res => res.tagAssociationTypeId == tagData.ttp) != -1)){
-                this.bindTag(tagData)
+                this.bindTag(tagData, suppressRecompute)
             }
         }else{
             if(this.tagId != null && this.tagType != null){
                 if(this.tagId == tagData.tid && this.tagType == tagData.ttp){
-                    this.bindTag(tagData);
+                    this.bindTag(tagData, suppressRecompute);
+                    if(!this.tagIdHighlighted && this.tagMarkerList[tagData.flr] && this.tagMarkerList[tagData.flr][tagData.tid]){
+                        this.tagIdHighlighted = true;
+                        this.highlightTag(tagData);
+                    }
                 }
             } else{
-                this.bindTag(tagData);
-            } 
+                this.bindTag(tagData, suppressRecompute);
+            }
+        }
+    }
+    // O(1) index of tid -> position in navigationData[facilityId], lazily built and kept in
+    // sync on push/splice so the hot per-message lookup in bindTag doesn't need an O(n)
+    // findIndex scan over the whole tag list on every single MQTT message.
+    private getNavIndex(facilityId): Map<string, number> {
+        if(!this.navIndex[facilityId]){
+            let map = new Map<string, number>();
+            let arr = this.navigationData[facilityId] || [];
+            for(let i=0; i < arr.length; i++){
+                map.set(arr[i].tid, i);
+            }
+            this.navIndex[facilityId] = map;
+        }
+        return this.navIndex[facilityId];
+    }
+    private navFindIndex(facilityId, tid): number {
+        let arr = this.navigationData[facilityId];
+        if(!arr || !arr.length){
+            return -1;
+        }
+        let map = this.getNavIndex(facilityId);
+        let idx = map.has(tid) ? map.get(tid) : -1;
+        if(idx === -1 || !arr[idx] || arr[idx].tid !== tid){
+            idx = arr.findIndex(res => res.tid == tid);
+            if(idx !== -1){
+                map.set(tid, idx);
+            }
+        }
+        return idx;
+    }
+    private navPush(facilityId, tagData){
+        this.navigationData[facilityId].push(tagData);
+        this.getNavIndex(facilityId).set(tagData.tid, this.navigationData[facilityId].length - 1);
+    }
+    private navRemoveByTid(facilityId, tid){
+        let idx = this.navFindIndex(facilityId, tid);
+        if(idx === -1){
+            return;
+        }
+        this.navigationData[facilityId].splice(idx, 1);
+        let map = this.navIndex[facilityId];
+        if(map){
+            map.delete(tid);
+            map.forEach((v, k) => {
+                if(v > idx){
+                    map.set(k, v - 1);
+                }
+            });
+        }
+    }
+    trackByTid(index, tag){
+        return tag && tag.tid ? tag.tid : index;
+    }
+    // Recomputes tabData + isShowTag (both derived from the full navigationData array) once.
+    // bindTag() used to do this on every single tag update; callers now pass
+    // suppressRecompute=true while processing a batch/initial load and call this once at the end.
+    refreshTagVisibility(){
+        if(this.tabValue.length > 0){
+            if(this.blockView.active) {
+                this.tabData = this.navigationData[this.facilityId].filter(val => val.ttp == this.tabValue[this.selectedIndex].type);
+            } else {
+                this.tabData = this.navigationData[this.facilityId].filter(val => val.flr == this.floorId.value && val.ttp == this.tabValue[this.selectedIndex].type);
+            }
+            if(this.navigationData[this.facilityId].length > 0){
+                let isShowTagKeys = Object.keys(this.isShowTag);
+                for(let i=0; i < isShowTagKeys.length; i++){
+                    let filterData = this.navigationData[this.facilityId].filter(res => res.flr == this.floorId.value && res.ttp == isShowTagKeys[i])
+                    this.isShowTag[isShowTagKeys[i]] = filterData.length > 0;
+                }
+            }
         }
     }
     // addMarker(iconData, tagData,movePoints) {
@@ -2123,7 +2310,10 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         }
         if(this.tagOptions.selectedTag != null && this.tagOptions.selectedTag.tid == tagData.tid){
             iconData['iconSize'] = [60, 60];
+            iconData['iconAnchor'] = [30, 55];
+            iconData['className'] = 'highlight-icon';
             marker.options.icon = L.icon(iconData);
+            marker.setZIndexOffset(250);
             this.tagOptions.lastTag = marker;
             if(this.isNavigate){
                 this.navigateHighlightedTag(tagData)
@@ -2139,8 +2329,9 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         marker.on('mouseover', this.getMarkerNearMarker.bind(this, tagData));
         // ASSET TRACKING MOUSE OVER CHANGES
         // if(tagData.ttp == "TAT-IN") {
-        //     marker.on('mouseover', this.showDeviceInfo.bind(this, tagData.tid, marker));        
+        //     marker.on('mouseover', this.showDeviceInfo.bind(this, tagData.tid, marker));
         // }
+        marker.tagId = tagData.tid;
         this.tagMarkerList[tagData.flr][tagData.tid] = marker;
         this.allOms[tagData.flr].addMarker(marker)
         // for(let i in this.tagMarkerList[this.floorId.value]){
@@ -2229,7 +2420,10 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         }
         if(this.tagOptions.selectedTag != null && this.tagOptions.selectedTag.tid == tagData.tid){
             iconData['iconSize'] = [60, 60];
+            iconData['iconAnchor'] = [30, 55];
+            iconData['className'] = 'highlight-icon';
             marker.options.icon = L.icon(iconData);
+            marker.setZIndexOffset(250);
             this.tagOptions.lastTag = marker;
             if(this.isNavigate){
                 this.navigateHighlightedTag(tagData)
@@ -2243,6 +2437,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         // marker.bindPopup("<div style = 'height: 80px;width: 175px'><div style = 'height: 80%; width: 100%'><div style='height: 100%; width: 25%;float:left'><img style='height: 50px; padding: 8px 0px 0px 0px;' src=" +  '/assets/Icons/' + tagData.icon + '.svg' + "></div><div style= 'height: 100%; width: 75%;float: right'><div style='height: 26% ;width:100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; text-align: center; font-size: 13px; padding-top: 3px; font-weight:700; font-family:" + 'Open Sans' + "'>" + tagData.tan.toUpperCase() + "</div><div style='height: 26%; padding-top: 2px; font-size: 13px; text-align: center; font-weight: 200; font-family:" +'Open Sans'+"'>" + tagData.tid + "</div><div style='height: 26%;font-weight: 200; font-size: 12px; text-align: center;text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-top:2px; font-family:" +'Open Sans'+ "'>" + tagData.lnm + ', '+ tagData.fln + "</div></div></div><div style = 'height: 20%; width: 100%; text-align: center; font-family:" +'Open Sans'+ "'> Last Seen : "+ lastSeen +"</div></div>")
         marker.on('click', this.showTagPop.bind(this, tagData));
         marker.on('mouseover', this.getMarkerNearMarker.bind(this, tagData));
+        marker.tagId = tagData.tid;
         this.tagMarkerList[tagData.flr][tagData.tid] = marker;
         this.allOms[tagData.flr].addMarker(marker)
         // for(let i in this.tagMarkerList[this.floorId.value]){
@@ -2305,6 +2500,73 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                 this.allFloorMap[flr].addLayer(this.allClusterPopup[flr][i])
                 }
             }
+    }
+    // Shows a scrollable list (icon + name + id) of every tag in a large overlapping cluster,
+    // as a map popup anchored at the cluster location - used instead of spreading the icons
+    // out when a cluster has clusterListThreshold or more tags. Reuses the current
+    // navigationData entry per tag (via navFindIndex) rather than the marker's tagData at
+    // creation time, so the list reflects each tag's latest known name/icon.
+    showClusterTagList(markers, floorid){
+        let tagList = markers.map(m => {
+            let idx = this.navFindIndex(this.facilityId, m.tagId);
+            return idx !== -1 ? this.navigationData[this.facilityId][idx] : null;
+        }).filter(res => res != null);
+        if(!tagList.length){
+            return;
+        }
+        let rows = tagList.map(tag => {
+            let tan = tag.tan ? tag.tan : '';
+            return "<div class='cluster-tag-list-row' data-tid='" + tag.tid + "' style='padding:4px 6px;display:flex;align-items:center;border-bottom:1px solid #ededed;cursor:pointer;'>" +
+                "<img src='/assets/Floorplan/" + tag.icon + ".svg' style='width:25px;height:30px;margin-right:6px;flex-shrink:0;'>" +
+                "<div style='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:" + 'Open Sans' + ";'>" +
+                tan + " <span style='font-size:11px;color:#888;'>(" + tag.tid + ")</span></div>" +
+                "</div>";
+        }).join('');
+        let popup = L.popup({maxHeight: 300, className: 'cluster-tag-list-popup'})
+            .setLatLng(markers[0].getLatLng())
+            .setContent("<div style='width:220px;'>" +
+                "<div class='cluster-tag-list-header' style='font-weight:600;font-size:13px;padding:4px 6px;border-bottom:1px solid #ccc;font-family:" + 'Open Sans' + ";'>" +
+                tagList.length + " tags</div>" +
+                "<div style='padding:4px 6px;border-bottom:1px solid #ccc;'>" +
+                "<input class='cluster-tag-search-input' type='text' placeholder='Search tag or name' style='width:100%;box-sizing:border-box;padding:3px 5px;font-size:12px;border:1px solid #ccc;border-radius:3px;'>" +
+                "</div>" +
+                "<div class='cluster-tag-list-body' style='max-height:220px;overflow-y:auto;'>" + rows + "</div></div>")
+            .openOn(this.allFloorMap[floorid]);
+        setTimeout(() => {
+            let container = popup.getElement();
+            if(!container){
+                return;
+            }
+            let header = container.querySelector('.cluster-tag-list-header');
+            let rowEls = container.querySelectorAll('.cluster-tag-list-row');
+            rowEls.forEach((rowEl: HTMLElement) => {
+                rowEl.addEventListener('click', () => {
+                    let tag = tagList.find(res => String(res.tid) === rowEl.getAttribute('data-tid'));
+                    if(tag){
+                        this.highlightTag(tag);
+                        this.allFloorMap[floorid].closePopup(popup);
+                    }
+                });
+            });
+            let searchInput = container.querySelector('.cluster-tag-search-input') as HTMLInputElement;
+            searchInput?.addEventListener('input', () => {
+                let query = searchInput.value.trim().toLowerCase();
+                let visibleCount = 0;
+                rowEls.forEach((rowEl: HTMLElement) => {
+                    let tag = tagList.find(res => String(res.tid) === rowEl.getAttribute('data-tid'));
+                    let tan = tag && tag.tan ? tag.tan.toLowerCase() : '';
+                    let tid = tag ? String(tag.tid).toLowerCase() : '';
+                    let isMatch = !query || tan.includes(query) || tid.includes(query);
+                    rowEl.style.display = isMatch ? 'flex' : 'none';
+                    if(isMatch){
+                        visibleCount++;
+                    }
+                });
+                if(header){
+                    header.textContent = visibleCount + ' of ' + tagList.length + ' tags';
+                }
+            });
+        }, 100);
     }
     getMarkerNearMarker(tagData, markerLayer){
         if(!this.allSpiderfiedMarkers.hasOwnProperty(tagData.flr)) {
@@ -2442,7 +2704,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         marker.bindTooltip("<div style="+ 'background:#e1e1e1;margin-top:100px;border-radius:5px;min-height:50px;padding-top:10px;border-radius:25px;width:'+ arrayData.length*45 + 'px;' + ">"+
         data+"</div>", { permanent: false, direction: "center", className: "leaf1-device-sensor" }).openTooltip();
     }
-    bindTag(tagData) {
+    bindTag(tagData, suppressRecompute: boolean = false) {
         tagData['status'] = ' ';
         if(!this.tagMarkerList[tagData.flr]){
             this.tagMarkerList[tagData.flr] = {}
@@ -2492,13 +2754,16 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
             let iconData = {iconUrl: iconName, iconSize: [50, 50], iconAnchor: [25, 45]};
             let index, point;
             let movePoints = [];
-            index = this.navigationData[this.facilityId].findIndex(val => val.flr == tagData.flr && val.tid == tagData.tid)
+            index = this.navFindIndex(this.facilityId, tagData.tid);
+            if(index !== -1 && this.navigationData[this.facilityId][index].flr != tagData.flr){
+                index = -1;
+            }
             if(this.navigationData[this.facilityId].length == 0 || index == -1 || index == 'undefined') {
                 // tagData.cxy = this.getPointer(tagData);
                 if(this.tabValue.find(val => val.type == tagData.ttp) == undefined && this.navType == 'location_nav'){
                     this.onTabChanged(tagData.ttp, 'newTab')
                 }
-                this.navigationData[this.facilityId].push(currentTag);
+                this.navPush(this.facilityId, currentTag);
                 // console.log(this.navigationData[this.facilityId])
                 this.wholeNavData.push(currentTag)
                 this.navigationHeatData[tagData.flr].push(tagData);
@@ -2528,16 +2793,10 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                         this.navigationData[this.facilityId][index] = tagData;
                         this.wholeNavData[index] = tagData;
                         if(this.tagMarkerList[tagData.flr][tagData.tid] != undefined){
-                            // this.floorMap.removeLayer(this.tagMarkerList[this.floorId.value][tagData.tid]);
+                            // addMarkerOverlay() below replaces this marker entirely (new instance,
+                            // re-registers with OMS, rebinds click/mouseover) - mutating this one first
+                            // is discarded work, so only remove its layer to avoid a duplicate on the map.
                             this.allFloorMap[tagData.flr].removeLayer(this.tagMarkerList[tagData.flr][tagData.tid]);
-                            let tag = this.tagMarkerList[tagData.flr][tagData.tid];
-                            let iconChange = tag.options.icon
-                            iconChange.options.iconUrl = this.truckEnable ? '/assets/Floorplan/TAT-TR.svg' : "/assets/Floorplan/"+ tagData.ttp + ".svg";
-                            tag.setIcon(iconChange);
-                            tag.on('click', this.showTagPop.bind(this, tagData));
-                            tag.on('mouseover', this.getMarkerNearMarker.bind(this, tagData));
-                            this.allOms[tagData.flr].removeMarker(this.tagMarkerList[tagData.flr][tagData.tid])
-                            this.allOms[tagData.flr].addMarker(tag)
                         }
                         movePoints = [point, [tagData.cxy[1] * -100, tagData.cxy[0] * 100]];
                         this.addMarkerOverlay(iconData, tagData, movePoints)
@@ -2604,24 +2863,8 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                     this.navigationHeatData[tagData.flr][index] = tagData;
                 }
             }            
-            if(this.tabValue.length > 0){
-            if(this.blockView.active) {
-                this.tabData = this.navigationData[this.facilityId].filter(val => val.ttp == this.tabValue[this.selectedIndex].type);
-            } else {
-                this.tabData = this.navigationData[this.facilityId].filter(val => val.flr == this.floorId.value && val.ttp == this.tabValue[this.selectedIndex].type);
-            }
-            // this.tabData.sort((a, b) => a.tan.toLowerCase().localeCompare(b.tan.toLowerCase()))
-            // this.tabValue.sort((a,b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-            if(this.navigationData[this.facilityId].length > 0){
-                for(let i=0; i < Object.keys(this.isShowTag).length; i++){
-                    let filterData = this.navigationData[this.facilityId].filter(res => res.flr == this.floorId.value && res.ttp == Object.keys(this.isShowTag)[i])
-                    if(filterData.length > 0){
-                    this.isShowTag[Object.keys(this.isShowTag)[i]] = true;
-                    } else{
-                        this.isShowTag[Object.keys(this.isShowTag)[i]] = false;
-                    }
-                }
-            }
+            if(!suppressRecompute){
+                this.refreshTagVisibility();
             }
         }
         } else {
@@ -3174,6 +3417,113 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         }
         }
     }
+    getInjectorcoord(type){
+        if(type == 'check'){
+            this.mapFilter.floorInjectors = this.mapFilter.injectorList.filter(res => res.floorId == this.floorId.value);
+        } else if(type == 'show'){
+        if(this.filterOptions.readerFilter == true){
+            const lanIcon = new L.Icon({ iconUrl: '/assets/icons/Lan.svg', iconSize: [18, 18], iconAnchor: [7, 7] });
+            for (const injector of this.mapFilter.floorInjectors) {
+                let value = null;
+                try { value = JSON.parse(injector.coordinate); } catch (e) { value = null; }
+                if(value != null){
+                    const injectorPoint = [value[1] * -100, value[0] * 100];
+                    const injectorMarker = L.marker(injectorPoint, {icon: lanIcon});
+                    injectorMarker.on('click', this.toggleInjectorWires.bind(this, injector));
+                    this.maps.injector_points.push(injectorMarker);
+                    injectorMarker.addTo(this.allFloorMap[this.floorId.value]);
+                }
+            }
+        }
+        else {
+            for(let i = 0; this.maps.injector_points.length > i ; i++){
+                this.allFloorMap[this.floorId.value].removeLayer(this.maps.injector_points[i]);
+            }
+            this.maps.injector_points = [];
+            for(const injectorId in this.maps.injector_wires){
+                this.removeInjectorWires(injectorId);
+            }
+        }
+        }
+    }
+    toggleInjectorWires(injector){
+        if(this.maps.injector_wires[injector.id]){
+            this.removeInjectorWires(injector.id);
+            return;
+        }
+        let injectorValue = null;
+        try { injectorValue = JSON.parse(injector.coordinate); } catch (e) { injectorValue = null; }
+        if(injectorValue == null){ return; }
+        const injectorPoint = [injectorValue[1] * -100, injectorValue[0] * 100];
+        const wireColor = '#5b6ee1';
+        const dot = (point) => L.circleMarker(point, {
+            radius: 4, color: wireColor, weight: 2, fillColor: '#ffffff', fillOpacity: 1
+        }).addTo(this.allFloorMap[this.floorId.value]);
+        const lines = [];
+        const dots = [dot(injectorPoint)];
+        this.maps.injector_wires[injector.id] = { lines, dots, label: null };
+        for (const link of (injector.injectorLinks || [])) {
+            const reader = this.mapFilter.readerList.find(r => r.id === link.readerId);
+            if(reader && reader.coordinate){
+                let readerValue = null;
+                try { readerValue = JSON.parse(reader.coordinate); } catch (e) { readerValue = null; }
+                if(readerValue != null){
+                    const readerPoint = [readerValue[1] * -100, readerValue[0] * 100];
+                    const line = L.polyline([injectorPoint, readerPoint], {color: wireColor, weight: 2});
+                    line.addTo(this.allFloorMap[this.floorId.value]);
+                    lines.push(line);
+                    this.animateInjectorWire(line, () => {
+                        if(this.maps.injector_wires[injector.id]){
+                            dots.push(dot(readerPoint));
+                        }
+                    });
+                }
+            }
+        }
+        const label = L.marker(injectorPoint, {
+            icon: L.divIcon({
+                html: "<div style='font-size: 10px;'>" + (injector.serialNumber || injector.ipAddress) + " <span style='font-size: 7px; padding-left: 7px;'>Hide</span></div>",
+                className: 'reader-popup',
+              })
+          }).on('click', this.toggleInjectorWires.bind(this, injector));
+        label.addTo(this.allFloorMap[this.floorId.value]);
+        this.maps.injector_wires[injector.id].label = label;
+    }
+    animateInjectorWire(line, onComplete?: () => void){
+        const path: any = (line as any).getElement ? (line as any).getElement() : null;
+        if(!path || typeof path.getTotalLength !== 'function'){
+            line.setStyle({ dashArray: '6,6', className: 'injector-wire-flow' });
+            if(onComplete){ onComplete(); }
+            return;
+        }
+        const length = path.getTotalLength();
+        path.style.strokeDasharray = `${length}`;
+        path.style.strokeDashoffset = `${length}`;
+        path.getBoundingClientRect();
+        path.style.transition = 'stroke-dashoffset 0.6s ease-in-out';
+        path.style.strokeDashoffset = '0';
+        path.addEventListener('transitionend', () => {
+            path.style.transition = '';
+            path.style.strokeDasharray = '6,6';
+            path.style.strokeDashoffset = '0';
+            path.classList.add('injector-wire-flow');
+            if(onComplete){ onComplete(); }
+        }, { once: true });
+    }
+    removeInjectorWires(injectorId){
+        const entry = this.maps.injector_wires[injectorId];
+        if(!entry){ return; }
+        for(const line of entry.lines){
+            this.allFloorMap[this.floorId.value].removeLayer(line);
+        }
+        for(const dot of (entry.dots || [])){
+            this.allFloorMap[this.floorId.value].removeLayer(dot);
+        }
+        if(entry.label){
+            this.allFloorMap[this.floorId.value].removeLayer(entry.label);
+        }
+        delete this.maps.injector_wires[injectorId];
+    }
     getDispensercoord(type){
         if(type == 'check'){
             this.mapFilter.floorDispenser = this.mapFilter.dispenserList.filter(res => res.floorId == this.floorId.value && res.readerTypeId != 'RT-POMS');
@@ -3210,6 +3560,75 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         }
         }
     }
+    loadCctvAssets(floorid: any) {
+        this.mapFilter.floorCctvAssets = [];
+        this.commonService.getConnectivityAssetsByFloor(floorid).subscribe(res => {
+            this.mapFilter.floorCctvAssets = (res.results || []).filter((a: any) => a.assetTypeId === 'AT-CCTV');
+            this.updateDisabledStates();
+        });
+    }
+
+    getCctvcoord(type: string) {
+        if (type !== 'show') { return; }
+        if (this.filterOptions.cctvFilter === false) {
+            for (const asset of this.mapFilter.floorCctvAssets) {
+                try {
+                    const coordObj = JSON.parse(asset.coordinates);
+                    const firstCoordStr = coordObj.geometry.coordinates[0];
+                    const coords = JSON.parse(firstCoordStr);
+                    const cctvPoint: [number, number] = [coords[1] * -100, coords[0] * 100];
+                    const iconImage = new L.Icon({
+                        iconUrl: this.assetIconConfig['CCTV'],
+                        iconSize: [22, 22],
+                        iconAnchor: [11, 11]
+                    });
+                    const marker = L.marker(cctvPoint, { icon: iconImage });
+                    marker.on('click', () => this.openCctvStream(asset));
+                    this.maps.cctv_points.push(marker);
+                    marker.addTo(this.allFloorMap[this.floorId.value]);
+                } catch (e) {
+                    // skip assets with invalid coordinates
+                }
+            }
+            this.filterOptions.cctvFilter = true;
+        } else {
+            for (const marker of this.maps.cctv_points) {
+                this.allFloorMap[this.floorId.value].removeLayer(marker);
+            }
+            this.maps.cctv_points = [];
+            this.filterOptions.cctvFilter = false;
+        }
+    }
+
+    openCctvStream(asset: any) {
+        try {
+            const outputData = JSON.parse(asset.outputDate);
+            const streamUrl = outputData?.streamUrl;
+            if (!streamUrl) {
+                this.toastr.warning('Warning', 'Camera stream URL is not configured for this asset.');
+                return;
+            }
+            this.dialog.open(NotificationCameraViewComponent, {
+                width: '72vw',
+                height: '90vh',
+                data: {
+                    cameras: [{
+                        id: asset.id,
+                        name: asset.name,
+                        streamUrl,
+                        playUrl: outputData?.playUrl,
+                        streamName: outputData?.streamName || asset.name,
+                        locationName: asset.locationName || ''
+                    }],
+                    locationName: asset.locationName || ''
+                },
+                disableClose: false
+            });
+        } catch (e) {
+            this.toastr.error('Error', 'Failed to open camera stream.');
+        }
+    }
+
     showDispenserPopup(data, type, id,  val){
         const value =  JSON.parse(data.coordinate)
         const readerPoints = [value[1] * -100, value[0] * 100];  
@@ -5504,9 +5923,12 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     ngOnDestroy(): void {
         if(this.client) {
             this.client.end(true);
-            console.log('client disconnected..')    
+            console.log('client disconnected..')
         }
-        if(this.interval){      
+        if(this.tagMessageSub) {
+            this.tagMessageSub.unsubscribe();
+        }
+        if(this.interval){
             clearInterval(this.interval);
         }
         if(this.tagRefreshInterval) {
@@ -5540,11 +5962,15 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                 filter.disabled = !this.navigationHeatData[this.floorId.value] || this.navigationHeatData[this.floorId.value].length === 0;
             } else if (filter.code === 'readers') {
                 this.mapFilter.floorReaders = this.mapFilter.readerList.filter(res => res.floorId == this.floorId.value && res.readerTypeId != 'RT-POMS');
+                this.mapFilter.floorInjectors = this.mapFilter.injectorList.filter(res => res.floorId == this.floorId.value);
                 this.selectedTagFilters = this.selectedTagFilters.filter(item => item !== 'readers');
                 this.selectedTagFilters = this.selectedTagFilters.filter(item => item !== 'lable');
                 this.selectedTagFilters = this.selectedTagFilters.filter(item => item !== 'mapPath');
                 this.selectedTagFilters = this.selectedTagFilters.filter(item => item !== 'distance');
                 filter.disabled = this.mapFilter.floorReaders.length === 0;
+            } else if (filter.code === 'cctv') {
+                this.selectedTagFilters = this.selectedTagFilters.filter(item => item !== 'cctv');
+                filter.disabled = this.mapFilter.floorCctvAssets.length === 0;
             } else if (filter.code === 'dispenser') {
                 filter.disabled = this.mapFilter.floorDispenser.length === 0;
             } else if (filter.code === 'mapPath') {
@@ -5618,6 +6044,10 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         if (code === 'readers') {
             this.filterOptions.readerFilter = state;
             this.getReadercoord('show');
+            this.getInjectorcoord('show');
+        } else if (code === 'cctv') {
+            this.filterOptions.cctvFilter = state;
+            this.getCctvcoord('show');
         } else  if (code === 'dispenser') {
             this.filterOptions.readerFilter = state;
             this.getDispensercoord('show');

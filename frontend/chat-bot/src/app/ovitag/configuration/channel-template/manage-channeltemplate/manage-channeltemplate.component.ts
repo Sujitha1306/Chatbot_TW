@@ -4,7 +4,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ConfigurationService, CommonService, DashboardService } from '../../../../shared';
 import { ManageOtprocedureComponent } from '../../ot-procedure/manage-otprocedure/manage-otprocedure/manage-otprocedure.component';
 import { Createchnltemp } from '../../configuration.model';
-import { arrayFormatValidator } from '../../../../shared/services/arrayformatvalidators.service';
+import { jsonStructureValidator } from '../../../../shared/services/arrayformatvalidators.service';
 import { AppToastService } from '../../../../shared/services/toaster.service';
 import { LookupTermService } from '../../../../shared/lookup-term.service';
 
@@ -105,7 +105,7 @@ export class ManageChanneltemplateComponent {
       templateFormat: [this.data ? this.data.templateFormat : null], 
       templateSample: [this.data ? this.data.templateSample : null],
       templateSourceId: [this.data ? this.data.templateSourceId : null],
-      templateValue: [this.data ? this.data.templateValue : null, [arrayFormatValidator()]],
+      templateValue: [this.data ? this.data.templateValue : null, [jsonStructureValidator()]],
       value: [this.data ? this.data.value : null],
       vendorId: [this.data ? this.data.vendorId : null],
     });

@@ -1,13 +1,28 @@
-<div class="ovi-font-family" style="overflow:auto;width: calc(100% - 0px);"  [ngStyle] ="{height: existPrivateUser ? 'calc(100% - 2px)' : 'calc(100% - 60px)'}">
+<div class="ovi-font-family" style="overflow:auto;width:calc(100% - 0px);position:relative;" [ngStyle]="{height: existPrivateUser ? 'calc(100% - 2px)' : 'calc(100% - 60px)'}">
+
+  <!-- ── V1 / V2 Version Toggle ──────────────────────────────────────────── -->
+  <div class="version-toggle-bar" *ngIf="staticReport == null">
+    <div class="version-toggle">
+      <button [class.v-active]="selectedVersion === 'V1'"
+              (click)="selectedVersion = 'V1'"
+              (keydown.enter)="selectedVersion = 'V1'">V1</button>
+      <button [class.v-active]="selectedVersion === 'V2'"
+              (click)="selectedVersion = 'V2'"
+              (keydown.enter)="selectedVersion = 'V2'">V2</button>
+    </div>
+  </div>
+
+  <!-- ── V1 Dashboard Content ───────────────────────────────────────────── -->
+  <ng-container *ngIf="selectedVersion === 'V1' && staticReport == null">
     <gridster id="dashTitle" [options]="options" class="ovi-gridster-width" style="background: #edf4f7; float: left;width: Calc(100% - 0px);overflow-x: auto;">
       <gridster-item *ngFor = "let wid of clayout" [item]="wid" [ngClass]="(['WD_DBAMR', 'WD_DBAS'].indexOf(wid.code) == -1 && dashboardDetails[wid.code]['type'] != 'header') || dashboardDetails[wid.code]['type'] == 'table' || dashboardDetails[wid.code]['type'] == 'chart' ? 'grid-item' : 'grid-item2'">
         <app-widget-header (childToParentAction)="floorView = false;" *ngIf = "(['WD_DBAMR', 'WD_DBAS'].indexOf(wid.code) == -1 && dashboardDetails[wid.code]['type'] != 'card' && dashboardDetails[wid.code]['type'] != 'header' && dashboardDetails[wid.code]['type'] != 'table') " (click)="goToReport(wid.code)"
           [title]="dashboardDetails[wid.code].hasOwnProperty('text') ? dashboardDetails[wid.code]['text'] : wid.widgetName" [headerStyle]="dashboardDetails[wid.code]['styles']" [navigate] = "dashboardDetails[wid.code].hasOwnProperty('redirect')?dashboardDetails[wid.code]['redirect']:null"
            [name]="'WD_DBFP'" [showMinimize]="wid.code == 'WD_DBFP' && floorView" [widDetail] = "dashboardDetails[wid.code].hasOwnProperty('filters') ? dashboardDetails[wid.code]['filters'] :null" (getWidgetFilter)="getWidgetFilterInput($event)" (keydown.enter)="fixClick()">
         </app-widget-header>
-          
+
         <!-- COMPONENT CALL  -->
-        <app-floor-planmap *ngIf="wid.code == 'WD_DBFP'" (childToParentAction)="floorView = true; getFloorId($event)"></app-floor-planmap>   
+        <app-floor-planmap *ngIf="wid.code == 'WD_DBFP'" (childToParentAction)="floorView = true; getFloorId($event)"></app-floor-planmap>
         <app-alert class="grid-content" *ngIf="wid.code == 'WD_DBALERT'"></app-alert>
         
         <!-- HEALTH PLAN AND TEST TABLE -->
@@ -267,6 +282,19 @@
       <!-- <img src="/assets/Alert/common_icons/pdf-file.png" (click) = "serverPdfDownload()" style="cursor: pointer;height: 22px;width: 25px;margin-top: 7px;margin-left: 7px;"> -->
     </div>
     <!-- <span class="footer" *ngIf="!existPrivateUser">© {{currentYear}} Trackerwave</span> -->
+
+  </ng-container>
+
+
+  <!-- ── V2 Dashboard Content ───────────────────────────────────────────── -->
+  <app-dashboard-v2-emp
+    *ngIf="selectedVersion === 'V2' && v2InputData && staticReport == null"
+    [externalDashboardData]="v2InputData">
+  </app-dashboard-v2-emp>
+
+
+  <!-- <--------------porter dashboard------------------->
+
+  <app-porter-v2-report *ngIf="staticReport == 'porter-report'" [showHeader] ="true" >
+  </app-porter-v2-report>
 </div>
-
-

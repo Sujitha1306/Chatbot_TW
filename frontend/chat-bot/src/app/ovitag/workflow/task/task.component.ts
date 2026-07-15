@@ -1539,11 +1539,16 @@ import { CommonDialogComponent } from "../../../shared/modules/entry-component/c
        this.loading = false;
        for (let i = 0; i <= Columns.length; i++) {
          this.tableData.map((data) => {
-            if(Columns[i] == 'nonPerformerName') {
-              data[this.displayedColumns[i]] = data[Columns[i]] ? data[Columns[i]] : data['title'] ? '*'+data['title'] : data[Columns[i]];
-            } else{
-              data[this.displayedColumns[i]] = data[Columns[i]];
-            }
+           if(Columns[i] == 'nonPerformerName') {
+             data[this.displayedColumns[i]] = data[Columns[i]] ? data[Columns[i]] : data['title'] ? '*' + data['title'] : data[Columns[i]];
+           } else if (Columns[i] === 'performerType') {
+             if (data[Columns[i]] === 'TAT-US') {
+               data[Columns[i]] = 'RT-US';
+             }
+             data[this.displayedColumns[i]] = data[Columns[i]];
+           } else {
+             data[this.displayedColumns[i]] = data[Columns[i]];
+           }
          });
        }
      } else {
@@ -1597,10 +1602,15 @@ import { CommonDialogComponent } from "../../../shared/modules/entry-component/c
                if (col === 'nonPerformerName') {
                  mappedRow[this.displayedColumns[index]] =
                    row[col] ?? (row.title ? '*' + row.title : null);
-               } else {
-                 mappedRow[this.displayedColumns[index]] = row[col];
-               }
-             });
+              } else if (col === 'performerType'){
+                  if (row[col] === 'TAT-US') {
+                    mappedRow[col] = 'RT-US';
+                  }
+                  mappedRow[this.displayedColumns[index]] = mappedRow[col];
+                } else {
+                  mappedRow[this.displayedColumns[index]] = row[col];
+                }
+              });
 
              return mappedRow;
            });
@@ -1632,6 +1642,11 @@ import { CommonDialogComponent } from "../../../shared/modules/entry-component/c
                if (col === 'nonPerformerName') {
                  mappedRow[this.displayedColumns[index]] =
                    row[col] ?? (row.title ? '*' + row.title : null);
+               } else if (col === 'performerType') {
+                 if (row[col] === 'TAT-US') {
+                   mappedRow[col] = 'RT-US';
+                 }
+                 mappedRow[this.displayedColumns[index]] = mappedRow[col];
                } else {
                  mappedRow[this.displayedColumns[index]] = row[col];
                }
@@ -1998,10 +2013,13 @@ import { CommonDialogComponent } from "../../../shared/modules/entry-component/c
       }
    }
  
-   ngOnInit() {
-     if (this.data && this.data.assignedToRoleId !== null) {
-       this.roleId = this.data.assignedToRoleId;
-     }
+    ngOnInit() {
+      if (this.data?.performerType === 'TAT-US') {
+        this.data.performerType = 'RT-US';
+      }
+      if (this.data && this.data.assignedToRoleId !== null) {
+        this.roleId = this.data.assignedToRoleId;
+      }
      this.workflowService.getTaskServiceNotification(this.data.requestId, 'Request').subscribe(res => {
        if (res.statusCode == 1) {
          this.isDisplayNotify = false;

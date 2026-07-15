@@ -34,6 +34,7 @@ import { ConfirmDialogComponent } from '../layout-save/layout-save.component';
 import { ApptermsService } from '../../../services/appterms.service';
 import { AppToastService } from '../../../services/toaster.service';
 import { ConfigurationService } from '../../../services';
+import { MatTabGroup } from '@angular/material/tabs';
 
 export const MY_FORMATS = {
   parse: {
@@ -193,6 +194,13 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
     userLoctionDetail: any=[];
     locDetail = null;
     historyData = null;
+    public AHdataSource: MatTableDataSource<any>;
+    public HCDisplayedColumns: any;
+    AHLength = 0;
+    public noData = false;
+    public spinLoader: boolean = false;
+    @ViewChild('AHPaginator') AHPaginator: MatPaginator;
+    @ViewChild('tabGroup') tabGroup: MatTabGroup;
     titleList: string[] = ["Mr", "Mrs", "Miss", "Ms", "Mx", "Sir", "Dr"];
     parentDetTabEnabled = false;
     studentRoleSelect = false;
@@ -275,6 +283,7 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
     }
   
     ngOnInit() {
+      this.spinLoader = true;
       if (window.location.hostname.includes("kyn")) {
         this.customerName = "kyn";
       }
@@ -360,6 +369,9 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
           this.parentDetailsForm.get('gender').setValue('Male');
         }
       });
+      setTimeout(() => {
+        this.spinLoader = false;
+      }, 500);
     }
 
   dynamicData() {
@@ -422,17 +434,46 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
       this.userShiftForm.controls['startTime'].setValue(this._dateFormat.transform(data.startTime, 'h:mm a'));
       this.userShiftForm.controls['endTime'].setValue(this._dateFormat.transform(data.endTime, 'h:mm a'));
     }
-    tabClick(event) {
-      this.selectedTabName = event.tab.textLabel
-      this.selectedTab = event.index;
-      if (event.index == 4) {
+    tabClick = (index: number): void => {
+      this.selectedTab = index;
+      const tab = this.tabGroup?._tabs?.toArray()[index];
+      this.selectedTabName = tab ? tab.textLabel : '';
+      this.spinLoader = true;
+      this.noData = false;
+      if (index === 4) {
         this.mapData = {
-          statusId : 'TW-RSU',
-          type : 'user',
-          data : this.data
-        }
+          statusId: 'TW-RSU',
+          type: 'user',
+          data: this.data
+        };
+      }
+      if (this.selectedTabName === 'Alert History') {
+        this.getStaffAlertHistory();
+      } else {
+        setTimeout(() => {
+          this.spinLoader = false;
+        }, 500);
       }
     }
+
+    getStaffAlertHistory() {
+      this.commonService.getAlertbyId('User', this.data.userId).subscribe((res) => {
+        if (res.statusCode == 1) {
+          this.HCDisplayedColumns = ['pfRuleName', 'Event', 'Message', 'Start Time', 'End Time', 'Comments', 'Status'];
+          this.AHdataSource = new MatTableDataSource<any>(res.results);
+          this.AHdataSource.paginator = this.AHPaginator;
+          this.AHLength = res.results.length;
+          this.spinLoader = false;
+        } else if (res.statusCode == 0) {
+          this.spinLoader = false;
+          this.noData = true;
+        }
+      }, (err) => {
+        this.spinLoader = false;
+        this.noData = true;
+      });
+    }
+
     getCustomerList(): void {
       this.hospitalServices.getCustomerList().subscribe(res => {
         this.customerList = res.results;
@@ -576,7 +617,7 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
         countryCode: [this.data.phoneNumber ? this.data.phoneNumber.substring(this.data.phoneNumber.length - 10, -10) : null, [Validators.required, Validators.pattern('^[+][0-9]{1,5}$')]],
         managerId: [this.data.managerName ? this.data.managerName : null, [this.requireManagerMatch.bind(this)]],
         locationId: [this.data.locationName ? this.data.locationName : null, [this.requireLocationMatch.bind(this)]],
-        sourceId: [this.data.employeeId ? this.data.employeeId : this.data.sourceId ? this.data.sourceId : null],
+        sourceId: [this.data?.type !== 'student' ? (this.data.mainIdentifier ?? this.data.employeeId ?? this.data.sourceId ?? null) : null],
         studentStartTime: [this.data.startDate ? this._dateFormat.transform(this.data.startDate, 'h:mm a') : null],
         studentEndTime: [this.data.endDate ?   this._dateFormat.transform(this.data.endDate, 'h:mm a') : null],
         studentStartDate: [this.data.startDate ?  this._dateFormat.transform(this.data.startDate, 'yyyy-MM-dd') : this.today],
@@ -1123,7 +1164,7 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
   public saveStudent(type) {
     this.isDisabled = true;
 
-    this.createStudent = new CreateStudent(null, null, null, null, null, null, null, null, null, null, null, null, null, null,  null, null,null,null,null,null,null);
+    this.createStudent = new CreateStudent(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,  null, null,null,null,null,null,null);
     const facilityId = localStorage.getItem(btoa('facilityId'));
     const scheduleStartDate = this._dateFormat.transform(this.userForm.controls['studentStartDate'].value, 'yyyy-MM-dd');
     this.studentStartTime = scheduleStartDate + ' ' + (this.userForm.controls['studentStartTime'].value ? this.userForm.controls['studentStartTime'].value : '');
@@ -1154,6 +1195,7 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
     this.createStudent.studentGroupId      = this.userForm.controls['studentGroupId'].value;
     this.createStudent.userStatusId = this.userForm.controls['userStatusId'].value;
     this.createStudent.designationId = this.userForm.controls['designation'].value;
+    this.createStudent.employeeId = this.userForm.controls['sourceId'].value;
 
     this.hospitalServices.saveUser(this.createStudent).subscribe(res => {
         if (res.statusCode != 1) {
@@ -1170,7 +1212,7 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
 
     public updateStudent(data) {
       this.isDisabled = true;
-      this.editStudent = new EditStudent(null, null, null, null, null, null, null, null, null, null, null,null, null, null,  null, null,null,null,null,null,null);
+      this.editStudent = new EditStudent(null, null, null, null, null, null, null, null, null, null, null, null,null, null, null,  null, null,null,null,null,null,null);
       const facilityId = localStorage.getItem(btoa('facilityId'));
       const scheduleStartDate = this._dateFormat.transform(this.userForm.controls['studentStartDate'].value, 'yyyy-MM-dd');
       this.studentStartTime = scheduleStartDate + ' ' + (this.userForm.controls['studentStartTime'].value ? this.userForm.controls['studentStartTime'].value : '');
@@ -1203,6 +1245,7 @@ export function existingUsernameValidator(hospitalService: HospitalService): Asy
       this.editStudent.locationId = this.locationId;
       this.editStudent.studentGradeId       = this.userForm.controls['studentGradeId'].value;
       this.editStudent.studentGroupId      = this.userForm.controls['studentGroupId'].value;
+      this.editStudent.employeeId = this.userForm.controls['sourceId'].value;
       
       this.hospitalServices.editUser(this.editStudent).subscribe(res => {
           if (res.statusCode != 1) {

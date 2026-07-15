@@ -42,7 +42,7 @@ export const environment = {
   ck : "2",
   serviceWorker : false,
   pwd_check : false,
-  fcm_Enable: false,
+  fcm_Enable: true,
   localStyle: true,
   setCookie : false,
   idle_time_out: 14400,

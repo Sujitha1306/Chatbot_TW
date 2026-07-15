@@ -17,6 +17,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { environment } from '../../../../../environments/environment';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ConfigurationService } from '../../../services';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -54,45 +56,55 @@ export class BulkIdentifierExportComponent implements OnInit {
   }
 
   ngOnInit() {
-    if (this.rawItems.length) {
-      this.isImageLoading = true;
-      const ids = this.rawItems.map(r => r.id?.toString());
-      const codeType = this.type === 'qr' ? 'QR_CODE' : 'BAR_CODE';
-      this.configurationServices.generateBulkQrBarcode(ids, 'Asset', codeType).subscribe({
-        next: () => this.preloadAndSetItems(),
-        error: () => { this.isImageLoading = false; }
-      });
-    }
+    if (!this.rawItems.length) return;
+    this.isImageLoading = true;
+    const ids = this.rawItems.map(r => r.id?.toString());
+    const codeType = this.type === 'qr' ? 'QR_CODE' : 'BAR_CODE';
+    forkJoin([
+      this.configurationServices.generateBulkQrBarcode(ids, 'Asset', codeType),
+      this.configurationServices.getConfigFile('qr-bar-config').pipe(
+        catchError(() => of(null))
+      )
+    ]).subscribe({
+      next: async ([_, configRes]) => {
+        if (configRes?.results?.contentObject) {
+          const config = configRes.results.contentObject;
+          this.position = config.qr['text-allign'];
+          this.printComments = config.hasOwnProperty('isPrintComments') ? config.isPrintComments : true;
+          this.customQrText = config.qr['qrText'] || null;
+          this.isBorder = config.qr['isBorder'] || false;
+          const rawContent = config.qr['content'] || null;
+          if (rawContent != null) {
+            const processed = await this.replaceImgSrcWithDataUrl(rawContent);
+            this.safeContentBasedQr = this.sanitizer.bypassSecurityTrustHtml(processed);
+          }
+        }
+        this.setItems();
+      },
+      error: () => { this.isImageLoading = false; }
+    });
   }
 
-  private preloadAndSetItems() {
+  private async setItems() {
     const baseUrl = this.type === 'qr'
       ? environment.api_base_url_new + environment.base_value.get_qr_code
       : environment.api_base_url_new + environment.base_value.get_bar_code;
-    const tempItems = this.rawItems.map(r => ({
-      id: r.id,
-      label: r.label,
-      comments: r.comments,
-      generateImage: `${baseUrl}/${r.id}?entityType=${this.entityType}`
-    }));
-    const nativeImages = tempItems.map(item => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = item.generateImage;
-      return img;
-    });
-    let loaded = 0;
-    const done = () => {
-      loaded++;
-      if (loaded === nativeImages.length) {
-        this.items = tempItems;
-        this.fetchConfig();
-      }
-    };
-    nativeImages.forEach(img => {
-      if (img.complete && img.naturalHeight !== 0) done();
-      else { img.onload = done; img.onerror = done; }
-    });
+    const items = await Promise.all( this.rawItems.map(async r => {
+        const url = `${baseUrl}/${r.id}?entityType=${this.entityType}`;
+        try {
+          const dataUrl = await this.loadAsDataUrl(url);
+          return { id: r.id, label: r.label, comments: r.comments, generateImage: dataUrl };
+        } catch {
+          return { id: r.id, label: r.label, comments: r.comments, generateImage: url };
+        }
+      })
+    );
+    this.items = items;
+    if (this.safeContentBasedQr && this.isQrType()) {
+      this.applyContentBasedQrAll();
+    } else {
+      this.isImageLoading = false;
+    }
   }
 
   isQrType() {
@@ -129,22 +141,43 @@ export class BulkIdentifierExportComponent implements OnInit {
     return [];
   }
 
-  private fetchConfig() {
-    this.configurationServices.getConfigFile('qr-bar-config').subscribe({
-      next: res => {
-        this.position = res.results.contentObject.qr['text-allign'];
-        this.printComments = res.results.contentObject.hasOwnProperty('isPrintComments')
-          ? res.results.contentObject.isPrintComments : true;
-        this.customQrText = res.results.contentObject.qr['qrText']
-          ? res.results.contentObject.qr['qrText'] : null;
-        this.isBorder = res.results.contentObject.qr['isBorder']
-          ? res.results.contentObject.qr['isBorder'] : false;
-        const rawContent = res.results.contentObject.qr['content'] || null;
-        this.safeContentBasedQr = rawContent != null
-          ? this.sanitizer.bypassSecurityTrustHtml(rawContent) : null;
-        this.applyContentBasedQrAll();
-      },
-      error: () => {}
+  private async replaceImgSrcWithDataUrl(html): Promise<string> {
+    const urls: string[] = [];
+    const regex = /<img[^>]+src="(https?:\/\/[^"]+)"[^>]*>/gi;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      if (!urls.includes(match[1])) urls.push(match[1]);
+    }
+    if (!urls.length) return html;
+    const replacements = await Promise.all(urls.map(async (url) => {
+      try {
+        const dataUrl = await this.loadAsDataUrl(url);
+        return { from: url, to: dataUrl };
+      } catch {
+        return null;
+      }
+    }));
+    let result = html;
+    for (const r of replacements) {
+      if (r) result = result.split(r.from).join(r.to);
+    }
+    return result;
+  }
+
+  private loadAsDataUrl(url): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL());
+      };
+      img.onerror = () => reject(new Error());
+      img.src = url;
     });
   }
 
@@ -215,5 +248,9 @@ export class BulkIdentifierExportComponent implements OnInit {
 
   closeDialog() {
     this.dialogRef.close();
+  }
+
+  trackById(id, item){
+    return item.id;
   }
 }

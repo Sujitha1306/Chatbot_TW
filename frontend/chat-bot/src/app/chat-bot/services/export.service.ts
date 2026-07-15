@@ -7,7 +7,7 @@ export class ExportService {
   constructor(private auth: AuthService) {}
 
   async export(question: string, format: 'csv' | 'excel' | 'pdf'): Promise<void> {
-    const res = await fetch(`${environment.chatbotApiUrl}export/${format}`, {
+    const res = await fetch(`${environment.base_value.chatbotApiUrl}export/${format}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

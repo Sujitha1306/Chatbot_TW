@@ -139,6 +139,7 @@ export class EnrollPatientComponent implements OnInit {
   patientVisitId = null;
   visitTypeId = null;
   disableHealthPlan = false;
+  showAllResults = false;
   constructor(
     public form: FormBuilder, public toastr: AppToastService, public dialog: MatDialog, private readonly commonService: CommonService,
     public thisDialogRef: MatDialogRef<EnrollPatientComponent>, @Inject(MAT_DIALOG_DATA) public data: any,
@@ -660,6 +661,7 @@ export class EnrollPatientComponent implements OnInit {
       this.isDataNotFound = false;
       this.loading = false;
       this.data = [];
+      this.showAllResults = false;                     
       this.dataSource = new MatTableDataSource<any[]>(this.data);
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
@@ -687,7 +689,10 @@ export class EnrollPatientComponent implements OnInit {
         }
       }
 
-      this.dataSource = new MatTableDataSource<any[]>(this.data);
+      this.showAllResults = false;                                                      
+      this.dataSource = new MatTableDataSource<any[]>(
+        this.data.length > 1 ? [this.data[0]] : this.data                                 
+      );
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
       this.loading = false;
@@ -696,6 +701,13 @@ export class EnrollPatientComponent implements OnInit {
         this.checkUHID = false;
         this.loading = false;
       });
+  }
+
+  toggleShowMore() {
+    this.showAllResults = !this.showAllResults;
+    this.dataSource.data = this.showAllResults
+      ? this.data
+      : (this.data.length ? [this.data[0]] : []);
   }
 
   clinicalDetails(event, type) {

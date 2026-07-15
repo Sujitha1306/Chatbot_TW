@@ -116,6 +116,10 @@ import { PatientDeviceAssociateComponent } from './patient-relation-new/patient-
 import { ManageChatBotComponent } from './manage-chat-bot/manage-chat-bot.component';
 import { StaffMusteringV2Component } from './staff-mustering/staff-mustering-v2/staff-mustering-v2.component';
 import { MusteringHistoryV2Component } from './staff-mustering/staff-mustering-v2/mustering-history-v2/mustering-history-v2.component';
+import { FacilityManagementComponent } from './facility-management/facility-management.component';
+import { NgxEchartsModule } from 'ngx-echarts';
+import { InfantAlertDialogComponent } from './infant/infant-alert-dialog/infant-alert-dialog.component';
+import { LocationTrackComponent } from './location-track/location-track.component';
 @NgModule({
     imports: [
         TranslateModule,
@@ -145,7 +149,14 @@ import { MusteringHistoryV2Component } from './staff-mustering/staff-mustering-v
         QRCodeModule,
         GoogleChartsModule,
         ShareModule,
-        FloorPlanModule
+        FloorPlanModule,
+        NgxEchartsModule.forRoot({
+          echarts: async () => {
+            const echarts = await import('echarts');
+            await import('echarts-gl');
+            return echarts as any;
+          }
+        })
     ],
     declarations: [WorkflowComponent,
         PorterNewComponent,
@@ -241,7 +252,11 @@ import { MusteringHistoryV2Component } from './staff-mustering/staff-mustering-v
         PatientDeviceAssociateComponent,
         ManageChatBotComponent,
         StaffMusteringV2Component,
-        MusteringHistoryV2Component        ],
+        MusteringHistoryV2Component,
+        FacilityManagementComponent,
+        InfantAlertDialogComponent,
+        LocationTrackComponent,
+    ],
 
     exports: [HealthCheckupComponent, TwTableModule, TwHeaderModule, TwDataTableModule, TruckComponent],
 })

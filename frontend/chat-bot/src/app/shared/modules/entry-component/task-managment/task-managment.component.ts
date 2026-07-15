@@ -91,7 +91,6 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
   availableQuantity =null;
   editdeliveryDetailsId = null;
   itemBatchName = null;
-  selectedItemId = null;
   assetTypeId =null;
   editRequestId=null;
   attachFiles=[];
@@ -271,6 +270,7 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
   displayToggleLayout = false;
   gridMandatoryEnabled = false;
   isRoleBasedCategoryEnabled = false;
+  bannerlabel = [];
   @ViewChild('scrollContainer')set scrollContainerSetter(
     content: ElementRef<HTMLDivElement>) {
     if (!content?.nativeElement) {
@@ -307,6 +307,11 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
       this.contestList.sort((a, b) => sortOrder.indexOf(a.value) - sortOrder.indexOf(b.value));
       this.selectedTask = this.contestList.some(s => s.code === 'PR-AT') ? 'PR-AT' : this.contestList[0]?.code;
     })
+     this.bannerlabel =[ 
+      {'left': [{label: 'Asset  Serial Number', value: this.data?.entityDetail?.assetSerialNumber},
+                {label: 'Asset Name', value: this.data?.entityDetail?.assetName}]},
+      {'right': [{label: 'Asset Type', value: this.data?.entityDetail?.assetTypeName},
+                 {label: 'Owner Department ', value: this.data?.entityDetail?.ownerDepartment}]}]
     this.bulidForm();
     await this.getDynamicConfigs();
     if (this.data.type === 'modify') {
@@ -699,8 +704,8 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
     })
     this.applyMandatoryFields();
     this.itemForm = this.form.group({
-      itemMasterId: [null,[Validators.required,this.validateItemSelection.bind(this)]],
-      batchId:[this.editInventory ? this.itemBatchName :null,],
+      itemMasterId: [null,[Validators.required]],
+      batchId:[this.editInventory ? this.itemBatchName :null,[Validators.required]],
       quantity: [1],
       cost: [null],
       serviceCost :[null],
@@ -765,6 +770,7 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
     }else if(this.selectedTab == 'History'){
       this.getAllTktHist(this.data.requestId);
     }else if (this.selectedTab =='Parts/Services'){
+      this.getItemSearch();
       this.getTicketInventoryDetails(this.data.requestId)
     }else if (this.selectedTab == 'Documents'){
         this.showDocuments = false;
@@ -939,8 +945,10 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
 
   updateSelectedEntityData() {
     this.showDocuments = false;
-    this.categoryList = [];
-    this.taskActivitiesList = [];
+    if(this.data?.type !='modify'){
+      this.categoryList = [];
+      this.taskActivitiesList = [];
+    }
     const entityGroup = {
       "PR-LC": { entityGroupTypeId: "EGTI-LOC", parentType: "Location" },
       "PR-AT": { entityGroupTypeId: "EGTI-AS", parentType: "Asset" },
@@ -1880,60 +1888,40 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
       }
     })
  }
-  private validateItemSelection(control: FormControl): { [key: string]: any } | null {
-    this.selectedItemId = control.value;
-    if (control.value) {
-      if (!this.selectedItemId || !this.itemList || this.itemList.length === 0) {
-        return { 'invalidItemSelection': true };
-      }
-      let selectedItem = this.itemList.find(item => item.id == this.selectedItemId);
-      if (this.editInventory && selectedItem === undefined) {
-        selectedItem = this.itemList.find(item => item.name === this.selectedItemId);
-      } 
-      if (control.value !== null && selectedItem === undefined) {
-        return { 'invalidItemSelection': true };
-      }
-    }
-    return null;
-  }
-  getItemSearch(event) {
-    if (event.text.length >= 2) {
-      if (event.toHit) {
-        this.commonService.getItemSearch(this.assetTypeId,this.modelNo,event.text).subscribe((res) => {
-          this.itemList = res.results.map(item => ({
-            id: item.itemId,
-            name: item.itemName
-          }));
-          this.itemLinked = this.itemList.length > 0;
-        });
-      }
-    } else {
-      this.itemList = [];
-      this.itemLinked = false;
-    }
-  }
-  
-  getItemName(id) {
-    if (id) {
-      const itemName = this as any as { id: string, name: string }[]
-      const itemId = itemName.find(obj => obj.id === id).name;
-      return itemId;
-    } else {
-      return '';
-    }
+  getItemSearch() {
+    let assetTypeId = this.assetTypeId ?? this.assetData?.assetTypeId;
+    let modelNo = this.modelNo ?? this.assetData?.modelId;
+    this.commonService.getItemSearch(assetTypeId, modelNo).subscribe((res) => {
+      this.itemList = res.results.map(item => ({
+        id: item.itemId,
+        name: item.itemName
+      }));
+      this.itemLinked = this.itemList.length > 0;
+    });
   }
 
   getBatchList(id){
     let type ;
+    const currentBatchId = this.itemForm.controls.batchId.value;
+    this.itemForm.controls.batchId.reset();
+    this.batchList = [];
     this.commonService.getItemType(id).subscribe(res =>{
       type = res.results.find(item => item.itemId === id);
       this.isServiceType = (type.itemTypeId === 'IT-SER')
-      if(type.itemTypeId != 'IT-SER'){
-      this.commonService.getBatchId(id).subscribe(res => {
+      if(this.isServiceType){
+        this.itemForm.controls.batchId.clearValidators();
+        this.itemForm.controls.batchId.setValidators(null);
+      } else {
+        this.itemForm.controls.batchId.setValidators([Validators.required]);
+        this.commonService.getBatchId(id).subscribe(res => {
           this.batchList = res.results;
+          if (currentBatchId) {
+            this.itemForm.controls.batchId.setValue(currentBatchId);
+          }
           this.onBatchSelect(this.itemForm.controls.batchId.value)
         })
       }
+      this.itemForm.controls.batchId.updateValueAndValidity();
     })
   }
 
@@ -2029,7 +2017,6 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
          this.itemForm.reset()
          this.itemForm.controls.quantity.setValue(1);
          this.editInventory = false;
-         this.itemList =[];
          this.batchList=[];
       }, error => {
         this.toastr.error('Error', `${error.error.message}`);
@@ -2041,7 +2028,6 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
          this.itemForm.reset();
          this.itemForm.controls.quantity.setValue(1);
          this.editInventory = false;
-         this.itemList=[];
          this.batchList=[];
       }, error => {
         this.toastr.error('Error', `${error.error.message}`);
@@ -2056,7 +2042,6 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
      this.itemForm.controls.cost.reset();
      this.itemForm.controls.serviceCost.reset();
      this.editInventory = false;
-     this.itemList=[];
   }
 
   editInventoryData(data){
@@ -2066,15 +2051,9 @@ export class TaskManagmentComponent implements OnInit,OnDestroy {
     this.editItemId = data.deliveryDetails[0].itemMasterId;
     this.itemBatchName = data.deliveryDetails[0].batchId;
     this.editRequestId = data.deliveryDetails[0].deliveryRequestId;
-    const itemName=data.deliveryDetails[0].itemMasterName;
-    this.workflowService.getAllIterm(null, itemName).subscribe(res => {
-      this.itemList = res.results.filter(val => val.id == data.deliveryDetails[0].itemMasterId);
-      this.selectedItemId = this.itemList[0].id;
-      this.itemForm.controls.itemMasterId.updateValueAndValidity();
-    })
     this.itemForm.patchValue({
-      itemMasterId: data.deliveryDetails[0].itemMasterName,
-      batchId:data.deliveryDetails[0].batchId,
+      itemMasterId: data.deliveryDetails[0].itemMasterId,
+      batchId: data.deliveryDetails[0].batchId,
       quantity: data.deliveryDetails[0].requestedQuantity,
       cost : data.deliveryDetails[0].unitCost,
       serviceCost : data.deliveryDetails[0].serviceCost

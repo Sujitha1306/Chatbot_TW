@@ -34,12 +34,12 @@ export class AuditScheduleManagementComponent {
   columns =[]
   displayedColumns1= ['select', 'Name', 'Asset Serial No', 'Asset Type', 'Category'];
   columns1 = ['select', 'assetName', 'assetSerialNumber', 'assetType', 'assetCategory'];
-  displayedColumns2= ['Name', 'Asset Serial No', 'Asset Type', 'Category','Audited By','Audited DateTime','Remarks','Attachments'];
-  columns2 = ['assetName', 'assetSerialNumber', 'assetType', 'assetCategory','auditedUser','auditDateTime','auditRemarks',''];
+  displayedColumns2= ['Name', 'Asset Serial No', 'Asset Type', 'Category','Mode','Audited By','Audited DateTime','Remarks','Attachments'];
+  columns2 = ['assetName', 'assetSerialNumber', 'assetType', 'assetCategory','auditModeName','auditedUser','auditDateTime','auditRemarks',''];
   displayedColumns3 =['select','Location Name','Location Type','Location Category','Location Identifier'];
   columns3=['select','fullName','locationTypeName','categoryName','locationIdentifier'];
-  displayedColumns4 =['select','Location Name','Location Type','Location Category','Location Identifier','Audited By','Audited DateTime','Remarks','Attachments'];
-  columns4=['select','fullName','locationTypeName','categoryName','locationIdentifier','createdUserName','auditDateTime','remarks',''];
+  displayedColumns4 =['select','Location Name','Location Type','Location Category','Location Identifier','Mode','Audited By','Audited DateTime','Remarks','Attachments'];
+  columns4=['select','fullName','locationTypeName','categoryName','locationIdentifier','auditModeName','createdUserName','auditDateTime','remarks',''];
   permissionControl = ['BT_ALLE'];
   sortColumn = [];
   iconHeader = ['select'];
@@ -554,7 +554,8 @@ export class auditRemarkscomponent {
         entityType: entityType,
         isActive: true,
         remarks: this.remarks.value,       
-        type: item.type
+        type: item.type,
+        modeId:'MOD-MAN'
       }));
     this.configurationService.postAuditInfo(payload).subscribe({
       next: (res: any) => {

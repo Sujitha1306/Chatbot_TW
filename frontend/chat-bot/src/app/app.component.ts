@@ -156,6 +156,7 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(){
+    sessionStorage.removeItem('chunk-reloaded');
     if(window.location.hostname.includes('pwa')) {
       this.router.navigate(['/pwa'], { queryParams: { }  })
     } else {

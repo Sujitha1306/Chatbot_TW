@@ -84,10 +84,17 @@ export class DashboardEmpComponent implements OnInit, DoCheck, OnDestroy {
   public subscription: Subscription;
   public subscriptionDept: Subscription;
   public gridsterConfig: any;
+  public configDefaultParams: any = {};
   enableEditDashboard = false;
   existPrivateUser = false;
+
+  // ── V1 / V2 version toggle ──────────────────────────────────────────────────
+  public selectedVersion: 'V1' | 'V2' = 'V1';
+  /** Pre-built input object passed to DashboardV2EmpComponent when V2 is active. */
+  public v2InputData: { preResponse: any; dashboardId: any; defaultLayout: string } | null = null;
   rawHtmlTemplate: any;
-  chartPlugins = [ChartDataLabels]
+  chartPlugins = [ChartDataLabels];
+  public staticReport = null;
   // currentYear: number;
   constructor(private readonly renderer: Renderer2, public dashboardService: DashboardService, public datepipe: DatePipe,
     private readonly commonService: CommonService, public ChartService: ChartjsService,
@@ -205,6 +212,8 @@ export class DashboardEmpComponent implements OnInit, DoCheck, OnDestroy {
         });
         this.defaultLayout = JSON.stringify(res.results[0].layouts);
         this.dashboardId = res.results[0].dashboardId;
+        this.v2InputData = { preResponse: this.preResponse, dashboardId: this.dashboardId, defaultLayout: this.defaultLayout };
+        this.setConfigDefaultParams(res.results[0].configValue);
         this.bindLayout(res.results[0].layouts);
       } else {
         this.openSnackbar(res.message, 'warning');
@@ -219,19 +228,52 @@ export class DashboardEmpComponent implements OnInit, DoCheck, OnDestroy {
         this.preResponse = res.results;
         this.preResponse['layouts'].sort((a, b) => {
           if (a.y === b.y) {
-            return a.x - b.x; 
+            return a.x - b.x;
           } else {
-            return a.y - b.y; 
+            return a.y - b.y;
           }
         });
         this.defaultLayout = JSON.stringify(res.results.layouts);
         this.dashboardId = res.results.dashboardId;
+        this.v2InputData = { preResponse: this.preResponse, dashboardId: this.dashboardId, defaultLayout: this.defaultLayout };
+        this.setConfigDefaultParams(res.results.configValue);
         this.getUserPreference();
         this.bindLayout(res.results.layouts);
       }
     });
   }
+
+  setConfigDefaultParams(configValue: any) {
+    this.configDefaultParams = {};
+    if (!configValue) {
+      return;
+    }
+    const input = JSON.parse(configValue);
+    this.staticReport  = input?.static;
+    const filterInputs = input?.dynamicHeader?.filterInputs;
+    if (!filterInputs) {
+      return;
+    }
+    filterInputs.forEach(filter => {
+      if (filter.id && filter.default != null) {
+        let value = filter.default;
+        if ((filter.name === 'fromDate' || filter.name === 'toDate') && !isNaN(Date.parse(value))) {
+          value = this.datepipe.transform(value, 'yyyy-MM-dd');
+        }
+        this.configDefaultParams[filter.id] = value;
+      }
+    });
+  }
+
   bindLayout(layout) {
+    let config = null;
+    const preResponse: any = this.preResponse;
+    try {
+      config = preResponse?.configValue ? JSON.parse(preResponse.configValue) : null;
+    } catch (e) {
+      config = null;
+    }
+    this.staticReport = config?.static ?? null;
     this.commonService.setDashboard(this.dashboardId);
     if (this.facilityId === localStorage.getItem(btoa('facilityId'))) {
       this.isLayoutChanged = false;
@@ -867,15 +909,19 @@ export class DashboardEmpComponent implements OnInit, DoCheck, OnDestroy {
       let modelInput = null;
       let layout = value[0];
       const widgetParam = [];
-      // const inputParam = layout.inputParams ? layout.inputParams.split(',') : [];
-      let iparam = "inputParams";
-      // check widget input params with default value 
-      if(!layout.inputParams?.includes('=')){
-        iparam = "modelInputParams";
-      }
-      const inputParam = layout[iparam] ? layout[iparam].split(',') : [];
+      // merge inputParams and modelInputParams by param key so an id present in either one isn't dropped
+      const inputParamTokens = layout.inputParams ? layout.inputParams.split(',') : [];
+      const modelInputParamTokens = layout.modelInputParams ? layout.modelInputParams.split(',') : [];
+      const seenParamKeys = new Set<string>();
+      const inputParam = [];
+      [...inputParamTokens, ...modelInputParamTokens].forEach(token => {
+        const paramKey = token.split('=')[0];
+        if (paramKey && !seenParamKeys.has(paramKey)) {
+          seenParamKeys.add(paramKey);
+          inputParam.push(token);
+        }
+      });
       let layoutParam = layout.widgetParam ? layout.widgetParam.split(',') : [];
-
       if (layout.inputParams && inputParam.length) {
         for (let i in inputParam) {
           if (inputParam[i] === 'fid' || inputParam[i] === 'facility_id') {
@@ -919,6 +965,12 @@ export class DashboardEmpComponent implements OnInit, DoCheck, OnDestroy {
                 widgetParam.push(inputParam[i] + '=' + localStorage.getItem(btoa('loginId')));
             } else {
                 widgetParam.push('&' + inputParam[i] + '=' + localStorage.getItem(btoa('loginId')));
+            }
+          } else if (this.configDefaultParams?.hasOwnProperty(inputParam[i])) {
+            if (widgetParam.length === 0) {
+              widgetParam.push(inputParam[i] + '=' + this.configDefaultParams[inputParam[i]]);
+            } else {
+              widgetParam.push('&' + inputParam[i] + '=' + this.configDefaultParams[inputParam[i]]);
             }
           } else if (inputParam[i].includes('=')) {
             if (parseInt(i) === 0) {

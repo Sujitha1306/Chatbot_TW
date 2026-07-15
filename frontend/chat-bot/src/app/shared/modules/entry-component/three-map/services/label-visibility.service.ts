@@ -12,7 +12,7 @@ import {
 })
 export class LabelVisibilityService {
 
-    private readonly ICON_DOT_SCALE = 0.75;
+    private readonly ICON_DOT_SCALE = 2.5;
     // Reference camera distance at which labels/icons were designed — scale is adjusted
     // proportionally so apparent screen size stays constant at any zoom level.
     private readonly LABEL_REFERENCE_DISTANCE = 200;
@@ -80,20 +80,42 @@ export class LabelVisibilityService {
             if (showFullLabel) {
                 // Per-label distance gives truly constant screen size regardless of
                 // where the label sits relative to the camera target.
-                const labelPos = room.label.position;
+                const labelPos = new THREE.Vector3();
+                room.label.getWorldPosition(labelPos);
                 const labelDist = camPos.distanceTo(labelPos);
                 const distFactor = labelDist / this.LABEL_REFERENCE_DISTANCE;
                 const fsx = (room.label.userData['fixedSX'] ?? 6.84) * distFactor;
-                const fsy = (room.label.userData['fixedSY'] ?? 1.41) * distFactor;
-                room.label.scale.set(fsx, fsy, 1);
+                const fsy = (room.label.userData['fixedSY'] ?? 1.46) * distFactor;
+
+                const parentScale = new THREE.Vector3(1, 1, 1);
+                if (room.label.parent) {
+                    room.label.parent.getWorldScale(parentScale);
+                }
+                const px = parentScale.x || 1;
+                const py = parentScale.y || 1;
+                const pz = parentScale.z || 1;
+
+                room.label.scale.set(fsx / px, fsy / py, 1 / pz);
             }
 
             if (room.labelIcon) {
                 const isIconRouteMarker = room.labelIcon.userData['isRouteMarker'] === true;
-                const iconPos = room.labelIcon.position;
+                const iconPos = new THREE.Vector3();
+                room.labelIcon.getWorldPosition(iconPos);
                 const iconDist = camPos.distanceTo(iconPos);
-                const iconFactor = iconDist / this.LABEL_REFERENCE_DISTANCE;
-                room.labelIcon.scale.set(this.ICON_DOT_SCALE * iconFactor, this.ICON_DOT_SCALE * iconFactor, 1);
+                const ratio = iconDist / this.LABEL_REFERENCE_DISTANCE;
+                const iconFactor = ratio > 1 ? Math.sqrt(ratio) : ratio;
+                const desiredScale = this.ICON_DOT_SCALE * iconFactor;
+
+                const parentScale = new THREE.Vector3(1, 1, 1);
+                if (room.labelIcon.parent) {
+                    room.labelIcon.parent.getWorldScale(parentScale);
+                }
+                const px = parentScale.x || 1;
+                const py = parentScale.y || 1;
+                const pz = parentScale.z || 1;
+
+                room.labelIcon.scale.set(desiredScale / px, desiredScale / py, 1 / pz);
                 room.labelIcon.visible = isIconRouteMarker || showIconOnly;
             }
         });

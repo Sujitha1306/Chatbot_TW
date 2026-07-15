@@ -43,6 +43,7 @@ import { LookupTermService } from "../../../shared/lookup-term.service";
 import { FacilityTransferComponent } from "../../../shared/modules/entry-component/facility-transfer/facility-transfer.component";
 import { AssetOverviewComponent } from "../../../shared/modules/entry-component/asset-overview/asset-overview.component";
 import { BulkIdentifierExportComponent } from "../../../shared/modules/entry-component/bulk-identifier-export/bulk-identifier-export.component";
+import { TwColumnDef, TwPaginationConfig } from "../../../shared/modules/entry-component/tw-data-table/tw-data-table.models";
 
 @Component({
   selector: "app-asset",
@@ -66,6 +67,7 @@ export class AssetComponent implements OnInit {
   sortColumn = [];
   permissionControl = ['BT_ALLE'];
   public selectedName: any = null;
+  public cellColors: any = null;
   public selectDropdown: any;
   selectedAction = new FormControl();
   public isCheck = false;
@@ -99,6 +101,7 @@ export class AssetComponent implements OnInit {
   isloadDepartmentBasedAssetCategory = false;
   public category =null;
   status = null;
+  public twTableVersionData: number = 1;
   public parentFilter = [
     {
       id: 'asset',
@@ -415,6 +418,8 @@ export class AssetComponent implements OnInit {
       this.manageWorklist(event);
     } else if (event.key === 'groupFilter') {
       this.manageGroupFilter(event);
+    } else if (event.key === 'downloadExcel') {
+      this.downloadBulkAsset();
     } else {
       this.applyFilterValue = null;
       this.refreshPage();
@@ -678,6 +683,7 @@ export class AssetComponent implements OnInit {
 
   async getDynamicTableColumn() {
       const res: any = await this.commonService.getDynamicTableColumn('asset').toPromise();
+      this.twTableVersionData = this.commonService.facilityConfig?.twTableVersion ?? 1;
       if(res?.statusCode === 1 && res?.results?.contentObject) {
         this.transferAllowedStatus = res?.results?.contentObject?.transferAllowedStatus??['ATS-INU'];
         const roleId = localStorage.getItem('roleId');
@@ -687,12 +693,19 @@ export class AssetComponent implements OnInit {
         } else {
           dynamicColumns = res.results.contentObject;
         }
-        this.displayedColumns = dynamicColumns.displayedColumns;
+        if (this.commonService?.facilityConfig?.twTableVersion === 2) {
+          this.displayedColumns = dynamicColumns.displayedColumns.filter(col => col !== 'ID');
+          this.responseColumns = dynamicColumns.columns.filter(col => col !== 'ID');
+          this.cellColors = dynamicColumns?.color ?? null;
+        } else {
+          this.cellColors = null;
+          this.displayedColumns = dynamicColumns.displayedColumns;
+          this.responseColumns = dynamicColumns.columns;
+        }
         this.iconColumn = dynamicColumns.iconColumn;
         this.eventColumn = dynamicColumns.eventColumn;
         this.sortColumn = dynamicColumns.sortColumn;
         this.iconHeader = dynamicColumns.iconHeader;
-        this.responseColumns = dynamicColumns.columns;
         this.isloadDepartmentBasedAssetType = dynamicColumns.isLoadDepartmentBasedAssetType;
         this.isloadDepartmentBasedAssetCategory = dynamicColumns.isLoadDepartmentBasedAssetCategory;
         this.pageSize = dynamicColumns.pageSize ?? this.pageSize;
@@ -715,7 +728,7 @@ export class AssetComponent implements OnInit {
     });
   }
 
-  currentLocationData(rowData: any, event: any) {
+  currentLocationData(rowData: any) {
     this.rowData = rowData;
     this.selectedName = rowData.id;
     rowData['tagType'] = 'Asset';
@@ -1128,8 +1141,8 @@ export class AssetComponent implements OnInit {
       const departmentIds:any = localStorage.getItem(btoa('departmentIds') || '[]');
       const transfer = ['ATT-BRD', 'ATT-SV', 'ATT-RR', 'ATT-RT', 'ATT-BRR', 'ATT-SRT'];
       const isStatus = transfer.includes(event.data.assetTransferTypeId);
-      const approved = department?.results?.transferType === "TRT-DEP"? (isStatus || departmentIds.includes(Number(department.results.sourceTransferId))): true;
-      const pending = department?.results?.transferType === "TRT-DEP"? (isStatus || departmentIds.includes(Number(department.results.transferId))): true;
+      const approved = department?.results?.transferType === "TRT-DEP"? (isStatus || departmentIds?.includes(Number(department.results.sourceTransferId))): true;
+      const pending = department?.results?.transferType === "TRT-DEP"? (isStatus || departmentIds?.includes(Number(department.results.transferId))): true;
       const isApprovedStatus = statusId === 'ATE-INI' && approved;
       const isPendingStatus = (statusId === 'ATE-PEN' || statusId ==='ATE-GENP') && pending;
       if (isApprovedStatus || isPendingStatus) {
@@ -1247,7 +1260,7 @@ export class AssetComponent implements OnInit {
     this.dialog.closeAll();
     const actions: Record<string, () => void> = {
       'Asset Name': () => this.sensorSummaryInfo(event.data),
-      'Current Location': () => this.currentLocationData(event.data, ''),
+      'Current Location': () => this.currentLocationData(event.data),
       'Status': () => this.handleStatus(event),
       'Event Status': () => this.manageEventStatus(event),
       'pagination': () => this.handlePagination(event),
@@ -1256,9 +1269,10 @@ export class AssetComponent implements OnInit {
       'Alert': () => this.getAllAssets(event.data, event?.patientId),
       'Linked Asset': () => this.linkedasset(event.data),
       'Report': () => this.getReportLayout(event.data),
-      'Overview':() => this.getAssetOverview(event.data)
+      'Overview': () => this.getAssetOverview(event.data),
+      'Device': () => this.manageCoster(event.data)
     };
-    (actions[event.key] || (() => this.manageCoster(event.data)))();
+    actions[event.key]?.();
   }
 
   handleStatus(event) {
@@ -2189,6 +2203,68 @@ async assetTermsListExist(): Promise<boolean> {
           this.refreshPage();
         });
     });
+  }
+
+  buildTwColumnDefs(
+    displayedCols: string[],
+    iconCols: string[] = [],
+    sortCols: string[] = [],
+    eventCols: string[] = [],
+    headerIconCols: string[] = [],
+    width: string[] = [...this.displayedColumns],
+    minWidth: string[] = [...this.displayedColumns],
+    maxWidth: string[] = [...this.displayedColumns],
+    truncate: string[] = [...this.displayedColumns],
+    align: string[] = ['Linked Asset'],
+    cellColorCols: Record<string, Record<string, string>> = this.cellColors
+    
+  ): TwColumnDef[] {
+    return (displayedCols ?? []).map(key => {
+      const def: TwColumnDef = { key };
+      if (cellColorCols[key]) { def.type = 'cellColor';  def.colorCellMap = cellColorCols[key]}
+      if (sortCols.includes(key)) def.sortable = true;
+      if (eventCols.includes(key)) def.clickable = true;
+      if (iconCols.includes(key)) def.type = 'icon';
+      if (width.includes(key)) def.width = key == 'Alert' || key == 'Current Location' || key == 'Asset Name' || key == 'Asset Type' || key == 'Owned Department' || key == 'Used By Department' ? '120px' : 
+      key === 'Device' || key === 'Linked Asset' || key === 'Report' || key === 'Overview' ? '20px' : key === 'Product Serial No' || key === 'Model No' || key === 'Cost Type' || key === 'Event Status' || key === 'Gatepass' || key === 'Category' ? '50px' : '80px';
+      if (minWidth.includes(key)) def.minWidth = key == 'Alert' || key == 'Current Location' || key == 'Asset Name' || key == 'Asset Type' || key == 'Owned Department' || key == 'Used By Department' ? '120px' :
+      key === 'Device' || key === 'Linked Asset' || key === 'Report' || key === 'Overview' ? '20px' : key === 'Product Serial No' || key === 'Model No'  || key === 'Cost Type' || key === 'Event Status' || key === 'Gatepass' || key === 'Category' ? '50px' : '80px';
+      if (maxWidth.includes(key)) def.maxWidth = key == 'Alert' || key == 'Current Location' || key == 'Asset Name' || key == 'Asset Type' || key == 'Owned Department' || key == 'Used By Department' ? '120px' : 
+      key === 'Device' || key === 'Linked Asset' || key === 'Report' || key === 'Overview' ? '20px' : key === 'Product Serial No' || key === 'Model No'  || key === 'Cost Type' || key === 'Event Status' || key === 'Gatepass' || key === 'Category' ? '50px' : '80px';
+      if (headerIconCols.includes(key)) {
+        def.headerIcon = { matIcon: key === 'Report' ? 'description' : key === 'Overview' ? 'dashboard' : '', src: key === 'Device' ? '/assets/Alert/common_icons/mob_coaster.svg' : '' };
+      }
+      if (truncate.includes(key)) def.truncate = true;
+      if (align.includes(key)) def.align = 'center';
+      return def;
+    });
+  }
+
+  get twColumns(): TwColumnDef[] {
+    return this.buildTwColumnDefs(
+      this.displayedColumns, this.iconColumn, this.sortColumn,
+      this.eventColumn, this.iconHeader
+    );
+  }
+
+  get paginationConfig(): TwPaginationConfig {
+    return { length: this.length, pageSize: this.pageSize, pageIndex: this.pageStart, pageSizeOptions: [20, 50, 100] };
+  }
+
+  onCellAction(event: { column: string; row: any }) {
+    this.eventAction({ key: event.column, data: event.row });
+  }
+
+  handleRowClick(row: any) {
+    this.rowClick(row);
+  }
+
+  handleRowDblClick(row: any) {
+    this.sensorSummaryInfo(row);
+  }
+
+  onPageChange(event: { pageIndex: number; pageSize: number }) {
+    this.eventAction({ key: 'pagination', data: event });
   }
 }
 

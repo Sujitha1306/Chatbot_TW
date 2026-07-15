@@ -14,7 +14,7 @@
  * ======================================================================================================
  ******************************************************************************/
 
-import { Component, HostListener, Inject, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, HostListener, Inject, OnInit, ViewChild, ViewEncapsulation, AfterViewInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -35,13 +35,11 @@ import { AppToastService } from '../../../services/toaster.service';
   styleUrls: ['./app-ot-new.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class AppOtNewComponent implements OnInit {
+export class AppOtNewComponent implements OnInit, AfterViewInit {
 
   dataSource = new MatTableDataSource<any>();
-  @ViewChild(MatPaginator)
-  set paginator(value: MatPaginator) {
-    this.dataSource.paginator = value;
-  }    
+  @ViewChild('patientPaginator') patientPaginator!: MatPaginator;
+  @ViewChild('staffPaginator') staffPaginator!: MatPaginator;
   @ViewChild(MatSort)
   set sort(value: MatSort) {
     this.dataSource.sort = value;
@@ -189,6 +187,20 @@ bannerlabel = {
     this.getPatientStatusInfo();
   }
 
+  ngAfterViewInit(): void {
+    this.bindPaginator();
+  }
+
+  bindPaginator() {
+    setTimeout(() => {
+      if (this.selectedTab === 'Patient') {
+        this.dataSource.paginator = this.patientPaginator;
+      } else if (this.selectedTab === 'Staff') {
+        this.dataSource.paginator = this.staffPaginator;
+      }
+    });
+  }
+
   @HostListener('document:keydown.escape', ['$event'])
   onEscapeKey(event: KeyboardEvent) {
     this.thisDialogRef.close();
@@ -308,6 +320,7 @@ bannerlabel = {
           });
         }
         this.dataSource.data = tableData;
+        this.bindPaginator();
       }
     })
   }
@@ -321,6 +334,7 @@ bannerlabel = {
   patientSummary(patient){
     this.data['selectedPatient'] = patient;
     this.getPatientStatusInfo();
+    this.bindPaginator();
     if(this.selectedTab == 'Asset'){
       this.tableColumns = this.assetTableColumns;
       this.patientSummeryId = patient?.visitEventId ? patient.visitEventId : null;
@@ -339,12 +353,14 @@ bannerlabel = {
   reloadTab(){
     if(this.selectedTab == 'Patient'){
       this.getPatientStatusInfo();
+      this.bindPaginator();
     }else if(this.selectedTab == 'Asset'){
       this.tableColumns = this.assetTableColumns;
       this.loadAssetChartData();
     }else if(this.selectedTab == 'Staff'){
       this.tableColumns = this.staffTableColumns;
       this.loadStaffChartData();
+      this.bindPaginator();
     }
   }
 
@@ -451,6 +467,7 @@ bannerlabel = {
             }
 
             this.dataSource.data = cpData;
+            this.bindPaginator();
             let cpArray = otDetail['Careprovider'].map(cp => [
               cp["Name"],
               cp["Location"],
@@ -459,8 +476,8 @@ bannerlabel = {
             ]);
             this.staffChartData = cpArray;
             this.staffOptions = {
-              timeline: { colorByRowLabel: true },
-              colors: ['#1f78b4', '#ffbb33'],
+              timeline: { colorByRowLabel: false },
+              colors: ['#54a2c9', '#b39ddb', '#81c784'],
               hAxis: {
                 format: 'HH:mm',
                 textStyle: {
@@ -503,10 +520,12 @@ bannerlabel = {
     if(this.selectedTab == 'Patient'){
       this.tableColumns = this.patTableColumns;
       this.getPatientStatusInfo();
+      this.bindPaginator();
     }else if(this.selectedTab == 'Asset'){
       this.getAssetStaffStatusInfo(this.selectedTab);
     }else if(this.selectedTab == 'Staff'){
       this.getAssetStaffStatusInfo(this.selectedTab);
+      this.bindPaginator();
     }else if(this.selectedTab == 'Form'){
       this.getFormTemplate();
       this.getFormDetails();
@@ -710,6 +729,15 @@ bannerlabel = {
       });
 
   }
+  getPatientInitials(name: string): string {
+    if (!name) return 'MO';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
    fixClick() {
     console.log('')
   } 

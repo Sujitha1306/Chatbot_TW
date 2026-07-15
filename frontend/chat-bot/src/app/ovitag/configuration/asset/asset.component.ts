@@ -282,7 +282,8 @@ export class CreateAssetComponent implements OnInit {
     'entityType': 'asset',
     'data': this.data,
     'enableClose': false
-  }
+  };
+  isEditingAssetDetails = true;
   @ViewChild('paginatorAll') paginatorAll: MatPaginator;
   @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
   @ViewChild(MatSort, { static: true }) sort: MatSort;
@@ -449,6 +450,7 @@ export class CreateAssetComponent implements OnInit {
   selectedDate: any = null;
   selectedDateObj: any = null;
   assetCostDependentFieldsValidations = false
+  bannerlabel = [];
   constructor(
     public form: FormBuilder,
     public dialog: MatDialog,
@@ -472,6 +474,14 @@ export class CreateAssetComponent implements OnInit {
   ngOnInit() {
     this.loading = true;
     this.selectedIndex = 0;
+    if(this.data?.id) {
+      this.isEditingAssetDetails = false;
+      this.bannerlabel =[ 
+      {'left': [{label: 'Asset  Serial Number', value: this.data.assetSerialNumber},
+                {label: 'Asset Name', value: this.data.assetName}]},
+      {'right': [{label: 'Asset Type', value: this.data.assetTypeName},
+                 {label: 'Owner Department ', value: this.data.ownerDepartment}]}]
+    }
     if (this.data?.id && this.data?.assetTypeId === 'AT-CCTV') {
       this.selectedCoordinates = this.extractCctvCoordinates(this.data?.coordinates ?? null);
       this.locationId = this.data?.locationId ?? null;
@@ -744,7 +754,7 @@ export class CreateAssetComponent implements OnInit {
     if (config?.tabOrder?.length >0) {
       this.tabOrder = config.tabOrder;
     } else {
-      this.tabOrder =  ['Basic Details','Financial','Identifier','Maintenance','Ticket','WorkOrder','Form','KPI','Assigned','Movement','Status History','Documents','Sensor','Linked Assets','Audit','Alert','Inventory'];
+      this.tabOrder =  ['Basic Details','Financial','Connectivity Details','Identifier','Maintenance','Ticket','WorkOrder','Form','KPI','Assigned','Movement','Status History','Documents','Sensor','Linked Assets','Audit','Alert','Inventory'];
     }
     this.selectedTab = this.data?.selectedTab && this.tabOrder?.includes(this.data.selectedTab) ? this.data.selectedTab : this.tabOrder[0];
       setTimeout(() => {
@@ -1168,7 +1178,7 @@ export class CreateAssetComponent implements OnInit {
         this.cctvBlockId = result.blockId;
         this.cctvFloorId = result.floorId;
 
-        const displayValue = `X:${result.x}, Y:${result.y}`;
+        const displayValue = result.locationName;
 
         this.assetForm.controls.locationDescription.setValue(displayValue);
         this.assetForm.controls.locationIdentifier.setValue(null);
@@ -1250,19 +1260,7 @@ export class CreateAssetComponent implements OnInit {
   }
 
   private initializeCctvLocationDisplay() {
-    let displayValue: string = this.assetForm.controls.locationDescription.value;
-
-    // If locationDescription wasn't persisted, derive the display text from coordinates.
-    if (!displayValue && this.selectedCoordinates) {
-      try {
-        const coords = JSON.parse(this.selectedCoordinates);
-        if (Array.isArray(coords) && coords.length === 2) {
-          displayValue = `X:${coords[0]}, Y:${coords[1]}`;
-          this.assetForm.controls.locationDescription.setValue(displayValue);
-        }
-      } catch {}
-    }
-
+    const displayValue: string = this.assetForm.controls.locationDescription.value;
     if (displayValue) {
       this.locationDescriptionList = [displayValue];
       this.locationlist = [{ id: this.locationId, fullName: displayValue, locationIdentifier: null }];
@@ -1289,6 +1287,9 @@ export class CreateAssetComponent implements OnInit {
       if (this.data?.assetTypeId !== 'AT-CCTV') {
         this.locationId = this.data?.homeLocationId ?? null;
       }
+    }
+    
+    if (this.selectedTab === 'Connectivity Details' && this.data.id) {
       this.commonService.getAssetConnectivity(this.data.id).subscribe((res)=>{
         this.connectivityData = res.results;
         this.connectivityDetails = this.connectivityData;
@@ -1597,8 +1598,8 @@ export class CreateAssetComponent implements OnInit {
       usefulLife:[this.data?.usefulLife ?? null],
       ownerDepartmentId:[this.data?.ownerDepartmentId ?? null],
       assignedDepartmentId:[this.data?.assignedDepartmentId ?? null],
-      ownerId:[this.data?.ownerId ?? null],
-      assetUserId:[this.data?.assetUserId ?? null],
+      ownerId:[this.data?.ownerId ?? null, [this.requireOwnerMatch.bind(this)]],
+      assetUserId:[this.data?.assetUserId ?? null, [this.requireUserMatch.bind(this)]],
       costCenterId:[this.data?.assignedDepartmentId ?? null],
       assetAdminEmail: [this.data?.assetAdminEmail ?? null,
       [Validators.pattern(/(^\d{10}$)|(^[A-Za-z0-9_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$)/)]],
@@ -1945,6 +1946,27 @@ export class CreateAssetComponent implements OnInit {
   }
   
   searchUserNameList(event, type) {
+    if (event.text.length === 0) {
+      if (type === 'user') {
+        this.userNameList = [];
+        this.userEnabled = false;
+        this.assetForm.controls.assetUserId.setValue(null);
+        this.assetForm.controls.assetUserId.markAsPristine();
+      } else if (type === 'owner') {
+        this.ownerNameList = [];
+        this.ownerEnabled = false;
+        this.assetForm.controls.ownerId.setValue(null);
+        this.assetForm.controls.ownerId.markAsPristine();
+      }
+      return;
+    }
+
+    if (type === 'user') {
+      this.userEnabled = true;
+    } else if (type === 'owner') {
+      this.ownerEnabled = true;
+    }
+
     if (event.text.length >= 2 && event.toHit === true) {
       const ownerDepartment = this.assetForm.controls.ownerDepartmentId.value;
       const userDepartment = this.assetForm.controls.assignedDepartmentId.value;
@@ -1955,9 +1977,11 @@ export class CreateAssetComponent implements OnInit {
     if (type === 'user') {
       this.userNameList = res.results;
       this.userEnabled = true;
+      this.assetForm.controls.assetUserId?.updateValueAndValidity();
     } else if (type === 'owner') {
       this.ownerNameList = res.results;
       this.ownerEnabled = true;
+      this.assetForm.controls.ownerId?.updateValueAndValidity();
       }
    });
     }
@@ -1994,6 +2018,38 @@ export class CreateAssetComponent implements OnInit {
       return null;
     }
 
+  }
+
+  private requireOwnerMatch(control: FormControl): ValidationErrors | null {
+    if (control.value !== null && control.value !== '') {
+      if (control.dirty) {
+        if (this.ownerNameList?.length > 0) {
+          const found = this.ownerNameList.some(x => x.id === control.value);
+          if (!found) {
+            return { requireOwnerMatch: true };
+          }
+        } else {
+          return { requireOwnerMatch: true };
+        }
+      }
+    }
+    return null;
+  }
+
+  private requireUserMatch(control: FormControl): ValidationErrors | null {
+    if (control.value !== null && control.value !== '') {
+      if (control.dirty) {
+        if (this.userNameList?.length > 0) {
+          const found = this.userNameList.some(x => x.id === control.value);
+          if (!found) {
+            return { requireUserMatch: true };
+          }
+        } else {
+          return { requireUserMatch: true };
+        }
+      }
+    }
+    return null;
   }
 
   private getChildAssets(){
@@ -2116,12 +2172,13 @@ export class CreateAssetComponent implements OnInit {
     if (this.createAsset.isNetwork) {
       if (this.isWebRTC) {     
         this.createAsset.assetConnectivityDto = [{
-          id:this.connectivityDetails[0].id ?? null,
+          id:this.connectivityDetails[0]?.id ?? null,
           connectionProtocolId: this.assetForm.controls.connectionProtocolId.value,
           outputData: JSON.stringify({
             streamName: this.assetForm.value.streamName ?? '',
             streamUrl: this.assetForm.value.streamUrl ?? ''
-          })
+          }),
+          isActive:true
         }];
       } else {
         this.createAsset.assetConnectivityDto = this.connectivityDetails;

@@ -15,6 +15,7 @@ export class RendererService {
         });
         this.renderer.setSize(width, height);
         this.renderer.setPixelRatio(Math.min(devicePixelRatio, RENDERER_PIXEL_RATIO_MAX));
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -36,7 +37,23 @@ export class RendererService {
 
     dispose(): void {
         if (this.renderer) {
-            this.renderer.dispose();
+            try {
+                this.renderer.forceContextLoss();
+            } catch (e) {
+                console.warn('WebGL forceContextLoss failed:', e);
+            }
+            try {
+                this.renderer.dispose();
+            } catch (e) {
+                console.warn('WebGLRenderer dispose failed:', e);
+            }
+            if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                try {
+                    this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+                } catch (e) {
+                    console.warn('Failed to remove canvas element from DOM:', e);
+                }
+            }
         }
     }
 }

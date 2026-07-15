@@ -74,6 +74,15 @@ export class BrokerResolver implements Resolve<Observable<any>> {
 }
 
 @Injectable()
+export class PoeInjectorResolver implements Resolve<Observable<any>> {
+  constructor(private readonly configurationService: ConfigurationService) {}
+
+  resolve(): Observable<any> {
+    return this.configurationService.getAllPoeInjectors(null, null, 0, 10);
+  }
+}
+
+@Injectable()
 export class ServerResolver implements Resolve<Observable<any>> {
   constructor(private readonly configurationService: ConfigurationService) {}
 

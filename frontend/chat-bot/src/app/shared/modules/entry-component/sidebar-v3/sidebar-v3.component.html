@@ -27,62 +27,68 @@
 
         <div *ngIf="!favoritesCollapsed" class="v3-section-items">
 
-          <!-- Favorited top-level (childless) items -->
-          <div *ngFor="let item of favoriteMainItems; trackBy: trackByCode"
-            class="v3-menu-row"
-            [class.v3-row-active]="selectedMenuId == item.id"
-            (mouseenter)="hoveredMenuId = item.id; openFlyout(item, $event)"
-            (mouseleave)="hoveredMenuId = null"
-            (click)="onCollapsedClick(item, $event)"
-            [routerLink]="item.link ? [item.link] : null"
-            role="button" tabindex="0" (keydown.enter)="fixClick()">
-            <span class="v3-row-icon">
-              <img src="/assets/Menus/{{ item.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
-            </span>
-            <span class="v3-row-label">{{ item.name | translate }}</span>
-            <mat-icon class="v3-star-icon v3-star-filled"
-              (click)="toggleFavorite(item.code, $event)" matTooltip="Remove from favorites">
-              star
-            </mat-icon>
-          </div>
-
-          <!-- Parents with favorited submenus (always expanded) -->
-          <ng-container *ngFor="let group of favoriteGroups; trackBy: trackByGroup">
-            <div class="v3-menu-row v3-fav-parent"
-              [class.v3-row-active]="selectedMenuId == group.parent.id"
-              (mouseenter)="hoveredMenuId = group.parent.id; openFavFlyout(group, $event)"
-              (mouseleave)="hoveredMenuId = null"
+          <!-- Collapsed (iconOnlyMode) Single Favorites Rail Icon -->
+          <ng-container *ngIf="iconOnlyMode">
+            <div class="v3-menu-row"
+              [class.v3-row-active]="flyoutItem?.code === 'MN_FAV'"
+              (mouseenter)="openFavoritesFlyout($event)"
+              (mouseleave)="scheduleCloseFlyout()"
               role="button" tabindex="0">
               <span class="v3-row-icon">
-                <img src="/assets/Menus/{{ group.parent.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
+                <mat-icon style="color: #ffb300; font-size: 20px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;padding: 0px;">star</mat-icon>
               </span>
-              <span class="v3-row-label">{{ group.parent.name | translate }}</span>
-              <mat-icon class="v3-row-chevron chevron-open">chevron_right</mat-icon>
+              <span class="v3-row-label">Favorites</span>
             </div>
-            <!-- Favorited sub items (2nd + 3rd level) -->
-            <div class="v3-fav-submenu">
+          </ng-container>
+
+          <!-- Favorited top-level (childless) items -->
+          <ng-container *ngIf="!iconOnlyMode">
+            <div *ngFor="let item of favoriteMainItems; trackBy: trackByCode"
+              class="v3-menu-row"
+              [class.v3-row-active]="selectedMenuId == item.id"
+              (mouseenter)="hoveredMenuId = item.id; openFlyout(item, $event)"
+              (mouseleave)="hoveredMenuId = null"
+              (click)="onCollapsedClick(item, $event)"
+              [routerLink]="item.link ? [item.link] : null"
+              role="button" tabindex="0" (keydown.enter)="fixClick()">
+              <span class="v3-row-icon">
+                <img src="/assets/Menus/{{ item.iconName }}.svg" alt="menu" (error)="handleImgError($event)" />
+              </span>
+              <span class="v3-row-label">{{ item.name | translate }}</span>
+              <mat-icon class="v3-star-icon v3-star-filled"
+                (click)="toggleFavorite(item.code, $event)">
+                star
+              </mat-icon>
+            </div>
+          </ng-container>
+
+          <!-- Favorited sub items (2nd + 3rd level) -->
+          <ng-container *ngIf="!iconOnlyMode">
+            <ng-container *ngFor="let group of favoriteGroups; trackBy: trackByGroup">
               <div *ngFor="let sub of group.subs; trackBy: trackByCode"
-                class="v3-menu-row v3-submenu-fav-row"
-                [class.v3-submenu-l3]="sub._level === 3"
-                [routerLink]="[sub.link]"
+                class="v3-menu-row"
+                [routerLink]="sub.link ? [sub.link] : null"
                 [routerLinkActive]="['v3-row-active']"
+                (mouseenter)="hoveredMenuId = sub.code; openFlyout(sub, $event)"
+                (mouseleave)="hoveredMenuId = null"
+                (click)="onCollapsedClick(sub, $event)"
+                appTooltip
+                [tooltipText]="sub._level === 3 ? ((sub._parentName | translate) + ' / ' + (sub._subParentName | translate) + ' / ' + (sub.name | translate)) : ((sub._parentName | translate) + ' / ' + (sub.name | translate))"
+                tooltipType="sidebar"
+                placement="bottom"
                 role="button" tabindex="0" (keydown.enter)="fixClick()">
-                <span class="v3-row-icon v3-row-icon-sm">
+                <span class="v3-row-icon">
                   <img [ngClass]="sub.iconName ? 'svg-icon' : 'wthoutsvg-icon'"
                     src="/assets/Menus/{{ sub.iconName }}.svg" alt="sub"
                     (error)="handleImgError($event)" />
                 </span>
-                <span class="v3-row-label v3-submenu-label-wrap">
-                  <span *ngIf="sub._level === 3" class="v3-l3-hint">{{ sub._parentName }} › </span>
-                  {{ sub.name | translate }}
-                </span>
+                <span class="v3-row-label">{{ sub.name | translate }}</span>
                 <mat-icon class="v3-star-icon v3-star-filled"
-                  (click)="toggleSubFavorite({subCode: sub.code, parentCode: group.parent.code}); $event.stopPropagation()"
-                  matTooltip="Remove from favorites">
+                  (click)="toggleSubFavorite({subCode: sub.code, parentCode: group.parent.code}); $event.stopPropagation()">
                   star
                 </mat-icon>
               </div>
-            </div>
+            </ng-container>
           </ng-container>
 
         </div>
@@ -131,14 +137,12 @@
                 <ng-container *ngIf="!hasChildMenus(menulist)">
                   <mat-icon class="v3-star-icon v3-star-filled"
                     *ngIf="isFavorite(menulist.code)"
-                    (click)="toggleFavorite(menulist.code, $event)"
-                    matTooltip="Remove from favorites">
+                    (click)="toggleFavorite(menulist.code, $event)">
                     star
                   </mat-icon>
                   <mat-icon class="v3-star-icon v3-star-outline"
                     *ngIf="!isFavorite(menulist.code) && hoveredMenuId === menulist.id"
-                    (click)="toggleFavorite(menulist.code, $event)"
-                    matTooltip="Add to favorites">
+                    (click)="toggleFavorite(menulist.code, $event)">
                     star_border
                   </mat-icon>
                 </ng-container>
@@ -197,14 +201,12 @@
             <ng-container *ngIf="res._level === 1">
               <mat-icon class="v3-star-icon v3-star-filled"
                 *ngIf="isFavorite(res.code)"
-                (click)="toggleFavorite(res.code, $event)"
-                matTooltip="Remove from favorites">
+                (click)="toggleFavorite(res.code, $event)">
                 star
               </mat-icon>
               <mat-icon class="v3-star-icon v3-star-outline"
                 *ngIf="!isFavorite(res.code) && hoveredMenuId === res.code"
-                (click)="toggleFavorite(res.code, $event)"
-                matTooltip="Add to favorites">
+                (click)="toggleFavorite(res.code, $event)">
                 star_border
               </mat-icon>
             </ng-container>
@@ -213,8 +215,7 @@
               <mat-icon class="v3-star-icon"
                 [class.v3-star-filled]="favSubCodesArray.includes(res.code)"
                 [class.v3-star-outline]="!favSubCodesArray.includes(res.code)"
-                (click)="toggleSubFavorite({subCode: res.code, parentCode: res._parentCode}); $event.stopPropagation()"
-                [matTooltip]="favSubCodesArray.includes(res.code) ? 'Remove from favorites' : 'Add to favorites'">
+                (click)="toggleSubFavorite({subCode: res.code, parentCode: res._parentCode}); $event.stopPropagation()">
                 {{ favSubCodesArray.includes(res.code) ? 'star' : 'star_border' }}
               </mat-icon>
             </ng-container>
@@ -233,6 +234,7 @@
       [style.top.px]="flyoutTop" [style.left.px]="flyoutLeft"
       (mouseenter)="cancelCloseFlyout()" (mouseleave)="scheduleCloseFlyout()">
       <div class="v3-flyout-title" [class.v3-flyout-title-link]="flyoutItem.link"
+        [class.v3-flyout-title-left]="!flyoutLevel2Subs || flyoutLevel2Subs.length === 0"
         (click)="flyoutTitleClick()" role="button" tabindex="0" (keydown.enter)="flyoutTitleClick()">
         {{ flyoutItem.name | translate }}
       </div>
@@ -243,6 +245,10 @@
             [routerLink]="!flyoutSubChildrenMap[sub.code]?.length && sub.link ? [sub.link] : null"
             [routerLinkActive]="['v3-row-active']"
             (click)="onFlyoutSubClick(sub)"
+            appTooltip
+            [tooltipText]="(flyoutItem.code === 'MN_FAV') ? (sub._origLevel === 3 ? ((sub._parentName | translate) + ' / ' + (sub._subParentName | translate) + ' / ' + (sub.name | translate)) : ((sub._parentName | translate) + ' / ' + (sub.name | translate))) : (sub._parentName ? ((sub._parentName | translate) + ' / ' + (sub.name | translate)) : (sub.name | translate))"
+            tooltipType="sidebar"
+            placement="bottom"
             role="button" tabindex="0" (keydown.enter)="fixClick()">
             <span class="v3-row-icon v3-row-icon-sm">
               <img [ngClass]="sub.iconName ? 'svg-icon' : 'wthoutsvg-icon'"
@@ -254,11 +260,10 @@
               chevron_right
             </mat-icon>
             <mat-icon *ngIf="!flyoutSubChildrenMap[sub.code]?.length" class="v3-star-icon"
-              [class.v3-star-filled]="favSubCodesArray.includes(sub.code)"
-              [class.v3-star-outline]="!favSubCodesArray.includes(sub.code)"
-              (click)="toggleSubFavorite({subCode: sub.code, parentCode: flyoutItem?.code}); $event.stopPropagation()"
-              [matTooltip]="favSubCodesArray.includes(sub.code) ? 'Remove from favorites' : 'Add to favorites'">
-              {{ favSubCodesArray.includes(sub.code) ? 'star' : 'star_border' }}
+              [class.v3-star-filled]="(sub._origLevel === 1 ? favoritesCodes.has(sub.code) : favSubCodesArray.includes(sub.code))"
+              [class.v3-star-outline]="!(sub._origLevel === 1 ? favoritesCodes.has(sub.code) : favSubCodesArray.includes(sub.code))"
+              (click)="sub._origLevel === 1 ? toggleFavorite(sub.code, $event) : toggleSubFavorite({subCode: sub.code, parentCode: sub._parentCode}); $event.stopPropagation()">
+              {{ (sub._origLevel === 1 ? favoritesCodes.has(sub.code) : favSubCodesArray.includes(sub.code)) ? 'star' : 'star_border' }}
             </mat-icon>
           </div>
           <div *ngIf="expandedFlyoutSubCode === sub.code" class="v3-flyout-subitems">
@@ -267,6 +272,10 @@
               [routerLink]="child.link ? [child.link] : null"
               [routerLinkActive]="['v3-row-active']"
               (click)="closeFlyoutNow()"
+              appTooltip
+              [tooltipText]="child._parentName ? ((child._parentName | translate) + ' / ' + (child.name | translate)) : (child.name | translate)"
+              tooltipType="sidebar"
+              placement="bottom"
               role="button" tabindex="0" (keydown.enter)="fixClick()">
               <span class="v3-row-icon v3-row-icon-sm">
                 <img [ngClass]="child.iconName ? 'svg-icon' : 'wthoutsvg-icon'"
@@ -276,8 +285,7 @@
               <mat-icon class="v3-star-icon"
                 [class.v3-star-filled]="favSubCodesArray.includes(child.code)"
                 [class.v3-star-outline]="!favSubCodesArray.includes(child.code)"
-                (click)="toggleSubFavorite({subCode: child.code, parentCode: flyoutItem?.code}); $event.stopPropagation()"
-                [matTooltip]="favSubCodesArray.includes(child.code) ? 'Remove from favorites' : 'Add to favorites'">
+                (click)="toggleSubFavorite({subCode: child.code, parentCode: flyoutItem?.code}); $event.stopPropagation()">
                 {{ favSubCodesArray.includes(child.code) ? 'star' : 'star_border' }}
               </mat-icon>
             </div>
@@ -344,7 +352,8 @@
       </div>
       <div class="v3-profile-card" (click)="selectMenu(profileMenu)" role="button" tabindex="0"
         (keydown.enter)="selectMenu(profileMenu)">
-        <span class="v3-avatar">{{ initials }}</span>
+        <img *ngIf="profileImage" [src]="profileImage" class="v3-avatar v3-avatar-img" alt="" (error)="handleAvatarImgError()">
+        <span *ngIf="!profileImage" class="v3-avatar">{{ initials }}</span>
         <div class="v3-profile-info">
           <span class="v3-profile-name">{{ userName | titlecase }}</span>
           <span class="v3-profile-role">{{ user }}</span>

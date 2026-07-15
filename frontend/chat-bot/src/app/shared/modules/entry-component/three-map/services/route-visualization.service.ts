@@ -28,7 +28,8 @@ export class RouteVisualizationService {
      */
     visualizeRoute(
         pathPoints: THREE.Vector3[],
-        parent: THREE.Scene | THREE.Group
+        parent: THREE.Scene | THREE.Group,
+        customWidth?: number
     ): {
         routeGroup: THREE.Group;
         pathPoints: THREE.Vector3[];
@@ -61,7 +62,8 @@ export class RouteVisualizationService {
             // Dense sample set → smooth corners without angular artefacts
             const sampled = curve.getPoints(ROUTE_RIBBON_SAMPLES);
 
-            const geometry = this.buildRibbonGeometry(sampled, ROUTE_RIBBON_WIDTH, ROUTE_RIBBON_Y);
+            const ribbonWidth = customWidth ?? ROUTE_RIBBON_WIDTH;
+            const geometry = this.buildRibbonGeometry(sampled, ribbonWidth, ROUTE_RIBBON_Y);
             const material = new THREE.MeshStandardMaterial({
                 color: ROUTE_PATH_COLOR,
                 transparent: true,

@@ -80,7 +80,7 @@
               <circle cx="12" cy="10" r="3"/>
             </svg>
           </span>
-          <span class="ip-sugg-name">{{ option.name }}</span>
+          <span class="ip-sugg-name">{{ getOptionDisplayName(option) }}</span>
           <span class="ip-sugg-type">{{ option.typeName }} - {{ option.floorName }}</span>
         </div>
         <div class="ip-sugg-empty" *ngIf="isNavSearchLoading && getDestSuggestions().length === 0">
@@ -141,7 +141,7 @@
               {{ getQaCategoryCount(cat) }} locations
             </span>
             <span class="ip-qa-cat-sub ip-qa-cat-sub--loc" *ngIf="getQaCategoryCount(cat) === 1">
-              {{ getQaSingleLocation(cat)?.name }}
+              {{ getOptionDisplayName(getQaSingleLocation(cat)) }}
             </span>
           </div>
           <svg class="ip-qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -184,7 +184,7 @@
             <circle cx="12" cy="10" r="3"/>
           </svg>
           <div class="ip-qa-loc-info">
-            <span class="ip-qa-loc-name">{{ option.name }}</span>
+            <span class="ip-qa-loc-name">{{ getOptionDisplayName(option) }}</span>
             <span class="ip-qa-loc-floor">{{ option.floorName }} • {{ hospitalName }}</span>
           </div>
         </button>
@@ -207,12 +207,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
+    <div class="ip-zoom-value">{{ zoomValue }}%</div>
     <div class="ip-ctrl-divider"></div>
     <button class="ip-ctrl-btn" (click)="resetCamera()" title="Reset View">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-      </svg>
+      <mat-icon>center_focus_strong</mat-icon>
     </button>
     <button class="ip-ctrl-btn" *ngIf="viewMode !== '2d'" [class.active]="isRotateMode" (click)="toggleRotateMode()"
       [title]="isRotateMode ? 'Rotate ON — click to disable' : 'Enable 3D Rotate'">
@@ -351,7 +349,7 @@
       </div>
     </div>
 
-    <!-- Map Location Search (only when urban/landscape) -->
+    <!-- Map Location Search (only when urban) -->
     <div class="ip-settings-section" *ngIf="mapViewMode !== 'default'">
       <span class="ip-settings-section-label">Map Location</span>
       <div class="ip-settings-search">
@@ -431,13 +429,13 @@
     </div>
 
     <!-- Current selection card -->
-    <div class="ip-src-display" [class.is-set]="!!startRoom">
-      <span class="ip-src-dot" [class.active]="!!startRoom"></span>
+    <div class="ip-src-display" [class.is-set]="!!selectedStartLocation">
+      <span class="ip-src-dot" [class.active]="!!selectedStartLocation"></span>
       <div class="ip-src-display-info">
-        <span class="ip-src-display-label" *ngIf="startRoom">{{ sourceLabel }}</span>
-        <span class="ip-src-display-placeholder" *ngIf="!startRoom">No start location selected</span>
+        <span class="ip-src-display-label" *ngIf="selectedStartLocation">{{ sourceLabel }}</span>
+        <span class="ip-src-display-placeholder" *ngIf="!selectedStartLocation">No start location selected</span>
       </div>
-      <button class="ip-src-clear-btn" *ngIf="startRoom" (click)="onClearStart()" title="Clear">
+      <button class="ip-src-clear-btn" *ngIf="selectedStartLocation" (click)="onClearStart()" title="Clear">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2.5" stroke-linecap="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -459,7 +457,7 @@
           [(ngModel)]="settingsSourceSearch"
           (input)="onSourceInput()"
           autocomplete="off"
-        />
+          />
         <button class="ip-src-input-clear" *ngIf="settingsSourceSearch" (click)="settingsSourceSearch = ''; onSourceInput()">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
             stroke-width="2.5" stroke-linecap="round">
@@ -474,7 +472,7 @@
         <button
           class="ip-settings-room"
           *ngFor="let option of getSourceSuggestions()"
-          [class.selected]="option.id === startRoom?.id"
+          [class.selected]="option.id === selectedStartLocation?.id"
           (click)="selectSourceFromSettings(option)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -482,10 +480,10 @@
             <path d="M12 2a10 10 0 0 1 10 10c0 5.52-10 20-10 20S2 17.52 2 12A10 10 0 0 1 12 2z"/>
           </svg>
           <div class="ip-settings-room-info">
-            <span class="ip-settings-room-name">{{ option.name }}</span>
+            <span class="ip-settings-room-name">{{ getOptionDisplayName(option) }}</span>
             <span class="ip-settings-room-type">{{ option.typeName }} · {{ option.floorName }}</span>
           </div>
-          <svg *ngIf="option.id === startRoom?.id" width="13" height="13" viewBox="0 0 24 24"
+          <svg *ngIf="option.id === selectedStartLocation?.id" width="13" height="13" viewBox="0 0 24 24"
             fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
@@ -599,7 +597,7 @@
   </div>
 
   <!-- ── Route Bar (pill) — shown when source + destination are both selected ── -->
-  <div class="ip-route-bar" *ngIf="!isLoading && startRoom && endRoom">
+  <div class="ip-route-bar" *ngIf="!isLoading && selectedStartLocation && selectedDestinationLocation">
     <!-- Nav icon -->
     <div class="ip-route-nav-icon">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff"
@@ -694,7 +692,7 @@
 
   <!-- ── You Are Here callout (3D-tracked, follows source room on screen) ─── -->
   <div class="ip-you-are-here" #youAreHereEl
-    *ngIf="!isLoading && startRoom && !routeDistance"
+    *ngIf="!isLoading && startRoom && selectedStartLocation && selectedStartLocation.floorId === selectedFloor?.id && !routeDistance"
     style="visibility:hidden">
     <div class="ip-yah-pin">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
@@ -709,7 +707,7 @@
 
   <!-- ── Destination Direction callout (3D-tracked, shown when both rooms set, no route yet) ── -->
   <div class="ip-dest-callout" #destCalloutEl
-    *ngIf="!isLoading && endRoom && startRoom && !routeDistance"
+    *ngIf="!isLoading && endRoom && selectedDestinationLocation && selectedDestinationLocation.floorId === selectedFloor?.id && !routeDistance"
     style="visibility:hidden">
     <div class="ip-dest-callout-body">
       <div class="ip-dest-callout-name">
@@ -730,33 +728,107 @@
   </div>
 
   <!-- ── Nav Markers — visible only when direction/route is active ── -->
-  <div class="ip-nav-marker ip-nav-marker--source" #sourceMarkerEl
-       *ngIf="!isLoading && startRoom && endRoom && !!routeDistance" style="visibility:hidden">
-    <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
-            fill="#1d4ed8" stroke="#1e40af" stroke-width="0.8"/>
-      <circle cx="14" cy="14" r="6" fill="#ffffff"/>
-    </svg>
+  <div class="ip-nav-marker ip-nav-marker--source" 
+       [class.ip-nav-marker--transition-mode]="isMultiFloorScenario() && selectedFloor?.id !== selectedStartLocation?.floorId"
+       #sourceMarkerEl
+       *ngIf="!isLoading && activePathStartNode && !!routeDistance" style="visibility:hidden">
+    <!-- Standard blue pin (only if on start floor or not multi-floor) -->
+    <ng-container *ngIf="!isMultiFloorScenario() || selectedFloor?.id === selectedStartLocation?.floorId">
+      <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
+              fill="#1d4ed8" stroke="#1e40af" stroke-width="0.8"/>
+        <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+      </svg>
+    </ng-container>
+    <!-- Transition ENTER badge (if on destination floor in multi-floor) -->
+    <ng-container *ngIf="isMultiFloorScenario() && selectedFloor?.id !== selectedStartLocation?.floorId">
+      <div class="ip-floor-switch-card" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+        <div class="ip-card-header">
+          <svg class="ip-card-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          <span class="ip-card-title">{{ getFormattedFloorName(selectedStartLocation?.floorName) }}</span>
+        </div>
+        <button class="ip-card-button" (click)="switchToFloor(selectedStartLocation?.floorId)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          <span>Switch</span>
+        </button>
+      </div>
+      <div class="ip-nav-marker-transition ip-transition-enter">
+        <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+          <!-- Door Frame (Green opening Outline) -->
+          <path d="M 8 2 L 18 2 L 18 22 L 8 22" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Door Leaf (Swinging open) -->
+          <path d="M 8 2 L 1 4 L 1 20 L 8 22 Z" fill="#22c55e"/>
+          <!-- Handle -->
+          <line x1="3" y1="12" x2="5" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Arrow pointing right -->
+          <path d="M 10 7 L 15 12 L 10 17 L 10 14 L 5 14 L 5 10 L 10 10 Z" fill="#22c55e"/>
+        </svg>
+      </div>
+    </ng-container>
   </div>
 
-  <div class="ip-nav-marker ip-nav-marker--dest" #destMarkerEl
-       *ngIf="!isLoading && endRoom && pathAnimComplete" style="visibility:hidden">
-    <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
-            fill="#ef4444" stroke="#c53030" stroke-width="0.8"/>
-      <circle cx="14" cy="14" r="6" fill="#ffffff"/>
-    </svg>
+  <div class="ip-nav-marker ip-nav-marker--dest" 
+       [class.ip-nav-marker--transition-mode]="isMultiFloorScenario() && selectedFloor?.id !== selectedDestinationLocation?.floorId"
+       #destMarkerEl
+       *ngIf="!isLoading && activePathEndNode && pathAnimComplete" style="visibility:hidden">
+    <!-- Standard red pin (only if on destination floor or not multi-floor) -->
+    <ng-container *ngIf="!isMultiFloorScenario() || selectedFloor?.id === selectedDestinationLocation?.floorId">
+      <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
+              fill="#ef4444" stroke="#c53030" stroke-width="0.8"/>
+        <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+      </svg>
+    </ng-container>
+    <!-- Transition EXIT badge (if on start floor in multi-floor) -->
+    <ng-container *ngIf="isMultiFloorScenario() && selectedFloor?.id !== selectedDestinationLocation?.floorId">
+      <div class="ip-floor-switch-card" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+        <div class="ip-card-header">
+          <svg class="ip-card-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          <span class="ip-card-title">{{ getFormattedFloorName(selectedDestinationLocation?.floorName) }}</span>
+        </div>
+        <button class="ip-card-button" (click)="switchToFloor(selectedDestinationLocation?.floorId)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          <span>Switch</span>
+        </button>
+      </div>
+      <div class="ip-nav-marker-transition ip-transition-exit">
+        <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+          <!-- Door Frame (Red opening Outline) -->
+          <path d="M 16 2 L 6 2 L 6 22 L 16 22" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Door Leaf (Swinging open) -->
+          <path d="M 16 2 L 23 4 L 23 20 L 16 22 Z" fill="#ef4444"/>
+          <!-- Handle -->
+          <line x1="21" y1="12" x2="19" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- Arrow pointing left -->
+          <path d="M 14 7 L 9 12 L 14 17 L 14 14 L 19 14 L 19 10 L 14 10 Z" fill="#ef4444"/>
+        </svg>
+      </div>
+    </ng-container>
   </div>
 
   <!-- Contextual hint chip -->
   <div class="ip-hint-chip" *ngIf="!isLoading && navHint">{{ navHint }}</div>
 
   <!-- ── Floor Selector + Settings (bottom-right) ──────────────── -->
-  <div class="ip-floor-selector" *ngIf="!isLoading">
+  <div class="ip-floor-selector" *ngIf="!isLoading && !routeDistance">
     <!-- Settings button — first in DOM → visually bottom with column-reverse -->
     <button class="ip-floor-settings-btn ip-settings-btn"
       [class.active]="isSettingsOpen"
-      [class.has-source]="!!startRoom"
+      [class.has-source]="!!selectedStartLocation"
       (click)="openSettings()"
       title="Settings">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -809,6 +881,59 @@
           </div>
         </div>
       </div>
+    </ng-container>
+  </div>
+
+  <!-- ── Route Floor selector (bottom-right, visible when route is active) ── -->
+  <div class="ip-route-floor-selector" *ngIf="!isLoading && routeDistance">
+    <!-- Same Floor Scenario -->
+    <ng-container *ngIf="!isMultiFloorScenario() && selectedStartLocation">
+      <button 
+        class="ip-route-floor-card active"
+        [title]="selectedStartLocation.floorName"
+        (click)="switchToFloor(selectedStartLocation.floorId)">
+        <span class="ip-rfc-icon-wrap same">
+          <svg class="ip-rfc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </span>
+        <span class="ip-rfc-text">{{ getFormattedFloorName(selectedStartLocation.floorName) }}</span>
+      </button>
+    </ng-container>
+
+    <!-- Multi-Floor Scenario -->
+    <ng-container *ngIf="isMultiFloorScenario() && selectedStartLocation && selectedDestinationLocation">
+      <!-- Start Floor Card -->
+      <button 
+        class="ip-route-floor-card" 
+        [class.active]="selectedFloor?.id === selectedStartLocation.floorId"
+        [title]="selectedStartLocation.floorName"
+        (click)="switchToFloor(selectedStartLocation.floorId)">
+        <span class="ip-rfc-icon-wrap start">
+          <svg class="ip-rfc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </span>
+        <span class="ip-rfc-text">{{ getFormattedFloorName(selectedStartLocation.floorName) }}</span>
+      </button>
+
+      <!-- Destination Floor Card -->
+      <button 
+        class="ip-route-floor-card" 
+        [class.active]="selectedFloor?.id === selectedDestinationLocation.floorId"
+        [title]="selectedDestinationLocation.floorName"
+        (click)="switchToFloor(selectedDestinationLocation.floorId)">
+        <span class="ip-rfc-icon-wrap dest">
+          <svg class="ip-rfc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </span>
+        <span class="ip-rfc-text">{{ getFormattedFloorName(selectedDestinationLocation.floorName) }}</span>
+      </button>
     </ng-container>
   </div>
 

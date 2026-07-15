@@ -26,6 +26,9 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
   @Input() initialFrom = '';
   @Input() initialTo   = '';
   @Input() mode: 'default' | 'year' = 'default';
+  // Latest selectable date — defaults to today. Pass yesterday's Date to block same-day selection
+  // (e.g. reports whose data isn't available until the next day).
+  @Input() maxDate: Date = new Date();
   @Output() dateChange = new EventEmitter<AiDateChange>();
 
   @ViewChild('panelRef')   panelRef:   ElementRef;
@@ -106,7 +109,8 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
   private _skipDocClick = false;
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  get isRange(): boolean { return true; }
+  // Year mode (V5) takes a single year only — internally expanded to Jan 1 – Dec 31 of that year.
+  get isRange(): boolean { return this.mode !== 'year'; }
 
   get inputType(): 'date' | 'month' | 'year' {
     if (this.selectedPeriod === 'Month') return 'month';
@@ -117,7 +121,13 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
   get todayStr(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  } 
+  }
+
+  // Latest selectable date as YYYY-MM-DD — mirrors `maxDate`, used for validation/presets.
+  get maxDateStr(): string {
+    const d = this.maxDate;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
   get thisYear():  number { return this.today.getFullYear(); }
   get thisMonth(): number { return this.today.getMonth(); }
 
@@ -137,10 +147,10 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
       const [y, m] = val.split('-');
       return new Date(+y, +m - 1, 1);
     }
-    // Use UTC midnight to match how NativeDateAdapter(useUtcForDisplay=true) creates dates,
-    // so the calendar highlights the correct day and sameDate() comparisons are consistent.
+    // Use local midnight so the Date matches what NativeDateAdapter emits on click,
+    // keeping sameDate() comparisons and calendar highlighting consistent.
     const [y, m, d] = val.split('-');
-    return new Date(Date.UTC(+y, +m - 1, +d));
+    return new Date(+y, +m - 1, +d);
   }
 
   // ── Display labels shown in the pill ─────────────────────────────────────
@@ -179,7 +189,7 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
         this.selectedPeriod = 'Year';
         const yr = String(new Date().getFullYear());
         this.fromVal = yr;
-        this.toVal   = yr;
+        this.toVal   = '';
       } else {
         this.selectedPeriod = this.periodType || 'Date';
         const { from, to } = this.resolveDefaults();
@@ -269,8 +279,9 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
 
   selectPreset(preset: string) {
     const today = new Date();
-    const fmt   = (d: Date) => d.toISOString().slice(0, 10);
-    const fmtM  = (d: Date) => d.toISOString().slice(0, 7);
+    const maxD  = this.maxDate;
+    const fmt  = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const fmtM = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
     switch (preset) {
       case 'Yesterday': {
@@ -278,12 +289,12 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
         this.selectedPeriod = 'Date'; this.fromVal = fmt(y); this.toVal = ''; break;
       }
       case 'Last 7 Days': {
-        const f = new Date(today); f.setDate(today.getDate() - 7);
-        this.selectedPeriod = 'Date'; this.fromVal = fmt(f); this.toVal = fmt(today); break;
+        const f = new Date(maxD); f.setDate(maxD.getDate() - 7);
+        this.selectedPeriod = 'Date'; this.fromVal = fmt(f); this.toVal = fmt(maxD); break;
       }
       case 'Last 30 Days': {
-        const f = new Date(today); f.setDate(today.getDate() - 30);
-        this.selectedPeriod = 'Date'; this.fromVal = fmt(f); this.toVal = fmt(today); break;
+        const f = new Date(maxD); f.setDate(maxD.getDate() - 30);
+        this.selectedPeriod = 'Date'; this.fromVal = fmt(f); this.toVal = fmt(maxD); break;
       }
       case 'This Month': {
         const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -407,8 +418,7 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
 
   private dateToStr(d: any): string {
     const date = d instanceof Date ? d : new Date(d);
-
-    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
   // ── Date input change delegates ───────────────────────────────────────────
@@ -429,8 +439,10 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
     this.errorMsg = '';
     const type    = this.inputType;
 
-    if (this.fromVal && this.toApiDate(this.fromVal, type, 'start') > this.todayStr) {
-      this.errorMsg = 'Selected date cannot be in the future.';
+    if (this.fromVal && this.toApiDate(this.fromVal, type, 'start') > this.maxDateStr) {
+      this.errorMsg = type === 'date' && this.maxDateStr < this.todayStr
+        ? `Selected date cannot be later than ${this.maxDateStr}.`
+        : 'Selected date cannot be in the future.';
       return false;
     }
 
@@ -439,6 +451,12 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
       const toApi   = this.toApiDate(this.toVal,   type, 'end');
 
       if (this.toVal < this.fromVal) { this.errorMsg = 'End date must be on or after start date.'; return false; }
+      if (toApi > this.maxDateStr) {
+        this.errorMsg = type === 'date' && this.maxDateStr < this.todayStr
+          ? `Selected date cannot be later than ${this.maxDateStr}.`
+          : 'Selected date cannot be in the future.';
+        return false;
+      }
 
       const days = (new Date(toApi).getTime() - new Date(fromApi).getTime()) / 86400000;
       if (type === 'date'  && days > this.MAX_DATE_DAYS)    { this.errorMsg = `Date range cannot exceed ${this.MAX_DATE_DAYS / 365} years.`; return false; }
@@ -455,10 +473,7 @@ export class PorterDateSelectorComponent implements OnInit, OnChanges {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   private resolveDefaults(): { from: string; to: string } {
-    const localFmt = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const today = localFmt(new Date());
-    return { from: this.initialFrom || today, to: this.initialTo || today };
+    return { from: this.initialFrom || this.maxDateStr, to: this.initialTo || this.maxDateStr };
   }
 
   private detectTypeFromValue(val: string): 'date' | 'month' | 'year' {

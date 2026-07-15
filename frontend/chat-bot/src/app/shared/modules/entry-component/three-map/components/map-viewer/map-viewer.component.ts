@@ -3,6 +3,8 @@ import {
   OnInit,
   AfterViewInit,
   OnDestroy,
+  OnChanges,
+  SimpleChanges,
   ElementRef,
   ViewChild,
   Input,
@@ -34,11 +36,12 @@ import {
   CompassControlService,
   LabelVisibilityService,
   PersonMovementService,
-  ReaderService
+  ReaderService,
+  RegionalLocationNameService
 } from '../../services';
 
 // Helpers
-import { applyRoomHighlight, createPerson, latLonToMeters, createLabel } from '../../helpers';
+import { applyRoomHighlight, createPerson, latLonToMeters, createLabel, getCategoryColor, getCategoryMaterialIcon } from '../../helpers';
 
 // Constants
 import {
@@ -58,14 +61,44 @@ import {
   PERSON_BODY_COLOR,
   PERSON_HEAD_COLOR,
   WALL_THICKNESS,
+  WALL_HEIGHT,
   WALL_COLOR,
-  LABEL_HEIGHT
+  LABEL_HEIGHT,
+  FOCUS_ROOM_MIN_DISTANCE,
+  ROUTE_RIBBON_WIDTH
 } from '../../constants/map.constants';
 
 import { CompassState } from '../../services/compass-control.service';
 import { MqttService, IMqttMessage } from '../../services/mqtt.service';
 import { MovementState } from '../../services/person-movement.service';
 import { HospitalService, CommonService } from '../../../../../services';
+
+export interface LocationCategory {
+  name: string;
+  catId: string;
+  color: string;
+  icon: string;
+  rooms: IndoorNavLocationOption[];
+}
+
+export interface PathStep {
+  instruction: string;
+  distance: string;
+  icon: 'start' | 'straight' | 'turn-left' | 'turn-right' | 'arrive';
+}
+
+export interface IndoorNavLocationOption {
+  id: number;
+  name: string;
+  displayName: string;
+  regionalName?: string;
+  typeName: string;
+  floorId: number;
+  floorName: string;
+  floor: any;
+  node: NavNode;
+  data: LocationData;
+}
 
 @Component({
   selector: 'app-map-viewer',
@@ -85,15 +118,30 @@ import { HospitalService, CommonService } from '../../../../../services';
     LabelVisibilityService
   ]
 })
-export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
+export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
   @Input() showMultiMapButton: boolean = false;
   @Input() initialFloorId: number | null = null;
   @Input() compactUi: boolean = false;
+  @Input() isFloorPlanPage: boolean = false;
   @Output() multipleMapView = new EventEmitter<void>();
+  @Output() floorChanged = new EventEmitter<number>();
+  @Output() blockChanged = new EventEmitter<number>();
 
   @ViewChild('canvasContainer', { static: true })
   container!: ElementRef<HTMLDivElement>;
+
+  @ViewChild('destCalloutEl')
+  private destCalloutEl?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('youAreHereEl')
+  private youAreHereEl?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('sourceMarkerEl')
+  private sourceMarkerEl?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('destMarkerEl')
+  private destMarkerEl?: ElementRef<HTMLDivElement>;
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
@@ -147,6 +195,52 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   // Person journey state
   public isJourneyStarted = false;
 
+  // --- Quick Access config & state ---
+  isQuickAccessConfigOn = false;
+  isQaOpen = false;
+  selectedQaCategory: LocationCategory | null = null;
+  qaCategories: LocationCategory[] = [];
+  qaLocCardTop = 0;
+  private locationCategoryMap: Map<string, string> = new Map();
+  private locationCategoryMapLoaded = false;
+  private allFloorNavOptions: IndoorNavLocationOption[] = [];
+  private allFloorSearchPromise: Promise<void> | null = null;
+  isNavSearchLoading = false;
+  selectedStartLocation: IndoorNavLocationOption | null = null;
+  selectedDestinationLocation: IndoorNavLocationOption | null = null;
+  sourceLabel = 'Select source location';
+  isSourceFromConfig = false;
+  isDestDropdownOpen = false;
+
+  // --- Multi-floor state ---
+  multiFloorRouteActive = false;
+  multiFloorStartLiftNode: NavNode | null = null;
+  multiFloorDestLiftNode: NavNode | null = null;
+  multiFloorStartLiftLocationId: number | null = null;
+  multiFloorDestLiftLocationId: number | null = null;
+  activePathStartNode: NavNode | null = null;
+  activePathEndNode: NavNode | null = null;
+  private animatedFloors = new Set<number>();
+
+  // --- Path Animation & camera follow ---
+  pathAnimating = false;
+  pathAnimStartTime = 0;
+  pathAnimDuration = 4000;
+  pathAnimComplete = false;
+  pathRevealTriggered = false;
+  routeCameraFollowActive = false;
+  pathTotalLength = 0;
+  routeRibbonMesh: any = null;
+  routeRibbonTotalIndices = 0;
+  routeAnimationTimer: any = null;
+  pathSteps: PathStep[] = [];
+  isStepsOpen = false;
+  private readonly routeCameraTransitionDuration = 1000;
+  private landingResetTimer: any = null;
+  private lastFrameTime = 0;
+  private nodeFetchPromises: Record<number, Promise<void>> = {};
+  private floorDetailFetchPromises: Record<number, Promise<void>> = {};
+
   public isActionLoading = false;
   private actionLoaderTimer: any = null;
 
@@ -155,7 +249,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   public showLabels = true;
   public showIcons = true;
   public showReaders = true;
-  public canSelectRooms = true; // Default OFF
+  public canSelectRooms = false; // Default OFF
   public showMqttMarkers = false;
   public showLevels = false;
   public showFloorImage = true;
@@ -169,22 +263,28 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   public tempWallColor = WALL_COLOR;
   public wallWidth: number = WALL_THICKNESS;
   public tempWallWidth: number = WALL_THICKNESS;
+  public wallHeight: number = WALL_HEIGHT;
+  public tempWallHeight: number = WALL_HEIGHT;
   public labelHeight: number = LABEL_HEIGHT;
   public tempLabelHeight: number = LABEL_HEIGHT;
   public labelScale: number = 3.0;
   public tempLabelScale: number = 3.0;
   public isPerspectiveLock = true;
   public isEagleTopView = false;
+  public viewMode: '2d' | '3d' = '3d';
   public isPanOnlyMode = false;
+  public isRotateMode = false;
+  public isWireframe = false;
   public showFog = false;
   public showSurroundings = true;
   public isConfigOpen = false;
+  public isBlockDropdownOpen = false;
   private person: THREE.Group | null = null;
   private floorImageMeshes: THREE.Mesh[] = [];
   private foundationMeshes: THREE.Mesh[] = [];
   private doorMeshes: THREE.Group[] = [];
   private blockLabelSprite: any = null;
-  private mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], buildingLat?: number, buildingLng?: number, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string }, floorDefaults?: { [floorId: string]: { distance: number, theta: number, phi: number } }, mapTileType?: string } = { skipLocByCat: [], skipLocCatByCat: [] };
+  private mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], threeDHeight?: Record<string, number>, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string }, floorDefaults?: { [floorId: string]: { distance: number, theta: number, phi: number } }, mapTileType?: string, categoryQuickAccess?: { [catId: string]: boolean } } = { skipLocByCat: [], skipLocCatByCat: [] };
   private mapConfigRecord: any = null;
   private mapConfigId: number | null = null;
   public isFloorDefaultSaving = false;
@@ -256,6 +356,12 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedFloor: any = null;
   selectedFloorId: number | null = null;
 
+  private outdoorBlock: any = null;
+  private outdoorFloorId: number | null = null;
+  private outdoorGroup: THREE.Group | null = null;
+  private outdoorRoomMeshes: RoomMesh[] = [];
+  private lastBuildingOpacity: number | null = null;
+
   private floorLayouts: any = null;
   public noDataFound = false;
 
@@ -291,6 +397,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     private labelVisibilityService: LabelVisibilityService,
     private personMovementService: PersonMovementService,
     private readerService: ReaderService,
+    private regionalLocationNameService: RegionalLocationNameService,
     private mqttService: MqttService,
     private hospitalService: HospitalService,
     private commonService: CommonService
@@ -305,7 +412,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   private clusterMeshes: Map<string, THREE.Group> = new Map(); // clusterId -> bubble mesh
   private clusterGroup: THREE.Group = new THREE.Group();
   private clusterDistance = 5.0; // Distance threshold for merging markers
-  public mapViewMode: 'landscape' | 'urban' | 'default' = 'landscape';
+  // public mapViewMode: 'landscape' | 'urban' | 'default' = 'landscape';
+  public mapViewMode: 'urban' | 'default' = 'default';
   private surroundingsGroup: THREE.Object3D | null = null;
   private mqttSubscription: any;
   private wallMaterial: THREE.MeshStandardMaterial | null = null;
@@ -321,6 +429,53 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private savedMapState: any = null;
   private pendingFloorLoad = false;
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialFloorId'] && !changes['initialFloorId'].isFirstChange()) {
+      const newFloorId = changes['initialFloorId'].currentValue;
+      if (newFloorId !== null && newFloorId !== undefined && this.blocks && this.blocks.length > 0) {
+        if (newFloorId !== this.selectedFloorId) {
+          this.selectFloorById(newFloorId);
+        }
+      }
+    }
+  }
+
+  private selectFloorById(floorId: number): void {
+    let targetBlock = null;
+    let targetFloor = null;
+
+    for (const block of this.blocks) {
+      const floor = (block.children || []).find((f: any) => f.id === floorId);
+      if (floor) {
+        targetBlock = block;
+        targetFloor = floor;
+        break;
+      }
+    }
+
+    if (targetBlock && targetFloor) {
+      this.selectedBlockId = targetBlock.id;
+      this.selectedBlock = targetBlock;
+      this.filteredFloors = targetBlock.children || [];
+      this.selectedFloor = targetFloor;
+      this.selectedFloorId = targetFloor.id;
+      const index = this.filteredFloors.indexOf(targetFloor);
+      this.selectedLevel = index + 1;
+      this.isLoading = true;
+      this.noDataFound = false;
+      this.getFloorNode(this.selectedFloorId);
+      if (this.floorDetails.hasOwnProperty(this.selectedFloorId)) {
+        this.regionalLocationNameService.applyToFloor(this.selectedFloorId, this.floorDetails[this.selectedFloorId]).finally(() => this.loadBlockFloors());
+      } else {
+        this.hospitalService.getLogicalLocationWithChildren(this.selectedFloorId).subscribe(res => {
+          this.floorDetails[this.selectedFloorId] = res.results;
+          this.regionalLocationNameService.applyToFloor(this.selectedFloorId, this.floorDetails[this.selectedFloorId]).finally(() => {
+            this.loadBlockFloors();
+          });
+        });
+      }
+    }
+  }
 
   ngOnInit(): void {
     if(localStorage.hasOwnProperty('tm_mapViewMode')) {
@@ -398,8 +553,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
           skipLocCatByCat: Array.isArray(cfg.skipLocCatByCat) ? cfg.skipLocCatByCat : [],
           skipLocNameByCat: Array.isArray(cfg.skipLocNameByCat) ? cfg.skipLocNameByCat : [],
           threeDFloorByCat: Array.isArray(cfg['threeDFloorByCat']) ? cfg['threeDFloorByCat'] : [],
-          buildingLat: typeof cfg.buildingLat === 'number' ? cfg.buildingLat : undefined,
-          buildingLng: typeof cfg.buildingLng === 'number' ? cfg.buildingLng : undefined,
+          threeDHeight: (cfg.threeDHeight ?? cfg.threeDheight) && typeof (cfg.threeDHeight ?? cfg.threeDheight) === 'object' ? (cfg.threeDHeight ?? cfg.threeDheight) : undefined,
           categoryColors: Object.keys(catColors).length > 0 ? catColors : undefined,
           categoryIcons: Object.keys(catIcons).length > 0 ? catIcons : undefined,
           floorDefaults: cfg.floorDefaults && typeof cfg.floorDefaults === 'object' && !Array.isArray(cfg.floorDefaults) ? cfg.floorDefaults : {},
@@ -422,12 +576,13 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
         // Wait for preferences before deciding which floor to load so savedMapState
         // is guaranteed to be populated (or null on error/timeout) first.
         this.userPreferencesReady.then(() => {
-          this.blockWithFloorList = res.results.filter((val: any) => val.hasOwnProperty('children') && val.locationTypeId !== 26);
+          this.blockWithFloorList = res.results.filter((val: any) => val.hasOwnProperty('children'));
 
           let initialFloor = null;
-          if (this.savedMapState?.floorId) {
+          const targetFloorId = this.initialFloorId || this.savedMapState?.floorId;
+          if (targetFloorId) {
             for (const block of this.blockWithFloorList as any[]) {
-              const floor = (block.children || []).find((f: any) => f.id === this.savedMapState.floorId);
+              const floor = (block.children || []).find((f: any) => f.id === targetFloorId);
               if (floor) { initialFloor = floor; break; }
             }
           }
@@ -446,8 +601,10 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     if(!this.floorDetails.hasOwnProperty(floorData.id)) {
       this.hospitalService.getLogicalLocationWithChildren(floorData.id).subscribe(res => {
         this.floorDetails[floorData.id] = res.results;
-        this.selectedFloorId = floorData.id;
-        this.loadMap();
+        this.regionalLocationNameService.applyToFloor(floorData.id, this.floorDetails[floorData.id]).finally(() => {
+          this.selectedFloorId = floorData.id;
+          this.loadMap();
+        });
       })
     }
   }
@@ -483,8 +640,25 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
         Promise.resolve(this.floorDetails)
       ]);
 
-      this.blocks = blocks;
+      this.blocks = blocks.filter((b: any) => b.name?.toLowerCase() !== 'outdoor');
       this.floorLayouts = layouts;
+
+      // Extract the outdoor block data to load in the background
+      this.outdoorBlock = blocks.find((b: any) => b.name?.toLowerCase() === 'outdoor');
+      if (this.outdoorBlock && this.outdoorBlock.children?.length > 0) {
+        this.outdoorFloorId = this.outdoorBlock.children[0].id;
+        // Pre-fetch outdoor floor location details if not already cached
+        if (!this.floorDetails.hasOwnProperty(this.outdoorFloorId)) {
+          this.hospitalService.getLogicalLocationWithChildren(this.outdoorFloorId).subscribe(res => {
+            this.floorDetails[this.outdoorFloorId] = res.results;
+            this.regionalLocationNameService.applyToFloor(this.outdoorFloorId, this.floorDetails[this.outdoorFloorId]);
+            this.buildOutdoorMap();
+          });
+        } else {
+          this.buildOutdoorMap();
+        }
+        this.getFloorNode(this.outdoorFloorId);
+      }
 
       if (this.initialFloorId) {
         // Find block that contains this floor
@@ -545,8 +719,17 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.saveMapViewerState();
     if (this.actionLoaderTimer) clearTimeout(this.actionLoaderTimer);
     this.animationService.stopAnimation();
+    if (this.scene) {
+      this.cleanupService.clearMapObjects(this.scene);
+    }
+    if (this.controls) {
+      try {
+        this.controls.dispose();
+      } catch (e) {
+        console.warn('Controls dispose failed:', e);
+      }
+    }
     this.rendererService.dispose();
-    window.removeEventListener('resize', () => this.onResize());
     if (this.mqttSubscription) {
       this.mqttSubscription.unsubscribe();
     }
@@ -563,6 +746,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.container.nativeElement.appendChild(this.renderer.domElement);
 
     this.controls = this.controlsService.initControls(this.camera, this.renderer.domElement);
+    this.controls.enableRotate = this.isRotateMode;
     this.applyPerspectiveLockLimits();
 
     this.clusterGroup.name = 'cluster-group';
@@ -637,6 +821,13 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.secondaryRoomMeshesByFloor = [];
     }
 
+    if (this.outdoorGroup) {
+      this.cleanupService.disposeGroup(this.outdoorGroup, this.scene);
+      this.outdoorGroup = null;
+      this.outdoorRoomMeshes = [];
+    }
+    this.lastBuildingOpacity = null;
+
     // Clear rooms
     this.roomMeshes.forEach(room => {
       if (room.floor) this.scene.remove(room.floor);
@@ -672,11 +863,27 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.graphGroup) {
       this.graphGroup.visible = this.isGraphVisible;
     }
+    this.saveMapViewerState();
   }
 
   public isValidNodeRoom(locationId: number): boolean {
     // if (!this.isFirstFloor) return true; // Fallback for other floors if any
     return this.navNodes.some(n => n.type === 'NT-RN' && n.location_id === locationId);
+  }
+
+  onBlockSelect(block: any): void {
+    if (block?.id === this.selectedBlockId) return;
+    this.selectedBlockId = block.id;
+    this.blockChanged.emit(block.id);
+    this.onBlockChange();
+  }
+
+  onFloorSelect(floor: any): void {
+    if (floor?.id === this.selectedFloorId) return;
+    this.selectedFloorId = floor.id;
+    this.selectedFloor = floor;
+    this.floorChanged.emit(floor.id);
+    this.onFloorChange();
   }
 
   onBlockChange(event?: Event): void {
@@ -729,14 +936,16 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.floorDetails.hasOwnProperty(this.selectedFloorId)) {
         const index = this.filteredFloors.indexOf(this.selectedFloor);
         this.selectedLevel = index + 1;
-        this.loadBlockFloors();
+        this.regionalLocationNameService.applyToFloor(this.selectedFloorId, this.floorDetails[this.selectedFloorId]).finally(() => this.loadBlockFloors());
       } else {
         this.hospitalService.getLogicalLocationWithChildren(this.selectedFloorId).subscribe(res => {
           this.floorDetails[this.selectedFloorId] = res.results;
-          this.selectedFloorId = this.selectedFloorId;
-          const index = this.filteredFloors.indexOf(this.selectedFloor);
-          this.selectedLevel = index + 1;
-          this.loadBlockFloors();
+          this.regionalLocationNameService.applyToFloor(this.selectedFloorId, this.floorDetails[this.selectedFloorId]).finally(() => {
+            this.selectedFloorId = this.selectedFloorId;
+            const index = this.filteredFloors.indexOf(this.selectedFloor);
+            this.selectedLevel = index + 1;
+            this.loadBlockFloors();
+          });
         })
       }
     }
@@ -759,6 +968,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedFloor.name?.toLowerCase().includes('first floor');
 
     try {
+      await this.readerService.loadReaders();
       // Clear previous buildings
       this.clearCurrentFloor();
 
@@ -783,6 +993,10 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       // Tracks GF rawCenter so upper floors use the same XZ centering offset.
       let stackBaseRawCenter: [number, number] | null = null;
 
+      // Check if selected floor has geo alignment / set points
+      const selectedFloorLayout = this.selectedFloor ? this.floorLayouts[this.selectedFloor.id] : null;
+      const baseFloorHasSetPoints = this.floorPlanService.hasGeoAlignment(selectedFloorLayout);
+
       // Render floors from index 0 up to selected index
       for (let i = 0; i <= topIndex; i++) {
         const isCurrentActive = i === topIndex;
@@ -791,6 +1005,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!this.showLevels && !isCurrentActive) {
           this.floorGroups.push(new THREE.Group());
           this.roomMeshesByFloor.push([]);
+          this.readerSpritesByFloor.push([]);
           continue;
         }
 
@@ -825,9 +1040,10 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
             yOffset,
             includeImage,
             isBaseFloor,
-            true,
+            isBaseFloor && (baseFloorHasSetPoints || !this.outdoorFloorId),
             this.foundationColor,
             this.wallWidth,
+            this.wallHeight,
             this.labelHeight,
             this.labelScale,
             this.showCorridorWalls,
@@ -913,7 +1129,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       // Apply geo polygon alignment to building content (OSM tiles are in scene directly, unaffected)
       // Rooms are centered at local origin; buildingGroup.position places them at the geo polygon center.
       // buildingGroup.rotation.y rotates in-place before the translation is applied.
-      if (baseGeoRotationY !== 0) {
+      if (this.floorHasGeoAlign) {
         this.buildingGroup.position.set(baseGeoCenterX, 0, baseGeoCenterZ);
         this.buildingGroup.rotation.y = baseGeoRotationY;
         this.buildingGroup.scale.set(baseGeoScaleX, 1, baseGeoScaleZ);
@@ -959,44 +1175,121 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       this.shiftCameraToActiveFloorPreservingOffset();
       setTimeout(() => { if (!this.applySavedCameraState()) { this.applyFloorDefaultCamera(); } }, 700);
 
-      // Block overview label — big centred name visible only when zoomed out.
-      // For geo-aligned floors rooms are centred at local (0,0) inside buildingGroup,
-      // so the label must also use local (0,0). For non-geo-aligned floors rooms sit at
-      // their raw polygon coordinates, so use the bounding-box centre instead.
       this.blockLabelSprite = null;
-      if (this.buildingGroup) {
-        const nonOutdoorBlocks = this.blocks.filter((b: any) => b.locationTypeId !== 26);
-        const isSingleBlock = nonOutdoorBlocks.length <= 1;
-        const storedFacility = localStorage.getItem(btoa('customer')) ?? '';
-        const facilityDisplayName = storedFacility.split(',')[0]?.trim() || '';
-        const overviewText = isSingleBlock && facilityDisplayName
-          ? facilityDisplayName
-          : (this.selectedBlock?.name ?? '');
-
-        if (overviewText) {
-          const labelX = this.floorHasGeoAlign ? 0 : this.baseFloorCenter.x;
-          const labelZ = this.floorHasGeoAlign ? 0 : this.baseFloorCenter.y;
-          this.blockLabelSprite = createLabel(
-            overviewText,
-            labelX,
-            labelZ,
-            this.buildingGroup,
-            null,  // no category icon — text only
-            5,     // float above room labels (LABEL_HEIGHT = 1.5)
-            8.0    // larger scale so it reads from far out
-          );
-          this.blockLabelSprite.visible = false;
-        }
-      }
+      this.buildOutdoorMap();
 
       this.initEnvironment();
       this.updateMapView(); // Apply initial view mode
       this.updateWallColors();
+      this.applyWireframe();
       this.isLoading = false;
+      this.refreshQaCategories();
     } catch (error) {
       console.error('Error loading block floors:', error);
       this.isLoading = false;
     }
+  }
+
+  private buildOutdoorMap(): void {
+    if (this.outdoorGroup) return; // already built
+
+    if (this.outdoorFloorId && this.floorLayouts[this.outdoorFloorId]) {
+      const selectedFloorLayout = this.selectedFloor ? this.floorLayouts[this.selectedFloor.id] : null;
+      const baseFloorHasSetPoints = this.floorPlanService.hasGeoAlignment(selectedFloorLayout);
+
+      const outdoorLayout = this.floorLayouts[this.outdoorFloorId];
+      this.outdoorGroup = new THREE.Group();
+      this.outdoorGroup.name = 'outdoor-building-root';
+      this.scene.add(this.outdoorGroup);
+
+      const outdoorFloorGroup = new THREE.Group();
+      const outdoorResult = this.floorPlanService.buildFloorPlan(
+        outdoorLayout,
+        outdoorFloorGroup,
+        0, // stackXOff
+        0, // stackZOff
+        0, // yOffset
+        true, // includeImage
+        true, // isBaseFloor
+        this.showSurroundings && !baseFloorHasSetPoints, // includeSurroundings
+        this.foundationColor,
+        this.wallWidth,
+        this.wallHeight,
+        this.labelHeight,
+        this.labelScale,
+        this.showCorridorWalls,
+        this.mapConfig
+      );
+      this.outdoorGroup.add(outdoorFloorGroup);
+      this.outdoorRoomMeshes = outdoorResult.roomMeshes;
+
+      if (outdoorResult.surroundingsMesh) {
+        if (this.surroundingsGroup) {
+          this.cleanupService.disposeGroup(this.surroundingsGroup, this.scene);
+        }
+        this.surroundingsGroup = outdoorResult.surroundingsMesh;
+        this.scene.add(this.surroundingsGroup);
+        this.applyGeoPolygonVisibility();
+      }
+
+      if (outdoorResult.geoRotationY !== 0) {
+        this.outdoorGroup.position.set(outdoorResult.geoCenterX, 0, outdoorResult.geoCenterZ);
+        this.outdoorGroup.rotation.y = outdoorResult.geoRotationY;
+        this.outdoorGroup.scale.set(outdoorResult.geoScaleX ?? 1, 1, outdoorResult.geoScaleZ ?? 1);
+      }
+
+      // Sync visibility configurations on outdoor meshes
+      this.outdoorRoomMeshes.forEach(room => {
+        room.floor.visible = this.showRooms;
+        room.walls.forEach(wall => { wall.visible = this.showRoomWalls; });
+      });
+
+      this.applyWireframe();
+      if (this.outdoorGroup) {
+        this.outdoorGroup.visible = this.zoomValue < 60;
+      }
+    }
+  }
+
+  private applyGroupOpacity(group: THREE.Group | null, opacity: number): void {
+    if (!group) return;
+    group.traverse((object) => {
+      const anyObj = object as any;
+      if (anyObj.isMesh || anyObj.isSprite) {
+        if (anyObj.material) {
+          this.applyMaterialOpacity(anyObj.material, opacity);
+        }
+      }
+    });
+  }
+
+  private applyMaterialOpacity(
+    materialOrArray: THREE.Material | THREE.Material[],
+    opacityFactor: number
+  ): void {
+    if (Array.isArray(materialOrArray)) {
+      materialOrArray.forEach(m => this.applyMaterialOpacity(m, opacityFactor));
+      return;
+    }
+
+    const material = materialOrArray;
+
+    if (!this.originalMaterialState.has(material)) {
+      const anyMat = material as any;
+      this.originalMaterialState.set(material, {
+        color: anyMat.color?.clone?.(),
+        opacity: typeof anyMat.opacity === 'number' ? anyMat.opacity : 1.0,
+        transparent: typeof anyMat.transparent === 'boolean' ? anyMat.transparent : false
+      });
+    }
+
+    const original = this.originalMaterialState.get(material)!;
+    const anyMat = material as any;
+
+    const targetOpacity = (original.opacity !== undefined ? original.opacity : 1.0) * opacityFactor;
+    anyMat.opacity = targetOpacity;
+    anyMat.transparent = targetOpacity < 1.0 || (original.transparent || false);
+    anyMat.needsUpdate = true;
   }
 
   onLevelChange(event: Event): void {
@@ -1160,36 +1453,32 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this));
     this.renderer.domElement.addEventListener('click', this.onClick.bind(this));
 
-    // Contextual Controls: Rotate on Building, Pan on Background
     this.renderer.domElement.addEventListener('mousedown', (event: MouseEvent) => {
       const rect = this.renderer.domElement.getBoundingClientRect();
       this.interactionService.updateMousePosition(event, rect);
 
-      const isOverBuilding = this.interactionService.isPointOnBuilding(this.camera, this.getActiveRoomMeshes());
-
-      if (this.isEagleTopView) {
+      if (!this.isRotateMode) {
+        // Left drag pans when 3D rotate is disabled
+        this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+      } else if (this.isEagleTopView) {
         // Eagle top view: only pan — no rotation or tilt
         this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
       } else if (this.isPanOnlyMode) {
         // Pan-only mode: left drag = always pan; tilt is still available
-        // (azimuth is locked separately so right-drag tilt works but no horizontal spin)
         this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
-      } else if (isOverBuilding) {
-        // Dragging building -> Rotate
-        this.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
       } else {
-        // Dragging background -> Pan
-        this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+        // Left drag rotates when 3D rotate is enabled
+        this.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
       }
     });
 
-    this.renderer.domElement.style.cursor = 'grab';
+    this.renderer.domElement.style.cursor = this.isRotateMode ? 'crosshair' : 'grab';
 
     this.controls.addEventListener('start', () => {
       this.renderer.domElement.style.cursor = 'grabbing';
     });
     this.controls.addEventListener('end', () => {
-      this.renderer.domElement.style.cursor = 'grab';
+      this.renderer.domElement.style.cursor = this.isRotateMode ? 'crosshair' : 'grab';
     });
 
     this.controls.addEventListener('change', () => {
@@ -1215,65 +1504,116 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
+    // Hide all labels initially (Outdoor)
+    this.outdoorRoomMeshes.forEach(room => {
+      if (room.label) room.label.visible = false;
+      if (room.labelIcon) room.labelIcon.visible = false;
+    });
+
     // Hide all readers initially
     this.readerSprites.forEach(sprite => sprite.visible = false);
 
-    // Get active readers (only for the current active floor)
-    const activeReaderSprites = this.readerSpritesByFloor[this.activeFloorIndex] ?? [];
+    const ZOOM_FADE_START = 55;
+    const ZOOM_FADE_END = 75;
 
-    // Only show labels for the active floor for BOTH buildings
-    this.labelVisibilityService.updateLabelVisibility(
-      this.getActiveRoomMeshes(),
-      this.camera,
-      this.controls,
-      this.floorSize,
-      (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
-      this.showLabels && this.showRooms,
-      this.showIcons && this.showRooms,
-      this.zoomValue
-    );
+    let buildingOpacity = 1.0;
+    let outdoorOpacity = 0.0;
+    let isZoomedOut = false;
 
-    // In stacked view, apply zoom-based icon visibility to lower floors (icons only, no text labels)
-    if (this.showLevels) {
-      for (let i = 0; i < this.activeFloorIndex; i++) {
-        const lowerFloorRooms = this.roomMeshesByFloor[i] ?? [];
-        if (lowerFloorRooms.length > 0) {
-          this.labelVisibilityService.updateLabelVisibility(
-            lowerFloorRooms,
-            this.camera,
-            this.controls,
-            this.floorSize,
-            (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
-            false,
-            this.showIcons,
-            this.zoomValue
-          );
-        }
-      }
+    if (this.zoomValue >= ZOOM_FADE_END) {
+      buildingOpacity = 1.0;
+      outdoorOpacity = 0.0;
+      isZoomedOut = false;
+    } else if (this.zoomValue <= ZOOM_FADE_START) {
+      buildingOpacity = 0.0;
+      outdoorOpacity = 1.0;
+      isZoomedOut = true;
+    } else {
+      buildingOpacity = (this.zoomValue - ZOOM_FADE_START) / (ZOOM_FADE_END - ZOOM_FADE_START);
+      outdoorOpacity = 1.0 - buildingOpacity;
+      isZoomedOut = this.zoomValue < 75; // midpoint threshold for label logic
     }
 
-    // Update Reader Icon Visibility
-    this.labelVisibilityService.updateSpriteVisibility(
-      activeReaderSprites,
-      this.camera,
-      this.controls,
-      this.floorSize,
-      this.showReaders
-    );
+    // Lazy-build outdoor map if it becomes available late
+    if (outdoorOpacity > 0.0 && !this.outdoorGroup) {
+      this.buildOutdoorMap();
+    }
 
-    // Block overview label: visible when zoomed out below 60 (on the 0-200 zoomValue scale)
-    if (this.blockLabelSprite && this.camera && this.controls) {
-      const show = this.zoomValue < 60;
-      this.blockLabelSprite.visible = show;
-      if (show) {
-        const dist = this.camera.position.distanceTo(this.controls.target);
-        const distFactor = dist / 200;
-        this.blockLabelSprite.scale.set(
-          (this.blockLabelSprite.userData['fixedSX'] ?? 12) * distFactor,
-          (this.blockLabelSprite.userData['fixedSY'] ?? 1.41) * distFactor,
-          1
+    // Toggle Group Visibilities based on whether opacity is active
+    if (this.outdoorGroup) {
+      this.outdoorGroup.visible = outdoorOpacity > 0.0;
+    }
+    if (this.buildingGroup) {
+      this.buildingGroup.visible = buildingOpacity > 0.0;
+    }
+    if (this.secondaryBuildingGroup) {
+      this.secondaryBuildingGroup.visible = buildingOpacity > 0.0;
+    }
+
+    // Apply opacities to groups smoothly if updated
+    if (buildingOpacity !== this.lastBuildingOpacity) {
+      this.applyGroupOpacity(this.buildingGroup, buildingOpacity);
+      this.applyGroupOpacity(this.secondaryBuildingGroup, buildingOpacity);
+      this.applyGroupOpacity(this.outdoorGroup, outdoorOpacity);
+      this.lastBuildingOpacity = buildingOpacity;
+    }
+
+    if (isZoomedOut) {
+      // Zoomed out: Show outdoor labels only
+      if (this.outdoorRoomMeshes.length > 0) {
+        this.labelVisibilityService.updateLabelVisibility(
+          this.outdoorRoomMeshes,
+          this.camera,
+          this.controls,
+          this.floorSize,
+          (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
+          this.showLabels && this.showRooms,
+          this.showIcons && this.showRooms,
+          this.zoomValue
         );
       }
+    } else {
+      // Zoomed in: Show active floor labels for Primary & Secondary buildings
+      const activeReaderSprites = this.readerSpritesByFloor[this.activeFloorIndex] ?? [];
+
+      this.labelVisibilityService.updateLabelVisibility(
+        this.getActiveRoomMeshes(),
+        this.camera,
+        this.controls,
+        this.floorSize,
+        (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
+        this.showLabels && this.showRooms,
+        this.showIcons && this.showRooms,
+        this.zoomValue
+      );
+
+      // In stacked view, apply zoom-based icon visibility to lower floors
+      if (this.showLevels) {
+        for (let i = 0; i < this.activeFloorIndex; i++) {
+          const lowerFloorRooms = this.roomMeshesByFloor[i] ?? [];
+          if (lowerFloorRooms.length > 0) {
+            this.labelVisibilityService.updateLabelVisibility(
+              lowerFloorRooms,
+              this.camera,
+              this.controls,
+              this.floorSize,
+              (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
+              false,
+              this.showIcons,
+              this.zoomValue
+            );
+          }
+        }
+      }
+
+      // Update Reader Icon Visibility
+      this.labelVisibilityService.updateSpriteVisibility(
+        activeReaderSprites,
+        this.camera,
+        this.controls,
+        this.floorSize,
+        this.showReaders
+      );
     }
   }
 
@@ -1284,7 +1624,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showLabels = true;
     this.showIcons = true;
     this.showReaders = true;
-    this.canSelectRooms = true;
+    this.canSelectRooms = false;
     this.showMqttMarkers = false;
     this.showLevels = false;
     this.showFloorImage = true;
@@ -1298,10 +1638,15 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isPanOnlyMode = false;
     this.showFog = false;
     this.showSurroundings = true;
+    this.isWireframe = false;
+    this.isGraphVisible = false;
+    this.isRotateMode = false;
     this.wallColor = WALL_COLOR;
     this.tempWallColor = WALL_COLOR;
     this.wallWidth = WALL_THICKNESS;
     this.tempWallWidth = WALL_THICKNESS;
+    this.wallHeight = WALL_HEIGHT;
+    this.tempWallHeight = WALL_HEIGHT;
     this.labelHeight = LABEL_HEIGHT;
     this.tempLabelHeight = LABEL_HEIGHT;
     this.labelScale = 3.0;
@@ -1311,11 +1656,18 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const s = this.savedMapState;
     if (s) {
+      if (s.isQuickAccessConfigOn !== undefined) this.isQuickAccessConfigOn = s.isQuickAccessConfigOn;
+      if (s.viewMode !== undefined) {
+        this.viewMode = s.viewMode;
+        this.isEagleTopView = this.viewMode === '2d';
+      } else if (s.isEagleTopView !== undefined) {
+        this.isEagleTopView = s.isEagleTopView;
+        this.viewMode = this.isEagleTopView ? '2d' : '3d';
+      }
       if (s.showRooms !== undefined) this.showRooms = s.showRooms;
       if (s.showLabels !== undefined) this.showLabels = s.showLabels;
       if (s.showIcons !== undefined) this.showIcons = s.showIcons;
       if (s.showReaders !== undefined) this.showReaders = s.showReaders;
-      if (s.canSelectRooms !== undefined) this.canSelectRooms = s.canSelectRooms;
       if (s.showMqttMarkers !== undefined) this.showMqttMarkers = s.showMqttMarkers;
       if (s.showLevels !== undefined) this.showLevels = s.showLevels;
       if (s.showFloorImage !== undefined) this.showFloorImage = s.showFloorImage;
@@ -1325,17 +1677,36 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       if (s.showDoors !== undefined) this.showDoors = s.showDoors;
       if (s.showGeoPolygon !== undefined) this.showGeoPolygon = s.showGeoPolygon;
       if (s.isPerspectiveLock !== undefined) this.isPerspectiveLock = s.isPerspectiveLock;
-      if (s.isEagleTopView !== undefined) this.isEagleTopView = s.isEagleTopView;
       if (s.isPanOnlyMode !== undefined) this.isPanOnlyMode = s.isPanOnlyMode;
       if (s.showFog !== undefined) this.showFog = s.showFog;
       if (s.showSurroundings !== undefined) this.showSurroundings = s.showSurroundings;
       if (s.wallColor) { this.wallColor = s.wallColor; this.tempWallColor = s.wallColor; }
       if (s.wallWidth !== undefined) { this.wallWidth = s.wallWidth; this.tempWallWidth = s.wallWidth; }
+      if (s.wallHeight !== undefined) { this.wallHeight = s.wallHeight; this.tempWallHeight = s.wallHeight; }
       if (s.labelHeight !== undefined) { this.labelHeight = s.labelHeight; this.tempLabelHeight = s.labelHeight; }
       if (s.labelScale !== undefined) { this.labelScale = s.labelScale; this.tempLabelScale = s.labelScale; }
       if (s.foundationColor) { this.foundationColor = s.foundationColor; this.tempFoundationColor = s.foundationColor; }
-      if (s.mapViewMode) this.mapViewMode = s.mapViewMode;
+      if (s.mapViewMode) {
+        // Fallback from landscape mode to default (Standard) view
+        this.mapViewMode = s.mapViewMode === 'landscape' ? 'default' : s.mapViewMode;
+      }
+      if (s.isWireframe !== undefined) this.isWireframe = s.isWireframe;
+      if (s.isGraphVisible !== undefined) this.isGraphVisible = s.isGraphVisible;
+      if (s.isRotateMode !== undefined) {
+        this.isRotateMode = s.isRotateMode;
+        if (this.controls) {
+          this.controls.enableRotate = this.isRotateMode;
+          this.controls.mouseButtons.LEFT = (this.isRotateMode && !this.isEagleTopView && !this.isPanOnlyMode)
+            ? THREE.MOUSE.ROTATE
+            : THREE.MOUSE.PAN;
+          this.renderer.domElement.style.cursor = this.isRotateMode ? 'crosshair' : 'grab';
+        }
+      }
+      if (s.mapTileType !== undefined) {
+        this.mapConfig.mapTileType = s.mapTileType;
+      }
     }
+    this.applyViewModeConstraints(false);
   }
 
   private getCameraState(): { distance: number; theta: number; phi: number } | null {
@@ -1350,22 +1721,32 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     const { distance, theta, phi } = this.savedMapState.camera;
     delete this.savedMapState.camera; // apply only once
     const clamped = Math.max(this.controls.minDistance, Math.min(this.controls.maxDistance, distance));
-    const spherical = new THREE.Spherical(clamped, phi, theta);
-    const offset = new THREE.Vector3().setFromSpherical(spherical);
-    this.camera.position.copy(this.controls.target).add(offset);
+    if (this.viewMode === '2d') {
+      const target = this.controls.target.clone();
+      this.camera.position.set(target.x, target.y + clamped, target.z);
+    } else {
+      const spherical = new THREE.Spherical(clamped, phi, theta);
+      const offset = new THREE.Vector3().setFromSpherical(spherical);
+      this.camera.position.copy(this.controls.target).add(offset);
+    }
     this.controls.update();
     this.updateLabelVisibility();
     return true;
   }
 
   private applyFloorDefaultCamera(): void {
-    if (!this.selectedFloorId || !this.mapConfig?.floorDefaults) return;
+    if (!this.selectedFloorId || !this.mapConfig?.floorDefaults || !this.controls || !this.camera) return;
     const def = this.mapConfig.floorDefaults[String(this.selectedFloorId)];
     if (!def) return;
     const clamped = Math.max(this.controls.minDistance, Math.min(this.controls.maxDistance, def.distance));
-    const spherical = new THREE.Spherical(clamped, def.phi, def.theta);
-    const offset = new THREE.Vector3().setFromSpherical(spherical);
-    this.camera.position.copy(this.controls.target).add(offset);
+    if (this.viewMode === '2d') {
+      const target = this.controls.target.clone();
+      this.camera.position.set(target.x, target.y + clamped, target.z);
+    } else {
+      const spherical = new THREE.Spherical(clamped, def.phi, def.theta);
+      const offset = new THREE.Vector3().setFromSpherical(spherical);
+      this.camera.position.copy(this.controls.target).add(offset);
+    }
     this.controls.update();
     this.updateLabelVisibility();
   }
@@ -1467,6 +1848,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       floorId: this.selectedFloorId,
       wallColor: this.wallColor,
       wallWidth: this.wallWidth,
+      wallHeight: this.wallHeight,
       labelHeight: this.labelHeight,
       labelScale: this.labelScale,
       foundationColor: this.foundationColor,
@@ -1483,12 +1865,17 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       showRoomWalls: this.showRoomWalls,
       showDoors: this.showDoors,
       showGeoPolygon: this.showGeoPolygon,
-      canSelectRooms: this.canSelectRooms,
       isPerspectiveLock: this.isPerspectiveLock,
       isEagleTopView: this.isEagleTopView,
+      viewMode: this.viewMode,
       isPanOnlyMode: this.isPanOnlyMode,
       showFog: this.showFog,
-      showSurroundings: this.showSurroundings
+      showSurroundings: this.showSurroundings,
+      mapTileType: this.mapConfig.mapTileType,
+      isGraphVisible: this.isGraphVisible,
+      isRotateMode: this.isRotateMode,
+      isWireframe: this.isWireframe,
+      isQuickAccessConfigOn: this.isQuickAccessConfigOn
     };
     this.commonService.validateUserPreference('tm_map_viewer_state', JSON.stringify(state));
   }
@@ -1511,24 +1898,28 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     });
     this.updateLabelVisibility();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleLabels(): void {
     this.showLabels = !this.showLabels;
     this.updateLabelVisibility();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleIcons(): void {
     this.showIcons = !this.showIcons;
     this.updateLabelVisibility();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleReaders(): void {
     this.showReaders = !this.showReaders;
     this.updateLabelVisibility();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
@@ -1544,12 +1935,14 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showMqttMarkers = !this.showMqttMarkers;
     this.markers.forEach(m => m.visible = this.showMqttMarkers);
     this.clusterGroup.visible = this.showMqttMarkers;
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleShowLevels(): void {
     this.showLevels = !this.showLevels;
     this.loadBlockFloors();
+    this.saveMapViewerState();
   }
 
   public toggleFloorImage(): void {
@@ -1557,12 +1950,14 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.floorImageMeshes.forEach(mesh => {
       mesh.visible = this.showFloorImage;
     });
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleCorridorWalls(): void {
     this.showCorridorWalls = !this.showCorridorWalls;
     this.loadBlockFloors();
+    this.saveMapViewerState();
   }
 
   public toggleRoomWalls(): void {
@@ -1574,12 +1969,14 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       });
     });
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleDoors(): void {
     this.showDoors = !this.showDoors;
     this.doorMeshes.forEach(door => { door.visible = this.showDoors; });
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
@@ -1593,12 +1990,14 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   public toggleSurroundings(): void {
     this.showSurroundings = !this.showSurroundings;
     this.updateMapView();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public toggleFog(): void {
     this.showFog = !this.showFog;
     this.scene.fog = this.showFog ? new THREE.Fog(0xf8fafc, 300, 1200) : null;
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
@@ -1616,34 +2015,106 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.foundationMeshes.forEach(mesh => {
       mesh.visible = this.showFoundation;
     });
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public togglePerspectiveLock(): void {
     this.isPerspectiveLock = !this.isPerspectiveLock;
     this.applyPerspectiveLockLimits();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   private applyPerspectiveLockLimits(): void {
     if (!this.controls) return;
-    if (this.isEagleTopView) return; // Eagle view manages polar limits independently
+    if (this.viewMode === '2d' || this.isEagleTopView) {
+      this.controls.minPolarAngle = 0;
+      this.controls.maxPolarAngle = 0;
+      this.controls.update();
+      return;
+    }
     const min = 0;
-    const max = this.isPerspectiveLock || this.showLevels ? Math.PI / 4 : Math.PI / 2;
+    const max = this.isPerspectiveLock || this.showLevels ? Math.PI / 3 : Math.PI / 2;
     this.controls.minPolarAngle = min;
     this.controls.maxPolarAngle = max;
     this.controls.update();
   }
 
+  public onViewModeChange(mode: '2d' | '3d'): void {
+    if (this.viewMode === mode) return;
+    this.viewMode = mode;
+    this.isEagleTopView = (mode === '2d');
+    this.applyViewModeConstraints(true);
+    this.saveMapViewerState();
+    this.showActionLoader();
+  }
+
+  private applyViewModeConstraints(animate: boolean = true): void {
+    if (!this.controls || !this.camera) return;
+    if (this.viewMode === '2d') {
+      this.controls.minPolarAngle = 0;
+      this.controls.maxPolarAngle = 0;
+      this.controls.enableRotate = false;
+      if (this.isRotateMode) {
+        this.isRotateMode = false;
+        this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+        this.renderer.domElement.style.cursor = 'grab';
+      }
+      if (animate) {
+        const target = this.controls.target.clone();
+        const dist = this.camera.position.distanceTo(target);
+        const topDownCam = new THREE.Vector3(target.x, target.y + dist, target.z);
+        this.cameraAnimationService.animateCamera(
+          this.camera, this.controls,
+          this.camera.position.clone(), topDownCam,
+          target, target, 600, () => this.updateLabelVisibility()
+        );
+      } else {
+        const target = this.controls.target.clone();
+        const dist = this.camera.position.distanceTo(target);
+        this.camera.position.set(target.x, target.y + dist, target.z);
+        this.controls.update();
+        this.updateLabelVisibility();
+      }
+    } else {
+      this.controls.minPolarAngle = 0;
+      const max = this.isPerspectiveLock || this.showLevels ? Math.PI / 3 : Math.PI / 2;
+      this.controls.maxPolarAngle = max;
+      this.controls.enableRotate = this.isRotateMode;
+      this.controls.mouseButtons.LEFT = (this.isRotateMode && !this.isPanOnlyMode)
+        ? THREE.MOUSE.ROTATE
+        : THREE.MOUSE.PAN;
+      this.renderer.domElement.style.cursor = this.isRotateMode ? 'crosshair' : 'grab';
+      this.controls.update();
+    }
+  }
+
   public toggleEagleTopView(): void {
     this.isEagleTopView = !this.isEagleTopView;
-    this.applyEagleTopViewLimits();
-    this.showActionLoader();
+    const mode = this.isEagleTopView ? '2d' : '3d';
+    this.viewMode = this.isEagleTopView ? '3d' : '2d'; // flip to force onViewModeChange execution
+    this.onViewModeChange(mode);
   }
 
   public togglePanOnlyMode(): void {
     this.isPanOnlyMode = !this.isPanOnlyMode;
     this.applyPanOnlyModeLimits();
+    this.saveMapViewerState();
+    this.showActionLoader();
+  }
+
+  public toggleRotateMode(): void {
+    if (this.viewMode === '2d') return;
+    this.isRotateMode = !this.isRotateMode;
+    if (this.controls) {
+      this.controls.enableRotate = this.isRotateMode;
+      this.controls.mouseButtons.LEFT = (this.isRotateMode && !this.isPanOnlyMode)
+        ? THREE.MOUSE.ROTATE
+        : THREE.MOUSE.PAN;
+      this.renderer.domElement.style.cursor = this.isRotateMode ? 'crosshair' : 'grab';
+    }
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
@@ -1665,26 +2136,6 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.controls.update();
   }
 
-  private applyEagleTopViewLimits(): void {
-    if (!this.controls || !this.camera) return;
-    if (this.isEagleTopView) {
-      // Lock polar angle to 0 — camera looks straight down, no tilt possible
-      this.controls.minPolarAngle = 0;
-      this.controls.maxPolarAngle = 0;
-      // Snap camera directly above the current target
-      const dist = this.camera.position.distanceTo(this.controls.target);
-      this.camera.position.set(
-        this.controls.target.x,
-        this.controls.target.y + dist,
-        this.controls.target.z
-      );
-      this.controls.update();
-    } else {
-      // Restore normal tilt limits based on perspective lock state
-      this.applyPerspectiveLockLimits();
-    }
-  }
-
   public onMapViewModeChange(): void {
     if (this.mapViewMode === 'urban' && this.mapConfig.mapTileType !== 'osm') {
       this.mapConfig.mapTileType = 'osm';
@@ -1692,27 +2143,31 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.updateMapView();
     }
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public onTileTypeChange(): void {
     // Reload floors so the surroundings group rebuilds with the new tile provider
     this.loadBlockFloors();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   private updateMapView(): void {
     if (!this.environmentGroup) return;
 
-    // Landscape: Everything visible
+    // Landscape: Everything visible (Commented out)
     // Urban: Hide Greenery, Show OSM
     // Default: Hide Both
 
-    const isLandscape = this.mapViewMode === 'landscape';
+    // const isLandscape = this.mapViewMode === 'landscape';
+    const isLandscape = false;
     const isDefault = this.mapViewMode === 'default';
 
     // Toggle Greenery Group
-    this.environmentGroup.visible = isLandscape;
+    // this.environmentGroup.visible = isLandscape;
+    this.environmentGroup.visible = false;
 
     // Fog is controlled exclusively by the Fog config toggle (showFog), default OFF.
     this.scene.fog = this.showFog ? new THREE.Fog(0xf8fafc, 300, 1200) : null;
@@ -1726,22 +2181,32 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   public applyWallColor(): void {
     this.wallColor = this.tempWallColor;
     this.updateWallColors();
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   public applyWallWidth(): void {
     this.wallWidth = this.tempWallWidth;
     this.loadBlockFloors(); // Reload the map with the new wall thickness
+    this.saveMapViewerState();
+  }
+
+  public applyWallHeight(): void {
+    this.wallHeight = this.tempWallHeight;
+    this.loadBlockFloors(); // Reload the map with the new wall height
+    this.saveMapViewerState();
   }
 
   public applyLabelHeight(): void {
     this.labelHeight = this.tempLabelHeight;
     this.loadBlockFloors(); // Reload the map with the new label height
+    this.saveMapViewerState();
   }
 
   public applyLabelScale(): void {
     this.labelScale = this.tempLabelScale;
     this.loadBlockFloors(); // Reload the map with the new label scale
+    this.saveMapViewerState();
   }
 
   private updateWallColors(): void {
@@ -1788,14 +2253,18 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
         mesh.material.color.copy(color);
       }
     });
+    this.saveMapViewerState();
     this.showActionLoader();
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    if (this.isConfigOpen && !target.closest('.config-container')) {
+    if (this.isConfigOpen && !target.closest('.settings-toggle-btn') && !target.closest('.config-dropdown')) {
       this.isConfigOpen = false;
+    }
+    if (!target.closest('.mv-block-pill')) {
+      this.isBlockDropdownOpen = false;
     }
   }
 
@@ -1944,6 +2413,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public getRoomDisplayLabel(room: RoomMesh): string {
+    const translatedName = this.regionalLocationNameService.getDisplayName(room?.data);
+    if (room?.data?.regionalName && translatedName) return translatedName;
     const name = (room?.data?.name ?? room?.name ?? '').trim();
     const match = name.match(/\b(\d{1,6})\b/);
     if (match?.[1]) return match[1];
@@ -1966,7 +2437,9 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     return filtered.filter(r => {
       const display = this.getRoomDisplayLabel(r).toLowerCase();
       const name = (r.data?.name ?? r.name ?? '').toLowerCase();
-      return display.includes(q) || name.includes(q);
+      const regionalName = (r.data?.regionalName ?? '').toLowerCase();
+      const displayName = this.regionalLocationNameService.getDisplayName(r.data).toLowerCase();
+      return display.includes(q) || name.includes(q) || regionalName.includes(q) || displayName.includes(q);
     });
   }
 
@@ -1986,7 +2459,9 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     return filtered.filter(r => {
       const display = this.getRoomDisplayLabel(r).toLowerCase();
       const name = (r.data?.name ?? r.name ?? '').toLowerCase();
-      return display.includes(q) || name.includes(q);
+      const regionalName = (r.data?.regionalName ?? '').toLowerCase();
+      const displayName = this.regionalLocationNameService.getDisplayName(r.data).toLowerCase();
+      return display.includes(q) || name.includes(q) || regionalName.includes(q) || displayName.includes(q);
     });
   }
 
@@ -2122,12 +2597,18 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public toggleWireframe(): void {
+    this.isWireframe = !this.isWireframe;
+    this.applyWireframe();
+    this.saveMapViewerState();
+  }
+
+  private applyWireframe(): void {
+    if (!this.scene) return;
     this.scene.traverse((object) => {
       if ((object as THREE.Mesh).isMesh) {
         const mesh = object as THREE.Mesh;
         if (mesh.material) {
-          (mesh.material as THREE.MeshStandardMaterial).wireframe =
-            !(mesh.material as THREE.MeshStandardMaterial).wireframe;
+          (mesh.material as THREE.MeshStandardMaterial).wireframe = this.isWireframe;
         }
       }
     });
@@ -2209,9 +2690,30 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.animateMarkers();
     this.updateMarkerClusters();
 
-    // Animate route path (No pulsing/breathing as requested)
-    if (this.routeGroup) {
-      // Logic for pulsing removed. Route remains bold and static.
+    const now = performance.now();
+    // Progressive path reveal + camera tip-follow (target modified before controls.update)
+    if (this.pathAnimating && this.routeRibbonMesh?.geometry?.index) {
+      const elapsed = now - this.pathAnimStartTime;
+      const t = Math.min(elapsed / this.pathAnimDuration, 1);
+      const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      this.routeRibbonMesh.geometry.setDrawRange(0, Math.floor(eased * this.routeRibbonTotalIndices));
+      if (this.routeCameraFollowActive && this.pathTotalLength > 0) {
+        this.panCameraTowardRoutePoint(this.getPathPositionAt(eased), this.viewMode === '2d' ? 0.09 : 0.07);
+      }
+      if (t >= 1) {
+        this.pathAnimating = false;
+        this.pathAnimComplete = true;
+        if (this.selectedFloorId !== null && this.selectedFloorId !== undefined) {
+          this.animatedFloors.add(this.selectedFloorId);
+        }
+      }
+    }
+
+    // Pull back to full route view once ribbon is complete (fires exactly once)
+    if (this.pathAnimComplete && !this.pathRevealTriggered && this.routeGroup) {
+      this.pathRevealTriggered = true;
+      this.routeCameraFollowActive = false;
+      this.fitFullRouteAfterArrival();
     }
 
     if (this.movementState.isMoving && this.person) {
@@ -2223,11 +2725,15 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
       );
     }
 
+    this.updateDestCalloutPosition();
+    this.updateNavMarkerPositions();
+    this.updateYouAreHerePosition();
     this.rendererService.render(this.scene, this.camera);
   }
 
   public startJourney(): void {
     if (this.pathPoints.length < 2) return;
+    this.isJourneyStarted = true;
 
     // Person must live inside buildingGroup so its position (in local/path space)
     // maps to the same world space as the route tube and room meshes.
@@ -2240,7 +2746,6 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.person) {
       this.person.position.copy(this.pathPoints[0]);
-      // Remove hardcoded Y=0 to allow point-based elevation
     }
   }
 
@@ -2393,6 +2898,145 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private calculateRoute(): void {
+    if (this.isQuickAccessConfigOn) {
+      if (this.isMultiFloorScenario() && !this.multiFloorRouteActive) {
+        this.multiFloorRouteActive = true;
+        this.animatedFloors.clear();
+        void this.ensureAllFloorNavOptions().then(() => {
+          const startLift = this.findNearestLiftOrStair(
+            this.selectedStartLocation!.node,
+            this.selectedStartLocation!.floorId
+          );
+          if (startLift) {
+            this.multiFloorStartLiftNode = startLift.node;
+            this.multiFloorStartLiftLocationId = startLift.locationId ?? null;
+
+            const destLift = this.findMatchingLiftOrStairNode(
+              startLift.name,
+              this.selectedDestinationLocation!.floorId
+            );
+            if (destLift) {
+              this.multiFloorDestLiftNode = destLift.node;
+              this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+            }
+          } else {
+            const destLift = this.findNearestLiftOrStair(
+              this.selectedDestinationLocation!.node,
+              this.selectedDestinationLocation!.floorId
+            );
+            if (destLift) {
+              this.multiFloorDestLiftNode = destLift.node;
+              this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+
+              const startLiftMatching = this.findMatchingLiftOrStairNode(
+                destLift.name,
+                this.selectedStartLocation!.floorId
+              );
+              if (startLiftMatching) {
+                this.multiFloorStartLiftNode = startLiftMatching.node;
+                this.multiFloorStartLiftLocationId = startLiftMatching.locationId ?? null;
+              }
+            }
+          }
+          this.applyMultiFloorRoute();
+        });
+        return;
+      }
+
+      this.clearRouteVisual();
+
+      let startNode: NavNode | undefined;
+      let endNode: NavNode | undefined;
+
+      if (this.multiFloorRouteActive) {
+        const currentFloorId = this.selectedFloorId;
+        if (currentFloorId === this.selectedStartLocation?.floorId) {
+          startNode = this.navNodes.find(n => n.id === this.selectedStartLocation!.node.id);
+          endNode = this.multiFloorStartLiftNode ? this.navNodes.find(n => n.id === this.multiFloorStartLiftNode!.id) : undefined;
+        } else if (currentFloorId === this.selectedDestinationLocation?.floorId) {
+          startNode = this.multiFloorDestLiftNode ? this.navNodes.find(n => n.id === this.multiFloorDestLiftNode!.id) : undefined;
+          endNode = this.navNodes.find(n => n.id === this.selectedDestinationLocation!.node.id);
+        }
+      } else {
+        if (!this.startRoom || !this.endRoom) return;
+        startNode = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === this.startRoom?.id);
+        endNode = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === this.endRoom?.id);
+      }
+
+      if (!startNode || !endNode) {
+        console.warn('[MapViewer] No nav nodes for selected rooms');
+        return;
+      }
+
+      this.activePathStartNode = startNode;
+      this.activePathEndNode = endNode;
+
+      const pathIds = this.navigationService.findShortestNodePath(
+        startNode.id, endNode.id, this.navNodes, this.nodeNavigationGraph
+      );
+      if (!pathIds) { console.warn('[MapViewer] No path found'); return; }
+
+      const xOff = this.floorHasGeoAlign ? this.rawFloorCenter.x : 0;
+      const zOff = this.floorHasGeoAlign ? this.rawFloorCenter.y : 0;
+      const floorY = this.activeFloorIndex * (this.showLevels ? FLOOR_STACK_HEIGHT : 0);
+      const pts = pathIds.map(id => {
+        const n = this.navNodes.find(n => n.id === id)!;
+        return new THREE.Vector3(n.x - xOff, floorY, n.y - zOff);
+      });
+
+      const parent = this.buildingGroup ?? this.scene;
+      const customWidth = Math.max(0.25, ROUTE_RIBBON_WIDTH * Math.min(1.0, (this.floorSize || 200) / 200));
+      const result = this.routeVisualizationService.visualizeRoute(pts, parent, customWidth);
+      this.routeGroup = result.routeGroup;
+      this.pathPoints = result.pathPoints;
+      this.moveSpeed = result.moveSpeed;
+
+      // Precompute path length for tip-follow camera
+      this.pathTotalLength = 0;
+      for (let i = 1; i < this.pathPoints.length; i++) {
+        this.pathTotalLength += this.pathPoints[i].distanceTo(this.pathPoints[i - 1]);
+      }
+      // Scale animation duration to path length: ~10 units/sec (near-walking), clamped 4s – 10s
+      this.pathAnimDuration = Math.min(Math.max(this.pathTotalLength / 10 * 1000, 4000), 10000);
+      this.pathRevealTriggered = false;
+
+      // Kick off draw animation — ribbon starts invisible and reveals over pathAnimDuration ms
+      const currentFloorId = this.selectedFloorId;
+      const skipAnim = currentFloorId !== undefined && currentFloorId !== null && this.animatedFloors.has(currentFloorId);
+
+      this.routeRibbonMesh = this.routeGroup?.children[0] ?? null;
+      if (this.routeRibbonMesh?.geometry?.index) {
+        this.routeRibbonTotalIndices = this.routeRibbonMesh.geometry.index.count;
+        if (skipAnim) {
+          this.routeRibbonMesh.geometry.setDrawRange(0, this.routeRibbonTotalIndices);
+        } else {
+          this.routeRibbonMesh.geometry.setDrawRange(0, 0);
+        }
+      }
+      this.pathAnimating = false;
+      this.pathAnimComplete = skipAnim;
+
+      if (currentFloorId !== undefined && currentFloorId !== null) {
+        this.animatedFloors.add(currentFloorId);
+      }
+
+      if (skipAnim) {
+        this.fitFullRouteAfterArrival(true);
+      } else {
+        this.focusOnRouteStartForNavigation(this.multiFloorRouteActive);
+        this.startRouteRevealAfterCameraFit(this.multiFloorRouteActive);
+      }
+
+      const frames = result.totalDistance / this.moveSpeed;
+      this.routeDistance = `${result.totalDistance.toFixed(0)}m`;
+      this.routeTime = `${Math.ceil(frames / 60)}s`;
+
+      // Generate turn-by-turn steps
+      this.pathSteps = this.generatePathSteps(result.pathPoints);
+      this.isStepsOpen = false;
+      return;
+    }
+
     if (!this.startRoom || !this.endRoom) return;
 
     // Cleanup previous route
@@ -2436,7 +3080,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
 
           // Route must live inside buildingGroup so it inherits geo-alignment transforms.
           const routeParent = this.buildingGroup ?? this.scene;
-          const result = this.routeVisualizationService.visualizeRoute(pathPoints, routeParent);
+          const customWidth = Math.max(0.25, ROUTE_RIBBON_WIDTH * Math.min(1.0, (this.floorSize || 200) / 200));
+          const result = this.routeVisualizationService.visualizeRoute(pathPoints, routeParent, customWidth);
           this.routeGroup = result.routeGroup;
           this.pathPoints = result.pathPoints;
           this.moveSpeed = result.moveSpeed;
@@ -2475,7 +3120,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
         return this.floorPlanService.getRoomCenter(room).clone().setY(floorY);
       });
 
-      const result = this.routeVisualizationService.visualizeRoute(pathPoints, this.scene);
+      const customWidth = Math.max(0.25, ROUTE_RIBBON_WIDTH * Math.min(1.0, (this.floorSize || 200) / 200));
+      const result = this.routeVisualizationService.visualizeRoute(pathPoints, this.scene, customWidth);
       this.routeGroup = result.routeGroup;
       this.pathPoints = result.pathPoints;
       this.moveSpeed = result.moveSpeed;
@@ -2859,7 +3505,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     texture.minFilter = THREE.LinearFilter;
     const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
     sprite.material = spriteMaterial;
-    sprite.renderOrder = 999;
+    sprite.renderOrder = 1010;
     sprite.scale.set(4, 4, 1);
     (sprite.userData as any).count = count;
   }
@@ -2914,7 +3560,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.environmentGroup.name = 'environment-group';
     this.scene.add(this.environmentGroup);
 
-    // Fog is managed by updateMapView() — only active in landscape mode.
+    // Fog is managed by updateMapView() — only active in landscape mode (disabled).
 
     this.addEnvironmentGround();
     this.addEnvironmentRoad();
@@ -3110,5 +3756,1139 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     console.log(`🌲 Rectangular AABB Environment set for building ${this.floorWidth}x${this.floorHeight} at center (${cx}, ${cz})`);
+  }
+
+  // --- Quick Access Helpers & Methods ---
+
+  toggleQuickAccessConfig(): void {
+    this.isQuickAccessConfigOn = !this.isQuickAccessConfigOn;
+    if (this.isQuickAccessConfigOn) {
+      this.openQa();
+    } else {
+      this.clearNavigation();
+    }
+    this.saveMapViewerState();
+  }
+
+  private async ensureAllFloorNavOptions(): Promise<void> {
+    if (this.allFloorNavOptions.length > 0) return;
+    if (this.allFloorSearchPromise) return this.allFloorSearchPromise;
+
+    this.isNavSearchLoading = true;
+    this.allFloorSearchPromise = (async () => {
+      const floors = this.filteredFloors.length ? this.filteredFloors : (this.selectedFloor ? [this.selectedFloor] : []);
+      await Promise.all(floors.map(floor => Promise.all([
+        this.fetchFloorLocationDetails(floor),
+        this.fetchFloorNodes(floor.id)
+      ])));
+
+      const options: IndoorNavLocationOption[] = [];
+      floors.forEach(floor => {
+        const floorData = this.floorDetails[floor.id];
+        const nodes = this.allNodes[floor.id] ?? [];
+        const roomNodes = nodes.filter(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) !== undefined);
+        const roomNodeMap = new Map<number, NavNode>();
+        roomNodes.forEach(node => roomNodeMap.set(this.getNodeLocationId(node)!, node));
+        this.collectFloorNavOptions(floorData, floor, roomNodeMap, options);
+      });
+      this.allFloorNavOptions = options;
+    })().finally(() => {
+      this.isNavSearchLoading = false;
+    });
+
+    return this.allFloorSearchPromise;
+  }
+
+  private collectFloorNavOptions(
+    location: LocationData | null | undefined,
+    floor: any,
+    roomNodeMap: Map<number, NavNode>,
+    options: IndoorNavLocationOption[]
+  ): void {
+    if (!location) return;
+    const node = roomNodeMap.get(location.id);
+    if (node) {
+      options.push({
+        id: location.id,
+        name: location.name,
+        displayName: this.getLocationDisplayName(location),
+        regionalName: location.regionalName,
+        typeName: location.locationTypeName,
+        floorId: floor.id,
+        floorName: floor.name,
+        floor,
+        node,
+        data: location
+      });
+    }
+    (location.children ?? []).forEach(child => this.collectFloorNavOptions(child, floor, roomNodeMap, options));
+  }
+
+  private getCurrentFloorOption(room: RoomMesh): IndoorNavLocationOption | null {
+    const node = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === room.id);
+    if (!node || !this.selectedFloor) return null;
+    return {
+      id: room.id,
+      name: room.data?.name ?? room.name,
+      displayName: this.getLocationDisplayName(room.data),
+      regionalName: room.data?.regionalName,
+      typeName: room.data?.locationTypeName ?? 'Room',
+      floorId: this.selectedFloor.id,
+      floorName: this.selectedFloor.name,
+      floor: this.selectedFloor,
+      node,
+      data: room.data
+    };
+  }
+
+  private getOptionLabel(option: IndoorNavLocationOption): string {
+    const name = (option.name ?? '').trim();
+    const match = name.match(/\b(\d{1,6})\b/);
+    return match?.[1] ?? name;
+  }
+
+  getOptionDisplayName(option: IndoorNavLocationOption | null | undefined): string {
+    return option?.displayName || option?.name || '';
+  }
+
+  private getLocationDisplayName(location: LocationData | null | undefined): string {
+    return this.regionalLocationNameService.getDisplayName(location);
+  }
+
+  private isRoomNavNode(node: NavNode): boolean {
+    return node.type === 'NT-RN';
+  }
+
+  private getNodeLocationId(node: NavNode): number | undefined {
+    const locationId = node.location_id ?? (node as any).locationId;
+    return locationId === undefined || locationId === null ? undefined : Number(locationId);
+  }
+
+  private refreshQaCategories(): void {
+    this.qaCategories = this.getCategories();
+    this.selectedQaCategory = null;
+  }
+
+  getCategories(): LocationCategory[] {
+    const source = (this.allFloorNavOptions.length
+      ? this.allFloorNavOptions
+      : this.getNavRooms().map(r => this.getCurrentFloorOption(r)).filter((v): v is IndoorNavLocationOption => !!v)
+    ).filter(option => option.floorId === this.selectedFloorId);
+    const map = new Map<string, { name: string; rooms: IndoorNavLocationOption[] }>();
+    source.forEach(option => {
+      const catId = option.data?.locationCategoryId ?? 'other';
+      const name = this.locationCategoryMap.get(catId) ?? this.formatCategoryName(catId);
+      if (!map.has(catId)) map.set(catId, { name, rooms: [] });
+      map.get(catId)!.rooms.push(option);
+    });
+    const qaFilter = this.mapConfig.categoryQuickAccess;
+    return Array.from(map.entries())
+      .filter(([catId]) => !qaFilter || qaFilter[catId] === true)
+      .map(([catId, { name, rooms }]) => ({
+        catId,
+        name,
+        color: getCategoryColor(catId, this.mapConfig.categoryColors),
+        icon: getCategoryMaterialIcon(catId, this.mapConfig.categoryIcons),
+        rooms
+      }));
+  }
+
+  private formatCategoryName(catId: string): string {
+    return catId
+      .replace(/^lc[-_]/i, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase())
+      .trim() || 'Other';
+  }
+
+  getFilteredQaCategories(): LocationCategory[] {
+    if (!this.selectedStartLocation) return this.qaCategories;
+    return this.qaCategories.filter(cat =>
+      cat.rooms.some(r => r.id !== this.selectedStartLocation!.id)
+    );
+  }
+
+  getQaCategoryCount(cat: LocationCategory): number {
+    return cat.rooms.filter(r => r.id !== this.selectedStartLocation?.id).length;
+  }
+
+  getQaLocations(): IndoorNavLocationOption[] {
+    if (!this.selectedQaCategory) return [];
+    return this.selectedQaCategory.rooms.filter(r => r.id !== this.selectedStartLocation?.id);
+  }
+
+  openQa(): void {
+    this.isQaOpen = true;
+    this.selectedQaCategory = null;
+    void this.ensureAllFloorNavOptions().then(() => this.refreshQaCategories());
+  }
+
+  closeQa(): void { this.isQaOpen = false; this.selectedQaCategory = null; }
+
+  getQaSingleLocation(cat: LocationCategory): IndoorNavLocationOption | null {
+    const locs = cat.rooms.filter(r => r.id !== this.selectedStartLocation?.id);
+    return locs.length === 1 ? locs[0] : null;
+  }
+
+  onQaCategoryClick(cat: LocationCategory, event: MouseEvent): void {
+    const single = this.getQaSingleLocation(cat);
+    if (single) {
+      void this.selectFromQa(single);
+    } else {
+      this.selectQaCategory(cat, event);
+    }
+  }
+
+  selectQaCategory(cat: LocationCategory, event: MouseEvent): void {
+    this.selectedQaCategory = cat;
+    const btn = event.currentTarget as HTMLElement;
+    const wrap = btn.closest('.mv-qa-list');
+    if (btn && wrap) {
+      const btnRect = btn.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      const rawTop = Math.max(0, Math.round(btnRect.top - wrapRect.top));
+      const MIN_CARD_HEIGHT = 220;
+      this.qaLocCardTop = Math.min(rawTop, Math.max(0, Math.round(wrapRect.height) - MIN_CARD_HEIGHT));
+    } else {
+      this.qaLocCardTop = 0;
+    }
+  }
+
+  async selectFromQa(option: IndoorNavLocationOption): Promise<void> {
+    this.closeQa();
+    const isFloorSwitch = option.floorId !== this.selectedFloorId;
+    const room = await this.resolveSearchOptionRoom(option);
+    if (!room) return;
+    this.setStartRoom(room, isFloorSwitch);
+    this.selectedStartLocation = option;
+    this.sourceLabel = option.displayName || option.name;
+    this.clearDestination();
+  }
+
+  private fetchFloorLocationDetails(floorData: any): Promise<void> {
+    if (this.floorDetails.hasOwnProperty(floorData.id)) return Promise.resolve();
+    if (this.floorDetailFetchPromises[floorData.id]) return this.floorDetailFetchPromises[floorData.id];
+
+    this.floorDetailFetchPromises[floorData.id] = new Promise<void>(resolve => {
+      this.hospitalService.getLogicalLocationWithChildren(floorData.id).subscribe({
+        next: res => {
+          const floorLayout = res?.results ?? res;
+          this.floorDetails[floorData.id] = floorLayout;
+          this.regionalLocationNameService.applyToFloor(floorData.id, floorLayout).finally(resolve);
+        },
+        error: () => resolve()
+      });
+    });
+    return this.floorDetailFetchPromises[floorData.id];
+  }
+
+  private fetchFloorNodes(floorId: number): Promise<void> {
+    if (this.allNodes.hasOwnProperty(floorId)) return Promise.resolve();
+    if (this.nodeFetchPromises[floorId]) return this.nodeFetchPromises[floorId];
+
+    this.nodeFetchPromises[floorId] = new Promise<void>(resolve => {
+      this.hospitalService.getNodePoints(floorId).subscribe({
+        next: res => {
+          const nodes = res?.results ?? res;
+          this.allNodes[floorId] = Array.isArray(nodes) ? nodes : [];
+          resolve();
+        },
+        error: () => {
+          this.allNodes[floorId] = [];
+          resolve();
+        }
+      });
+    });
+    return this.nodeFetchPromises[floorId];
+  }
+
+  private isValidNavRoom(id: number): boolean {
+    return this.navNodes.some(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === id);
+  }
+
+  getNavRooms(): RoomMesh[] {
+    return this.getActiveRoomMeshes().filter(r => this.isValidNavRoom(r.id));
+  }
+
+  private getRoomLabel(room: RoomMesh): string {
+    const regionalLabel = this.getLocationDisplayName(room?.data);
+    if (room?.data?.regionalName && regionalLabel) return regionalLabel;
+    const name = (room?.data?.name ?? room?.name ?? '').trim();
+    const match = name.match(/\b(\d{1,6})\b/);
+    return match?.[1] ?? name;
+  }
+
+  private keepRoomLabelMapSized(room: RoomMesh): void {
+    const setHighlightScale: ((active: boolean) => void) | undefined = room.label?.userData['setHighlightScale'];
+    setHighlightScale?.(false);
+  }
+
+  private setStartRoom(room: RoomMesh, isFloorSwitch = false): void {
+    if (this.startRoom && this.startRoom !== room) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+    }
+    this.startRoom = room;
+    this.sourceLabel = this.getLocationDisplayName(room.data) || this.getRoomLabel(room);
+    this.isSourceFromConfig = false;
+    applyRoomHighlight(room, false, false, true, false);
+    this.keepRoomLabelMapSized(room);
+  }
+
+  private setEndRoom(room: RoomMesh, instant = false): void {
+    if (this.endRoom && this.endRoom !== room) {
+      applyRoomHighlight(this.endRoom, false, false, false, false);
+      this.clearRouteVisual();
+    }
+    this.endRoom = room;
+    this.destinationSearchValue = this.getLocationDisplayName(room.data) || this.getRoomLabel(room);
+    this.destinationSelectedRoomId = room.id;
+    this.selectedDestinationLocation = this.getCurrentFloorOption(room);
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
+    applyRoomHighlight(room, false, false, false, true);
+    this.keepRoomLabelMapSized(room);
+    this.focusOnDestinationRoom(room, instant);
+  }
+
+  private focusOnDestinationRoom(room: RoomMesh, instant = false): void {
+    if (this.scene) {
+      this.scene.updateMatrixWorld(true);
+    }
+    const bounds = new THREE.Box3().setFromObject(room.floor);
+    if (bounds.isEmpty()) return;
+    this.focusOnBoundsForView(bounds, this.viewMode === '2d' ? 3.0 : 3.5, instant);
+  }
+
+  private clearStartSelection(): void {
+    if (this.startRoom) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+      this.startRoom = null;
+    }
+    this.sourceLabel = 'Select source location';
+    this.selectedStartLocation = null;
+    this.animatedFloors.clear();
+  }
+
+  clearDestination(): void {
+    this.destinationSearchValue = '';
+    this.destinationSelectedRoomId = null;
+    this.selectedDestinationLocation = null;
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
+    this.isDestDropdownOpen = false;
+    if (this.endRoom) {
+      applyRoomHighlight(this.endRoom, false, false, false, false);
+      this.endRoom = null;
+    }
+    this.clearRouteVisual();
+  }
+
+  private clearRouteVisual(): void {
+    if (this.routeGroup) {
+      this.cleanupService.disposeGroup(this.routeGroup, this.scene);
+      this.routeGroup = null;
+    }
+    if (this.person) {
+      this.cleanupService.disposeGroup(this.person, this.scene);
+      this.person = null;
+    }
+    this.activePathStartNode = null;
+    this.activePathEndNode = null;
+    this.pathPoints = [];
+    this.pathSteps = [];
+    this.isStepsOpen = false;
+    this.routeDistance = '';
+    this.routeTime = '';
+    this.isJourneyStarted = false;
+    this.movementState = { isMoving: false, currentPathIndex: 0, moveProgress: 0 };
+    if (this.routeAnimationTimer) {
+      clearTimeout(this.routeAnimationTimer);
+      this.routeAnimationTimer = null;
+    }
+    this.pathAnimating = false;
+    this.pathAnimComplete = false;
+    this.routeRibbonMesh = null;
+    this.routeRibbonTotalIndices = 0;
+    this.pathTotalLength = 0;
+    this.pathRevealTriggered = false;
+    this.routeCameraFollowActive = false;
+    this.lastFrameTime = 0;
+  }
+
+  clearNavigation(): void {
+    this.clearRouteVisual();
+    if (this.startRoom) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+      this.startRoom = null;
+    }
+    if (this.endRoom) {
+      applyRoomHighlight(this.endRoom, false, false, false, false);
+      this.endRoom = null;
+    }
+    this.selectedStartLocation = null;
+    this.selectedDestinationLocation = null;
+    this.sourceLabel = 'Select source location';
+    this.destinationSearchValue = '';
+    this.destinationSelectedRoomId = null;
+    this.isDestDropdownOpen = false;
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
+    this.updateLabelVisibility();
+  }
+
+  // --- Search Box suggestions ---
+
+  getDestSuggestions(): IndoorNavLocationOption[] {
+    return this.getAllFloorSuggestions(this.destinationSearchValue, this.selectedStartLocation?.id);
+  }
+
+  onDestinationInput(): void {
+    if (this.endRoom) {
+      applyRoomHighlight(this.endRoom, false, false, false, false);
+      this.endRoom = null;
+      this.clearRouteVisual();
+    }
+    this.destinationSelectedRoomId = null;
+    this.isDestDropdownOpen = true;
+    void this.ensureAllFloorNavOptions();
+  }
+
+  openDestDropdown(): void {
+    this.isDestDropdownOpen = true;
+    void this.ensureAllFloorNavOptions();
+  }
+
+  async selectDestination(option: IndoorNavLocationOption): Promise<void> {
+    this.isDestDropdownOpen = false;
+    this.selectedDestinationLocation = option;
+    const isFloorSwitch = option.floorId !== this.selectedFloorId;
+    const room = await this.resolveSearchOptionRoom(option);
+    if (!room) return;
+    this.setEndRoom(room, isFloorSwitch);
+  }
+
+  private async resolveSearchOptionRoom(option: IndoorNavLocationOption): Promise<RoomMesh | null> {
+    if (option.floorId !== this.selectedFloorId) {
+      await this.switchToSearchFloor(option.floor);
+    }
+    return this.getNavRooms().find(room => room.id === option.id) ?? null;
+  }
+
+  private async switchToSearchFloor(floor: any): Promise<void> {
+    if (floor?.id === this.selectedFloorId) return;
+    this.isLoading = true;
+    if (this.startRoom) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+      this.startRoom = null;
+    }
+    this.clearRouteVisual();
+    await this.fetchFloorLocationDetails(floor);
+    await this.fetchFloorNodes(floor.id);
+    this.selectedFloor = floor;
+    this.selectedFloorId = floor.id;
+    await this.loadBlockFloors();
+  }
+
+  // --- Multi-floor helpers ---
+
+  private getLiftStairNodes(floorId: number): Array<{ node: NavNode; locationId?: number; name: string }> {
+    const nodes = this.allNodes[floorId] || [];
+    const floorLayout = this.floorDetails[floorId];
+    
+    const findLocationById = (loc: any, id: number): any => {
+      if (!loc) return null;
+      if (loc.id === id) return loc;
+      for (const child of loc.children || []) {
+        const found = findLocationById(child, id);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const results: Array<{ node: NavNode; locationId?: number; name: string }> = [];
+
+    nodes.forEach(node => {
+      let isMatch = false;
+      let name = '';
+      const locId = node.location_id ?? (node as any).locationId;
+
+      if (node.locationName && /lift|stair|elev|escalat/i.test(node.locationName)) {
+        isMatch = true;
+        name = node.locationName;
+      }
+
+      if (!isMatch && locId !== undefined && locId !== null && floorLayout) {
+        const loc = findLocationById(floorLayout, Number(locId));
+        if (loc) {
+          const locName = loc.name || '';
+          const dispName = loc.displayName || '';
+          const typeName = loc.locationTypeName || '';
+          const catId = loc.locationCategoryId || '';
+          if (/lift|stair|elev|escalat/i.test(locName) ||
+              /lift|stair|elev|escalat/i.test(dispName) ||
+              /lift|stair|elev|escalat/i.test(typeName) ||
+              /lift|stair|elev|escalat/i.test(catId)) {
+            isMatch = true;
+            name = dispName || locName;
+          }
+        }
+      }
+
+      if (isMatch) {
+        results.push({
+          node,
+          locationId: locId ? Number(locId) : undefined,
+          name: name || `Lift/Stair (${node.id})`
+        });
+      }
+    });
+
+    return results;
+  }
+
+  private findNearestLiftOrStair(
+    fromNode: NavNode,
+    floorId: number
+  ): { node: NavNode; locationId?: number; name: string } | null {
+    const liftStairNodes = this.getLiftStairNodes(floorId);
+    if (liftStairNodes.length === 0) return null;
+
+    let shortestPathLength = Infinity;
+    let nearestNodeInfo: { node: NavNode; locationId?: number; name: string } | null = null;
+
+    const nodes = this.allNodes[floorId] || [];
+    const graph = this.navigationService.constructNodeGraph(nodes);
+
+    liftStairNodes.forEach(info => {
+      const path = this.navigationService.findShortestNodePath(
+        fromNode.id, info.node.id, nodes, graph
+      );
+      if (path) {
+        let dist = 0;
+        for (let i = 1; i < path.length; i++) {
+          const nA = nodes.find(n => n.id === path[i - 1])!;
+          const nB = nodes.find(n => n.id === path[i])!;
+          dist += Math.sqrt(Math.pow(nB.x - nA.x, 2) + Math.pow(nB.y - nA.y, 2));
+        }
+        if (dist < shortestPathLength) {
+          shortestPathLength = dist;
+          nearestNodeInfo = info;
+        }
+      }
+    });
+
+    if (!nearestNodeInfo) {
+      let minStraightDist = Infinity;
+      liftStairNodes.forEach(info => {
+        const dx = info.node.x - fromNode.x;
+        const dy = info.node.y - fromNode.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minStraightDist) {
+          minStraightDist = dist;
+          nearestNodeInfo = info;
+        }
+      });
+    }
+
+    return nearestNodeInfo;
+  }
+
+  private findMatchingLiftOrStairNode(
+    sourceLiftName: string,
+    targetFloorId: number
+  ): { node: NavNode; locationId?: number; name: string } | null {
+    const liftStairNodes = this.getLiftStairNodes(targetFloorId);
+    if (liftStairNodes.length === 0) return null;
+
+    const normalize = (s: string) => (s || '').toLowerCase().replace(/[\s-_]/g, '');
+    const sourceNameNorm = normalize(sourceLiftName);
+
+    let match = liftStairNodes.find(info => normalize(info.name) === sourceNameNorm);
+    if (match) return match;
+
+    match = liftStairNodes.find(info => {
+      const nameNorm = normalize(info.name);
+      return nameNorm.includes(sourceNameNorm) || sourceNameNorm.includes(nameNorm);
+    });
+    if (match) return match;
+
+    if (this.selectedDestinationLocation) {
+      const nearestToDest = this.findNearestLiftOrStair(
+        this.selectedDestinationLocation.node,
+        targetFloorId
+      );
+      if (nearestToDest) return nearestToDest;
+    }
+
+    return liftStairNodes[0];
+  }
+
+  private applyMultiFloorRoute(): void {
+    if (!this.multiFloorRouteActive) return;
+
+    const currentFloorId = this.selectedFloorId;
+    if (!currentFloorId) return;
+
+    if (this.startRoom) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+      this.startRoom = null;
+    }
+    if (this.endRoom) {
+      applyRoomHighlight(this.endRoom, false, false, false, false);
+      this.endRoom = null;
+    }
+
+    if (currentFloorId === this.selectedStartLocation?.floorId) {
+      const startRoomMesh = this.roomMeshes.find(r => r.id === this.selectedStartLocation!.id);
+      if (startRoomMesh) {
+        this.startRoom = startRoomMesh;
+        applyRoomHighlight(startRoomMesh, false, false, true, false);
+        this.keepRoomLabelMapSized(startRoomMesh);
+      }
+      if (this.multiFloorStartLiftLocationId) {
+        const liftRoomMesh = this.roomMeshes.find(r => r.id === this.multiFloorStartLiftLocationId);
+        if (liftRoomMesh) {
+          this.endRoom = liftRoomMesh;
+          applyRoomHighlight(liftRoomMesh, false, false, false, false);
+          this.keepRoomLabelMapSized(liftRoomMesh);
+        }
+      }
+    } else if (currentFloorId === this.selectedDestinationLocation?.floorId) {
+      if (this.multiFloorDestLiftLocationId) {
+        const liftRoomMesh = this.roomMeshes.find(r => r.id === this.multiFloorDestLiftLocationId);
+        if (liftRoomMesh) {
+          this.startRoom = liftRoomMesh;
+          applyRoomHighlight(liftRoomMesh, false, false, false, false);
+          this.keepRoomLabelMapSized(liftRoomMesh);
+        }
+      }
+      const destRoomMesh = this.roomMeshes.find(r => r.id === this.selectedDestinationLocation!.id);
+      if (destRoomMesh) {
+        this.endRoom = destRoomMesh;
+        applyRoomHighlight(destRoomMesh, false, false, false, true);
+        this.keepRoomLabelMapSized(destRoomMesh);
+      }
+    }
+
+    this.calculateRoute();
+  }
+
+  private getAllFloorSuggestions(query: string, excludeRoomId?: number | null): IndoorNavLocationOption[] {
+    const q = (query ?? '').trim().toLowerCase();
+    const source = this.allFloorNavOptions.length
+      ? this.allFloorNavOptions
+      : this.getNavRooms().map(room => this.getCurrentFloorOption(room)).filter((v): v is IndoorNavLocationOption => !!v);
+    return source.filter(option => {
+      if (option.id === excludeRoomId) return false;
+      if (!q) return true;
+      const label = this.getOptionLabel(option).toLowerCase();
+      return label.includes(q)
+        || option.name.toLowerCase().includes(q)
+        || option.displayName.toLowerCase().includes(q)
+        || (option.regionalName ?? '').toLowerCase().includes(q)
+        || option.floorName.toLowerCase().includes(q)
+        || (option.typeName ?? '').toLowerCase().includes(q);
+    });
+  }
+
+  private findFloorById(floorId: number): any {
+    for (const block of this.blockWithFloorList as any[]) {
+      const floor = (block.children || []).find((f: any) => f.id === floorId);
+      if (floor) return floor;
+    }
+    return null;
+  }
+
+  public switchToFloor(floorId: number | undefined): void {
+    if (!floorId) return;
+    const floor = this.findFloorById(floorId);
+    if (floor) {
+      this.selectedFloor = floor;
+      this.selectedFloorId = floor.id;
+      this.floorChanged.emit(floor.id);
+      void this.loadBlockFloors().then(() => {
+        this.applyMultiFloorRoute();
+      });
+    }
+  }
+
+  isMultiFloorScenario(): boolean {
+    return !!this.selectedStartLocation && 
+           !!this.selectedDestinationLocation && 
+           this.selectedStartLocation.floorId !== this.selectedDestinationLocation.floorId;
+  }
+
+  public onDirectionClick(): void {
+    this.isQaOpen = false;
+    this.selectedQaCategory = null;
+    this.animatedFloors.clear();
+
+    if (this.isMultiFloorScenario()) {
+      const startFloorId = this.selectedStartLocation!.floorId;
+      if (this.selectedFloorId !== startFloorId) {
+        this.multiFloorRouteActive = true;
+        void this.ensureAllFloorNavOptions().then(() => {
+          const startLift = this.findNearestLiftOrStair(
+            this.selectedStartLocation!.node,
+            this.selectedStartLocation!.floorId
+          );
+          if (startLift) {
+            this.multiFloorStartLiftNode = startLift.node;
+            this.multiFloorStartLiftLocationId = startLift.locationId ?? null;
+
+            const destLift = this.findMatchingLiftOrStairNode(
+              startLift.name,
+              this.selectedDestinationLocation!.floorId
+            );
+            if (destLift) {
+              this.multiFloorDestLiftNode = destLift.node;
+              this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+            }
+          } else {
+            const destLift = this.findNearestLiftOrStair(
+              this.selectedDestinationLocation!.node,
+              this.selectedDestinationLocation!.floorId
+            );
+            if (destLift) {
+              this.multiFloorDestLiftNode = destLift.node;
+              this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+
+              const startLiftMatching = this.findMatchingLiftOrStairNode(
+                destLift.name,
+                this.selectedStartLocation!.floorId
+              );
+              if (startLiftMatching) {
+                this.multiFloorStartLiftNode = startLiftMatching.node;
+                this.multiFloorStartLiftLocationId = startLiftMatching.locationId ?? null;
+              }
+            }
+          }
+          this.switchToFloor(startFloorId);
+        });
+        return;
+      }
+    }
+
+    this.calculateRoute();
+  }
+
+  // --- Animation Helpers ---
+
+  private focusOnBoundsForView(bounds: THREE.Box3, distanceMultiplier: number, instant = false): void {
+    if (this.landingResetTimer) {
+      clearTimeout(this.landingResetTimer);
+      this.landingResetTimer = null;
+    }
+    if (this.viewMode !== '2d') {
+      if (instant) {
+        const center = new THREE.Vector3();
+        bounds.getCenter(center);
+        const size = new THREE.Vector3();
+        bounds.getSize(size);
+        const maxDim = Math.max(size.x, size.z);
+        const fov = this.camera.fov * (Math.PI / 180);
+        const baseDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+        const dist = Math.max(baseDist * distanceMultiplier, FOCUS_ROOM_MIN_DISTANCE);
+        
+        const currentSpherical = new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(this.controls.target));
+        const def = this.mapConfig.floorDefaults?.[String(this.selectedFloorId)];
+        const spherical = new THREE.Spherical(dist, def?.phi ?? currentSpherical.phi, def?.theta ?? currentSpherical.theta);
+        const targetCam = center.clone().add(new THREE.Vector3().setFromSpherical(spherical));
+        
+        this.controls.target.copy(center);
+        this.camera.position.copy(targetCam);
+        this.controls.update();
+        this.updateLabelVisibility();
+        return;
+      }
+      this.cameraAnimationService.focusOnBounds(bounds, this.camera, this.controls, () => this.updateLabelVisibility(), distanceMultiplier);
+      return;
+    }
+
+    if (bounds.isEmpty()) return;
+
+    const center = new THREE.Vector3();
+    bounds.getCenter(center);
+    const size = new THREE.Vector3();
+    bounds.getSize(size);
+
+    const maxDim = Math.max(size.x, size.z);
+    const fov = this.camera.fov * (Math.PI / 180);
+    const baseDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    const dist = Math.max(baseDist * distanceMultiplier, FOCUS_ROOM_MIN_DISTANCE);
+    const targetCam = new THREE.Vector3(center.x, center.y + dist, center.z);
+
+    if (instant) {
+      this.controls.minPolarAngle = 0;
+      this.controls.maxPolarAngle = 0;
+      this.controls.enableRotate = false;
+      this.controls.target.copy(center);
+      this.camera.position.copy(targetCam);
+      this.controls.update();
+      this.updateLabelVisibility();
+      return;
+    }
+
+    const startCam = this.camera.position.clone();
+    const startTarget = this.controls.target.clone();
+
+    this.controls.minPolarAngle = 0;
+    this.controls.maxPolarAngle = 0;
+    this.controls.enableRotate = false;
+    this.cameraAnimationService.animateCamera(
+      this.camera, this.controls,
+      startCam, targetCam,
+      startTarget, center,
+      this.routeCameraTransitionDuration,
+      () => this.updateLabelVisibility()
+    );
+  }
+
+  private getPathPositionAt(t: number): THREE.Vector3 {
+    const pts = this.pathPoints;
+    if (!pts.length) return new THREE.Vector3();
+    if (t <= 0) return pts[0].clone();
+    if (t >= 1) return pts[pts.length - 1].clone();
+    const targetLen = t * this.pathTotalLength;
+    let cum = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const seg = pts[i].distanceTo(pts[i + 1]);
+      if (cum + seg >= targetLen) {
+        const lt = seg > 0 ? (targetLen - cum) / seg : 0;
+        return new THREE.Vector3().lerpVectors(pts[i], pts[i + 1], lt);
+      }
+      cum += seg;
+    }
+    return pts[pts.length - 1].clone();
+  }
+
+  private fitFullRouteAfterArrival(instant = false): void {
+    const bounds = this.getRouteBounds();
+    if (bounds.isEmpty()) return;
+
+    const multiplier = this.getResponsiveRouteFitMultiplier();
+    if (this.viewMode === '2d') {
+      this.focusOnBoundsForView(bounds, multiplier, instant);
+      this.controls.enablePan = false;
+    } else {
+      this.focusOnRouteBounds3d(bounds, multiplier, instant);
+    }
+  }
+
+  private getRouteBounds(): THREE.Box3 {
+    if (this.scene) {
+      this.scene.updateMatrixWorld(true);
+    }
+    const bounds = new THREE.Box3();
+    if (this.startRoom) bounds.expandByObject(this.startRoom.floor);
+    if (this.endRoom) bounds.expandByObject(this.endRoom.floor);
+    if (this.routeGroup) bounds.expandByObject(this.routeGroup);
+    return bounds;
+  }
+
+  private getRouteWorldPoint(point: THREE.Vector3): THREE.Vector3 {
+    const worldPoint = point.clone();
+    if (this.routeGroup?.parent) {
+      this.routeGroup.parent.localToWorld(worldPoint);
+    }
+    return worldPoint;
+  }
+
+  private panCameraTowardRoutePoint(point: THREE.Vector3, factor: number): void {
+    const worldPoint = this.getRouteWorldPoint(point);
+    const target = new THREE.Vector3(worldPoint.x, this.controls.target.y, worldPoint.z);
+    const delta = target.sub(this.controls.target).multiplyScalar(factor);
+    this.controls.target.add(delta);
+    this.camera.position.add(delta);
+  }
+
+  private getResponsiveRouteFitMultiplier(): number {
+    const width = this.renderer?.domElement?.clientWidth ?? window.innerWidth;
+    const height = this.renderer?.domElement?.clientHeight ?? window.innerHeight;
+    const aspect = width / Math.max(height, 1);
+
+    if (width < 640 || aspect < 0.9) return 2.5;
+    if (width < 1024 || aspect < 1.2) return 2.15;
+    return 1.8;
+  }
+
+  private focusOnRouteStartForNavigation(instant = false): void {
+    if (this.scene) {
+      this.scene.updateMatrixWorld(true);
+    }
+    const bounds = new THREE.Box3();
+    if (this.startRoom) bounds.expandByObject(this.startRoom.floor);
+
+    const previewCount = Math.max(2, Math.ceil(this.pathPoints.length * 0.25));
+    this.pathPoints.slice(0, previewCount).forEach(point => bounds.expandByPoint(this.getRouteWorldPoint(point)));
+    if (bounds.isEmpty()) return;
+
+    const multiplier = this.getResponsiveRouteFitMultiplier() * 1.25;
+    if (this.viewMode === '2d') {
+      this.focusOnBoundsForView(bounds, multiplier, instant);
+      this.controls.enablePan = false;
+    } else {
+      this.focusOnRouteBounds3d(bounds, multiplier, instant);
+    }
+
+    this.routeCameraFollowActive = true;
+  }
+
+  private startRouteRevealAfterCameraFit(instant = false): void {
+    if (this.routeAnimationTimer) clearTimeout(this.routeAnimationTimer);
+    const delay = instant ? 100 : (this.routeCameraTransitionDuration + 80);
+    this.routeAnimationTimer = setTimeout(() => {
+      this.routeAnimationTimer = null;
+      this.pathAnimStartTime = performance.now();
+      this.pathAnimating = true;
+    }, delay);
+  }
+
+  private focusOnRouteBounds3d(bounds: THREE.Box3, distanceMultiplier: number, instant = false): void {
+    if (this.landingResetTimer) {
+      clearTimeout(this.landingResetTimer);
+      this.landingResetTimer = null;
+    }
+    const center = new THREE.Vector3();
+    bounds.getCenter(center);
+    const size = new THREE.Vector3();
+    bounds.getSize(size);
+
+    const maxDim = Math.max(size.x, size.z);
+    const fov = this.camera.fov * (Math.PI / 180);
+    const baseDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+    const dist = Math.max(
+      this.controls.minDistance,
+      Math.min(this.controls.maxDistance, Math.max(baseDist * distanceMultiplier, FOCUS_ROOM_MIN_DISTANCE))
+    );
+
+    const currentSpherical = new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(this.controls.target));
+    const def = this.mapConfig.floorDefaults?.[String(this.selectedFloorId)];
+    const spherical = new THREE.Spherical(dist, def?.phi ?? currentSpherical.phi, def?.theta ?? currentSpherical.theta);
+    const targetCam = center.clone().add(new THREE.Vector3().setFromSpherical(spherical));
+
+    if (instant) {
+      this.controls.target.copy(center);
+      this.camera.position.copy(targetCam);
+      this.controls.update();
+      this.updateLabelVisibility();
+      return;
+    }
+
+    const startCam = this.camera.position.clone();
+    const startTarget = this.controls.target.clone();
+
+    this.cameraAnimationService.animateCamera(
+      this.camera, this.controls,
+      startCam, targetCam,
+      startTarget, center,
+      this.routeCameraTransitionDuration,
+      () => this.updateLabelVisibility()
+    );
+  }
+
+  private generatePathSteps(pts: any[]): PathStep[] {
+    if (pts.length < 2) return [];
+    const steps: PathStep[] = [];
+    const startName = this.startRoom ? this.getLocationDisplayName(this.startRoom.data) || this.sourceLabel : this.sourceLabel;
+    const endName = this.endRoom ? this.getLocationDisplayName(this.endRoom.data) || this.destinationSearchValue : this.destinationSearchValue;
+
+    steps.push({ instruction: `Start at ${startName}`, distance: '', icon: 'start' });
+
+    let segDist = 0;
+
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i - 1];
+      const curr = pts[i];
+      const dx = curr.x - prev.x;
+      const dz = curr.z - prev.z;
+      const d = Math.sqrt(dx * dx + dz * dz);
+      segDist += d;
+
+      if (i < pts.length - 1) {
+        const next = pts[i + 1];
+        const v1 = new THREE.Vector2(dx, dz).normalize();
+        const v2 = new THREE.Vector2(next.x - curr.x, next.z - curr.z).normalize();
+        const cross = v1.x * v2.y - v1.y * v2.x;
+        const dot = v1.dot(v2);
+        const angleDeg = Math.abs(Math.atan2(Math.abs(cross), dot) * (180 / Math.PI));
+
+        if (angleDeg > 20) {
+          const distLabel = `${segDist.toFixed(0)}m`;
+          if (angleDeg < 35) {
+            steps.push({ instruction: cross > 0 ? 'Slight right' : 'Slight left', distance: distLabel, icon: cross > 0 ? 'turn-right' : 'turn-left' });
+          } else if (angleDeg < 100) {
+            steps.push({ instruction: cross > 0 ? 'Turn right' : 'Turn left', distance: distLabel, icon: cross > 0 ? 'turn-right' : 'turn-left' });
+          } else {
+            steps.push({ instruction: cross > 0 ? 'Sharp right' : 'Sharp left', distance: distLabel, icon: cross > 0 ? 'turn-right' : 'turn-left' });
+          }
+          segDist = 0;
+        }
+      }
+    }
+
+    if (segDist > 0.5) {
+      steps.push({ instruction: 'Continue straight', distance: `${segDist.toFixed(0)}m`, icon: 'straight' });
+    }
+    steps.push({ instruction: `Arrive at ${endName}`, distance: '', icon: 'arrive' });
+    return steps;
+  }
+
+  private updateDestCalloutPosition(): void {
+    const el = this.destCalloutEl?.nativeElement;
+    if (!el || !this.endRoom || !this.startRoom || this.routeDistance || !this.camera) {
+      if (el) el.style.visibility = 'hidden';
+      return;
+    }
+
+    const box = new THREE.Box3().setFromObject(this.endRoom.floor);
+    const worldCenter = new THREE.Vector3();
+    box.getCenter(worldCenter);
+    worldCenter.y += 2;
+    worldCenter.project(this.camera);
+
+    if (worldCenter.z > 1) { el.style.visibility = 'hidden'; return; }
+
+    const canvas = this.renderer?.domElement;
+    if (!canvas) return;
+    const x = (worldCenter.x * 0.5 + 0.5) * canvas.clientWidth;
+    const y = (-worldCenter.y * 0.5 + 0.5) * canvas.clientHeight;
+
+    el.style.visibility = 'visible';
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+  }
+
+  private projectNodeToScreen(node: NavNode): { x: number; y: number } | null {
+    if (!this.camera || !this.renderer || !node) return null;
+    const xOff = this.floorHasGeoAlign ? this.rawFloorCenter.x : 0;
+    const zOff = this.floorHasGeoAlign ? this.rawFloorCenter.y : 0;
+    const worldPos = new THREE.Vector3(node.x - xOff, 0, node.y - zOff);
+    if (this.buildingGroup) this.buildingGroup.localToWorld(worldPos);
+    const projected = worldPos.clone().project(this.camera);
+    if (projected.z > 1) return null;
+    const canvas = this.renderer.domElement;
+    return {
+      x: (projected.x * 0.5 + 0.5) * canvas.clientWidth,
+      y: (-projected.y * 0.5 + 0.5) * canvas.clientHeight,
+    };
+  }
+
+  private updateNavMarkerPositions(): void {
+    const src = this.sourceMarkerEl?.nativeElement;
+    if (src) {
+      const pos = this.activePathStartNode ? this.projectNodeToScreen(this.activePathStartNode) : null;
+      if (pos) {
+        src.style.visibility = 'visible';
+        src.style.left = pos.x + 'px';
+        src.style.top = pos.y + 'px';
+      } else {
+        src.style.visibility = 'hidden';
+      }
+    }
+    const dst = this.destMarkerEl?.nativeElement;
+    if (dst) {
+      const pos = this.activePathEndNode ? this.projectNodeToScreen(this.activePathEndNode) : null;
+      if (pos) {
+        dst.style.visibility = 'visible';
+        dst.style.left = pos.x + 'px';
+        dst.style.top = pos.y + 'px';
+      } else {
+        dst.style.visibility = 'hidden';
+      }
+    }
+  }
+
+  private updateYouAreHerePosition(): void {
+    const el = this.youAreHereEl?.nativeElement;
+    if (!el || !this.startRoom || this.routeDistance || !this.camera) {
+      if (el) el.style.visibility = 'hidden';
+      return;
+    }
+
+    const box = new THREE.Box3().setFromObject(this.startRoom.floor);
+    const worldCenter = new THREE.Vector3();
+    box.getCenter(worldCenter);
+    worldCenter.y += 2;
+    worldCenter.project(this.camera);
+
+    if (worldCenter.z > 1) { el.style.visibility = 'hidden'; return; }
+
+    const canvas = this.renderer?.domElement;
+    if (!canvas) return;
+    const x = (worldCenter.x * 0.5 + 0.5) * canvas.clientWidth;
+    const y = (-worldCenter.y * 0.5 + 0.5) * canvas.clientHeight;
+
+    el.style.visibility = 'visible';
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+  }
+
+  public getFormattedFloorName(floorName: string | undefined): string {
+    if (!floorName) return '';
+    const lower = floorName.toLowerCase().trim();
+    if (lower === 'ground') return 'Ground Floor';
+    if (lower === 'first') return 'First Floor';
+    if (lower === 'second') return 'Second Floor';
+    if (lower === 'third') return 'Third Floor';
+    if (lower.endsWith('floor')) {
+      return floorName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    const capitalized = floorName.charAt(0).toUpperCase() + floorName.slice(1).toLowerCase();
+    return `${capitalized} Floor`;
+  }
+
+  refreshMapView(): void {
+    const floorId = this.selectedFloorId;
+    if (!floorId) return;
+
+    this.isLoading = true;
+    this.noDataFound = false;
+
+    // Clear caches for the current floor so they are fetched fresh
+    delete this.floorDetails[floorId];
+    delete this.allNodes[floorId];
+
+    // Re-fetch logical location details with children (layout)
+    this.hospitalService.getLogicalLocationWithChildren(floorId).subscribe({
+      next: (res) => {
+        this.floorDetails[floorId] = res.results;
+        this.regionalLocationNameService.applyToFloor(floorId, this.floorDetails[floorId]).finally(() => {
+          // Re-fetch navigation nodes
+          this.hospitalService.getNodePoints(floorId).subscribe({
+            next: (nodeRes) => {
+              this.allNodes[floorId] = nodeRes.results;
+              // Re-fetch readers and rebuild the scene
+              this.loadBlockFloors().finally(() => {
+                this.isLoading = false;
+              });
+            },
+            error: (err) => {
+              console.error('Error fetching navigation nodes during refresh:', err);
+              // Fallback: try loading block floors anyway
+              this.loadBlockFloors().finally(() => {
+                this.isLoading = false;
+              });
+            }
+          });
+        });
+      },
+      error: (err) => {
+        console.error('Error fetching floor details during refresh:', err);
+        this.isLoading = false;
+      }
+    });
   }
 }

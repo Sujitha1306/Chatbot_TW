@@ -13,10 +13,10 @@
   --tdt-row-hover: #eef4ff;
   --tdt-row-active: #dce8ff;
   --tdt-row-selected: #f0f0ff;
-  --tdt-header-height: 44px;
-  --tdt-row-height: 48px;
+  --tdt-header-height: 40px;
+  --tdt-row-height: 40px;
   --tdt-radius: 12px;
-  --tdt-font: 12px;
+  --tdt-font: 11px;
   --tdt-font-header: 11.5px;
   display: block;
 }
@@ -26,19 +26,21 @@
   display: flex;
   flex-direction: column;
   background: #fff;
-  border-radius: var(--tdt-radius);
+  border-radius: 4px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.04),
     0 2px 6px rgba(0, 0, 0, 0.06),
     0 8px 24px rgba(0, 0, 0, 0.04);
   overflow: hidden;
-  max-height: calc(100vh - var(--tdt-size, 190px));
+  height: calc(100vh - var(--tdt-size, 190px));
+  margin: 5px 16px 0px 16px;
 }
 
 // ─── Scroll container ─────────────────────────────────────────────────────────
 .tdt-scroll-container {
   overflow: auto;
   flex: 1;
+  container-type: inline-size;
 
   // Custom scrollbar (Chrome / Edge / Safari)
   &::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -70,7 +72,7 @@
   font-size: var(--tdt-font-header);
   font-weight: 600;
   letter-spacing: 0.6px;
-  text-transform: uppercase;
+  text-transform: none;
   color: rgba(255, 255, 255, 0.92);
   border-bottom: none;
   white-space: nowrap;
@@ -95,16 +97,16 @@
 }
 
 .tdt-header-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
   vertical-align: middle;
   opacity: 0.85;
 }
 
 .tdt-header-img {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   vertical-align: middle;
   object-fit: contain;
 }
@@ -200,6 +202,8 @@
 .tdt-no-data-cell {
   border: none !important;
   padding: 0 !important;
+  position: sticky;
+  left: 0;
 }
 
 .tdt-empty-state {
@@ -210,6 +214,8 @@
   padding: 56px 24px;
   color: #d1d5db;
   gap: 12px;
+  width: 100cqw;
+  box-sizing: border-box;
 }
 
 .tdt-empty-icon {
@@ -382,4 +388,46 @@
 @media (max-width: 600px) {
   .tdt-wrapper { border-radius: 0; }
   .tdt-body-cell, .tdt-header-cell { padding: 0 8px; }
+}
+
+
+.tw-grid-status-badge {
+  --badge-color: #2696d6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--badge-color);
+  background: color-mix(in srgb, var(--badge-color) 12%, white);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 45%, white);
+  transition: all .25s ease;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.tw-grid-status-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    rgba(255,255,255,.6) 50%,
+    transparent 80%
+  );
+  transform: translateX(-120%);
+  transition: transform .6s ease;
+}
+
+.tw-grid-status-badge:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+.tw-grid-status-badge:hover::before {
+  transform: translateX(120%);
 }

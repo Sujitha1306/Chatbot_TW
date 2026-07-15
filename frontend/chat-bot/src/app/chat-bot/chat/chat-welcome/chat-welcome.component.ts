@@ -1,5 +1,6 @@
-import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, ChangeDetectorRef, Optional } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { MatDialogRef } from '@angular/material/dialog';
 import { ChatService } from '../../services/chat.service';
 import { Subscription } from 'rxjs';
 
@@ -24,9 +25,17 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
     { icon: 'security',      title: 'Warranty Status',     subtitle: 'Which assets have warranty expiring next 30 days?', query: 'Which assets have warranty expiring in next 30 days?' },
   ];
   inputValue = '';
+  showThread = false;
+  activeConversationId?: string;
   private sub?: Subscription;
 
-  constructor(private chat: ChatService, private router: Router, private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private chat: ChatService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+    @Optional() public dialogRef: MatDialogRef<ChatWelcomeComponent>
+  ) {}
 
   ngOnInit() {
     this.sub = this.chat.fillInput$.subscribe(val => {
@@ -51,11 +60,33 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
       this.send();
     }
   }
+  closePopup() {
+    this.dialogRef?.close();
+  }
+
+  onSidebarSelectConversation(convId: string) {
+    this.activeConversationId = convId;
+    this.showThread = true;
+    this.cdr.markForCheck();
+  }
+
+  onSidebarNewConversation() {
+    this.activeConversationId = undefined;
+    this.showThread = false;
+    this.inputValue = '';
+    this.cdr.markForCheck();
+  }
   
-  send() { 
+  send() {
     const q = this.inputValue.trim();
     if (!q) return;
     const convId = this.chat.startConversation(q);
-    this.router.navigate(['./', convId], { relativeTo: this.route });
+    if(this.dialogRef) {
+      this.activeConversationId = convId;
+      this.showThread = true;
+      this.cdr.markForCheck();
+    } else {
+      this.router.navigate(['./', convId], { relativeTo: this.route });
+    }
   }
 }

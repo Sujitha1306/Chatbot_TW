@@ -1,0 +1,323 @@
+<div class="location-track-root">
+  <lazy-loader *ngIf="loading"></lazy-loader>
+  <div class="location-track-header" *ngIf="blockList.length; else emptyState">
+    <div class="location-track-filter-bar">
+      <div class="location-track-path-header" *ngIf="selectedBlockName">
+        <span class="lt-location-icon-badge">
+          <mat-icon class="location-icon">place</mat-icon>
+        </span>
+        <span class="path-segment block-name" [matTooltip]="selectedBlockName">{{ selectedBlockName }}</span>
+        <span class="path-separator">&gt;</span>
+        <span class="path-segment floor-name" [matTooltip]="selectedFloorName === 'All' ? ('All' | translate) : selectedFloorName">{{ selectedFloorName === 'All' ? ('All' | translate) : selectedFloorName }}</span>
+        <span class="path-separator">&gt;</span>
+        <span class="path-segment location-name" [matTooltip]="selectedLocationName === 'All' ? ('All' | translate) : selectedLocationName">{{ selectedLocationName === 'All' ? ('All' | translate) : selectedLocationName }}</span>
+      </div>
+
+      <mat-form-field appearance="fill" class="location-track-search">
+        <mat-icon matPrefix class="material-icons lt-search-field-icon">search</mat-icon>
+        <input matInput [(ngModel)]="searchText" (input)="onSearchInput($any($event.target).value)" placeholder="{{'Search (Min 3 characters)'|translate}}">
+        <button matSuffix mat-icon-button *ngIf="searchText" (click)="onSearchInput(''); $event.stopPropagation()"
+          matTooltip="Clear">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+      
+      <div class="location-track-legend">
+        <div class="lt-legend-time-group">
+          <span>
+            <mat-icon class="lt-star-update-icon lt-star--blink">star</mat-icon>
+            &lt; 1 min
+          </span>
+          <span>
+            <mat-icon class="lt-star-update-icon lt-star--yellow">star</mat-icon>
+            1 - 5 min
+          </span>
+          <span>
+            <mat-icon class="lt-star-update-icon lt-star--orange">star</mat-icon>
+            &gt; 5 min
+          </span>
+        </div>
+        <div class="lt-mqtt-status-wrapper">
+          <span class="lt-mqtt-status-badge" [class.lt-mqtt--connected]="isMqttConnected" [class.lt-mqtt--disconnected]="!isMqttConnected"
+            [matTooltip]="(isMqttConnected ? 'Live Connection Active' : 'Live Connection Offline') | translate">
+            <mat-icon class="material-icons lt-mqtt-icon">sync</mat-icon>
+          </span>
+        </div>
+      </div>
+
+      <div class="location-track-actions-row">
+        <div class="lt-toggle-cards-btn" *ngIf="isCardtoggle" (click)="toggleCardsRow()" 
+          [matTooltip]="(showCardsRow ? 'Hide Cards' : 'Show Cards') | translate">
+          <mat-icon>{{ showCardsRow ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </div>
+        <div class="lt-toggle-view-btn" (click)="toggleViewMode()" 
+          [matTooltip]="(viewMode === 'list' ? 'Switch to Card View' : 'Switch to List View') | translate">
+          <mat-icon>{{ viewMode === 'list' ? 'grid_view' : 'view_list' }}</mat-icon>
+        </div>
+        <div #filterTrigger="matMenuTrigger" class="lt-filter-btn" 
+          [class.lt-filter-btn--disabled]="loading"
+          [matMenuTriggerFor]="filterMenu"
+          (menuOpened)="onFilterMenuOpen()"
+          matTooltip="{{'Filter'|translate}}"
+          style="position: relative;">
+          <mat-icon>filter_list</mat-icon>
+          <span *ngIf="isFilterActive" class="group-filter-indicator">
+            <span class="sub-indicator"></span>
+          </span>
+        </div>
+        <div class="lt-refresh-btn" (click)="refreshPage()" matTooltip="{{'Refresh'|translate}}">
+          <mat-icon>refresh</mat-icon>
+        </div>
+      </div>
+        <mat-menu #filterMenu="matMenu" class="location-track-filter-menu ovi-font-family">
+          <div class="group-filter-container" (click)="$event.stopPropagation()">
+            <span class="ovi-fnt-sze14"
+              style="padding: 10px 15px; font-weight: 600; display: flex; align-items: center; gap: 3px;">
+              {{"Filter"|translate}}
+            </span>
+            <div class="filter-list">
+              <div class="filter-group">
+                <div class="header-container">
+                  <div class="filter-header">{{"Block"|translate}}</div>
+                  <div class="filter-header-search" *ngIf="blockList.length > 15" style="margin-right: 15px;">
+                    <span class="tw-filter-new search-align" style="width: 150px; display: block;">
+                      <form autocomplete="off" class="tw-search-box" style="height: 28px; padding: 0 6px;">
+                        <mat-icon class="tw-search-icon" style="font-size: 14px; width: 14px; height: 14px; line-height: 14px; margin-right: 2px;">search</mat-icon>
+                        <input matInput [(ngModel)]="blockSearchTerm" [ngModelOptions]="{ standalone: true }" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" style="font-size: 11px;">
+                      </form>
+                    </span>
+                  </div>
+                </div>
+                <div class="subfilters-inline">
+                  <span class="subfilter all-filter" *ngIf="filteredBlocks.length > 1" (click)="onTempBlockChange('All')"
+                    [class.selected-subfilter]="tempSelectedBlockId === 'All'">
+                    <span class="filter-check" [class.selected-filter-check]="tempSelectedBlockId === 'All'">
+                      {{tempSelectedBlockId === 'All' ? '✔' : ''}}
+                    </span>
+                    {{"All"|translate}}
+                  </span>
+                  <span *ngFor="let b of filteredBlocks" class="subfilter"
+                    [class.selected-subfilter]="tempSelectedBlockId === 'All' || tempSelectedBlockId === b.id" (click)="onTempBlockChange(b.id)">
+                    <span class="filter-check" [class.selected-filter-check]="tempSelectedBlockId === 'All' || tempSelectedBlockId === b.id">
+                      {{(tempSelectedBlockId === 'All' || tempSelectedBlockId === b.id) ? '✔' : ''}}
+                    </span>
+                    {{ b.name }}
+                  </span>
+                </div>
+              </div>
+              <div class="filter-group" *ngIf="tempSelectedBlockId !== 'All'">
+                <div class="header-container">
+                  <div class="filter-header">{{"Floor"|translate}}</div>
+                  <div class="filter-header-search" *ngIf="tempFloorList.length - 1 > 15" style="margin-right: 15px;">
+                    <span class="tw-filter-new search-align" style="width: 150px; display: block;">
+                      <form autocomplete="off" class="tw-search-box" style="height: 28px; padding: 0 6px;">
+                        <mat-icon class="tw-search-icon" style="font-size: 14px; width: 14px; height: 14px; line-height: 14px; margin-right: 2px;">search</mat-icon>
+                        <input matInput [(ngModel)]="floorSearchTerm" [ngModelOptions]="{ standalone: true }" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" style="font-size: 11px;">
+                      </form>
+                    </span>
+                  </div>
+                </div>
+                <div class="subfilters-inline">
+                  <span class="subfilter all-filter" *ngIf="filteredFloors.length > 1" (click)="onFloorFilterChange('All')"
+                    [class.selected-subfilter]="tempSelectedFloorId === 'All'">
+                    <span class="filter-check" [class.selected-filter-check]="tempSelectedFloorId === 'All'">
+                      {{tempSelectedFloorId === 'All' ? '✔' : ''}}
+                    </span>
+                    {{"All"|translate}}
+                  </span>
+                  <span *ngFor="let f of filteredFloors" class="subfilter"
+                    [class.selected-subfilter]="tempSelectedFloorId === 'All' || tempSelectedFloorId === f.id" (click)="onFloorFilterChange(f.id)">
+                    <span class="filter-check" [class.selected-filter-check]="tempSelectedFloorId === 'All' || tempSelectedFloorId === f.id">
+                      {{(tempSelectedFloorId === 'All' || tempSelectedFloorId === f.id) ? '✔' : ''}}
+                    </span>
+                    {{ f.name | translate }}
+                  </span>
+                </div>
+              </div>
+              <div class="filter-group" *ngIf="tempSelectedFloorId !== 'All'">
+                <div class="header-container">
+                  <div class="filter-header">{{"Location"|translate}}</div>
+                  <div class="filter-header-search" *ngIf="locationList.length > 15" style="margin-right: 15px;">
+                    <span class="tw-filter-new search-align" style="width: 150px; display: block;">
+                      <form autocomplete="off" class="tw-search-box" style="height: 28px; padding: 0 6px;">
+                        <mat-icon class="tw-search-icon" style="font-size: 14px; width: 14px; height: 14px; line-height: 14px; margin-right: 2px;">search</mat-icon>
+                        <input matInput [(ngModel)]="locSearchTerm" (input)="onLocSearchInput()" [ngModelOptions]="{ standalone: true }" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" style="font-size: 11px;">
+                      </form>
+                    </span>
+                  </div>
+                </div>
+                <div class="subfilters-inline" *ngIf="locationList.length; else emptyLocations">
+                  <span class="subfilter all-filter" *ngIf="displayedLocations.length > 1" (click)="onLocationFilterChange('All')"
+                    [class.selected-subfilter]="tempSelectedLocations.length === locationList.length">
+                    <span class="filter-check"
+                      [class.selected-filter-check]="tempSelectedLocations.length === locationList.length">
+                      {{tempSelectedLocations.length === locationList.length ? '✔' : ''}}
+                    </span>
+                    {{"All"|translate}}
+                  </span>
+                  <span *ngFor="let loc of displayedLocations" class="subfilter"
+                    [class.selected-subfilter]="tempSelectedLocations.includes(loc)" (click)="onLocationFilterChange(loc)">
+                    <span class="filter-check" [class.selected-filter-check]="tempSelectedLocations.includes(loc)">
+                      {{tempSelectedLocations.includes(loc) ? '✔' : ''}}
+                    </span>
+                    {{ loc | translate }}
+                  </span>
+                </div>
+                <div *ngIf="!locSearchTerm && !locShowAll && hiddenLocCount > 0" class="show-more-row">
+                  <button mat-button class="show-more-btn" (click)="locShowAll = true">
+                    {{'Show more'|translate}} ({{hiddenLocCount}})
+                  </button>
+                </div>
+                <div *ngIf="!locSearchTerm && locShowAll && locationList.length > 15" class="show-more-row">
+                  <button mat-button class="show-more-btn" (click)="locShowAll = false">
+                    {{'Show less'|translate}}
+                  </button>
+                </div>
+                <ng-template #emptyLocations>
+                  <div class="filter-loading" style="color: var(--lt-text-muted); font-size: var(--lt-font-xs); padding: 12px 15px;">
+                    <span>{{'No locations with active tags'|translate}}</span>
+                  </div>
+                </ng-template>
+              </div>
+              <div class="filter-group">
+                <div class="header-container">
+                  <div class="filter-header">{{"Tag Type"|translate}}</div>
+                  <div class="filter-header-search" *ngIf="tagTypes.length > 15" style="margin-right: 15px;">
+                    <span class="tw-filter-new search-align" style="width: 150px; display: block;">
+                      <form autocomplete="off" class="tw-search-box" style="height: 28px; padding: 0 6px;">
+                        <mat-icon class="tw-search-icon" style="font-size: 14px; width: 14px; height: 14px; line-height: 14px; margin-right: 2px;">search</mat-icon>
+                        <input matInput [(ngModel)]="tagTypeSearchTerm" [ngModelOptions]="{ standalone: true }" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Search'|translate" style="font-size: 11px;">
+                      </form>
+                    </span>
+                  </div>
+                </div>
+                <div class="subfilters-inline" *ngIf="tagTypes.length; else emptyTagTypes">
+                  <span class="subfilter all-filter" *ngIf="filteredTagTypes.length > 1" (click)="onTagTypeFilterChange('All')"
+                    [class.selected-subfilter]="tempSelectedTagTypes.length === tagTypes.length">
+                    <span class="filter-check"
+                      [class.selected-filter-check]="tempSelectedTagTypes.length === tagTypes.length">
+                      {{tempSelectedTagTypes.length === tagTypes.length ? '✔' : ''}}
+                    </span>
+                    {{"All"|translate}}
+                  </span>
+                  <span *ngFor="let type of filteredTagTypes" class="subfilter"
+                    [class.selected-subfilter]="tempSelectedTagTypes.includes(type)" (click)="onTagTypeFilterChange(type)">
+                    <span class="filter-check" [class.selected-filter-check]="tempSelectedTagTypes.includes(type)">
+                      {{tempSelectedTagTypes.includes(type) ? '✔' : ''}}
+                    </span>
+                    {{ type | translate }}
+                  </span>
+                </div>
+                <ng-template #emptyTagTypes>
+                  <div class="filter-loading" style="color: var(--lt-text-muted); font-size: var(--lt-font-xs); padding: 12px 15px;">
+                    <span>{{'No active tag types'|translate}}</span>
+                  </div>
+                </ng-template>
+              </div>
+            </div>
+            <div class="filter-footer">
+              <button mat-button class="active-btn" (click)="applyFilters()">{{"Apply"|translate}}</button>
+            </div>
+          </div>
+        </mat-menu>
+      </div>
+
+    <div class="location-track-summary-row" *ngIf="showCardsRow && typeCounts.length">
+      <ng-container *ngFor="let c of typeCounts; let idx = index; trackBy: trackByLabel">
+        <div class="lt-summary-item" *ngIf="c.count > 0"
+          [matTooltip]="c.label | translate"
+          [style.background-color]="getCardBgColor(idx, c.label)" 
+          [style.border-color]="getCardBorderColor(idx, c.label)">
+          <mat-icon *ngIf="tagTypeMatIcon(c.label)" class="lt-summary-item__icon" [ngClass]="tagTypeIconClass(c.label)">{{ tagTypeMatIcon(c.label) }}</mat-icon>
+          <span class="lt-summary-item__count" [style.color]="getCardTextColor(idx, c.label)">{{c.count}}</span>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="location-track-table-container" *ngIf="selectedFloorId && blockList.length; else noFloor">
+    <div class="lt-cache-null-banner" *ngIf="cacheDataNull && !loading && !isTableEmpty">
+      <mat-icon class="lt-cache-null-icon">info_outline</mat-icon>
+      <span>{{'No new data from cache. Showing last known data.' | translate}}</span>
+    </div>
+    
+    <!-- List / Table View -->
+    <div class="location-track-table-wrapper" *ngIf="viewMode === 'list' && !isTableEmpty">
+      <table mat-table [dataSource]="dataSource" matSort [trackBy]="trackByTag" class="location-track-table">
+        <ng-container *ngFor="let col of responseColumns; let i = index" [matColumnDef]="col">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header [disabled]="!isSortable(col)">{{ displayColumns[i] | translate }}</th>
+          <td mat-cell *matCellDef="let row">
+            <div class="lt-cell-value">
+              <span *ngIf="col === responseColumns[0]" class="lt-cell__location-name">{{row[col]}}</span>
+              <span *ngIf="col === responseColumns[1]" class="lt-cell__username">
+                <span>{{ row[col] }}<span *ngIf="row.raw?.tagid || row.raw?.tid" class="lt-cell__tagid"> ({{ row.raw?.tagid || row.raw?.tid }})</span></span>
+              </span>
+              <span *ngIf="col === responseColumns[2]" class="lt-cell__tagtype" style="display: flex; align-items: center; gap: 8px;">
+                <mat-icon *ngIf="tagTypeMatIcon(row[col])" class="lt-cell__tag-icon" [ngClass]="tagTypeIconClass(row[col])" [matTooltip]="row[col] | translate">{{ tagTypeMatIcon(row[col]) }}</mat-icon>
+                <span class="lt-badge" [ngClass]="tagTypeBadgeClass(row[col])">{{ row[col] }}</span>
+              </span>
+              <span *ngIf="isDateTimeColumn(col)" style="display: flex; align-items: center; gap: 6px;">
+                {{ row[col] | date:'dd MMM hh:mm a' }}
+                <mat-icon *ngIf="getUpdateAgeStatus(row) === 'new'" class="lt-star-update-icon lt-star--blink" matTooltip="Updated < 1 min ago">star</mat-icon>
+                <mat-icon *ngIf="getUpdateAgeStatus(row) === 'recent'" class="lt-star-update-icon lt-star--yellow" matTooltip="Updated 1-5 min ago">star</mat-icon>
+                <mat-icon *ngIf="getUpdateAgeStatus(row) === 'old'" class="lt-star-update-icon lt-star--orange" matTooltip="Updated > 5 min ago">star</mat-icon>
+              </span>
+              <span *ngIf="col !== responseColumns[0] && col !== responseColumns[1] && col !== responseColumns[2] && !isDateTimeColumn(col)">{{ row[col] }}</span>
+            </div>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="responseColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: responseColumns" [class.lt-row--status-new]="getUpdateAgeStatus(row) === 'new'"></tr>
+      </table>
+    </div>
+
+    <!-- Card View (Similar to Room Display Cards) -->
+    <div class="location-track-cards-grid" *ngIf="viewMode === 'card' && !isTableEmpty">
+      <mat-card class="lt-track-card" [ngClass]="tagTypeCardClass(row[responseColumns[2]])" [class.lt-card--status-new]="getUpdateAgeStatus(row) === 'new'" *ngFor="let row of getPaginatedCardData(); trackBy: trackByTag">
+        <div class="lt-card-header">
+          <div class="lt-card-location-group">
+            <mat-icon class="lt-card-loc-icon">place</mat-icon>
+            <span class="lt-card-location-name" [matTooltip]="row[responseColumns[0]]">{{ row[responseColumns[0]] }}</span>
+          </div>
+          <span class="lt-badge" [ngClass]="tagTypeBadgeClass(row[responseColumns[2]])">{{ row[responseColumns[2]] | translate }}</span>
+        </div>
+        <div class="lt-card-body">
+          <div class="lt-card-user-info">
+            <mat-icon class="lt-card-tag-icon" [ngClass]="tagTypeIconClass(row[responseColumns[2]])">{{ tagTypeMatIcon(row[responseColumns[2]]) }}</mat-icon>
+            <span class="lt-card-username">{{ row[responseColumns[1]] }}<span *ngIf="row.raw?.tagid || row.raw?.tid" class="lt-card-tagid"> ({{ row.raw?.tagid || row.raw?.tid }})</span></span>
+          </div>
+          <div class="lt-card-meta" *ngIf="row[responseColumns[3]]">
+            <span class="lt-card-meta-label">{{ 'Role' | translate }}:</span>
+            <span class="lt-card-meta-value">{{ row[responseColumns[3]] }}</span>
+          </div>
+        </div>
+        <div class="lt-card-footer">
+          <mat-icon class="lt-card-time-icon">schedule</mat-icon>
+          <span class="lt-card-time">{{ row[responseColumns[4]] | date:'dd MMM hh:mm a' }}</span>
+          <mat-icon *ngIf="getUpdateAgeStatus(row) === 'new'" class="lt-star-update-icon lt-star--blink" style="margin-left: auto;" matTooltip="Updated < 1 min ago">star</mat-icon>
+          <mat-icon *ngIf="getUpdateAgeStatus(row) === 'recent'" class="lt-star-update-icon lt-star--yellow" style="margin-left: auto;" matTooltip="Updated 1-5 min ago">star</mat-icon>
+          <mat-icon *ngIf="getUpdateAgeStatus(row) === 'old'" class="lt-star-update-icon lt-star--orange" style="margin-left: auto;" matTooltip="Updated > 5 min ago">star</mat-icon>
+        </div>
+      </mat-card>
+    </div>
+    
+    <div class="location-track-empty-state-table" *ngIf="isTableEmpty">
+      <mat-icon>info_outline</mat-icon>
+      <p>{{'No tags found'|translate}}</p>
+    </div>
+
+    <mat-paginator *ngIf="selectedFloorId && blockList.length && !isTableEmpty" [pageSizeOptions]="currentPageSizeOptions" [pageSize]="pageSize"
+      showFirstLastButtons class="location-track-paginator" (page)="onPageEvent($event)"></mat-paginator>
+  </div>
+
+  <ng-template #noFloor>
+    <div class="location-track-empty-state"><mat-icon>map</mat-icon>
+      <p>{{'Select block & floor'|translate}}</p>
+    </div>
+  </ng-template>
+</div>
+<ng-template #emptyState>
+  <div class="location-track-empty-state"><mat-icon>error_outline</mat-icon>
+    <p>{{'No blocks'|translate}}</p>
+  </div>
+</ng-template>

@@ -1,18 +1,22 @@
-<div style="height: calc(100% - 60px);width: 100%;" class="ovi-font-family ot-new-container">
-    <mat-toolbar  class="input-header">
-        <div [ngStyle]="{'background-color':enableSidebar?'#54a2c9':''}"><mat-icon class="ovi-fnt-sze22" style="padding-left: 4px;" (click)="enableSidebar=!enableSidebar;reloadTab();" (keydown.enter)="fixClick()">menu</mat-icon></div>
-        <div  class="header-name" *ngIf = "headerName">{{headerName | translate}}</div>
-        <div class="header-close"><button mat-icon-button mat-dialog-close close-button class="ie-close-icon">
-            <mat-icon class="icon-style">highlight_off</mat-icon>
-        </button></div>
-    </mat-toolbar>
+<div style="height: 100%;width: 100%;overflow: hidden;" class="ovi-font-family ot-new-container">
+    <div class="ovi-pop-hdr" style="background-color: var(--primary-bg-hghl-color);height: 40px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <mat-icon style="padding: 0px; font-size: 20px; width: 20px; height: 20px; cursor: pointer; color: #000;" (click)="enableSidebar=!enableSidebar;reloadTab();" (keydown.enter)="fixClick()">menu</mat-icon>
+            <span *ngIf="headerName" style="color: #000;">{{headerName | translate}}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div mat-dialog-close style="display: flex; align-items: center; cursor: pointer;">
+                <mat-icon style="padding: 0px; font-size: 20px; width: 22px; height: 22px; color: #000;">highlight_off</mat-icon>
+            </div>
+        </div>
+    </div>
     <div style="height: calc(100% - 35px);width: 100%;">
-        <div style="display: flex;height: 100%;">
-            <div *ngIf="enableSidebar" style="height: 100%;border-right: 1px solid #C8C7C7;width: 20%;">
+        <div style="display: flex;height: 100%;position: relative;">
+            <div *ngIf="enableSidebar" class="custom-sidebar">
                 <div style="padding: 5px;display: flex;align-items: center;justify-content: space-between;height: 28px;background-color: #EFEFEF;border-bottom: 1px solid rgb(200, 199, 199);">
                     <span class="ovi-fnt-sze15" style="font-weight: 600;">{{"Patients"|translate}}</span>
                     <span>
-                        <mat-icon class="ovi-prmry-wht-clr ovi-fnt-sze20" (click)="enableSidebar=!enableSidebar" (keydown.enter)="fixClick()">close</mat-icon>
+                        <mat-icon class="ovi-prmry-wht-clr ovi-fnt-sze20" style="padding: 0px;" (click)="enableSidebar=!enableSidebar" (keydown.enter)="fixClick()">close</mat-icon>
                     </span>
                 </div>
                 <mat-list style="height: 92%;overflow: auto;width: 100%;">
@@ -37,8 +41,8 @@
                             <span style="color: #837d7d;text-overflow: ellipsis; overflow: hidden;text-wrap: nowrap;width: 100%;display: flex;column-gap: 2px;align-items: center;">
                                 <span>
                                     <span *ngIf="patient['surgeryTypeId']== 'SGT-EM'" appTooltip [tooltipText]="'Emergency'| translate" placement="bottom" style="padding-left: 2px;"><img alt="Emergency" src="../../../../../assets/icons/emergency.png" height="18px" width="18px"></span>
-                                    <span *ngIf="patient['isVulnerable']"><mat-icon class="ovi-fnt-sze17" style="color: orange;padding-top: 0px;height: 16px;width: 18px;" appTooltip [tooltipText]="'Vulnerable'|translate" placement="bottom">warning</mat-icon></span>
-                                    <span *ngIf="patient['threats']!=null"><mat-icon class="ovi-fnt-sze17" style="color: red;padding-top: 0px;height: 16px;width: 18px;"  appTooltip [tooltipText]="patient['threatsTooltip'] || data['selectedPatient']['threats']" placement="bottom">warning</mat-icon></span>
+                                    <span *ngIf="patient['isVulnerable']"><mat-icon class="ovi-fnt-sze17" style="color: orange;padding-top: 0px;height: 16px;width: 18px;padding: 0px;" appTooltip [tooltipText]="'Vulnerable'|translate" placement="bottom">warning</mat-icon></span>
+                                    <span *ngIf="patient['threats']!=null"><mat-icon class="ovi-fnt-sze17" style="color: red;padding-top: 0px;height: 16px;width: 18px;padding: 0px;"  appTooltip [tooltipText]="patient['threatsTooltip'] || data['selectedPatient']['threats']" placement="bottom">warning</mat-icon></span>
                                 </span>
                                 <span style="text-overflow: ellipsis;overflow: hidden;white-space: nowrap;" appTooltip [tooltipText]="patient['otProcedureNames'] && patient['otProcedureNames'] !== null && patient['otProcedureNames'] !== '' ? patient['otProcedureNames'] : patient['otProcedureName']" placement="bottom">
                                     {{patient['otProcedureNames'] && patient['otProcedureNames'] !== null && patient['otProcedureNames'] !== '' ? patient['otProcedureNames'] : patient['otProcedureName']}}</span>
@@ -52,122 +56,264 @@
                     </mat-list-item>
                 </mat-list>
             </div>
-            <div style="width: -webkit-fill-available;height: 100%;overflow: auto;">
-                <app-banner [type]="'TW-PD'" [bannerData]="bannerlabel"></app-banner>
-                <div style="padding: 5px;display: flex;flex-direction: column;row-gap: 10px;width: 99%;height: calc(100% - 61px);">
-                    <div [ngStyle]="{'height':selectedTab === 'Patient' || selectedTab === 'Visit Details' || selectedTab === 'Form'?'':'calc(100% - 225px)'}">
-                        <div style="display: flex;position: relative;" [ngStyle]="{'height': selectedTab === 'Visit Details' || selectedTab === 'Form'? '100%' : ''}">
-                            <mat-tab-group (selectedTabChange)="onTabChange($event)" style="flex-grow: 1;">
+            <div class="custom-right-pane">
+                <div class="custom-patient-banner">
+                    <div class="avatar-and-name">
+                        <div class="patient-avatar-wrapper">
+                            <div class="patient-avatar">{{ getPatientInitials(data.selectedPatient?.name) }}</div>
+                            <span class="avatar-pulse-ring"></span>
+                        </div>
+                        <div class="patient-name-section">
+                            <div class="patient-name-row">
+                                <span class="patient-name">{{ data.selectedPatient?.name }}</span>
+                                <span class="patient-meta-badge age" *ngIf="data['selectedPatient']['birthDate']">{{ calculateAge(data.selectedPatient.birthDate) }} yrs</span>
+                                <span class="patient-meta-badge gender" [ngClass]="data.selectedPatient?.gender?.toLowerCase() || 'other'" *ngIf="data.selectedPatient?.gender">{{ data.selectedPatient.gender }}</span>
+                            </div>
+                            <div class="patient-info-chips">
+                                <div class="info-chip id-chip">
+                                    <mat-icon class="chip-icon" style="padding: 0px;">fingerprint</mat-icon>
+                                    <span class="chip-label">{{"ID"|translate}}:</span>
+                                    <span class="chip-val">{{ data.selectedPatient?.mainIdentifier || data.selectedPatient?.uhid || data.selectedPatient?.id }}</span>
+                                </div>
+                                <div class="info-chip surgery-chip">
+                                    <mat-icon class="chip-icon" style="padding: 0px;">health_and_safety</mat-icon>
+                                    <span class="chip-label">{{"Surgery"|translate}}:</span>
+                                    <span class="chip-val">{{ data.selectedPatient?.otProcedureName || data.selectedPatient?.otProcedureNames || 'N/A' }}</span>
+                                </div>
+                                <div class="info-chip package-chip">
+                                    <mat-icon class="chip-icon" style="padding: 0px;">layers</mat-icon>
+                                    <span class="chip-label">{{"Package"|translate}}:</span>
+                                    <span class="chip-val">{{ data.selectedPatient?.packageName || data.selectedPatient?.PackageName || 'Surgery' }}</span>
+                                </div>
+                                <div class="info-chip location-chip">
+                                    <mat-icon class="chip-icon" style="padding: 0px;">location_on</mat-icon>
+                                    <span class="chip-label">{{"Location"|translate}}:</span>
+                                     <span class="chip-val">{{ data.selectedPatient?.eventLocationName || data.data?.eventLocationName || patientDetails?.locationName || 'OT' }}<span *ngIf="data.selectedPatient?.floorName || data.data?.floorName || patientDetails?.floorName"> ({{ data.selectedPatient?.floorName || data.data?.floorName || patientDetails?.floorName }})</span></span>
+                                </div>
+                                <div class="info-chip doctor-chip" *ngIf="patientDetails?.doctorName || data.selectedPatient?.doctorName">
+                                    <mat-icon class="chip-icon" style="padding: 0px;">local_hospital</mat-icon>
+                                    <span class="chip-label">{{"Doctor"|translate}}:</span>
+                                    <span class="chip-val">{{ patientDetails?.doctorName || data.selectedPatient?.doctorName }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="schedule-section-card">
+                        <div class="schedule-header">
+                            <mat-icon class="schedule-bell-icon" style="padding: 0px;">alarm</mat-icon>
+                            <span class="schedule-label">{{"Schedule Start Time"|translate}}</span>
+                        </div>
+                        <div class="schedule-time">
+                            <span>{{ (data.selectedPatient?.scheduleStartTime || data.selectedPatient?.visitEventFrmTime || patientDetails?.fromTime || data.data?.scheduleStartTime) | date: 'dd MMM yyyy, hh:mm a' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="custom-main-content" style="position: relative;">
+                    <mat-tab-group (selectedTabChange)="onTabChange($event)" style="flex-grow: 1;">
                                 <mat-tab label="Patient">
-                                    <ng-template  mat-tab-label >{{"Patient"|translate}}</ng-template>
-                                    <div style="display: flex;flex-direction: column;row-gap: 5px;height: 180px;">
-                                        <div class="ovi-fnt-sze17" style="font-weight: 600;padding: 5px;">{{"Patient Progress"|translate}}</div>
-                                        <div style="padding-left: 15px;width: 50px;"  *ngIf="false" appTooltip [tooltipText]="('Schedule Start: ' | translate) + (patientDetails['fromTime'] | date: 'HH:mm')" placement="bottom">
-                                            <img style="vertical-align: middle;" alt="Time" src="../../../../../assets/icons/clock-time-eight-outline.svg">
-                                            <span class="ovi-fnt-sze12" style="color: #888888;font-weight: 600;">{{patientDetails['fromTime'] | date: 'HH:mm'}}</span>
-                                        </div>
-                                        <div class="ovi-fnt-sze12" style="display: flex;flex-direction: row;padding: 15px;column-gap: 5px;padding-top: 30px;padding-bottom: 8px;">
-                                            <div style="height: 100px;display: flex;flex-direction: column;" *ngFor="let event of events" [ngStyle]="{'width':event['testCategoryId'] != 'TC-DOC'?'220px':'155px'}">
-                                                <div style="border:1px solid #888888;height: 30%;border-style: dashed;border-top-left-radius: 10px;border-top-right-radius: 10px;border-bottom: none;position: relative;display: flex;flex-direction: column;justify-content: flex-end;" [ngStyle]="{'width':event['testCategoryId'] != 'TC-DOC'?'91%':'80%','left':event['testCategoryId'] != 'TC-DOC'?'0%':'9%'}">
-                                                    <div style="position: absolute;top: -28px;" *ngIf="event['healthTestName'] == 'Preparation'" appTooltip [tooltipText]="('Schedule Start: ' | translate) + (patientDetails['fromTime'] | date: 'HH:mm')" placement="bottom">
-                                                        <img style="vertical-align: middle;" alt="Time" src="../../../../../assets/icons/clock-time-eight-outline.svg">
-                                                        <span class="ovi-fnt-sze12" style="color: #888888;font-weight: 600;">{{patientDetails['fromTime'] | date: 'HH:mm'}}</span>
-                                                    </div>
-                                                    <div class="status-circle" [ngStyle]="{'width':event['testCategoryId'] != 'TC-DOC'?'18%':'29%','left':event['testCategoryId'] != 'TC-DOC'?'40%':'35%'}">
-                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Yet to Start" src="../../../../../assets/icons/timer-sand-grey.svg" *ngIf="event['patientStatusId'] == 'QS-PE'"></span>
-                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Completed" src="../../../../../assets/icons/timer-sand-green.svg" *ngIf="event['patientStatusId'] == 'QS-CO'"></span>
-                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Inprogress" src="../../../../../assets/icons/timer-sand-orange.svg" *ngIf="event['patientStatusId'] == 'QS-IP' && !isTimeExceed"></span>
-                                                        <span><img style="width: 11px;padding-left: 12px;padding-top: 5px;" alt="Delay to Complete" src="../../../../../assets/icons/timer-sand-red.svg" *ngIf="event['patientStatusId'] == 'QS-IP' && isTimeExceed"></span>
-                                                    </div>
-                                                    <div style="display: flex;justify-content: space-between;padding: 3px;">
-                                                        <div class="ovi-fnt-sze12"  [ngStyle]="{'color': event['healthTestName'] == 'Preparation' && event['Start'] > (patientDetails['fromTime'] | date: 'HH:mm') ? 'red' : ''}">{{event['Start']}}</div>
-                                                        <div class="ovi-fnt-sze12" >{{event['End']}}</div>
-                                                    </div>
-                                                </div>
-                                                <div style="display: flex;height: 45%;width: 99%;" (click)="fieldEnable=!fieldEnable" (keydown.enter)="fixClick()" *ngIf="event['testCategoryId'] != 'TC-DOC'">
-                                                    <div style="width: 95%;height: 100%;">
-                                                        <div class="content-center" style="height: 100%;display: flex;align-items: center;" [ngStyle]="{'background':event['patientStatusId']== 'QS-CO'?'#1e8fc8': event['patientStatusId']== 'QS-IP'? 'linear-gradient(to right, #1e8fc8 60%, rgb(239 239 239) 40%)':'rgb(239 239 239)','justify-content':event['patientStatusId'] != 'QS-PE'?'space-evenly':'space-between'}">
-                                                            <div><mat-icon class="ovi-fnt-sze20" style="font-weight: lighter;" *ngIf="event['patientStatusId'] == 'QS-CO'">check</mat-icon></div>
-                                                            <div *ngIf="event['patientStatusId'] != 'QS-PE'">{{event['locationName']}}</div>
-                                                            <div appTooltip tooltipText="Form" *ngIf="event['formTemplateId'] != null" (click)="formBuilder(null,event['formTemplateId'],event['entityFormList'])" (keydown.enter)="fixClick()">
-                                                            <mat-icon class="ovi-fnt-sze31" style=" padding-bottom: 10px;width: 31px;" 
-                                                             [ngClass]="{'text-qscp': event.patientStatusId === 'QS-CO','ovi-prmry-bg-clr': event.patientStatusId !== 'QS-CO' }"> description</mat-icon></div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="triangle-right" [ngClass]="{'border-qscp': event.patientStatusId === 'QS-CO','border-default': event.patientStatusId !== 'QS-CO'}">
-                                                        </div>
-                                                </div>
-                                                <div style="display: flex;height: 45%;width: 100%;" *ngIf="event['testCategoryId'] == 'TC-DOC'">
-                                                    <div style="width: 100%;height: 100%;">
-                                                        <div class="hexagon-border">
-                                                            <div class="content-center" style="height: 100%;display: flex;justify-content: space-around;align-items: center;" [ngStyle]="{'background':event['patientStatusId']== 'QS-CO'?'#1e8fc8': event['patientStatusId']== 'QS-IP'? 'linear-gradient(to right, #1e8fc8 60%, rgb(239 239 239) 40%)':'rgb(239 239 239)'}">
-                                                                <div><mat-icon class="ovi-fnt-sze20" style="font-weight: lighter;" *ngIf="event['patientStatusId'] == 'QS-CO'">check</mat-icon></div>
-                                                                <div appTooltip tooltipText="Form" (click)="event['formTemplateId'] != null?formBuilder(null,event['formTemplateId'],event['entityFormList']):''" (keydown.enter)="fixClick()">
-                                                                <mat-icon class="ovi-fnt-sze31" style="padding-bottom: 10px;width: 31px;"
-                                                                [ngClass]="{'text-qscp': event.patientStatusId === 'QS-CO','ovi-prmry-bg-clr': event.patientStatusId !== 'QS-CO'}"> description</mat-icon></div>
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="tab-icon" style="padding: 0px;">person</mat-icon>
+                                        <span>{{"Patient"|translate}}</span>
+                                    </ng-template>
+                                    <div class="patient-progress-container">
+                                        <div class="progress-title">{{"Patient Progress"|translate}}</div>
+                                        <div class="custom-progress-stepper">
+                                            <ng-container *ngFor="let event of events; let idx = index; let last = last">
+                                                <div class="step-card" [ngClass]="[
+                                                    'step-' + idx,
+                                                    event.patientStatusId === 'QS-CO' ? 'completed' : event.patientStatusId === 'QS-IP' ? 'inprogress' : 'pending'
+                                                ]">
+                                                    <div class="step-header">
+                                                        <div class="left-header">
+                                                            <div class="status-icon-wrapper">
+                                                                <mat-icon style="padding: 0px;" *ngIf="event.healthTestName?.toLowerCase().includes('prep')">hotel</mat-icon>
+                                                                <mat-icon style="padding: 0px;" *ngIf="event.healthTestName?.toLowerCase().includes('surg')">content_cut</mat-icon>
+                                                                <mat-icon style="padding: 0px;" *ngIf="event.healthTestName?.toLowerCase().includes('rec')">favorite</mat-icon>
+                                                            </div>
+                                                            <div class="step-name-col">
+                                                                <span class="step-num">Step {{ idx + 1 }}</span>
+                                                                <span class="step-name">{{ event.healthTestName }}</span>
                                                             </div>
                                                         </div>
+                                                        <span class="step-badge" [ngClass]="{
+                                                            'completed': event.patientStatusId === 'QS-CO',
+                                                            'inprogress': event.patientStatusId === 'QS-IP',
+                                                            'pending': event.patientStatusId === 'QS-PE'
+                                                        }">{{ event.patientStatusName || (event.patientStatusId === 'QS-CO' ? 'Completed' : event.patientStatusId === 'QS-IP' ? 'In Progress' : 'Pending') }}</span>
+                                                    </div>
+                                                    <div class="step-body-details">
+                                                        <div class="info-row" *ngIf="event.locationName">
+                                                            <span class="label-txt">Location</span>
+                                                            <span class="val-txt">{{ event.locationName }}</span>
+                                                        </div>
+                                                        <div class="info-row" *ngIf="event.patientStatusId === 'QS-CO'">
+                                                            <span class="label-txt">Duration</span>
+                                                            <span class="val-txt">{{ event.consultTime || event['Duration (hh:mm:ss)'] || '00:00:00' }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="step-time-footer">
+                                                        <div class="time-box start">
+                                                            <mat-icon style="padding: 0px;">play_circle_outline</mat-icon>
+                                                            <span>{{ event.Start || event.inTime ? (event.Start || (event.inTime | date: 'HH:mm')) : '--:--' }}</span>
+                                                        </div>
+                                                        <div class="time-box end" *ngIf="event.End || event.toTime">
+                                                            <mat-icon style="padding: 0px;">stop_circle</mat-icon>
+                                                            <span>{{ event.End || event.toTime ? (event.End || (event.toTime | date: 'HH:mm')) : '--:--' }}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div style="text-align: center;height: 10%;padding-top: 5px;">{{event['healthTestName']}}</div>
-                                            </div>
-                                        </div>
-                                        <div class="mat-custom-form-field-box" *ngIf="fieldEnable && false" style="padding-left: 10px;">
-                                            <div class="form-row block-3">
-                                                <div class="row-field-1">
-                                                    <mat-form-field appearance="outline">
-                                                        <input matInput type="text" appPlaceholder [showPlaceholder]="true" [placeholderText]="'Remarks'|translate" autocomplete="off">
-                                                    </mat-form-field>
+                                                <div class="step-connector" *ngIf="!last">
+                                                    <div class="line-segment" [ngClass]="{'active': event.patientStatusId === 'QS-CO'}"></div>
+                                                    <div class="connector-details">
+                                                        <mat-icon class="hourglass-icon" [ngClass]="{'active': event.patientStatusId === 'QS-IP'}" style="padding: 0px;">hourglass_empty</mat-icon>
+                                                        <span class="wait-time-lbl">Wait Time</span>
+                                                        <span class="wait-time-val">{{ event.waitTime || event['Wait Time (hh:mm:ss)'] || '00:00:00' }}</span>
+                                                    </div>
                                                 </div>
+                                            </ng-container>
+                                        </div>
+                                    </div>
+                                    <div style="width: 100%; display: block;" [style.display]="(dataSource.data.length && selectedTab === 'Patient') ? 'block' : 'none'">
+                                        <div class="ovi-fnt-sze17" style="font-weight: 600;padding: 16px 5px 5px 5px;">{{"Patient TAT Summary"|translate }}</div>
+                                        <div style="padding-left: 5px;width: 100%;">
+                                            <div class="mat-elevation-z8" style="width: 100%; display: block;">
+                                                <div style="margin: 10px 0px;overflow-x: auto;width: 100%;height: 100%;display: block;">
+                                                    <table mat-table [dataSource]="dataSource" style="table-layout: fixed;">
+                                                        <ng-container *ngFor="let column of tableColumns" [matColumnDef]="column">
+                                                            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+                                                                <span *ngIf="column !== 'select'">{{ column |translate }}</span>
+                                                                <span *ngIf="column == 'select'">
+                                                                    <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="selection.hasValue() && isAllSelected()"
+                                                                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+                                                                    </mat-checkbox>
+                                                                </span>
+                                                            </th>
+                                                            <td mat-cell *matCellDef="let element;let i = index">
+                                                                <span *ngIf="column !== 'select' && column !== 'Status' && column !== 'Start Time' && column !== 'End Time' && column !== 'Remarks'">{{ element[column] }}</span>
+                                                                <span *ngIf="column === 'Status'" class="status-badge" [ngClass]="{
+                                                                    'status-pending': element[column]?.toLowerCase().includes('pend') || element[column] === 'QS-PE',
+                                                                    'status-inprogress': element[column]?.toLowerCase().includes('progress') || element[column] === 'QS-IP',
+                                                                    'status-completed': element[column]?.toLowerCase().includes('complete') || element[column] === 'QS-CO'
+                                                                }">
+                                                                    {{ element[column] }}
+                                                                </span>
+                                                                <span *ngIf="column == 'select'">
+                                                                    <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(element) : null"
+                                                                        [checked]="selection.isSelected(element)"  (keydown.enter)="fixClick()">
+                                                                    </mat-checkbox>
+                                                                </span>
+                                                                <span *ngIf="column === 'Start Time' || column === 'End Time'">{{element[column] | date: "dd-MM-yyyy HH:mm"}}</span>
+                                                                <span *ngIf="column === 'Remarks'">
+                                                                    <mat-form-field style="width: -webkit-fill-available;">
+                                                                        <input matInput [type]="'text'" [value]="element[column]" [(ngModel)]="element[column]" [ngModelOptions]="{ standalone: true }">
+                                                                    </mat-form-field>
+                                                                </span>
+                                                            </td>
+                                                        </ng-container>
+                                                        <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+                                                        <tr mat-row *matRowDef="let row; let i = index; columns: tableColumns;"></tr>
+                                                    </table>
+                                                </div>
+                                                 <mat-paginator #patientPaginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
                                             </div>
                                         </div>
                                     </div>
-                                    <div *ngIf="dataSource.data.length == 0" style="text-align: center;">
+                                    <div *ngIf="dataSource.data.length == 0" style="text-align: center; padding: 20px;">
                                         {{"No Data Found"|translate}}
                                     </div>
                                 </mat-tab>
                                 <mat-tab label="Asset">
-                                    <ng-template mat-tab-label >{{"Asset"|translate}}</ng-template>
-                                       <div class="loading-spinner" *ngIf="isAssetChartLoading">
-                                            <div class="spinnerload">
-                                                <div class="spin1"></div>
-                                                <div class="spin2"></div>
-                                                <div class="spin3"></div>
-                                            </div>
-                                        </div>
-                                    <div style="height: calc(-246px + 100vh);">
-                                        <div class="ovi-fnt-sze17"  style="font-weight: 600; padding: 5px;position: relative; top: 5px;">
-                                            Asset utilize summary
-                                        </div>
-                                        <div *ngIf="tableData.length" style="border: 1px solid #ddd;position: relative; top: 10px;">
-                                            <tw-table-component [component]="'ot-asset'" [columns]="assetDisplayedColumns" [tableData]="tableData"
-                                                [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [rowDbClick]="true"
-                                                [eventColumn]="eventColumn" [rowClick]="true" [rowId]="null" (rowClickAction)="rowClick($event)"
-                                                [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
-                                                [pagination]="null"></tw-table-component>
-                                        </div>
-                                        <div *ngIf="tableData.length === 0" style="height: 55px; display: flex ; align-items: center; justify-content: center;">
-                                            {{"No Data Found"|translate}}
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="tab-icon" style="padding: 0px;">devices</mat-icon>
+                                        <span>{{"Asset"|translate}}</span>
+                                    </ng-template>
+                                    <div class="loading-spinner" *ngIf="isAssetChartLoading">
+                                        <div class="spinnerload">
+                                            <div class="spin1"></div>
+                                            <div class="spin2"></div>
+                                            <div class="spin3"></div>
                                         </div>
                                     </div>
-                                    <div [ngClass]="!isAssetChartLoading && chartData.length == 0 ? 'chart-container-timeline-duplicate' : 'chart-container-timeline'">
-                                        <div  class="loading-spinner" *ngIf="isAssetChartLoading">
-                                            <div class="spinnerload">
-                                                <div class="spin1"></div>
-                                                <div class="spin2"></div>
-                                                <div class="spin3"></div>
+                                    <div class="asset-tab-content" *ngIf="!isAssetChartLoading">
+                                        <div class="tab-section-title">Asset Utilize Summary</div>
+
+                                        <!-- Asset Gantt Chart -->
+                                        <div class="asset-chart-wrapper">
+                                            <google-chart #assetChart style="width: 100%;"
+                                                [type]="chartType"
+                                                [data]="chartData"
+                                                [columns]="columns"
+                                                [options]="options">
+                                            </google-chart>
+                                        </div>
+
+                                        <div class="asset-legend-container">
+                                            <div class="legend-item">
+                                                <span class="legend-dot" style="background:#b0bec5;"></span>
+                                                <span class="legend-label">Off</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-dot" style="background:#42a5f5;"></span>
+                                                <span class="legend-label">Idle</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-dot" style="background:#ff8a65;"></span>
+                                                <span class="legend-label">In Use</span>
                                             </div>
                                         </div>
-                                        <div *ngIf="!isAssetChartLoading && chartData.length">
-                                            <google-chart #chart style="width: 100%;" [type]="chartType" [data]="chartData" [columns]="columns" [options]="options"></google-chart>
+
+                                        <div class="table-container custom-table-wrapper">
+                                            <table class="custom-data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Device ID</th>
+                                                        <th>Asset Name</th>
+                                                        <th>Asset Serial Number</th>
+                                                        <th>Start Time</th>
+                                                        <th>End Time</th>
+                                                        <th>Duration</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr *ngFor="let asset of tableData">
+                                                        <td>
+                                                             <div class="device-cell">
+                                                                 <div class="device-icon-wrapper">
+                                                                     <mat-icon style="padding: 0px;">biotech</mat-icon>
+                                                                 </div>
+                                                                 <span>{{ asset.tagId || asset['Device ID'] || '--' }}</span>
+                                                             </div>
+                                                        </td>
+                                                        <td>{{ asset.assetName || asset['Asset Name'] }}</td>
+                                                        <td>{{ asset.assetSerialNumber || asset['Asset Serial Number'] }}</td>
+                                                        <td>{{ (asset.startTime || asset['Start Time']) ? ((asset.startTime || asset['Start Time']) | date: 'hh:mm a') : '--:--' }}</td>
+                                                        <td>{{ (asset.endTime || asset['End Time']) ? ((asset.endTime || asset['End Time']) | date: 'hh:mm a') : '--:--' }}</td>
+                                                        <td>{{ asset.duration || asset['Duration'] || '--:--' }}</td>
+                                                    </tr>
+                                                    <tr *ngIf="!tableData || tableData.length === 0">
+                                                        <td colspan="6" class="no-data-cell">No Data Found</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
-                                        <div *ngIf="!isAssetChartLoading && chartData.length == 0" style="text-align: center;">
-                                            {{"No Data Found"|translate}}
+                                        <div class="custom-paginator" *ngIf="tableData && tableData.length > 0">
+                                            <span class="paginator-label">Items per page:</span>
+                                            <mat-select class="paginator-select" [value]="10">
+                                                <mat-option [value]="10">10</mat-option>
+                                            </mat-select>
+                                            <span class="paginator-range">1 - {{ tableData.length }} of {{ tableData.length }}</span>
+                                            <div class="paginator-buttons">
+                                                <mat-icon class="pag-btn disabled" style="padding: 0px;">chevron_left</mat-icon>
+                                                <mat-icon class="pag-btn disabled" style="padding: 0px;">chevron_right</mat-icon>
+                                            </div>
                                         </div>
                                     </div>
                                 </mat-tab>
                                 <mat-tab label="Staff">
-                                    <ng-template mat-tab-label>{{"Staff"|translate}}</ng-template>
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="tab-icon" style="padding: 0px;">people</mat-icon>
+                                        <span>{{"Staff"|translate}}</span>
+                                    </ng-template>
                                     <div class="loading-spinner" *ngIf="isStaffChartLoading">
                                         <div class="spinnerload">
                                             <div class="spin1"></div>
@@ -175,159 +321,247 @@
                                             <div class="spin3"></div>
                                         </div>
                                     </div>
-                                    <div style="height: calc(-246px + 100vh);">
-                                        <div class="ovi-fnt-sze17"  style="font-weight: 600;padding: 5px;position: relative; top: 5px;">
-                                            Staff utilize summary
+                                    <div class="staff-tab-content" *ngIf="!isStaffChartLoading">
+                                        <div class="tab-section-title">Staff Schedule</div>
+                                        
+                                        <div class="staff-chart-wrapper">
+                                            <google-chart #chart style="width: 100%;" 
+                                                [type]="chartType" 
+                                                [data]="staffChartData" 
+                                                [columns]="columns" 
+                                                [options]="staffOptions">
+                                            </google-chart>
                                         </div>
-                                        <div *ngIf="tableData.length" style="position: relative; top: 10px;border: 1px solid #ddd;">
-                                            <tw-table-component [component]="'ot-asset'" [columns]="StaffDisplayedColumns" [tableData]="tableData"
-                                                [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [rowDbClick]="true"
-                                                [eventColumn]="eventColumn" [rowClick]="true" [rowId]="null" (rowClickAction)="rowClick($event)"
-                                                [applyFilter]="applyFilterValue" [permissionControl]="permissionControl"
-                                                [pagination]="null"></tw-table-component>
-                                        </div>
-                                        <div *ngIf="tableData.length === 0" style="height: 55px; display: flex ; align-items: center; justify-content: center;">
-                                            {{"No Data Found"|translate}}
-                                        </div>
-                                    </div>
-                                    <div [ngClass]="!isStaffChartLoading && staffChartData.length == 0 ? 'chart-container-timeline-duplicate' : 'chart-container-timeline'">
-                                        <div class="loading-spinner" *ngIf="isStaffChartLoading">
-                                            <div class="spinnerload">
-                                                <div class="spin1"></div>
-                                                <div class="spin2"></div>
-                                                <div class="spin3"></div>
+
+                                        <div class="staff-legend-container">
+                                            <div class="legend-item">
+                                                <span class="legend-dot shift-1"></span>
+                                                <span class="legend-label">Shift 1</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-dot shift-2"></span>
+                                                <span class="legend-label">Shift 2</span>
+                                            </div>
+                                            <div class="legend-item">
+                                                <span class="legend-dot shift-3"></span>
+                                                <span class="legend-label">Shift 3</span>
                                             </div>
                                         </div>
-                                        <div *ngIf="!isStaffChartLoading && staffChartData.length">
-                                            <google-chart #chart style="width: 100%;" [type]="chartType" [data]="staffChartData" [columns]="columns" [options]="staffOptions"></google-chart>
-                                        </div>
-                                        <div *ngIf="!isStaffChartLoading && staffChartData.length == 0" style="text-align: center;">
-                                            {{"No Data Found"|translate}}
+                                    </div>
+                                    <div style="width: 100%; display: block;" [style.display]="(dataSource.data.length && selectedTab === 'Staff') ? 'block' : 'none'">
+                                        <div class="ovi-fnt-sze17" style="font-weight: 600;padding: 16px 5px 5px 5px;">{{"Movement Summary"|translate }}</div>
+                                        <div style="padding-left: 5px;width: 100%;">
+                                            <div class="mat-elevation-z8" style="width: 100%; display: block;">
+                                                <div style="margin: 10px 0px;overflow-x: auto;width: 100%;height: 100%;display: block;">
+                                                    <table mat-table [dataSource]="dataSource" style="table-layout: fixed;">
+                                                        <ng-container *ngFor="let column of tableColumns" [matColumnDef]="column">
+                                                            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header">
+                                                                <span *ngIf="column !== 'select'">{{ column |translate }}</span>
+                                                                <span *ngIf="column == 'select'">
+                                                                    <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="selection.hasValue() && isAllSelected()"
+                                                                        [indeterminate]="selection.hasValue() && !isAllSelected()">
+                                                                    </mat-checkbox>
+                                                                </span>
+                                                            </th>
+                                                            <td mat-cell *matCellDef="let element;let i = index">
+                                                                <span *ngIf="column !== 'select' && column !== 'Status' && column !== 'Start Time' && column !== 'End Time' && column !== 'Remarks'">{{ element[column] }}</span>
+                                                                <span *ngIf="column === 'Status'" class="status-badge" [ngClass]="{
+                                                                    'status-pending': element[column]?.toLowerCase().includes('pend') || element[column] === 'QS-PE',
+                                                                    'status-inprogress': element[column]?.toLowerCase().includes('progress') || element[column] === 'QS-IP',
+                                                                    'status-completed': element[column]?.toLowerCase().includes('complete') || element[column] === 'QS-CO'
+                                                                }">
+                                                                    {{ element[column] }}
+                                                                </span>
+                                                                <span *ngIf="column == 'select'">
+                                                                    <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(element) : null"
+                                                                        [checked]="selection.isSelected(element)"  (keydown.enter)="fixClick()">
+                                                                    </mat-checkbox>
+                                                                </span>
+                                                                <span *ngIf="column === 'Start Time' || column === 'End Time'">{{element[column] | date: "dd-MM-yyyy HH:mm"}}</span>
+                                                                <span *ngIf="column === 'Remarks'">
+                                                                    <mat-form-field style="width: -webkit-fill-available;">
+                                                                        <input matInput [type]="'text'" [value]="element[column]" [(ngModel)]="element[column]" [ngModelOptions]="{ standalone: true }">
+                                                                    </mat-form-field>
+                                                                </span>
+                                                            </td>
+                                                        </ng-container>
+                                                        <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+                                                        <tr mat-row *matRowDef="let row; let i = index; columns: tableColumns;"></tr>
+                                                    </table>
+                                                </div>
+                                                 <mat-paginator #staffPaginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+                                            </div>
                                         </div>
                                     </div>
                                 </mat-tab>
                                 <mat-tab label="{{ 'Resources' | translate }}">
-                                    <ng-template mat-tab-label>{{"Resources"|translate}}</ng-template>
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="tab-icon" style="padding: 0px;">bar_chart</mat-icon>
+                                        <span>{{"Resources"|translate}}</span>
+                                    </ng-template>
                                     <div>
                                         <app-manage-patient [scheduleInputData]="scheduleInputData"></app-manage-patient>
                                     </div>
                                 </mat-tab>
                                 <mat-tab label="Visit Details" [formGroup]="planDetailForm">
-                                    <ng-template mat-tab-label >{{"Visit Details"|translate}}</ng-template>
-                                    <div class="top-style mat-custom-form-field-box">
-                                        <div class="block-3">
-                                            <div class="row-field-5">
-                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                                    <span class="ovi-lbl-text-size ">{{"Admit Date & Time"|translate}}: </span> <span class="ovi-fnt-sze12" 
-                                                        *ngIf="patientDetails?.admitDate != null" style="font-weight: 600;">
-                                                        {{patientDetails.admitDate | date : 'dd/MM/yyyy h:mm a'}}</span>
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="tab-icon" style="padding: 0px;">event_note</mat-icon>
+                                        <span>{{"Visit Details"|translate}}</span>
+                                    </ng-template>
+                                    <div class="vd-layout ovi-matfrmfld">
+
+                                        <!-- LEFT: Dark stat panel -->
+                                        <div class="vd-stat-panel">
+                                            <div class="vd-stat-panel-title">
+                                                <mat-icon style="padding:0px;font-size:16px;width:16px;height:16px;">assignment_ind</mat-icon>
+                                                <span>{{"Visit Summary"|translate}}</span>
+                                            </div>
+                                            <div class="vd-stat-item">
+                                                <div class="vd-stat-icon blue-glow">
+                                                    <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">event</mat-icon>
+                                                </div>
+                                                <div class="vd-stat-text">
+                                                    <span class="vd-stat-label">{{"Admit Date & Time"|translate}}</span>
+                                                    <span class="vd-stat-value">{{ patientDetails?.admitDate ? (patientDetails.admitDate | date:'dd MMM yyyy, hh:mm a') : '—' }}</span>
                                                 </div>
                                             </div>
-                                            <div class="row-field-5">
-                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                                    <span class="ovi-lbl-text-size ">{{"Admitting Doctor"|translate}}: </span> <span class="ovi-fnt-sze12" 
-                                                        *ngIf="patientDetails?.doctorName != null" style="font-weight: 600;">
-                                                        {{patientDetails.doctorName}}</span>
+                                            <div class="vd-stat-item">
+                                                <div class="vd-stat-icon teal-glow">
+                                                    <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">person</mat-icon>
+                                                </div>
+                                                <div class="vd-stat-text">
+                                                    <span class="vd-stat-label">{{"Admitting Doctor"|translate}}</span>
+                                                    <span class="vd-stat-value">{{ patientDetails?.doctorName || '—' }}</span>
                                                 </div>
                                             </div>
-                                            <div class="row-field-5">
-                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                                    <span class="ovi-lbl-text-size ">{{"Length of Stay"|translate}}: </span>
-                                                    <span *ngIf="patientDetails?.lengthOfStay != null" class="ovi-fnt-sze12" 
-                                                        style="font-weight: 600;">{{patientDetails.lengthOfStay}}</span>
+                                            <div class="vd-stat-item">
+                                                <div class="vd-stat-icon amber-glow">
+                                                    <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">hotel</mat-icon>
+                                                </div>
+                                                <div class="vd-stat-text">
+                                                    <span class="vd-stat-label">{{"Length of Stay"|translate}}</span>
+                                                    <span class="vd-stat-value">{{ patientDetails?.lengthOfStay || '—' }} {{"days"|translate}}</span>
                                                 </div>
                                             </div>
-                                            <div class="row-field-5">
-                                                <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                                    <span class="ovi-lbl-text-size ">{{"DOB"|translate}}: </span> <span *ngIf="patientDetails?.dob != null" class="ovi-fnt-sze12" 
-                                                        style="font-weight: 600;">{{patientDetails.dob | date : 'dd/MM/yyyy'}}</span>
+                                            <div class="vd-stat-item">
+                                                <div class="vd-stat-icon purple-glow">
+                                                    <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">cake</mat-icon>
+                                                </div>
+                                                <div class="vd-stat-text">
+                                                    <span class="vd-stat-label">{{"Date of Birth"|translate}}</span>
+                                                    <span class="vd-stat-value">{{ patientDetails?.dob ? (patientDetails.dob | date:'dd MMM yyyy') : '—' }}</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="top-style ovi-fnt-sze12" style="display: flex;column-gap: 20px;font-weight: 600;margin: 15px 0px 8px 0px;">
-                                            <span class="info-space-around">
-                                                <mat-checkbox [checked]="patientDetails?.isDiabetic" formControlName="isDiabetic"> {{"Diabetic"|translate}}</mat-checkbox>
-                                            </span>
-                    
-                                            <span class="info-space-around">
-                                                <mat-checkbox [checked]="patientDetails?.isFasting" formControlName="isFasting">
-                                                    Fasting</mat-checkbox>
-                                            </span>
-                    
-                                            <span class="info-space-around">
-                                                <mat-checkbox [checked]="patientDetails?.isVulnerable" formControlName="isVulnerable"> {{"Vulnerable"|translate}}
-                                                </mat-checkbox>
-                                            </span>
-                    
-                                            <span class="info-space-around">
-                                                <mat-checkbox [checked]="patientDetails?.isPregnant" [disabled]="patientDetails?.gender === 'Male'"
-                                                formControlName="isPregnant"> {{"Pregnant"|translate}}</mat-checkbox>
-                                            </span>
-                                        </div>
-                                        <div style="padding: 18px 5px 10px 0px;">
-                                            <div style="padding: 10px 5px 10px 5px;display: flex;column-gap: 8px;align-items: center;">
-                                                <span style="padding: 2px;" class="ovi-lbl-text-size" *ngIf="data['selectedPatient']['threats']!=null || threatsIncluded">{{"Threats"|translate}}:</span>
-                                                <span style="padding: 2px;" class="ovi-lbl-text-size" *ngIf="data['selectedPatient']['threats']==null && !threatsIncluded">{{"Add Threats"|translate}}</span>
-                                                <span *ngFor="let threat of threatList" style="display: flex">
-                                                    <span class="subfilter selected-subfilter ovi-fnt-sze12" *ngIf="setThreatsIncluded(threat)">{{threat.value}}</span>
-                                                </span>
-                                                <span><mat-icon class="ovi-prmry-clr ovi-fnt-sze26" appTooltip tooltipText="Add Threats" [matMenuTriggerFor]="menu">add_circle</mat-icon></span>
+
+                                        <!-- RIGHT: Editable panel -->
+                                        <div class="vd-form-panel">
+
+                                            <!-- Clinical Flags -->
+                                            <div class="vd-section">
+                                                <div class="vd-section-label">
+                                                    <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;color:#00acc1;">health_and_safety</mat-icon>
+                                                    <span>{{"Clinical Flags"|translate}}</span>
+                                                </div>
+                                                <div class="vd-flag-row">
+                                                    <label class="vd-flag-chip diabetic" [class.active]="planDetailForm.get('isDiabetic').value" (click)="planDetailForm.get('isDiabetic').setValue(!planDetailForm.get('isDiabetic').value)">
+                                                        <mat-checkbox formControlName="isDiabetic" class="vd-flag-inner-check" (click)="$event.stopPropagation()"></mat-checkbox>
+                                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;">bloodtype</mat-icon>
+                                                        <span>{{"Diabetic"|translate}}</span>
+                                                    </label>
+                                                    <label class="vd-flag-chip fasting" [class.active]="planDetailForm.get('isFasting').value" (click)="planDetailForm.get('isFasting').setValue(!planDetailForm.get('isFasting').value)">
+                                                        <mat-checkbox formControlName="isFasting" class="vd-flag-inner-check" (click)="$event.stopPropagation()"></mat-checkbox>
+                                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;">no_meals</mat-icon>
+                                                        <span>{{"Fasting"|translate}}</span>
+                                                    </label>
+                                                    <label class="vd-flag-chip vulnerable" [class.active]="planDetailForm.get('isVulnerable').value" (click)="planDetailForm.get('isVulnerable').setValue(!planDetailForm.get('isVulnerable').value)">
+                                                        <mat-checkbox formControlName="isVulnerable" class="vd-flag-inner-check" (click)="$event.stopPropagation()"></mat-checkbox>
+                                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;">warning_amber</mat-icon>
+                                                        <span>{{"Vulnerable"|translate}}</span>
+                                                    </label>
+                                                    <label class="vd-flag-chip pregnant" [class.active]="planDetailForm.get('isPregnant').value" [class.disabled]="patientDetails?.gender === 'Male'" (click)="patientDetails?.gender !== 'Male' && planDetailForm.get('isPregnant').setValue(!planDetailForm.get('isPregnant').value)">
+                                                        <mat-checkbox formControlName="isPregnant" [disabled]="patientDetails?.gender === 'Male'" class="vd-flag-inner-check" (click)="$event.stopPropagation()"></mat-checkbox>
+                                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;">pregnant_woman</mat-icon>
+                                                        <span>{{"Pregnant"|translate}}</span>
+                                                    </label>
+                                                </div>
                                             </div>
-                                            <mat-menu #menu="matMenu" class="filter-menu ovi-font-family">
-                                                <div (click)="$event.stopPropagation()"  (keydown.enter)="fixClick()">
-                                                    <div class="header-container">
-                                                        <div class="filter-header">{{"Threats"|translate}}</div>
-                                                    </div>
-                                                    <div class="subfilters-inline">
-                                                        <span *ngFor="let threat of threatList" style="cursor: pointer;display: flex" class="subfilter" [ngClass] = "threat.isSelected? 'selected-subfilter':''" (click)="threat.isSelected = !threat.isSelected"  (keydown.enter)="fixClick()">
-                                                            <span class="filter-check" [ngClass] = "threat.isSelected? 'selected-filter-check':''">{{threat.isSelected? '✔' : ''}}</span><span class="ovi-fnt-sze12">{{threat.value}}</span>
+
+                                            <!-- Threats -->
+                                            <div class="vd-section">
+                                                <div class="vd-section-label">
+                                                    <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;color:#e53935;">warning</mat-icon>
+                                                    <span>{{"Threats"|translate}}</span>
+                                                </div>
+                                                <div class="vd-threats-row">
+                                                    <ng-container *ngFor="let threat of threatList">
+                                                        <span class="vd-threat-chip" *ngIf="setThreatsIncluded(threat)">
+                                                            <mat-icon style="padding:0px;font-size:11px;width:11px;height:11px;">warning</mat-icon>
+                                                            {{threat.value}}
                                                         </span>
-                                                    </div>
-                                                </div>
-                                            </mat-menu>
-                                        </div>
-                                        <div class="patients-form-row block-3" style="padding-top: 10px;">
-                                            <div class="row-field-5">
-                                                <div class="example-form">
-                                                    <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"VIP"|translate}}</mat-label>
-                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
-                                                        <mat-select formControlName="vipTypeId">
-                                                            <mat-option>{{"None"|translate}}</mat-option>
-                                                            <mat-option *ngFor="let data of vipList" [value]="data.code">{{data.value}}
-                                                            </mat-option>
-                                                        </mat-select>
-                                                    </mat-form-field>
+                                                    </ng-container>
+                                                    <span *ngIf="data['selectedPatient']['threats']==null && !threatsIncluded" class="vd-no-threats">{{"No threats added"|translate}}</span>
+                                                    <button mat-icon-button [matMenuTriggerFor]="menu" class="vd-add-threat-btn">
+                                                        <mat-icon style="padding:0px;">add_circle_outline</mat-icon>
+                                                    </button>
+                                                    <mat-menu #menu="matMenu" class="filter-menu ovi-font-family">
+                                                        <div (click)="$event.stopPropagation()" (keydown.enter)="fixClick()">
+                                                            <div class="header-container">
+                                                                <div class="filter-header">{{"Threats"|translate}}</div>
+                                                            </div>
+                                                            <div class="subfilters-inline">
+                                                                <span *ngFor="let threat of threatList" style="cursor: pointer;display: flex" class="subfilter" [ngClass]="threat.isSelected? 'selected-subfilter':''" (click)="threat.isSelected = !threat.isSelected" (keydown.enter)="fixClick()">
+                                                                    <span class="filter-check" [ngClass]="threat.isSelected? 'selected-filter-check':''">{{threat.isSelected? '✔' : ''}}</span><span class="ovi-fnt-sze12">{{threat.value}}</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </mat-menu>
                                                 </div>
                                             </div>
-                                            <div class="row-field-5">
-                                                <div class="example-form">
-                                                    <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"Preferred Language"|translate}}</mat-label>
-                                                    <mat-form-field class="example-full-width form-field" appearance="outline">
-                                                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate"
-                                                            formControlName="preferedLanguage">
-                                                            <mat-option *ngFor="let data of languageList" [value]="data.code">
-                                                                {{data.value }}
-                                                            </mat-option>
-                                                        </mat-select>
-                                                    </mat-form-field>
+
+                                            <!-- Preferences -->
+                                            <div class="vd-section vd-preferences">
+                                                <div class="vd-section-label">
+                                                    <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;color:#7b1fa2;">tune</mat-icon>
+                                                    <span>{{"Preferences"|translate}}</span>
+                                                </div>
+                                                <div class="vd-pref-row ovi-row-gap">
+                                                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                                        <mat-label class="ovi-lbl-text-size">{{"VIP"|translate}}</mat-label>
+                                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                            <mat-select formControlName="vipTypeId">
+                                                                <mat-option>{{"None"|translate}}</mat-option>
+                                                                <mat-option *ngFor="let data of vipList" [value]="data.code">{{data.value}}</mat-option>
+                                                            </mat-select>
+                                                        </mat-form-field>
+                                                    </div>
+                                                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                                        <mat-label class="ovi-lbl-text-size">{{"Preferred Language"|translate}}</mat-label>
+                                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                            <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate" formControlName="preferedLanguage">
+                                                                <mat-option *ngFor="let data of languageList" [value]="data.code">{{data.value }}</mat-option>
+                                                            </mat-select>
+                                                        </mat-form-field>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="input-footer" style="padding: 10px;">
-                                        <div style="float:left;">
-                                            <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="discharge()"
-                                                [debounceTime]="300" cdkFocusInitial>{{"Discharge"|translate}}</button>
+                                    <div class="custom-visit-footer">
+                                        <div class="left-footer">
+                                            <button mat-button class="discharge-btn" appDebounceClick (debounceClick)="discharge()" [debounceTime]="300" cdkFocusInitial>{{"Discharge"|translate}}</button>
                                         </div>
-                                        <div style="float: right;display: flex;">
-                                            <button mat-button class="cancle-btn margin-r-1" mat-dialog-close>{{"Cancel"|translate}}</button>
-                                            <button mat-button class="active-btn margin-r-1" appDebounceClick (debounceClick)="updateClinicalDetails()"
-                                                [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
+                                        <div class="right-footer">
+                                            <button mat-button class="cancel-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+                                            <button mat-button class="save-btn" appDebounceClick (debounceClick)="updateClinicalDetails()" [debounceTime]="300" cdkFocusInitial>{{"Save"|translate}}</button>
                                         </div>
                                     </div>
                                 </mat-tab>
                                 <mat-tab label="Form">
-                                    <ng-template mat-tab-label>{{"Form"|translate}}</ng-template>
+                                    <ng-template mat-tab-label>
+                                        <mat-icon class="tab-icon" style="padding: 0px;">assignment</mat-icon>
+                                        <span>{{"Form"|translate}}</span>
+                                    </ng-template>
                                     <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg">
                                         <div class="ovi-row-gap " style="margin-right: 0px;padding: 10px;align-items: center;">
                                             <div class="ovi-matfrmfld-drpdwn-top-box">
@@ -364,49 +598,9 @@
                                     </div>
                                 </div>
                                 <div style="cursor: pointer;" (click)="formBuilder()" *ngIf="selectedTab === 'Patient' && false" (keydown.enter)="fixClick()">
-                                    <mat-icon class="ovi-prmry-clr ovi-fnt-sze30" style="padding-top: 5px;" appTooltip tooltipText="{{'Form'|translate}}" placement="bottom">description</mat-icon>
+                                    <mat-icon class="ovi-prmry-clr ovi-fnt-sze30" style="padding-top: 5px; padding: 0px;" appTooltip tooltipText="{{'Form'|translate}}" placement="bottom">description</mat-icon>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    <div style="height: calc(100% - 280px);" *ngIf="dataSource.data.length && selectedTab != 'Visit Details' && selectedTab != 'Form' && selectedTab != 'Resources' && selectedTab != 'Asset' && selectedTab != 'Staff'">
-                        <div *ngIf="selectedTab === 'Patient'" class="ovi-fnt-sze17" style="font-weight: 600;padding: 5px;">{{"Patient TAT Summary"|translate }}</div>
-                        <div *ngIf="selectedTab === 'Staff'" class="ovi-fnt-sze17" style="font-weight: 600;padding: 16px 5px 5px 5px;">{{"Movement Summary"|translate }}</div>
-                        <div style="padding-left: 15px;width: 98%;">
-                            <div class="mat-elevation-z8" style="height: 100%;display: block;">
-                                <div style="margin: 10px 0px;overflow-x: auto;width: 100%;height: 100%;display: block;">
-                                    <table mat-table [dataSource]="dataSource" style="table-layout: fixed;">
-                                        <ng-container *ngFor="let column of tableColumns" [matColumnDef]="column">
-                                            <th mat-header-cell *matHeaderCellDef class="tw-manage-table-header" style="background-color: #EFEFEF;">
-                                                <span *ngIf="column !== 'select'">{{ column |translate }}</span>
-                                                <span *ngIf="column == 'select'">
-                                                    <mat-checkbox (change)="$event ? masterToggle() : null" [checked]="selection.hasValue() && isAllSelected()"
-                                                        [indeterminate]="selection.hasValue() && !isAllSelected()">
-                                                    </mat-checkbox>
-                                                </span>
-                                            </th>
-                                            <td mat-cell *matCellDef="let element;let i = index">
-                                                <span *ngIf="column !== 'select' && column !== 'Start Time' && column !== 'End Time' && column !== 'Remarks'">{{ element[column] }}</span>
-                                                <span *ngIf="column == 'select'">
-                                                    <mat-checkbox (click)="$event.stopPropagation()" (change)="$event ? selection.toggle(element) : null"
-                                                        [checked]="selection.isSelected(element)"  (keydown.enter)="fixClick()">
-                                                    </mat-checkbox>
-                                                </span>
-                                                <span *ngIf="column === 'Start Time' || column === 'End Time'">{{element[column] | date: "dd-MM-yyyy HH:mm"}}</span>
-                                                <span *ngIf="column === 'Remarks'">
-                                                    <mat-form-field style="width: -webkit-fill-available;">
-                                                        <input matInput [type]="'text'" [value]="element[column]" [(ngModel)]="element[column]" [ngModelOptions]="{ standalone: true }">
-                                                    </mat-form-field>
-                                                </span>
-                                            </td>
-                                        </ng-container>
-                                        <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
-                                        <tr mat-row *matRowDef="let row; let i = index; columns: tableColumns;"></tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialog } from '../../../shared/modules/entry-component/confirmation-dialog/confirmation-dialog.component';
 import { Subscription } from 'rxjs';
 import { PatientInfoComponent } from '../../../shared/modules/entry-component/patient/patient.component';
+import { NotificationAlertPopupComponent } from '../../../shared/modules/entry-component/notification-alert-popup/notification-alert-popup.component';
 
 @Component({
   selector: 'app-nursecall-view',
@@ -17,7 +18,7 @@ export class NursecallViewComponent implements OnInit {
   public selectFilter = [{ id: "ward", value: "WARD" }];
   public displayedColumns : string [] = ["ID", "Device", "Porter", "Alerts", "Bed No", "UHID", "Patient Name", "Gender", "Age", "Consulting Doctor", "Task", "Length of stay", "Status"];
   public iconHeader = ["ID", "Device", "Gender"];
-  public iconColumn = ["ID", "Device", "Porter", "Patient Name", "Patient Name", "Gender", "Alerts", "Task"];
+  public iconColumn = ["ID", "Device", "Porter", "Gender", "Alerts", "Task"];
   public sortColumn = ["ID"];
   public eventColumn = ["Device", "Porter", "Task", "Status"];
   public permissionControl = ["BT_ALLE"];
@@ -524,7 +525,11 @@ export class NursecallViewComponent implements OnInit {
     if (event.key === "Device") {
       this.manageCoster(event.data);
     } else if (event.key === "nurse-call" || event.key === "fall-risk") {
-      this.cancelAlert(event.data, event.key, event.patientId);
+      if (event.data.eventCode == "CE-PC") {
+        this.alertsDetails(event);
+      } else {
+        this.cancelAlert(event.data, event.key, event.patientId);
+      }
     } else if(event.key == 'Status') {
       this.patientInfo(event.data);
     } else if (event.key === 'pagination') {
@@ -546,6 +551,38 @@ export class NursecallViewComponent implements OnInit {
     this.applyFilterValue = null;
     this.getNurseCallData();
     this.countAlert();
+  }
+
+  alertsDetails(event) {
+    let patientDetails = this.tableData.find(res => res.patientId == event?.patientId);
+    const alertObj = {
+      id: event?.data?.iotAlertId,
+      configName: event?.data?.eventName || 'Patient Care',
+      message: event?.data?.message || 'Patient Care Alert',
+      sentDatetime: event.data.message.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/)?.[0],
+      alertTypeId: 'AT-AL',
+      ruleTypeId: 'CE-PC',
+      identifyingType: 'Patient',
+      identifyingId: patientDetails?.patientId,
+      alertDetails: [
+        { identifyingType: 'Location', identifyingValue: patientDetails?.locationId || patientDetails?.wardId },
+        { identifyingType: 'Tag', identifyingValue: patientDetails?.tagId },
+        { identifyingType: 'Patient', identifyingValue: patientDetails?.patientId, identifyingValueName: patientDetails?.patientName }
+      ]
+    };
+    const dialogRef = this.dialog.open(NotificationAlertPopupComponent, {
+      data: {
+        selectedAlert: alertObj,
+        allAlerts: [],
+        ruleFilterList: [],
+        hideCamera: true,
+        hideSidebar: true,
+        patientDetails: patientDetails
+      },
+      panelClass: ['medium-popup'],
+      disableClose: true
+    });
+    dialogRef.afterClosed().subscribe(result => { });
   }
 
 }

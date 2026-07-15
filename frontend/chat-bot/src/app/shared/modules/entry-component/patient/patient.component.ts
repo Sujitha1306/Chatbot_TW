@@ -283,11 +283,87 @@ export class PatientInfoComponent implements OnInit {
   public allowTokenEnroll = false;
   public tokenDetail: any = null;
   public tokenMsg = null;
-  public selectedTabIndex = 0;
   public isTempPatient: boolean;
   public checkProcessTest: Array<any> = [];
   public isChkPendingProcessTest: Array<any> = [];
-  public selectedTab = 0;
+  public selectedTabKey = 'workflow';
+  public tabDescriptors: { key: string, visible: () => boolean }[] = [
+    { key: 'workflow', visible: () => this.visitTypeId === 'VT-HC' || this.visitTypeId === 'VT-OP' || this.visitEventTypeId === 'VE-OT' || this.visitTypeId === 'VT-EC' || (this.visitTypeId === 'VT-IP' && this.patientInfo?.[0]?.testStatuses?.length > 0) },
+    { key: 'planDetails', visible: () => this.visitEventTypeId !== 'VE-OT' },
+    { key: 'vitals', visible: () => this.activate_btn && this.activate_btn.includes('TB_VITL') && this.visitEventTypeId !== 'VE-OT' && this.visitTypeId !== 'VT-EC' },
+    { key: 'visitHistory', visible: () => this.visitTypeId === 'VT-IP' && this.visitEventTypeId !== 'VE-OT' && this.visitTypeId !== 'VT-EC' },
+    { key: 'alertHistory', visible: () => this.visitTypeId === 'VT-IP' && this.visitEventTypeId !== 'VE-OT' && this.visitTypeId !== 'VT-EC' },
+    { key: 'routine', visible: () => this.activate_btn && this.activate_btn.includes('TB_RUTN') && this.visitTypeId === 'VT-IP' && this.visitEventTypeId !== 'VE-OT' && this.visitTypeId !== 'VT-EC' },
+    { key: 'assetUtilisation', visible: () => this.activate_btn && this.activate_btn.includes('TB_AU') },
+    { key: 'medication', visible: () => this.activate_btn && this.activate_btn.includes('TB_MDCN') && this.visitTypeId === 'VT-IP' && this.visitEventTypeId !== 'VE-OT' && this.visitTypeId !== 'VT-EC' },
+    { key: 'movementHistory', visible: () => this.visitTypeId === 'VT-EC' || (this.visitTypeId === 'VT-IP' && this.visitEventTypeId !== 'VE-OT') },
+    { key: 'report', visible: () => this.visitTypeId === 'VT-HC' && this.activate_btn && this.activate_btn.includes('TB_HCRDS') },
+  ];
+
+  // Default DOM/tab order. For VT-IP, the tab order below is used instead so Visit Detail/Overview/Services/Routine/Alert History/Movement History appear in that sequence.
+  private readonly tabOrderDefault: string[] = ['workflow', 'planDetails', 'vitals', 'visitHistory', 'alertHistory', 'routine', 'assetUtilisation', 'medication', 'movementHistory', 'report'];
+  private readonly tabOrderIP: string[] = ['visitHistory', 'planDetails', 'workflow', 'routine', 'vitals', 'alertHistory', 'movementHistory', 'assetUtilisation', 'medication', 'report'];
+
+  getPatientInitials(name: string): string {
+    if (!name) return 'MO';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  calculateAge(dob: string): number {
+    if (!dob) return 0;
+    const year = new Date(dob).getFullYear();
+    const currentYear = new Date().getFullYear();
+    return currentYear - year;
+  }
+
+  private readonly tabLabels: { [key: string]: string } = {
+    planDetails: 'Plan Details',
+    vitals: 'Vitals',
+    visitHistory: 'Visit History',
+    alertHistory: 'Alert History',
+    routine: 'Routine',
+    assetUtilisation: 'Asset Utilisation',
+    medication: 'Medication',
+    movementHistory: 'Movement History',
+    report: 'Report',
+  };
+
+  tabLabel(key: string): string {
+    if (key === 'workflow') {
+      return this.labeltext;
+    }
+    if (this.visitTypeId === 'VT-IP') {
+      if (key === 'planDetails') {
+        return 'Overview';
+      }
+      if (key === 'visitHistory') {
+        return 'Visit Detail';
+      }
+    }
+    return this.tabLabels[key];
+  }
+
+  trackByTabKey(index: number, key: string): string {
+    return key;
+  }
+
+  get visibleTabKeys(): string[] {
+    const order = this.visitTypeId === 'VT-IP' ? this.tabOrderIP : this.tabOrderDefault;
+    return order.filter(key => this.isTabVisible(key));
+  }
+
+  isTabVisible(key: string): boolean {
+    return !!this.tabDescriptors.find(tabDescriptor => tabDescriptor.key === key)?.visible();
+  }
+
+  get selectedTabIndex(): number {
+    const index = this.visibleTabKeys.indexOf(this.selectedTabKey);
+    return index > -1 ? index : 0;
+  }
   public patientListView = false;
   public visitTypeId = null;
   public visitStatus: string;
@@ -467,11 +543,9 @@ export class PatientInfoComponent implements OnInit {
           }
 
           if ((data.hasOwnProperty('tokenNo') && data.tokenNo !== '' && data.tokenNo !== null)) {
-            this.selectedTabIndex = 0;
-            this.selectedTab = 0;
+            this.selectedTabKey = 'workflow';
           } else {
-            this.selectedTabIndex = 1;
-            this.selectedTab = 1;
+            this.selectedTabKey = 'planDetails';
           }
 
           if (this.selectedPatinetVisitId == null) {
@@ -498,11 +572,9 @@ export class PatientInfoComponent implements OnInit {
         }
 
         if (data.token_no !== '' && data.token_no !== null) {
-          this.selectedTabIndex = 0;
-          this.selectedTab = 0;
+          this.selectedTabKey = 'workflow';
         } else {
-          this.selectedTabIndex = 1;
-          this.selectedTab = 1;
+          this.selectedTabKey = 'planDetails';
         }
 
         if (this.selectedPatinetVisitId == null) {
@@ -1651,23 +1723,23 @@ export class PatientInfoComponent implements OnInit {
   }
 
   tabChanged = (tabChangeEvent: any): void => {
-    this.selectedTab = tabChangeEvent.index;
-    if (tabChangeEvent.tab.textLabel === 'Alert History' && this.visitTypeId === 'VT-IP') {
+    this.selectedTabKey = this.visibleTabKeys[tabChangeEvent.index] ?? this.selectedTabKey;
+    if (this.selectedTabKey === 'alertHistory' && this.visitTypeId === 'VT-IP') {
       this.getPatientAlert(this.selectedPatientId);
       this.spinLoader = true;
     }
-    if (tabChangeEvent.tab.textLabel === 'Asset Utilisation') {
+    if (this.selectedTabKey === 'assetUtilisation') {
       this.getAssetUtlisation(this.selectedPatientId);
       this.spinLoader = true;
     }
-    if (tabChangeEvent.tab.textLabel === 'Visit History' && this.visitTypeId === 'VT-IP') {
+    if (this.selectedTabKey === 'visitHistory' && this.visitTypeId === 'VT-IP') {
       this.getVisitHistory(this.selectedPatientId);
       this.spinLoader = true;
     }
-    if(tabChangeEvent.tab.textLabel === 'Movement History') {
+    if(this.selectedTabKey === 'movementHistory') {
       this.getMovementHistoryData(this.fromDate1,this.toDate,this.data.patientId,this.data.tagAssociationTypeId,this.pageStart, this.pageSize);
     }
-    if(tabChangeEvent.tab.textLabel === 'Report') {
+    if(this.selectedTabKey === 'report') {
       this.getPatientReportHistory();
     }
   }
@@ -1909,7 +1981,7 @@ export class PatientInfoComponent implements OnInit {
         this.tokenDetail = null;
         this.tokenMsg = null;
         this.isTempPatient = false;
-        this.selectedTabIndex = 1;
+        this.selectedTabKey = 'planDetails';
         this.getPatientDetails(result.patientId, result.patinetVisitId, this.visitTypeId, this.visitEventId);
       } else {
         console.log(res.message);
@@ -1978,7 +2050,7 @@ export class PatientInfoComponent implements OnInit {
         this.tokenDetail = null;
         this.tokenMsg = null;
         this.isTempPatient = false;
-        this.selectedTabIndex = 1;
+        this.selectedTabKey = 'planDetails';
         this.token_no = res.results?.tokenNo;
         this.getPatientDetails(res.results.id, res.results.patientVisitId, this.visitTypeId, this.visitEventId, skipValidate);
       }
@@ -2132,31 +2204,29 @@ export class PatientInfoComponent implements OnInit {
         }
       }
 
-    });  
+      if (this.visitTypeId === 'VT-IP') {
+        // testStatuses just resolved, which decides whether 'workflow' (Services) is visible;
+        // re-sync so whichever tab actually ends up active (e.g. Visit Detail when Services has no tests) loads its data.
+        this.tabChanged({ index: this.selectedTabIndex });
+      }
+    });
   }
 
   getPatientDetails(id, patientVisitId, visitTypeId?: string, visitEventId?: string, skipValidate?) {
     this.loading = true;
     if(this.data.hasOwnProperty('ipView') && this.data.ipView == 'location') {
-      this.selectedTabIndex = 2;
-      this.selectedTab = 2;
-      let tabData = {
-        index : 2,
-        tab : { textLabel : 'Alert History' }
+      this.tabChanged({
+        index: this.visibleTabKeys.indexOf('alertHistory'),
+        tab: { textLabel: 'Alert History' }
+      });
+    } else {
+      if (this.selectedTabKey !== 'planDetails') {
+        this.selectedTabKey = 'workflow';
       }
-      this.tabChanged(tabData)
-    } else {
-    if (this.selectedTab === 1) {
-      this.selectedTabIndex = 1;
-    } else {
-      this.selectedTab = 0;
-      this.selectedTabIndex = 0;
-    }
     }
 
     if ((this.data.hasOwnProperty('defaultTab') && this.data.defaultTab === 'routine')) {
-      this.selectedTabIndex = 3;
-      this.selectedTab = 3;
+      this.selectedTabKey = 'routine';
     }
     this.selectedPatientId = id;
     this.selectedPatinetVisitId = patientVisitId;
@@ -2947,11 +3017,8 @@ updateClinicalDetails() {
   }
 
   refresh() {
-    if (this.selectedTab === 1) {
-      this.selectedTabIndex = 1;
-    } else {
-      this.selectedTab = 0;
-      this.selectedTabIndex = 0;
+    if (this.selectedTabKey !== 'planDetails') {
+      this.selectedTabKey = 'workflow';
     }
     this.isEditReviewDateTestId = null;
     this.enableReviewDate = false;

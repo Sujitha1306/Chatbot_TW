@@ -46,6 +46,8 @@ export interface PathStep {
 export interface IndoorNavLocationOption {
   id: number;
   name: string;
+  displayName: string;
+  regionalName?: string;
   typeName: string;
   floorId: number;
   floorName: string;
@@ -53,7 +55,7 @@ export interface IndoorNavLocationOption {
   node: NavNode;
   data: LocationData;
 }
-import { FOCUS_ROOM_MIN_DISTANCE, PERSON_BASE_MOVE_SPEED } from '../../constants/map.constants';
+import { FOCUS_ROOM_MIN_DISTANCE, PERSON_BASE_MOVE_SPEED, FLOOR_MAX_DISTANCE_MULTIPLIER, FLOOR_MIN_DISTANCE_MULTIPLIER, FLOOR_MIN_DISTANCE_ABSOLUTE, ROUTE_RIBBON_WIDTH } from '../../constants/map.constants';
 import { environment } from '../../../../../../../environments/environment';
 import { MovementState } from '../../services/person-movement.service';
 import { AppToastService } from '../../../../../../shared/services/toaster.service';
@@ -96,11 +98,23 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
 
   // --- Navigation state ---
   startRoom: RoomMesh | null = null;
+  selectedStartLocation: IndoorNavLocationOption | null = null;
   endRoom: RoomMesh | null = null;
   private routeGroup: THREE.Group | null = null;
   private person: THREE.Group | null = null;
   @ViewChild('sourceMarkerEl') private sourceMarkerEl?: ElementRef<HTMLDivElement>;
   @ViewChild('destMarkerEl') private destMarkerEl?: ElementRef<HTMLDivElement>;
+
+  // --- Multi-floor state ---
+  multiFloorRouteActive = false;
+  selectedDestinationLocation: IndoorNavLocationOption | null = null;
+  multiFloorStartLiftNode: NavNode | null = null;
+  multiFloorDestLiftNode: NavNode | null = null;
+  multiFloorStartLiftLocationId: number | null = null;
+  multiFloorDestLiftLocationId: number | null = null;
+  activePathStartNode: NavNode | null = null;
+  activePathEndNode: NavNode | null = null;
+  private animatedFloors = new Set<number>();
 
   // Path draw animation
   private pathAnimating = false;
@@ -169,6 +183,17 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
 
   // --- 2D / 3D view mode ---
   viewMode: '2d' | '3d' = '3d';
+
+  private outdoorBlock: any = null;
+  private outdoorFloorId: number | null = null;
+  private outdoorGroup: THREE.Group | null = null;
+  private outdoorRoomMeshes: RoomMesh[] = [];
+  private lastBuildingOpacity: number | null = null;
+  private originalMaterialState = new WeakMap<THREE.Material, {
+    color?: THREE.Color;
+    opacity?: number;
+    transparent?: boolean;
+  }>();
 
   // --- Label size (S=0.75 / M=1.0 / L=1.3 / XL=1.6 relative to compact map-label base) ---
   private readonly indoorLabelBaseScale = 2.2;
@@ -263,8 +288,33 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     this.applyFloorDefaultCamera();
   }
 
-  private focusOnBoundsForView(bounds: THREE.Box3, distanceMultiplier: number): void {
+  private focusOnBoundsForView(bounds: THREE.Box3, distanceMultiplier: number, instant = false): void {
+    if (this.landingResetTimer) {
+      clearTimeout(this.landingResetTimer);
+      this.landingResetTimer = null;
+    }
     if (this.viewMode !== '2d') {
+      if (instant) {
+        const center = new THREE.Vector3();
+        bounds.getCenter(center);
+        const size = new THREE.Vector3();
+        bounds.getSize(size);
+        const maxDim = Math.max(size.x, size.z);
+        const fov = this.camera.fov * (Math.PI / 180);
+        const baseDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+        const dist = Math.max(baseDist * distanceMultiplier, FOCUS_ROOM_MIN_DISTANCE);
+        
+        const currentSpherical = new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(this.controls.target));
+        const def = this.mapConfig.floorDefaults?.[String(this.selectedFloorId)];
+        const spherical = new THREE.Spherical(dist, def?.phi ?? currentSpherical.phi, def?.theta ?? currentSpherical.theta);
+        const targetCam = center.clone().add(new THREE.Vector3().setFromSpherical(spherical));
+        
+        this.controls.target.copy(center);
+        this.camera.position.copy(targetCam);
+        this.controls.update();
+        this.updateLabelVisibility();
+        return;
+      }
       this.cameraAnimationService.focusOnBounds(bounds, this.camera, this.controls, () => this.updateLabelVisibility(), distanceMultiplier);
       return;
     }
@@ -280,9 +330,21 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     const fov = this.camera.fov * (Math.PI / 180);
     const baseDist = Math.abs(maxDim / 2 / Math.tan(fov / 2));
     const dist = Math.max(baseDist * distanceMultiplier, FOCUS_ROOM_MIN_DISTANCE);
+    const targetCam = new THREE.Vector3(center.x, center.y + dist, center.z);
+
+    if (instant) {
+      this.controls.minPolarAngle = 0;
+      this.controls.maxPolarAngle = 0;
+      this.controls.enableRotate = false;
+      this.controls.target.copy(center);
+      this.camera.position.copy(targetCam);
+      this.controls.update();
+      this.updateLabelVisibility();
+      return;
+    }
+
     const startCam = this.camera.position.clone();
     const startTarget = this.controls.target.clone();
-    const targetCam = new THREE.Vector3(center.x, center.y + dist, center.z);
 
     this.controls.minPolarAngle = 0;
     this.controls.maxPolarAngle = 0;
@@ -296,10 +358,13 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     );
   }
 
-  private focusOnDestinationRoom(room: RoomMesh): void {
+  private focusOnDestinationRoom(room: RoomMesh, instant = false): void {
+    if (this.scene) {
+      this.scene.updateMatrixWorld(true);
+    }
     const bounds = new THREE.Box3().setFromObject(room.floor);
     if (bounds.isEmpty()) return;
-    this.focusOnBoundsForView(bounds, this.viewMode === '2d' ? 3.0 : 3.5);
+    this.focusOnBoundsForView(bounds, this.viewMode === '2d' ? 3.0 : 3.5, instant);
   }
 
   private keepRoomLabelMapSized(room: RoomMesh): void {
@@ -325,7 +390,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     for (const room of this.roomMeshes) {
       if (room.label) {
         room.label.userData['fixedSX'] = (room.label.userData['fixedSX'] ?? 6.84) * ratio;
-        room.label.userData['fixedSY'] = (room.label.userData['fixedSY'] ?? 1.41) * ratio;
+        room.label.userData['fixedSY'] = (room.label.userData['fixedSY'] ?? 1.46) * ratio;
       }
     }
     this.labelScale = this.indoorLabelBaseScale * newMultiplier;
@@ -480,13 +545,21 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   get hospitalName(): string { return this.selectedBlock?.name ?? 'Indoor Navigation'; }
   get floorName(): string { return this.selectedFloor?.name ?? ''; }
   get availableFloors(): any[] { return this.filteredFloors; }
-  get availableBlocks(): any[] { return this.blocks; }
+  get availableBlocks(): any[] {
+    return (this.blocks || []).filter((b: any) => b.name?.toLowerCase() !== 'outdoor');
+  }
 
   onFloorSelect(floor: any): void {
     if (floor?.id === this.selectedFloor?.id) return;
     this.isLoading = true;
-    this.clearStartSelection();
-    this.clearNavigation();
+    if (!this.multiFloorRouteActive) {
+      if (this.startRoom) {
+        this.startRoom = null;
+      }
+      this.clearNavigation();
+    } else {
+      this.clearRouteVisual();
+    }
     this.fetchFloorDetails(floor);
   }
 
@@ -497,8 +570,14 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     this.invalidateAllFloorSearch();
     if (this.filteredFloors.length) {
       this.isLoading = true;
-      this.clearStartSelection();
-      this.clearNavigation();
+      if (!this.multiFloorRouteActive) {
+        if (this.startRoom) {
+          this.startRoom = null;
+        }
+        this.clearNavigation();
+      } else {
+        this.clearRouteVisual();
+      }
       this.fetchFloorDetails(this.filteredFloors[0]);
     }
   }
@@ -539,14 +618,140 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   // --- Base hooks ---
 
   protected override async loadBlockFloors(): Promise<void> {
-    // showSurroundings is passed as isBaseFloor to FloorPlanService — controls OSM tile building
-    this.showSurroundings = this.mapViewMode !== 'default';
-    await super.loadBlockFloors();
+    if (!this.selectedBlock || !this.selectedFloor) return;
+    if (!this.scene) { (this as any).pendingFloorLoad = true; return; }
+    (this as any).pendingFloorLoad = false;
+    this.isLoading = true;
+    this.noDataFound = false;
 
-    // Skip fallback if scene is not yet ready (base already deferred via pendingFloorLoad)
+    // Yield control to allow the browser to repaint and show the loader
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    try {
+      this.clearCurrentFloor();
+      this.buildingGroup = new THREE.Group();
+      this.buildingGroup.name = 'building-root';
+      this.scene.add(this.buildingGroup);
+      this.floorGroups = [];
+      this.roomMeshesByFloor = [];
+
+      const layout = this.floorDetails[this.selectedFloor.id];
+      if (!layout) {
+        this.noDataFound = true;
+        this.isLoading = false;
+        return;
+      }
+
+      let textureResolve: () => void;
+      const texturePromise = new Promise<void>(resolve => {
+        textureResolve = resolve;
+      });
+
+      const safetyTimeout = setTimeout(() => {
+        textureResolve();
+      }, 5000);
+
+      const floorGroup = new THREE.Group();
+      const baseFloorHasSetPoints = this.floorPlanService.hasGeoAlignment(layout);
+      const shouldBuildBuildingSurroundings = this.mapViewMode !== 'default' && (baseFloorHasSetPoints || !this.outdoorFloorId);
+
+      const result = this.floorPlanService.buildFloorPlan(
+        layout,
+        floorGroup,
+        0,
+        0,
+        0,
+        true,
+        this.viewMode === '3d',
+        shouldBuildBuildingSurroundings,
+        this.foundationColor,
+        this.wallWidth,
+        this.wallHeight,
+        this.labelHeight,
+        this.labelScale,
+        this.showCorridorWalls,
+        this.mapConfig,
+        () => {
+          clearTimeout(safetyTimeout);
+          textureResolve();
+        }
+      );
+
+      this.floorGroups.push(floorGroup);
+      this.roomMeshesByFloor.push(result.roomMeshes);
+      this.buildingGroup.add(floorGroup);
+
+      if (result.surroundingsMesh) {
+        this.surroundingsGroup = result.surroundingsMesh;
+        this.surroundingsGroup.traverse((obj: any) => {
+          if (obj.name === 'floor-geo-polygon-outline' || obj.name === 'floor-geo-polygon-fill') {
+            obj.visible = false;
+          }
+        });
+        this.scene.add(this.surroundingsGroup);
+      }
+      if (result.floorImageMesh) this.floorImageMeshes.push(result.floorImageMesh);
+      if (result.foundationMesh) this.foundationMeshes.push(result.foundationMesh);
+      result.doorMeshes.forEach((d: any) => {
+        d.visible = this.showDoors;
+        this.doorMeshes.push(d);
+      });
+      result.roomMeshes.forEach((room: any) => {
+        room.walls.forEach((wall: any) => { wall.visible = this.showRoomWalls; });
+      });
+
+      if (result.hasGeoAlign) {
+        this.buildingGroup.position.set(result.geoCenterX, 0, result.geoCenterZ);
+        this.buildingGroup.rotation.y = result.geoRotationY;
+        this.buildingGroup.scale.set(result.geoScaleX ?? 1, 1, result.geoScaleZ ?? 1);
+      }
+
+      this.baseFloorCenter.set(result.center[0], result.center[1]);
+      this.rawFloorCenter.set(result.rawCenter[0], result.rawCenter[1]);
+      this.floorHasGeoAlign = result.hasGeoAlign;
+      this.floorSize = result.floorSize || 200;
+      this.floorWidth = result.floorWidth;
+      this.floorHeight = result.floorHeight;
+      this.roomMeshes = this.getActiveRoomMeshes();
+
+      this.controlsService.updateDistanceLimits(
+        this.floorSize * FLOOR_MAX_DISTANCE_MULTIPLIER * 2,
+        Math.min(this.floorSize * FLOOR_MIN_DISTANCE_MULTIPLIER, FLOOR_MIN_DISTANCE_ABSOLUTE)
+      );
+
+      this.navigationGraph = this.navigationService.constructNavigationGraph(
+        this.roomMeshes,
+        (r: RoomMesh) => this.floorPlanService.getRoomCenter(r)
+      );
+
+      await this.fetchFloorNodes(this.selectedFloorId!);
+      this.navNodes = this.allNodes[this.selectedFloorId!] || [];
+      this.nodeNavigationGraph = new Map<number, number[]>();
+      if (this.navNodes.length > 0) {
+        this.nodeNavigationGraph = this.navigationService.constructNodeGraph(this.navNodes);
+      }
+
+      this.buildOutdoorMap();
+
+      if (this.shouldFocusOnFloorOnLoad()) {
+        this.cameraAnimationService.focusOnFloor(
+          this.roomMeshes, this.camera, this.controls, 1,
+          () => this.updateLabelVisibility()
+        );
+      }
+      this.updateLabelVisibility();
+
+      await texturePromise;
+
+      await this.onFloorLoaded();
+      this.isLoading = false;
+    } catch (e) {
+      console.error('[IndoorPathComponent] loadBlockFloors error', e);
+      this.isLoading = false;
+    }
+
     if (!this.scene) return;
 
-    // If the auto-selected floor produced no rooms, walk filteredFloors to find the first with data
     if (this.roomMeshes.length === 0 && this.filteredFloors.length > 1) {
       for (const floor of this.filteredFloors) {
         if (floor.id === this.selectedFloor?.id) continue;
@@ -559,10 +764,206 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
         void this.fetchFloorNodes(floor.id);
         this.selectedFloor = floor;
         this.selectedFloorId = floor.id;
-        await super.loadBlockFloors();
+        await this.loadBlockFloors();
         if (this.roomMeshes.length > 0) break;
       }
     }
+  }
+
+  protected override clearCurrentFloor(): void {
+    super.clearCurrentFloor();
+    if (this.outdoorGroup) {
+      this.cleanupService.disposeGroup(this.outdoorGroup, this.scene);
+      this.outdoorGroup = null;
+      this.outdoorRoomMeshes = [];
+    }
+    this.lastBuildingOpacity = null;
+  }
+
+  private buildOutdoorMap(): void {
+    if (this.outdoorGroup) return;
+
+    if (this.outdoorFloorId && this.floorDetails[this.outdoorFloorId]) {
+      const activeLayout = this.selectedFloor ? this.floorDetails[this.selectedFloor.id] : null;
+      const baseFloorHasSetPoints = this.floorPlanService.hasGeoAlignment(activeLayout);
+
+      const outdoorLayout = this.floorDetails[this.outdoorFloorId];
+      this.outdoorGroup = new THREE.Group();
+      this.outdoorGroup.name = 'outdoor-building-root';
+      this.scene.add(this.outdoorGroup);
+
+      const outdoorFloorGroup = new THREE.Group();
+      const outdoorResult = this.floorPlanService.buildFloorPlan(
+        outdoorLayout,
+        outdoorFloorGroup,
+        0,
+        0,
+        0,
+        true,
+        true,
+        this.mapViewMode !== 'default' && !baseFloorHasSetPoints, // includeSurroundings
+        this.foundationColor,
+        this.wallWidth,
+        this.wallHeight,
+        this.labelHeight,
+        this.labelScale,
+        this.showCorridorWalls,
+        this.mapConfig
+      );
+      this.outdoorGroup.add(outdoorFloorGroup);
+      this.outdoorRoomMeshes = outdoorResult.roomMeshes;
+
+      if (outdoorResult.surroundingsMesh) {
+        if (this.surroundingsGroup) {
+          this.cleanupService.disposeGroup(this.surroundingsGroup as any, this.scene);
+        }
+        this.surroundingsGroup = outdoorResult.surroundingsMesh;
+        this.surroundingsGroup.traverse((obj: any) => {
+          if (obj.name === 'floor-geo-polygon-outline' || obj.name === 'floor-geo-polygon-fill') {
+            obj.visible = false;
+          }
+        });
+        this.scene.add(this.surroundingsGroup);
+      }
+
+      if (outdoorResult.hasGeoAlign) {
+        this.outdoorGroup.position.set(outdoorResult.geoCenterX, 0, outdoorResult.geoCenterZ);
+        this.outdoorGroup.rotation.y = outdoorResult.geoRotationY;
+        this.outdoorGroup.scale.set(outdoorResult.geoScaleX ?? 1, 1, outdoorResult.geoScaleZ ?? 1);
+      }
+
+      this.outdoorRoomMeshes.forEach(room => {
+        room.floor.visible = true;
+        room.walls.forEach(wall => { wall.visible = this.showRoomWalls; });
+      });
+
+      if (this.outdoorGroup) {
+        this.outdoorGroup.visible = this.zoomValue < 60;
+      }
+    }
+  }
+
+  protected override updateLabelVisibility(): void {
+    this.roomMeshesByFloor.forEach(rooms => {
+      rooms.forEach(r => {
+        if (r.label) r.label.visible = false;
+        if (r.labelIcon) r.labelIcon.visible = false;
+      });
+    });
+
+    this.outdoorRoomMeshes.forEach(room => {
+      if (room.label) room.label.visible = false;
+      if (room.labelIcon) room.labelIcon.visible = false;
+    });
+
+    const ZOOM_FADE_START = 55;
+    const ZOOM_FADE_END = 75;
+
+    let buildingOpacity = 1.0;
+    let outdoorOpacity = 0.0;
+    let isZoomedOut = false;
+
+    if (this.zoomValue >= ZOOM_FADE_END) {
+      buildingOpacity = 1.0;
+      outdoorOpacity = 0.0;
+      isZoomedOut = false;
+    } else if (this.zoomValue <= ZOOM_FADE_START) {
+      buildingOpacity = 0.0;
+      outdoorOpacity = 1.0;
+      isZoomedOut = true;
+    } else {
+      buildingOpacity = (this.zoomValue - ZOOM_FADE_START) / (ZOOM_FADE_END - ZOOM_FADE_START);
+      outdoorOpacity = 1.0 - buildingOpacity;
+      isZoomedOut = this.zoomValue < 75;
+    }
+
+    if (outdoorOpacity > 0.0 && !this.outdoorGroup) {
+      this.buildOutdoorMap();
+    }
+
+    if (this.outdoorGroup) {
+      this.outdoorGroup.visible = outdoorOpacity > 0.0;
+    }
+    if (this.buildingGroup) {
+      this.buildingGroup.visible = buildingOpacity > 0.0;
+    }
+
+    if (buildingOpacity !== this.lastBuildingOpacity) {
+      this.applyGroupOpacity(this.buildingGroup, buildingOpacity);
+      this.applyGroupOpacity(this.outdoorGroup, outdoorOpacity);
+      this.lastBuildingOpacity = buildingOpacity;
+    }
+
+    if (isZoomedOut) {
+      if (this.outdoorRoomMeshes.length > 0) {
+        this.labelVisibilityService.updateLabelVisibility(
+          this.outdoorRoomMeshes,
+          this.camera,
+          this.controls,
+          this.floorSize,
+          (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
+          this.showLabels,
+          this.showIcons,
+          this.zoomValue
+        );
+      }
+    } else {
+      this.labelVisibilityService.updateLabelVisibility(
+        this.getActiveRoomMeshes(),
+        this.camera,
+        this.controls,
+        this.floorSize,
+        (room: RoomMesh) => this.floorPlanService.getRoomCenter(room),
+        this.showLabels,
+        this.showIcons,
+        this.zoomValue
+      );
+    }
+  }
+
+  private applyGroupOpacity(group: THREE.Group | null, opacity: number): void {
+    if (!group) return;
+    group.traverse((object) => {
+      const anyObj = object as any;
+      if (anyObj.isMesh || anyObj.isSprite) {
+        if (anyObj.material) {
+          this.applyMaterialOpacity(anyObj.material, opacity);
+        }
+      }
+    });
+  }
+
+  private applyMaterialOpacity(
+    materialOrArray: THREE.Material | THREE.Material[],
+    opacityFactor: number
+  ): void {
+    if (Array.isArray(materialOrArray)) {
+      materialOrArray.forEach(m => this.applyMaterialOpacity(m, opacityFactor));
+      return;
+    }
+
+    const material = materialOrArray;
+
+    if (!this.originalMaterialState.has(material)) {
+      const anyMat = material as any;
+      this.originalMaterialState.set(material, {
+        color: anyMat.color?.clone?.(),
+        opacity: typeof anyMat.opacity === 'number' ? anyMat.opacity : 1.0,
+        transparent: typeof anyMat.transparent === 'boolean' ? anyMat.transparent : false
+      });
+    }
+
+    const original = this.originalMaterialState.get(material)!;
+    const anyMat = material as any;
+
+    const targetOpacity = (original.opacity !== undefined ? original.opacity : 1.0) * opacityFactor;
+    anyMat.opacity = targetOpacity;
+    anyMat.transparent = targetOpacity < 1.0 || (original.transparent || false);
+    anyMat.needsUpdate = true;
+  }
+
+  protected override shouldFocusOnFloorOnLoad(): boolean {
+    return !this.multiFloorRouteActive;
   }
 
   protected override onMapConfigLoaded(): void {
@@ -604,6 +1005,25 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
 
   protected override async onFloorLoaded(): Promise<void> {
+    // Cache outdoor block data to build the outdoor map in the background
+    if (!this.outdoorBlock && this.blockWithFloorList && this.blockWithFloorList.length > 0) {
+      this.outdoorBlock = this.blockWithFloorList.find((b: any) => b.name?.toLowerCase() === 'outdoor');
+      if (this.outdoorBlock && this.outdoorBlock.children?.length > 0) {
+        this.outdoorFloorId = this.outdoorBlock.children[0].id;
+        // Pre-fetch outdoor floor location details if not already cached
+        if (!this.floorDetails.hasOwnProperty(this.outdoorFloorId)) {
+          this.hospitalService.getLogicalLocationWithChildren(this.outdoorFloorId).subscribe((res: any) => {
+            this.floorDetails[this.outdoorFloorId] = res.results;
+            this.regionalLocationNameService.applyToFloor(this.outdoorFloorId, this.floorDetails[this.outdoorFloorId]);
+            this.buildOutdoorMap();
+          });
+        } else {
+          this.buildOutdoorMap();
+        }
+        void this.fetchFloorNodes(this.outdoorFloorId);
+      }
+    }
+
     this.updateMapView();
 
     // Enforce view mode constraints — set both branches so stale state never leaks across floors
@@ -628,6 +1048,10 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     }
     this.invalidateAllFloorSearch();
     this.settingsSourceSearch = '';
+    if (this.multiFloorRouteActive) {
+      this.applyMultiFloorRoute();
+      return;
+    }
     if (this.pendingNavConfig) {
       await this.applyPendingNavConfig();
       return;
@@ -636,13 +1060,19 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       const room = this.roomMeshes.find(r => r.id === this.mapConfig.webIndoor!.sourceRoomId);
       if (room) {
         this.assignStart(room);
+        this.selectedStartLocation = this.getCurrentFloorOption(room);
         this.resetViewAfterLanding();
         return;
       }
     }
     if (IndoorPathComponent.savedSourceId !== null) {
       const room = this.getNavRooms().find(r => r.id === IndoorPathComponent.savedSourceId);
-      if (room) this.setStartRoom(room);
+      if (room) {
+        this.setStartRoom(room);
+        this.selectedStartLocation = this.getCurrentFloorOption(room);
+      } else {
+        void this.ensureAllFloorNavOptions();
+      }
     }
     this.resetViewAfterLanding();
   }
@@ -670,7 +1100,12 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
         this.isLaunchedFromNavQr = false;
         if (IndoorPathComponent.savedSourceId !== null) {
           const room = this.getNavRooms().find(r => r.id === IndoorPathComponent.savedSourceId);
-          if (room) this.setStartRoom(room);
+          if (room) {
+            this.setStartRoom(room);
+            this.selectedStartLocation = this.getCurrentFloorOption(room);
+          } else {
+            void this.ensureAllFloorNavOptions();
+          }
         }
       }
       return;
@@ -681,11 +1116,31 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     if (sourceRoom) {
       this.setStartRoom(sourceRoom);
       IndoorPathComponent.savedSourceId = sourceRoom.id;
+      this.selectedStartLocation = this.getCurrentFloorOption(sourceRoom);
     }
-    const destRoom = nav.dli != null ? this.roomMeshes.find(r => r.id === nav.dli) : null;
-    if (destRoom) {
-      this.setEndRoom(destRoom);
-      if (sourceRoom) this.calculateRoute(); // auto-navigate for QR deep-link
+    if (nav.dli != null) {
+      if (nav.dfi !== null && nav.dfi !== nav.sfi) {
+        // Multi-floor scenario: resolve the destination option from other floors
+        await this.ensureAllFloorNavOptions();
+        const destOption = this.allFloorNavOptions.find(opt => opt.id === nav.dli && opt.floorId === nav.dfi);
+        if (destOption) {
+          this.selectedDestinationLocation = destOption;
+          this.destinationSearchValue = destOption.displayName || destOption.name;
+          this.destinationSelectedRoomId = destOption.id;
+          if (sourceRoom) {
+            this.calculateRoute();
+          }
+        }
+      } else {
+        // Same-floor scenario: resolve room mesh from the current floor
+        const destRoom = this.roomMeshes.find(r => r.id === nav.dli);
+        if (destRoom) {
+          this.setEndRoom(destRoom);
+          if (sourceRoom) {
+            this.calculateRoute();
+          }
+        }
+      }
     }
   }
 
@@ -733,6 +1188,13 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
         this.collectFloorNavOptions(floorData, floor, roomNodeMap, options);
       });
       this.allFloorNavOptions = options;
+      if (IndoorPathComponent.savedSourceId !== null && !this.selectedStartLocation) {
+        const found = this.allFloorNavOptions.find(opt => opt.id === IndoorPathComponent.savedSourceId);
+        if (found) {
+          this.selectedStartLocation = found;
+          this.sourceLabel = found.displayName || found.name;
+        }
+      }
     })().finally(() => {
       this.isNavSearchLoading = false;
     });
@@ -752,6 +1214,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       options.push({
         id: location.id,
         name: location.name,
+        displayName: this.getLocationDisplayName(location),
+        regionalName: location.regionalName,
         typeName: location.locationTypeName,
         floorId: floor.id,
         floorName: floor.name,
@@ -769,6 +1233,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     return {
       id: room.id,
       name: room.data?.name ?? room.name,
+      displayName: this.getLocationDisplayName(room.data),
+      regionalName: room.data?.regionalName,
       typeName: room.data?.locationTypeName ?? 'Room',
       floorId: this.selectedFloor.id,
       floorName: this.selectedFloor.name,
@@ -789,6 +1255,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       const label = this.getOptionLabel(option).toLowerCase();
       return label.includes(q)
         || option.name.toLowerCase().includes(q)
+        || option.displayName.toLowerCase().includes(q)
+        || (option.regionalName ?? '').toLowerCase().includes(q)
         || option.floorName.toLowerCase().includes(q)
         || (option.typeName ?? '').toLowerCase().includes(q);
     });
@@ -798,6 +1266,14 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     const name = (option.name ?? '').trim();
     const match = name.match(/\b(\d{1,6})\b/);
     return match?.[1] ?? name;
+  }
+
+  getOptionDisplayName(option: IndoorNavLocationOption | null | undefined): string {
+    return option?.displayName || option?.name || '';
+  }
+
+  private getLocationDisplayName(location: LocationData | null | undefined): string {
+    return this.regionalLocationNameService.getDisplayName(location);
   }
 
   private isRoomNavNode(node: NavNode): boolean {
@@ -819,13 +1295,22 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   private async switchToSearchFloor(floor: any): Promise<void> {
     if (floor?.id === this.selectedFloor?.id) return;
     this.isLoading = true;
-    this.clearStartSelection();
+    if (this.startRoom) {
+      this.startRoom = null;
+    }
     this.clearNavigation();
     await this.ensureFloorDetailsForSearch(floor);
     await this.fetchFloorNodes(floor.id);
     this.selectedFloor = floor;
     this.selectedFloorId = floor.id;
     await super.loadBlockFloors();
+    if (this.surroundingsGroup) {
+      this.surroundingsGroup.traverse((obj: any) => {
+        if (obj.name === 'floor-geo-polygon-outline' || obj.name === 'floor-geo-polygon-fill') {
+          obj.visible = false;
+        }
+      });
+    }
   }
 
   protected animate(): void {
@@ -846,7 +1331,13 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       if (this.routeCameraFollowActive && this.pathTotalLength > 0) {
         this.panCameraTowardRoutePoint(this.getPathPositionAt(eased), this.viewMode === '2d' ? 0.09 : 0.07);
       }
-      if (t >= 1) { this.pathAnimating = false; this.pathAnimComplete = true; }
+      if (t >= 1) {
+        this.pathAnimating = false;
+        this.pathAnimComplete = true;
+        if (this.selectedFloor?.id !== undefined) {
+          this.animatedFloors.add(this.selectedFloor.id);
+        }
+      }
     }
 
     // Pull back to full route view once ribbon is complete (fires exactly once)
@@ -1015,6 +1506,13 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       this.destinationSearchValue = this.getRoomLabel(room);
       this.destinationSelectedRoomId = room.id;
     }
+    this.selectedDestinationLocation = this.getCurrentFloorOption(room);
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
     applyRoomHighlight(room, false, false, false, true);
     this.keepRoomLabelMapSized(room);
   }
@@ -1024,6 +1522,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
 
   private getRoomLabel(room: RoomMesh): string {
+    const regionalLabel = this.getLocationDisplayName(room?.data);
+    if (room?.data?.regionalName && regionalLabel) return regionalLabel;
     const name = (room?.data?.name ?? room?.name ?? '').trim();
     const match = name.match(/\b(\d{1,6})\b/);
     return match?.[1] ?? name;
@@ -1036,7 +1536,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
 
   getDestSuggestions(): IndoorNavLocationOption[] {
-    return this.getAllFloorSuggestions(this.destinationSearchValue, this.startRoom?.id);
+    return this.getAllFloorSuggestions(this.destinationSearchValue, this.selectedStartLocation?.id);
   }
 
   onDestinationInput(): void {
@@ -1058,23 +1558,32 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
 
   async selectDestination(option: IndoorNavLocationOption): Promise<void> {
     this.isDestDropdownOpen = false;
+    this.selectedDestinationLocation = option;
+    const isFloorSwitch = option.floorId !== this.selectedFloor?.id;
     const room = await this.resolveSearchOptionRoom(option);
     if (!room) return;
-    this.setEndRoom(room);
+    this.setEndRoom(room, isFloorSwitch);
   }
 
   /** Direct room setter — bypasses nav-node re-validation (room is already from getNavRooms()) */
-  private setEndRoom(room: RoomMesh): void {
+  private setEndRoom(room: RoomMesh, instant = false): void {
     if (this.endRoom && this.endRoom !== room) {
       applyRoomHighlight(this.endRoom, false, false, false, false);
       this.clearRouteVisual();
     }
     this.endRoom = room;
-    this.destinationSearchValue = room.data?.name ?? this.getRoomLabel(room);
+    this.destinationSearchValue = this.getLocationDisplayName(room.data) || this.getRoomLabel(room);
     this.destinationSelectedRoomId = room.id;
+    this.selectedDestinationLocation = this.getCurrentFloorOption(room);
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
     applyRoomHighlight(room, false, false, false, true);
     this.keepRoomLabelMapSized(room);
-    this.focusOnDestinationRoom(room);
+    this.focusOnDestinationRoom(room, instant);
   }
 
   /** Direct room setter for start — used by Settings panel */
@@ -1083,7 +1592,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       applyRoomHighlight(this.startRoom, false, false, false, false);
     }
     this.startRoom = room;
-    this.sourceLabel = room.data?.name ?? this.getRoomLabel(room);
+    this.sourceLabel = this.getLocationDisplayName(room.data) || this.getRoomLabel(room);
     this.isSourceFromConfig = false;
     applyRoomHighlight(room, false, false, true, false);
     this.keepRoomLabelMapSized(room);
@@ -1095,11 +1604,21 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       this.startRoom = null;
     }
     this.sourceLabel = 'Select source location';
+    this.selectedStartLocation = null;
+    IndoorPathComponent.savedSourceId = null;
+    this.animatedFloors.clear();
   }
 
   clearDestination(): void {
     this.destinationSearchValue = '';
     this.destinationSelectedRoomId = null;
+    this.selectedDestinationLocation = null;
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
     this.isDestDropdownOpen = false;
     if (this.endRoom) {
       applyRoomHighlight(this.endRoom, false, false, false, false);
@@ -1108,18 +1627,276 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     this.clearRouteVisual();
   }
 
+  isMultiFloorScenario(): boolean {
+    return !!this.selectedStartLocation && 
+           !!this.selectedDestinationLocation && 
+           this.selectedStartLocation.floorId !== this.selectedDestinationLocation.floorId;
+  }
+
+  private getLiftStairNodes(floorId: number): Array<{ node: NavNode; locationId?: number; name: string }> {
+    const nodes = this.allNodes[floorId] || [];
+    const floorLayout = this.floorDetails[floorId];
+    
+    const findLocationById = (loc: any, id: number): any => {
+      if (!loc) return null;
+      if (loc.id === id) return loc;
+      for (const child of loc.children || []) {
+        const found = findLocationById(child, id);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const results: Array<{ node: NavNode; locationId?: number; name: string }> = [];
+
+    nodes.forEach(node => {
+      let isMatch = false;
+      let name = '';
+      const locId = node.location_id ?? (node as any).locationId;
+
+      if (node.locationName && /lift|stair|elev|escalat/i.test(node.locationName)) {
+        isMatch = true;
+        name = node.locationName;
+      }
+
+      if (!isMatch && locId !== undefined && locId !== null && floorLayout) {
+        const loc = findLocationById(floorLayout, Number(locId));
+        if (loc) {
+          const locName = loc.name || '';
+          const dispName = loc.displayName || '';
+          const typeName = loc.locationTypeName || '';
+          const catId = loc.locationCategoryId || '';
+          if (/lift|stair|elev|escalat/i.test(locName) ||
+              /lift|stair|elev|escalat/i.test(dispName) ||
+              /lift|stair|elev|escalat/i.test(typeName) ||
+              /lift|stair|elev|escalat/i.test(catId)) {
+            isMatch = true;
+            name = dispName || locName;
+          }
+        }
+      }
+
+      if (isMatch) {
+        results.push({
+          node,
+          locationId: locId ? Number(locId) : undefined,
+          name: name || `Lift/Stair (${node.id})`
+        });
+      }
+    });
+
+    return results;
+  }
+
+  private findNearestLiftOrStair(
+    fromNode: NavNode,
+    floorId: number
+  ): { node: NavNode; locationId?: number; name: string } | null {
+    const liftStairNodes = this.getLiftStairNodes(floorId);
+    if (liftStairNodes.length === 0) return null;
+
+    let shortestPathLength = Infinity;
+    let nearestNodeInfo: { node: NavNode; locationId?: number; name: string } | null = null;
+
+    const nodes = this.allNodes[floorId] || [];
+    const graph = this.navigationService.constructNodeGraph(nodes);
+
+    liftStairNodes.forEach(info => {
+      const path = this.navigationService.findShortestNodePath(
+        fromNode.id, info.node.id, nodes, graph
+      );
+      if (path) {
+        let dist = 0;
+        for (let i = 1; i < path.length; i++) {
+          const nA = nodes.find(n => n.id === path[i - 1])!;
+          const nB = nodes.find(n => n.id === path[i])!;
+          dist += Math.sqrt(Math.pow(nB.x - nA.x, 2) + Math.pow(nB.y - nA.y, 2));
+        }
+        if (dist < shortestPathLength) {
+          shortestPathLength = dist;
+          nearestNodeInfo = info;
+        }
+      }
+    });
+
+    if (!nearestNodeInfo) {
+      let minStraightDist = Infinity;
+      liftStairNodes.forEach(info => {
+        const dx = info.node.x - fromNode.x;
+        const dy = info.node.y - fromNode.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minStraightDist) {
+          minStraightDist = dist;
+          nearestNodeInfo = info;
+        }
+      });
+    }
+
+    return nearestNodeInfo;
+  }
+
+  private findMatchingLiftOrStairNode(
+    sourceLiftName: string,
+    targetFloorId: number
+  ): { node: NavNode; locationId?: number; name: string } | null {
+    const liftStairNodes = this.getLiftStairNodes(targetFloorId);
+    if (liftStairNodes.length === 0) return null;
+
+    const normalize = (s: string) => (s || '').toLowerCase().replace(/[\s-_]/g, '');
+    const sourceNameNorm = normalize(sourceLiftName);
+
+    // 1. Exact match
+    let match = liftStairNodes.find(info => normalize(info.name) === sourceNameNorm);
+    if (match) return match;
+
+    // 2. Substring match
+    match = liftStairNodes.find(info => {
+      const nameNorm = normalize(info.name);
+      return nameNorm.includes(sourceNameNorm) || sourceNameNorm.includes(nameNorm);
+    });
+    if (match) return match;
+
+    // 3. Fallback to nearest to destination room on target floor
+    if (this.selectedDestinationLocation) {
+      const nearestToDest = this.findNearestLiftOrStair(
+        this.selectedDestinationLocation.node,
+        targetFloorId
+      );
+      if (nearestToDest) return nearestToDest;
+    }
+
+    // 4. First lift/stair on target floor
+    return liftStairNodes[0];
+  }
+
+  private applyMultiFloorRoute(): void {
+    if (!this.multiFloorRouteActive) return;
+
+    const currentFloorId = this.selectedFloor?.id;
+    if (!currentFloorId) return;
+
+    // Reset current room highlight states first
+    if (this.startRoom) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+      this.startRoom = null;
+    }
+    if (this.endRoom) {
+      applyRoomHighlight(this.endRoom, false, false, false, false);
+      this.endRoom = null;
+    }
+
+    if (currentFloorId === this.selectedStartLocation?.floorId) {
+      // Start floor
+      const startRoomMesh = this.roomMeshes.find(r => r.id === this.selectedStartLocation!.id);
+      if (startRoomMesh) {
+        this.startRoom = startRoomMesh;
+        applyRoomHighlight(startRoomMesh, false, false, true, false);
+        this.keepRoomLabelMapSized(startRoomMesh);
+      }
+      if (this.multiFloorStartLiftLocationId) {
+        const liftRoomMesh = this.roomMeshes.find(r => r.id === this.multiFloorStartLiftLocationId);
+        if (liftRoomMesh) {
+          this.endRoom = liftRoomMesh;
+          applyRoomHighlight(liftRoomMesh, false, false, false, false);
+          this.keepRoomLabelMapSized(liftRoomMesh);
+        }
+      }
+    } else if (currentFloorId === this.selectedDestinationLocation?.floorId) {
+      // Destination floor
+      if (this.multiFloorDestLiftLocationId) {
+        const liftRoomMesh = this.roomMeshes.find(r => r.id === this.multiFloorDestLiftLocationId);
+        if (liftRoomMesh) {
+          this.startRoom = liftRoomMesh;
+          applyRoomHighlight(liftRoomMesh, false, false, false, false);
+          this.keepRoomLabelMapSized(liftRoomMesh);
+        }
+      }
+      const destRoomMesh = this.roomMeshes.find(r => r.id === this.selectedDestinationLocation!.id);
+      if (destRoomMesh) {
+        this.endRoom = destRoomMesh;
+        applyRoomHighlight(destRoomMesh, false, false, false, true);
+        this.keepRoomLabelMapSized(destRoomMesh);
+      }
+    }
+
+    // Now calculate the route path for this floor!
+    this.calculateRoute();
+  }
+
   // --- Route calculation ---
 
   private calculateRoute(): void {
-    if (!this.startRoom || !this.endRoom) return;
+    if (this.isMultiFloorScenario() && !this.multiFloorRouteActive) {
+      this.multiFloorRouteActive = true;
+      this.animatedFloors.clear();
+      void this.ensureAllFloorNavOptions().then(() => {
+        const startLift = this.findNearestLiftOrStair(
+          this.selectedStartLocation!.node,
+          this.selectedStartLocation!.floorId
+        );
+        if (startLift) {
+          this.multiFloorStartLiftNode = startLift.node;
+          this.multiFloorStartLiftLocationId = startLift.locationId ?? null;
+
+          const destLift = this.findMatchingLiftOrStairNode(
+            startLift.name,
+            this.selectedDestinationLocation!.floorId
+          );
+          if (destLift) {
+            this.multiFloorDestLiftNode = destLift.node;
+            this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+          }
+        } else {
+          const destLift = this.findNearestLiftOrStair(
+            this.selectedDestinationLocation!.node,
+            this.selectedDestinationLocation!.floorId
+          );
+          if (destLift) {
+            this.multiFloorDestLiftNode = destLift.node;
+            this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+
+            const startLiftMatching = this.findMatchingLiftOrStairNode(
+              destLift.name,
+              this.selectedStartLocation!.floorId
+            );
+            if (startLiftMatching) {
+              this.multiFloorStartLiftNode = startLiftMatching.node;
+              this.multiFloorStartLiftLocationId = startLiftMatching.locationId ?? null;
+            }
+          }
+        }
+        this.applyMultiFloorRoute();
+      });
+      return;
+    }
+
     this.clearRouteVisual();
 
-    const startNode = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === this.startRoom?.id);
-    const endNode = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === this.endRoom?.id);
+    let startNode: NavNode | undefined;
+    let endNode: NavNode | undefined;
+
+    if (this.multiFloorRouteActive) {
+      const currentFloorId = this.selectedFloor?.id;
+      if (currentFloorId === this.selectedStartLocation?.floorId) {
+        startNode = this.navNodes.find(n => n.id === this.selectedStartLocation!.node.id);
+        endNode = this.multiFloorStartLiftNode ? this.navNodes.find(n => n.id === this.multiFloorStartLiftNode!.id) : undefined;
+      } else if (currentFloorId === this.selectedDestinationLocation?.floorId) {
+        startNode = this.multiFloorDestLiftNode ? this.navNodes.find(n => n.id === this.multiFloorDestLiftNode!.id) : undefined;
+        endNode = this.navNodes.find(n => n.id === this.selectedDestinationLocation!.node.id);
+      }
+    } else {
+      if (!this.startRoom || !this.endRoom) return;
+      startNode = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === this.startRoom?.id);
+      endNode = this.navNodes.find(n => this.isRoomNavNode(n) && this.getNodeLocationId(n) === this.endRoom?.id);
+    }
+
     if (!startNode || !endNode) {
       console.warn('[IndoorPath] No nav nodes for selected rooms');
       return;
     }
+
+    this.activePathStartNode = startNode;
+    this.activePathEndNode = endNode;
 
     const pathIds = this.navigationService.findShortestNodePath(
       startNode.id, endNode.id, this.navNodes, this.nodeNavigationGraph
@@ -1134,7 +1911,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     });
 
     const parent = this.buildingGroup ?? this.scene;
-    const result = this.routeVizService.visualizeRoute(pts, parent);
+    const customWidth = Math.max(0.25, ROUTE_RIBBON_WIDTH * Math.min(1.0, (this.floorSize || 200) / 200));
+    const result = this.routeVizService.visualizeRoute(pts, parent, customWidth);
     this.routeGroup = result.routeGroup;
     this.pathPoints = result.pathPoints;
     this.moveSpeed = result.moveSpeed;
@@ -1144,21 +1922,36 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     for (let i = 1; i < this.pathPoints.length; i++) {
       this.pathTotalLength += this.pathPoints[i].distanceTo(this.pathPoints[i - 1]);
     }
-    // Scale animation duration to path length: ~10 units/sec (near-walking), clamped 2s – 10s
-    this.pathAnimDuration = Math.min(Math.max(this.pathTotalLength / 10 * 1000, 2000), 10000);
+    // Scale animation duration to path length: ~10 units/sec (near-walking), clamped 4s – 10s
+    this.pathAnimDuration = Math.min(Math.max(this.pathTotalLength / 10 * 1000, 4000), 10000);
     this.pathRevealTriggered = false;
 
     // Kick off draw animation — ribbon starts invisible and reveals over pathAnimDuration ms
+    const currentFloorId = this.selectedFloor?.id;
+    const skipAnim = currentFloorId !== undefined && this.animatedFloors.has(currentFloorId);
+
     this.routeRibbonMesh = this.routeGroup?.children[0] ?? null;
     if (this.routeRibbonMesh?.geometry?.index) {
       this.routeRibbonTotalIndices = this.routeRibbonMesh.geometry.index.count;
-      this.routeRibbonMesh.geometry.setDrawRange(0, 0);
+      if (skipAnim) {
+        this.routeRibbonMesh.geometry.setDrawRange(0, this.routeRibbonTotalIndices);
+      } else {
+        this.routeRibbonMesh.geometry.setDrawRange(0, 0);
+      }
     }
     this.pathAnimating = false;
-    this.pathAnimComplete = false;
+    this.pathAnimComplete = skipAnim;
 
-    this.focusOnRouteStartForNavigation();
-    this.startRouteRevealAfterCameraFit();
+    if (currentFloorId !== undefined) {
+      this.animatedFloors.add(currentFloorId);
+    }
+
+    if (skipAnim) {
+      this.fitFullRouteAfterArrival(true);
+    } else {
+      this.focusOnRouteStartForNavigation(this.multiFloorRouteActive);
+      this.startRouteRevealAfterCameraFit(this.multiFloorRouteActive);
+    }
 
     const frames = result.totalDistance / this.moveSpeed;
     this.routeDistance = `${result.totalDistance.toFixed(0)}m`;
@@ -1173,7 +1966,10 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     // Camera starts at the source, follows the path, then fits the full route at arrival.
   }
 
-  private focusOnRouteStartForNavigation(): void {
+  private focusOnRouteStartForNavigation(instant = false): void {
+    if (this.scene) {
+      this.scene.updateMatrixWorld(true);
+    }
     const bounds = new THREE.Box3();
     if (this.startRoom) bounds.expandByObject(this.startRoom.floor);
 
@@ -1183,29 +1979,32 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
 
     const multiplier = this.getResponsiveRouteFitMultiplier() * 1.25;
     if (this.viewMode === '2d') {
-      this.focusOnBoundsForView(bounds, multiplier);
+      this.focusOnBoundsForView(bounds, multiplier, instant);
       this.controls.enablePan = false;
     } else {
-      this.focusOnRouteBounds3d(bounds, multiplier);
+      this.focusOnRouteBounds3d(bounds, multiplier, instant);
     }
 
     this.routeCameraFollowActive = true;
   }
 
-  private fitFullRouteAfterArrival(): void {
+  private fitFullRouteAfterArrival(instant = false): void {
     const bounds = this.getRouteBounds();
     if (bounds.isEmpty()) return;
 
     const multiplier = this.getResponsiveRouteFitMultiplier();
     if (this.viewMode === '2d') {
-      this.focusOnBoundsForView(bounds, multiplier);
+      this.focusOnBoundsForView(bounds, multiplier, instant);
       this.controls.enablePan = false;
     } else {
-      this.focusOnRouteBounds3d(bounds, multiplier);
+      this.focusOnRouteBounds3d(bounds, multiplier, instant);
     }
   }
 
   private getRouteBounds(): THREE.Box3 {
+    if (this.scene) {
+      this.scene.updateMatrixWorld(true);
+    }
     const bounds = new THREE.Box3();
     if (this.startRoom) bounds.expandByObject(this.startRoom.floor);
     if (this.endRoom) bounds.expandByObject(this.endRoom.floor);
@@ -1239,16 +2038,21 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     return 1.8;
   }
 
-  private startRouteRevealAfterCameraFit(): void {
+  private startRouteRevealAfterCameraFit(instant = false): void {
     if (this.routeAnimationTimer) clearTimeout(this.routeAnimationTimer);
+    const delay = instant ? 100 : (this.routeCameraTransitionDuration + 80);
     this.routeAnimationTimer = setTimeout(() => {
       this.routeAnimationTimer = null;
       this.pathAnimStartTime = performance.now();
       this.pathAnimating = true;
-    }, this.routeCameraTransitionDuration + 80);
+    }, delay);
   }
 
-  private focusOnRouteBounds3d(bounds: THREE.Box3, distanceMultiplier: number): void {
+  private focusOnRouteBounds3d(bounds: THREE.Box3, distanceMultiplier: number, instant = false): void {
+    if (this.landingResetTimer) {
+      clearTimeout(this.landingResetTimer);
+      this.landingResetTimer = null;
+    }
     const center = new THREE.Vector3();
     bounds.getCenter(center);
     const size = new THREE.Vector3();
@@ -1267,6 +2071,14 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     const spherical = new THREE.Spherical(dist, def?.phi ?? currentSpherical.phi, def?.theta ?? currentSpherical.theta);
     const targetCam = center.clone().add(new THREE.Vector3().setFromSpherical(spherical));
 
+    if (instant) {
+      this.controls.target.copy(center);
+      this.camera.position.copy(targetCam);
+      this.controls.update();
+      this.updateLabelVisibility();
+      return;
+    }
+
     this.cameraAnimationService.animateCamera(
       this.camera,
       this.controls,
@@ -1282,8 +2094,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   private generatePathSteps(pts: any[]): PathStep[] {
     if (pts.length < 2) return [];
     const steps: PathStep[] = [];
-    const startName = this.startRoom?.data?.name ?? this.sourceLabel;
-    const endName = this.endRoom?.data?.name ?? this.destinationSearchValue;
+    const startName = this.startRoom ? this.getLocationDisplayName(this.startRoom.data) || this.sourceLabel : this.sourceLabel;
+    const endName = this.endRoom ? this.getLocationDisplayName(this.endRoom.data) || this.destinationSearchValue : this.destinationSearchValue;
 
     steps.push({ instruction: `Start at ${startName}`, distance: '', icon: 'start' });
 
@@ -1327,13 +2139,13 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
 
   private generateNavQrUrl(sni: number, dni: number): void {
-    if (!this.startRoom || !this.endRoom || !this.selectedFloor) return;
+    if (!this.selectedStartLocation || !this.selectedDestinationLocation) return;
     const navObj = {
-      sfi: this.selectedFloor.id,
-      sli: this.startRoom.id,
+      sfi: this.selectedStartLocation.floorId,
+      sli: this.selectedStartLocation.id,
       sni,
-      dfi: this.selectedFloor.id,
-      dli: this.endRoom.id,
+      dfi: this.selectedDestinationLocation.floorId,
+      dli: this.selectedDestinationLocation.id,
       dni,
       slp: null,
       dlp: null
@@ -1341,7 +2153,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     const navStr = btoa(JSON.stringify(navObj));
     const gtk = this.mapConfig.webIndoor?.guestToken ?? 'eyJZfgZ2ajdGsiOiJENjUwOFQ5OTExMjQ1MDEzOTVPPT0iLCJmaWQiOiIwMjUwIn0=';
     const base = this.mapConfig.webIndoor?.navBaseUrl ?? window.location.origin;
-    this.navQrUrl = `${base}/ovitag/organization/indoor-path?gtk=${gtk}&nav=${navStr}`;
+    this.navQrUrl = `${base}/ovitag/organization/indoor-path?gtk=${gtk}&nav=${navStr}&ts=${Date.now()}`;
   }
 
   private projectNavNodeToScreen(room: RoomMesh): { x: number; y: number } | null {
@@ -1367,10 +2179,25 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     };
   }
 
+  private projectNodeToScreen(node: NavNode): { x: number; y: number } | null {
+    if (!this.camera || !this.renderer || !node) return null;
+    const xOff = this.floorHasGeoAlign ? this.rawFloorCenter.x : 0;
+    const zOff = this.floorHasGeoAlign ? this.rawFloorCenter.y : 0;
+    const worldPos = new THREE.Vector3(node.x - xOff, 0, node.y - zOff);
+    if (this.buildingGroup) this.buildingGroup.localToWorld(worldPos);
+    const projected = worldPos.clone().project(this.camera);
+    if (projected.z > 1) return null;
+    const canvas = this.renderer.domElement;
+    return {
+      x: (projected.x * 0.5 + 0.5) * canvas.clientWidth,
+      y: (-projected.y * 0.5 + 0.5) * canvas.clientHeight,
+    };
+  }
+
   private updateNavMarkerPositions(): void {
     const src = this.sourceMarkerEl?.nativeElement;
     if (src) {
-      const pos = this.startRoom ? this.projectNavNodeToScreen(this.startRoom) : null;
+      const pos = this.activePathStartNode ? this.projectNodeToScreen(this.activePathStartNode) : null;
       if (pos) {
         src.style.visibility = 'visible';
         src.style.left = pos.x + 'px';
@@ -1381,7 +2208,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     }
     const dst = this.destMarkerEl?.nativeElement;
     if (dst) {
-      const pos = this.endRoom ? this.projectNavNodeToScreen(this.endRoom) : null;
+      const pos = this.activePathEndNode ? this.projectNodeToScreen(this.activePathEndNode) : null;
       if (pos) {
         dst.style.visibility = 'visible';
         dst.style.left = pos.x + 'px';
@@ -1401,6 +2228,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
       this.cleanupService.disposeGroup(this.person, this.scene);
       this.person = null;
     }
+    this.activePathStartNode = null;
+    this.activePathEndNode = null;
     this.pathPoints = [];
     this.pathSteps = [];
     this.isStepsOpen = false;
@@ -1442,6 +2271,25 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     }
     this.destinationSearchValue = '';
     this.destinationSelectedRoomId = null;
+    this.selectedDestinationLocation = null;
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
+    if (this.startRoom) {
+      applyRoomHighlight(this.startRoom, false, false, false, false);
+      this.startRoom = null;
+    }
+    if (this.selectedStartLocation && this.selectedStartLocation.floorId === this.selectedFloor?.id) {
+      const room = this.roomMeshes.find(r => r.id === this.selectedStartLocation!.id);
+      if (room) {
+        this.startRoom = room;
+        applyRoomHighlight(room, false, false, true, false);
+        this.keepRoomLabelMapSized(room);
+      }
+    }
     this.resetCamera();
   }
 
@@ -1493,21 +2341,21 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
 
   // Categories visible in QA — hides categories where only the source room remains
   getFilteredQaCategories(): LocationCategory[] {
-    if (!this.startRoom) return this.qaCategories;
+    if (!this.selectedStartLocation) return this.qaCategories;
     return this.qaCategories.filter(cat =>
-      cat.rooms.some(r => r.id !== this.startRoom!.id)
+      cat.rooms.some(r => r.id !== this.selectedStartLocation!.id)
     );
   }
 
   // Count for a category, excluding the selected source room
   getQaCategoryCount(cat: LocationCategory): number {
-    return cat.rooms.filter(r => r.id !== this.startRoom?.id).length;
+    return cat.rooms.filter(r => r.id !== this.selectedStartLocation?.id).length;
   }
 
   // Locations in selected category, excluding the already-set source
   getQaLocations(): IndoorNavLocationOption[] {
     if (!this.selectedQaCategory) return [];
-    return this.selectedQaCategory.rooms.filter(r => r.id !== this.startRoom?.id);
+    return this.selectedQaCategory.rooms.filter(r => r.id !== this.selectedStartLocation?.id);
   }
 
   openQa(): void {
@@ -1518,7 +2366,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
   closeQa(): void { this.isQaOpen = false; this.selectedQaCategory = null; }
   getQaSingleLocation(cat: LocationCategory): IndoorNavLocationOption | null {
-    const locs = cat.rooms.filter(r => r.id !== this.startRoom?.id);
+    const locs = cat.rooms.filter(r => r.id !== this.selectedStartLocation?.id);
     return locs.length === 1 ? locs[0] : null;
   }
 
@@ -1548,9 +2396,10 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
 
   async selectFromQa(option: IndoorNavLocationOption): Promise<void> {
     this.closeQa();
+    const isFloorSwitch = option.floorId !== this.selectedFloor?.id;
     const room = await this.resolveSearchOptionRoom(option);
     if (!room) return;
-    this.setEndRoom(room);
+    this.setEndRoom(room, isFloorSwitch);
   }
 
   // --- Settings (source selector) ---
@@ -1655,10 +2504,81 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     if (!room) return;
     this.setStartRoom(room);
     IndoorPathComponent.savedSourceId = room.id;
+    this.selectedStartLocation = option;
+    this.multiFloorRouteActive = false;
+    this.multiFloorStartLiftNode = null;
+    this.multiFloorDestLiftNode = null;
+    this.multiFloorStartLiftLocationId = null;
+    this.multiFloorDestLiftLocationId = null;
+    this.animatedFloors.clear();
   }
 
   public swapLocations(): void {
-    if (!this.startRoom || !this.endRoom || this.isSourceFromConfig) return;
+    if (this.isSourceFromConfig) return;
+
+    if (this.isMultiFloorScenario() || (this.selectedStartLocation && this.selectedDestinationLocation && this.selectedStartLocation.floorId !== this.selectedDestinationLocation.floorId)) {
+      const wasRouteShown = !!this.routeDistance || this.multiFloorRouteActive;
+      this.clearRouteVisual();
+
+      const tmp = this.selectedStartLocation;
+      this.selectedStartLocation = this.selectedDestinationLocation;
+      this.selectedDestinationLocation = tmp;
+
+      if (this.selectedStartLocation) {
+        this.sourceLabel = this.selectedStartLocation.displayName || this.selectedStartLocation.name;
+        IndoorPathComponent.savedSourceId = this.selectedStartLocation.id;
+      } else {
+        this.sourceLabel = 'Select source location';
+        IndoorPathComponent.savedSourceId = null;
+      }
+
+      if (this.selectedDestinationLocation) {
+        this.destinationSearchValue = this.selectedDestinationLocation.displayName || this.selectedDestinationLocation.name;
+        this.destinationSelectedRoomId = this.selectedDestinationLocation.id;
+      } else {
+        this.destinationSearchValue = '';
+        this.destinationSelectedRoomId = null;
+      }
+
+      this.multiFloorRouteActive = false;
+      this.multiFloorStartLiftNode = null;
+      this.multiFloorDestLiftNode = null;
+      this.multiFloorStartLiftLocationId = null;
+      this.multiFloorDestLiftLocationId = null;
+      this.animatedFloors.clear();
+
+      // Let's resolve the room mesh for start and end on the current floor
+      if (this.startRoom) {
+        applyRoomHighlight(this.startRoom, false, false, false, false);
+        this.startRoom = null;
+      }
+      if (this.endRoom) {
+        applyRoomHighlight(this.endRoom, false, false, false, false);
+        this.endRoom = null;
+      }
+
+      if (this.selectedStartLocation && this.selectedStartLocation.floorId === this.selectedFloor?.id) {
+        this.startRoom = this.roomMeshes.find(r => r.id === this.selectedStartLocation!.id) || null;
+        if (this.startRoom) {
+          applyRoomHighlight(this.startRoom, false, false, true, false);
+          this.keepRoomLabelMapSized(this.startRoom);
+        }
+      }
+      if (this.selectedDestinationLocation && this.selectedDestinationLocation.floorId === this.selectedFloor?.id) {
+        this.endRoom = this.roomMeshes.find(r => r.id === this.selectedDestinationLocation!.id) || null;
+        if (this.endRoom) {
+          applyRoomHighlight(this.endRoom, false, false, false, true);
+          this.keepRoomLabelMapSized(this.endRoom);
+        }
+      }
+
+      if (wasRouteShown) {
+        this.calculateRoute();
+      }
+      return;
+    }
+
+    if (!this.startRoom || !this.endRoom) return;
     const wasRouteShown = !!this.routeDistance;
     this.clearRouteVisual();
     const tmp = this.startRoom;
@@ -1667,6 +2587,8 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
     this.sourceLabel = this.getRoomLabel(this.startRoom);
     this.destinationSearchValue = this.getRoomLabel(this.endRoom);
     this.destinationSelectedRoomId = this.endRoom.id;
+    this.selectedStartLocation = this.getCurrentFloorOption(this.startRoom);
+    IndoorPathComponent.savedSourceId = this.startRoom.id;
     applyRoomHighlight(this.startRoom, false, false, true, false);
     applyRoomHighlight(this.endRoom, false, false, false, true);
     this.keepRoomLabelMapSized(this.startRoom);
@@ -1678,7 +2600,87 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   public onDirectionClick(): void {
     this.isQaOpen = false;
     this.selectedQaCategory = null;
+    this.animatedFloors.clear();
+
+    if (this.isMultiFloorScenario()) {
+      const startFloorId = this.selectedStartLocation!.floorId;
+      if (this.selectedFloor?.id !== startFloorId) {
+        this.multiFloorRouteActive = true;
+        void this.ensureAllFloorNavOptions().then(() => {
+          const startLift = this.findNearestLiftOrStair(
+            this.selectedStartLocation!.node,
+            this.selectedStartLocation!.floorId
+          );
+          if (startLift) {
+            this.multiFloorStartLiftNode = startLift.node;
+            this.multiFloorStartLiftLocationId = startLift.locationId ?? null;
+
+            const destLift = this.findMatchingLiftOrStairNode(
+              startLift.name,
+              this.selectedDestinationLocation!.floorId
+            );
+            if (destLift) {
+              this.multiFloorDestLiftNode = destLift.node;
+              this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+            }
+          } else {
+            const destLift = this.findNearestLiftOrStair(
+              this.selectedDestinationLocation!.node,
+              this.selectedDestinationLocation!.floorId
+            );
+            if (destLift) {
+              this.multiFloorDestLiftNode = destLift.node;
+              this.multiFloorDestLiftLocationId = destLift.locationId ?? null;
+
+              const startLiftMatching = this.findMatchingLiftOrStairNode(
+                destLift.name,
+                this.selectedStartLocation!.floorId
+              );
+              if (startLiftMatching) {
+                this.multiFloorStartLiftNode = startLiftMatching.node;
+                this.multiFloorStartLiftLocationId = startLiftMatching.locationId ?? null;
+              }
+            }
+          }
+          this.switchToFloor(startFloorId);
+        });
+        return;
+      }
+    }
+
     this.calculateRoute();
+  }
+
+  public switchToFloor(floorId: number | undefined): void {
+    if (!floorId) return;
+    const floor = this.findFloorById(floorId);
+    if (floor) {
+      this.onFloorSelect(floor);
+    }
+  }
+
+  public getFloorCode(floorId: number | undefined): string {
+    if (floorId === undefined) return '';
+    const index = this.availableFloors.findIndex(f => f.id === floorId);
+    if (index !== -1) {
+      return `${index}F`;
+    }
+    const floor = this.findFloorById(floorId);
+    return floor ? floor.name : '';
+  }
+
+  public getFormattedFloorName(floorName: string | undefined): string {
+    if (!floorName) return '';
+    const lower = floorName.toLowerCase().trim();
+    if (lower === 'ground') return 'Ground Floor';
+    if (lower === 'first') return 'First Floor';
+    if (lower === 'second') return 'Second Floor';
+    if (lower === 'third') return 'Third Floor';
+    if (lower.endsWith('floor')) {
+      return floorName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    const capitalized = floorName.charAt(0).toUpperCase() + floorName.slice(1).toLowerCase();
+    return `${capitalized} Floor`;
   }
 
   // ==========================================================================
@@ -1720,8 +2722,6 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
 
   public selectMapLocation(loc: { display_name: string; lat: string; lon: string }): void {
-    this.mapConfig.buildingLat = parseFloat(loc.lat);
-    this.mapConfig.buildingLng = parseFloat(loc.lon);
     this.mapLocationSearch = loc.display_name.split(',')[0].trim();
     this.mapLocationSuggestions = [];
     this.isMapLocationDropdownOpen = false;

@@ -180,7 +180,8 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { AIPromptFormComponent } from './ai-prompt-form/ai-prompt-form.component';
 import { PwaNotificationComponent, TimeAgoPipes } from './pwa/pwa-notification/pwa-notification.component';
 import { EditTemplateComponent } from './edit-template/edit-template.component';
-import { FloorPlanModule } from '../../../ovitag/floor-plan/floor-plan.module';
+import { CommonLeafletComponent } from '../../../ovitag/floor-plan/leaflet/common-leaflet/common-leaflet.component';
+import { ManageLocationLeafletComponent } from '../../../ovitag/floor-plan/leaflet/common-leaflet/manage-location-leaflet/manage-location-leaflet.component';
 import { PfModelsEditinfoComponent } from './pf-models-editinfo/pf-models-editinfo.component';
 import { EasyTaskComponent } from './pwa/easy-task/easy-task.component';
 import { MonitorComponent } from './monitor/monitor.component';
@@ -204,6 +205,9 @@ import { PatientAdmitComponent } from './patient-admit/patient-admit.component';
 import { PatientRelationManagementComponent } from './patient-relation-management/patient-relation-management.component';
 import { AssetOverviewComponent } from './asset-overview/asset-overview.component';
 import { BulkIdentifierExportComponent } from './bulk-identifier-export/bulk-identifier-export.component';
+import { MapCropComponent } from './map-crop/map-crop.component';
+import { MapCropResultDialogComponent } from './map-crop/map-crop-result-dialog.component';
+import { NotificationAlertPopupComponent } from './notification-alert-popup/notification-alert-popup.component';
 
 
 // import { ManageLocationComponent} from './manage-location/manage-location.component';
@@ -241,10 +245,11 @@ import { BulkIdentifierExportComponent } from './bulk-identifier-export/bulk-ide
         }),
         TranslateModule,
         ShareModule,
-        DragDropModule,
-        FloorPlanModule
+        DragDropModule
     ],
     exports: [
+        CommonLeafletComponent,
+        ManageLocationLeafletComponent,
         AmbulanceRequestComponent,
         PorterRequestNewComponent,
         ManageVisitorComponent,
@@ -275,6 +280,7 @@ import { BulkIdentifierExportComponent } from './bulk-identifier-export/bulk-ide
         MaintenanceViewmoreComponent,
         TableComponent,
         ThreeMapComponent,
+        MapViewerComponent,
         LiveTrackingComponent,
         AngularTableComponent,
         // ManageLocationComponent,
@@ -350,9 +356,13 @@ import { BulkIdentifierExportComponent } from './bulk-identifier-export/bulk-ide
         CreateUserScheduleComponent,
         RequestComponent,
         ChatBotComponent,
-        BulkIdentifierExportComponent
+        BulkIdentifierExportComponent,
+        MapCropComponent,
+        NotificationAlertPopupComponent
     ],
     declarations: [
+        CommonLeafletComponent,
+        ManageLocationLeafletComponent,
         AmbulanceRequestComponent,
         PorterRequestNewComponent,
         PorterRequestHistoryComponent,
@@ -533,7 +543,10 @@ import { BulkIdentifierExportComponent } from './bulk-identifier-export/bulk-ide
         ManagePatientRelationComponent,
         PatientRelationManagementComponent,
         AssetOverviewComponent,
-        BulkIdentifierExportComponent
+        BulkIdentifierExportComponent,
+        MapCropComponent,
+        MapCropResultDialogComponent,
+        NotificationAlertPopupComponent
     ],
 })
 export class EntryComponentModule {

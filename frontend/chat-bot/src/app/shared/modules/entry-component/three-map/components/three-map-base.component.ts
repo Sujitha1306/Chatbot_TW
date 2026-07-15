@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Injector, OnDestroy, OnInit } from '@angular/core';
+import { Directive, ElementRef, Injector, OnDestroy, OnInit, Input } from '@angular/core';
 import * as THREE from 'three';
 
 import { RoomMesh, NavNode } from '../models';
@@ -12,13 +12,15 @@ import {
   FloorPlanService,
   NavigationService,
   CameraAnimationService,
-  LabelVisibilityService
+  LabelVisibilityService,
+  RegionalLocationNameService
 } from '../services';
 import {
   FLOOR_MAX_DISTANCE_MULTIPLIER,
   FLOOR_MIN_DISTANCE_MULTIPLIER,
   FLOOR_MIN_DISTANCE_ABSOLUTE,
   WALL_THICKNESS,
+  WALL_HEIGHT,
   LABEL_HEIGHT
 } from '../constants/map.constants';
 import { HospitalService, CommonService } from '../../../../services';
@@ -28,8 +30,7 @@ export interface MapConfig {
   skipLocCatByCat: string[];
   skipLocNameByCat?: string[];
   threeDFloorByCat?: string[];
-  buildingLat?: number;
-  buildingLng?: number;
+  threeDHeight?: Record<string, number>;
   categoryColors?: Record<string, string>;
   categoryIcons?: Record<string, string>;
   categoryQuickAccess?: Record<string, boolean>;
@@ -55,6 +56,13 @@ export interface MapConfig {
 @Directive()
 export abstract class ThreeMapBase implements OnInit, OnDestroy {
   abstract container: ElementRef<HTMLDivElement>;
+
+  @Input() blockId: number | null = null;
+  @Input() floorId: number | null = null;
+  @Input() locFlr: number | null = null;
+  @Input() tagId: string | null = null;
+  @Input() tagType: string | null = null;
+  @Input() type: string = '';
 
   protected scene!: THREE.Scene;
   protected camera!: THREE.PerspectiveCamera;
@@ -106,6 +114,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   protected allowRotate = false;
   protected foundationColor = '#ffffff';
   protected wallWidth = WALL_THICKNESS;
+  protected wallHeight = WALL_HEIGHT;
   protected labelHeight = LABEL_HEIGHT;
   protected labelScale = 4.0;
   protected zoomValue = 0;
@@ -126,6 +135,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   protected readonly navigationService: NavigationService;
   protected readonly cameraAnimationService: CameraAnimationService;
   protected readonly labelVisibilityService: LabelVisibilityService;
+  protected readonly regionalLocationNameService: RegionalLocationNameService;
   protected readonly hospitalService: HospitalService;
   protected readonly commonService: CommonService;
 
@@ -142,6 +152,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     this.navigationService = injector.get(NavigationService);
     this.cameraAnimationService = injector.get(CameraAnimationService);
     this.labelVisibilityService = injector.get(LabelVisibilityService);
+    this.regionalLocationNameService = injector.get(RegionalLocationNameService);
     this.hospitalService = injector.get(HospitalService);
     this.commonService = injector.get(CommonService);
     this.animate = this.animate.bind(this);
@@ -207,8 +218,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
         skipLocCatByCat: Array.isArray(cfg.skipLocCatByCat) ? cfg.skipLocCatByCat : [],
         skipLocNameByCat: Array.isArray(cfg.skipLocNameByCat) ? cfg.skipLocNameByCat : [],
         threeDFloorByCat: Array.isArray(cfg.threeDFloorByCat) ? cfg.threeDFloorByCat : [],
-        buildingLat: typeof cfg.buildingLat === 'number' ? cfg.buildingLat : undefined,
-        buildingLng: typeof cfg.buildingLng === 'number' ? cfg.buildingLng : undefined,
+        threeDHeight: (cfg.threeDHeight ?? cfg.threeDheight) && typeof (cfg.threeDHeight ?? cfg.threeDheight) === 'object' ? (cfg.threeDHeight ?? cfg.threeDheight) : undefined,
         categoryColors: Object.keys(catColors).length ? catColors : undefined,
         categoryIcons: Object.keys(catIcons).length ? catIcons : undefined,
         categoryQuickAccess: Object.keys(catQuickAccess).length ? catQuickAccess : undefined,
@@ -236,17 +246,26 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
       if (res.statusCode !== 1) return;
       prefsReady.then(() => {
         this.blockWithFloorList = res.results.filter((v: any) =>
-          v.hasOwnProperty('children') && v.locationTypeId !== 26
+          v.hasOwnProperty('children')
         );
         let initialFloor: any = null;
-        if (this.savedMapState?.floorId) {
+        const targetFloorId = this.floorId ? Number(this.floorId) : (this.savedMapState?.floorId ? Number(this.savedMapState.floorId) : null);
+        if (targetFloorId) {
           for (const block of this.blockWithFloorList as any[]) {
-            const f = (block.children || []).find((f: any) => f.id === this.savedMapState.floorId);
+            const f = (block.children || []).find((f: any) => Number(f.id) === targetFloorId);
             if (f) { initialFloor = f; break; }
           }
         }
         if (!initialFloor && this.blockWithFloorList.length) {
-          initialFloor = (this.blockWithFloorList[0] as any).children?.[0];
+          if (this.blockId) {
+            const targetBlock = this.blockWithFloorList.find((b: any) => Number(b.id) === Number(this.blockId));
+            if (targetBlock && targetBlock.children?.length) {
+              initialFloor = targetBlock.children[0];
+            }
+          }
+          if (!initialFloor) {
+            initialFloor = (this.blockWithFloorList[0] as any).children?.[0];
+          }
         }
         if (initialFloor) this.fetchFloorDetails(initialFloor);
       });
@@ -269,8 +288,9 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     this.floorDetailFetchPromises[floorData.id] = new Promise<void>(resolve => {
       this.hospitalService.getLogicalLocationWithChildren(floorData.id).subscribe({
         next: res => {
-          this.floorDetails[floorData.id] = this.unwrapApiResult(res);
-          resolve();
+          const floorLayout = this.unwrapApiResult(res);
+          this.floorDetails[floorData.id] = floorLayout;
+          this.regionalLocationNameService.applyToFloor(floorData.id, floorLayout).finally(resolve);
         },
         error: () => resolve()
       });
@@ -370,6 +390,9 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     this.isLoading = true;
     this.noDataFound = false;
 
+    // Yield control to allow the browser to repaint and show the loader
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     try {
       this.clearCurrentFloor();
       this.buildingGroup = new THREE.Group();
@@ -385,11 +408,24 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
         return;
       }
 
+      let textureResolve: () => void;
+      const texturePromise = new Promise<void>(resolve => {
+        textureResolve = resolve;
+      });
+
+      const safetyTimeout = setTimeout(() => {
+        textureResolve();
+      }, 5000);
+
       const floorGroup = new THREE.Group();
       const result = this.floorPlanService.buildFloorPlan(
         layout, floorGroup, 0, 0, 0, true, this.showSurroundings, true,
-        this.foundationColor, this.wallWidth, this.labelHeight, this.labelScale,
-        this.showCorridorWalls, this.mapConfig
+        this.foundationColor, this.wallWidth, this.wallHeight, this.labelHeight, this.labelScale,
+        this.showCorridorWalls, this.mapConfig,
+        () => {
+          clearTimeout(safetyTimeout);
+          textureResolve();
+        }
       );
 
       this.floorGroups.push(floorGroup);
@@ -410,7 +446,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
         room.walls.forEach((wall: any) => { wall.visible = this.showRoomWalls; });
       });
 
-      if (result.geoRotationY !== 0) {
+      if (result.hasGeoAlign) {
         this.buildingGroup.position.set(result.geoCenterX, 0, result.geoCenterZ);
         this.buildingGroup.rotation.y = result.geoRotationY;
         this.buildingGroup.scale.set(result.geoScaleX ?? 1, 1, result.geoScaleZ ?? 1);
@@ -441,11 +477,26 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
         this.nodeNavigationGraph = this.navigationService.constructNodeGraph(this.navNodes);
       }
 
-      this.cameraAnimationService.focusOnFloor(
-        this.roomMeshes, this.camera, this.controls, 1,
-        () => this.updateLabelVisibility()
-      );
+      let roomFocused = false;
+      if (this.locFlr) {
+        const targetRoom = this.roomMeshes.find(r => Number(r.id) === Number(this.locFlr));
+        if (targetRoom) {
+          this.cameraAnimationService.focusOnRoom(
+            targetRoom, this.camera, this.controls,
+            () => this.updateLabelVisibility()
+          );
+          roomFocused = true;
+        }
+      }
+      if (!roomFocused && this.shouldFocusOnFloorOnLoad()) {
+        this.cameraAnimationService.focusOnFloor(
+          this.roomMeshes, this.camera, this.controls, 1,
+          () => this.updateLabelVisibility()
+        );
+      }
       this.updateLabelVisibility();
+
+      await texturePromise;
 
       await this.onFloorLoaded();
       this.isLoading = false;
@@ -515,6 +566,10 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     );
   }
 
+  protected shouldFocusOnFloorOnLoad(): boolean {
+    return true;
+  }
+
   protected onResize(): void {
     const el = this.container.nativeElement;
     this.cameraService.updateAspect(el.clientWidth, el.clientHeight);
@@ -523,6 +578,17 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.animationService.stopAnimation();
+    if (this.scene) {
+      this.cleanupService.clearMapObjects(this.scene);
+    }
+    this.clearCurrentFloor();
+    if (this.controls) {
+      try {
+        this.controls.dispose();
+      } catch (e) {
+        console.warn('Controls dispose failed:', e);
+      }
+    }
     this.rendererService.dispose();
     window.removeEventListener('resize', this._onResize);
   }

@@ -22,9 +22,136 @@
         <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
     </div>
     <div class="leaflet-content" *ngIf="contentDetail['content'] == 'floorplan'">
-        <tw-common-leaflet [leafRef]="'popup'" [blockSelect]="selectedBlock" [floorSelect]="selectedFloor"
+        <div fxHide fxShow.gt-sm *ngIf="reqType && reqType == 'porter'" class="porter-info-card">
+            <!-- Header Section -->
+            <div class="porter-card-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="porter-card-icon-wrap">
+                        <img class="porter-card-hdr-icon" src="/assets/Menus/SMW_porter_management.svg" alt="porter" />
+                    </div>
+                    <div class="porter-card-title-group">
+                        <span class="porter-card-title">{{"Porter Request"|translate}}</span>
+                        <span class="porter-card-subtitle" *ngIf="reqDetail.requestId">{{"ID:"|translate}} {{reqDetail.requestId}}</span>
+                    </div>
+                </div>
+                <span class="status-badge" *ngIf="reqDetail.statusName">
+                    {{reqDetail.statusName}}
+                </span>
+            </div>
+
+            <!-- Body Section -->
+            <div class="porter-card-body">
+                <!-- Type Row -->
+                <div class="porter-info-row status-row">
+                    <mat-icon class="row-icon">category</mat-icon>
+                    <div class="row-content">
+                        <span class="row-label">{{"Type"|translate}}</span>
+                        <span class="row-value status-badge" [matTooltip]="getFriendlyRequestType()" matTooltipClass="custom-tooltip">
+                            {{ getFriendlyRequestType() || ('N/A'|translate) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Name Row -->
+                <div class="porter-info-row primary-info" *ngIf="reqDetail['nonPerformer']?.length > 0 || reqDetail['requestCategory'] == 'PR-OT'">
+                    <mat-icon class="row-icon">person</mat-icon>
+                    <div class="row-content">
+                        <span class="row-label">{{"Name"|translate}}</span>
+                        <span class="row-value" [matTooltip]="reqDetail.sourceLocationName" matTooltipClass="custom-tooltip">
+                            {{ reqDetail['nonPerformer']?.length > 0 ? reqDetail['nonPerformer'][0].name : reqDetail['requestCategory'] == 'PR-OT' ? reqDetail['comments'] : ''}}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="porter-card-divider"></div>
+
+                <!-- From/To Route Timeline -->
+                <div class="porter-route-timeline">
+                    <!-- From -->
+                    <div class="timeline-step">
+                        <div class="timeline-dot source"></div>
+                        <div class="timeline-details">
+                            <span class="timeline-label">{{"From"|translate}}</span>
+                            <span class="timeline-value" [matTooltip]="reqDetail.sourceLocationName" matTooltipClass="custom-tooltip">
+                                {{reqDetail.sourceLocationName}}
+                            </span>
+                            <span class="timeline-time" *ngIf="reqDetail.startTime">
+                                {{reqDetail.startTime | date : 'hh:mm a'}}
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Connector line -->
+                    <div class="timeline-line"></div>
+                    <!-- To -->
+                    <div class="timeline-step">
+                        <div class="timeline-dot destination"></div>
+                        <div class="timeline-details">
+                            <span class="timeline-label">{{"To"|translate}}</span>
+                            <span class="timeline-value" [matTooltip]="reqDetail.destinationLocationName" matTooltipClass="custom-tooltip">
+                                {{reqDetail.destinationLocationName}}
+                            </span>
+                            <span class="timeline-time" *ngIf="reqDetail.endTime">
+                                {{reqDetail.endTime | date : 'hh:mm a'}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="porter-card-divider"></div>
+
+                <!-- Stats: Porter & Asset count -->
+                <div class="porter-stats-row">
+                    <div class="stat-box">
+                        <mat-icon class="stat-icon">people</mat-icon>
+                        <div class="stat-details">
+                            <span class="stat-label">{{"Porter"|translate}}</span>
+                            <span class="stat-value" [matTooltip]="reqDetail.porterCount" matTooltipClass="custom-tooltip">
+                                {{reqDetail.porterCount}}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <mat-icon class="stat-icon">widgets</mat-icon>
+                        <div class="stat-details">
+                            <span class="stat-label">{{"Asset"|translate}}</span>
+                            <span class="stat-value" [matTooltip]="reqDetail.assetCount" matTooltipClass="custom-tooltip">
+                                {{reqDetail.assetCount}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="porter-card-divider"></div>
+
+                <!-- Dropdown Section -->
+                <div class="porter-select-section">
+                    <span class="select-label">{{"Monitor Device / Tag"|translate}}</span>
+                    <div class="porter-select-wrapper">
+                        <mat-select class="widget-class porter-leaf-select">
+                            <mat-option *ngFor="let tag of porterReqTagList" value="{{tag.id}}"
+                                (click)="onSelectMonitorTag(tag)" (keydown.enter)="fixClick()">
+                                <img class="tag-option-icon" src='/assets/Floorplan/{{tag.tagAssociationTypeId}}.svg' alt="tag">
+                                <span class="tag-option-text">{{tag.fullName}} ({{tag.tagId}})</span>
+                            </mat-option>
+                        </mat-select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- <tw-common-leaflet [leafRef]="'popup'" [blockSelect]="selectedBlock" [floorSelect]="selectedFloor"
             [locFlr]="selectedLoc" [tagId]="tagId" [tagType]="tagType" [type]="type" [options]="contextOptions"
-            [reqTagDetail]="reqDetail" [reqType]="reqType"></tw-common-leaflet>
+            [reqTagDetail]="reqDetail" [reqType]="reqType"></tw-common-leaflet> -->
+        <app-live-tracking 
+            [blockId]="selectedBlock" 
+            [floorId]="selectedFloor" 
+            [locFlr]="selectedLoc" 
+            [tagId]="tagId" 
+            [tagType]="tagType" 
+            [type]="'popup'"
+            [requestId]="reqDetail?.requestId"
+            [requestType]="reqType"
+            [reqTagDetail]="reqDetail">
+        </app-live-tracking>
     </div>
     <div class="webcam-container" *ngIf="contentDetail['content'] == 'webcam'">
         <video #video autoplay></video>

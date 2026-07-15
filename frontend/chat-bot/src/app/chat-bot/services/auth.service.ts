@@ -57,13 +57,13 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.chatbotApiUrl}auth/login`, { email, password }).pipe(
+    return this.http.post<AuthResponse>(`${environment.base_value.chatbotApiUrl}auth/login`, { email, password }).pipe(
       tap(res => this.setSession(res))
     );
   }
 
   signup(name: string, email: string, password: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${environment.chatbotApiUrl}auth/signup`, { name, email, password }).pipe(
+    return this.http.post<AuthResponse>(`${environment.base_value.chatbotApiUrl}auth/signup`, { name, email, password }).pipe(
       tap(res => this.setSession(res))
     );
   }
@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   updateName(newName: string): Observable<{ status: string, name: string }> {
-    return this.http.put<{ status: string, name: string }>(`${environment.chatbotApiUrl}auth/me/name`, { name: newName }).pipe(
+    return this.http.put<{ status: string, name: string }>(`${environment.base_value.chatbotApiUrl}auth/me/name`, { name: newName }).pipe(
       tap(res => {
         const user = this.userSubject.value;
         if (user && res.status === 'ok') {

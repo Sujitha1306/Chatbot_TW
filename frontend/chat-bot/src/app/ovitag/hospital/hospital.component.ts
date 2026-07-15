@@ -32,8 +32,7 @@ export class HospitalComponent implements OnInit {
       this.customerName = "kyn";
     }
     this.existPrivateUser = ('privateUser' in localStorage);
-    this.checkFloorMenu = window.location.pathname.includes('/ovitag/organization/floor-plan') || 
-                          window.location.pathname.includes('/chat-bot-AI');
+    this.checkFloorMenu = window.location.pathname.includes('/ovitag/organization/floor-plan') 
   }
 
 }

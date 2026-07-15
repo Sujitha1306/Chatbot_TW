@@ -1,10 +1,10 @@
 <lazy-loader *ngIf=loading></lazy-loader>
-<div class="manage-body">
+<div *ngIf="twTableVersionData === 1" class="manage-body">
     <tw-header-new-component [type]="'new'" [component]="'asset-management'" [permission]="null" [dateFilter]="null" [multiView]="false"
       [manageAction]="showActions" [selectDropdown]="selectDropdown" [selectedName]="selectedName !== null ? selectedName : true"
       [selectedView]="null" (selectedViewAction)="null" (headerEventAction)="headerEventAction($event)"[multiClickFilterActive]="false" [groupFilter]="parentFilter"></tw-header-new-component>
   <div>
-  <div style="display:flex; justify-content:flex-end; margin:10px 10px 5px 0;">
+  <div style="display:flex; justify-content:flex-end; margin:10px 16px 5px 0;">
       <img *ngIf="activate_btn?.includes('BT_HPISUMA')"
            src="/assets/Alert/common_icons/excelimport.png" alt="excel-import"
            appTooltip [tooltipText]="'Upload Asset Template'" placement="bottom"
@@ -15,5 +15,155 @@
       [iconHeader]="iconHeader" [iconColumn]="iconColumn" [sortColumn]="sortColumn" [eventColumn]="eventColumn" (eventAction)="eventAction($event)"
       [rowClick]="true" [rowId]="'assetId'" (rowClickAction)="rowClick($event);"[rowDbClick]="false" (rowDbClickAction)="sensorSummaryInfo($event)" [applyFilter]="applyFilterValue"
       [permissionControl]="permissionControl"  [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" [tableClass]="'table-icon-header'" ></tw-table-component>
+  </div>
+</div>
+
+<div *ngIf="twTableVersionData == 2" class="manage-body">
+  <tw-header-new-component [type]="'new'" [component]="'asset-management'" [permission]="null" [dateFilter]="null"
+    [multiView]="false" [manageAction]="showActions" [selectDropdown]="selectDropdown" [moreMenu]="true"
+    [selectedName]="selectedName !== null ? selectedName : true" [selectedView]="null" (selectedViewAction)="null"
+    (headerEventAction)="headerEventAction($event)" [multiClickFilterActive]="false"
+    [groupFilter]="parentFilter"></tw-header-new-component>
+  <div>
+    <!-- <div style="display:flex; justify-content:flex-end; margin:10px 16px 5px 0;">
+      <img *ngIf="activate_btn?.includes('BT_HPISUMA')" src="/assets/Alert/common_icons/excelimport.png"
+        alt="excel-import" appTooltip [tooltipText]="'Upload Asset Template'" placement="bottom" width="25px"
+        style="cursor:pointer" (click)="fileInput.click()" (keydown.enter)="fixClick()">
+      <input type="file" #fileInput accept=".xlsx" style="display:none" (change)="uploadBulkAsset($event)">
+    </div> -->
+    <tw-data-table [columns]="twColumns" [data]="tableData" [loading]="loading" [pagination]="paginationConfig"
+      [rowClickable]="true" [rowDblClickable]="false" [rowId]="'assetId'" [applyFilter]="applyFilterValue"
+      [permissionControl]="permissionControl" tableClass="table-icon-header" tableSize="138px"
+      (cellAction)="onCellAction($event)" (rowClick)="rowClick($event)" (rowDblClick)="handleRowDblClick($event)"
+      (pageChange)="onPageChange($event)">
+
+      <ng-template twCellDef="Device" let-row>
+        <span *ngIf="row['Device'] === null">
+          <img class="grid-tab-action-icon" style="width:20px;" src="/assets/Alert/common_icons/coaster-g.svg"
+            alt="coaster_img">
+        </span>
+        <span *ngIf="row['Device'] !== null">
+          <img class="grid-tab-action-icon" style="width:20px;" src="/assets/Alert/common_icons/coaster.svg"
+            alt="coaster_img" appTooltip [tooltipText]="row['tagSerialNumber']" placement="top">
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Alert" let-row>
+        <span style="display: flex;flex-direction: row;gap: 3px;">
+          <mat-icon *ngIf="row['taskCount']" appTooltip class="grid-tab-action-icon ovi-fnt-sze18"
+            (click)="eventAction({ key: 'Alert', data: row, patientId: 'Ticket' }); $event.stopPropagation()"
+            [tooltipText]="(row.taskCount) === 1 ? (row.taskCount + ' ' + ('Ticket Open' | translate)): (row.taskCount + ' ' + ('Tickets Open' | translate))"
+            style="color: #3381cc;cursor: pointer;padding:0; position:relative;">task</mat-icon>
+          <mat-icon *ngIf="row['workOrderCount']" appTooltip class="grid-tab-action-icon ovi-fnt-sze18"
+            (click)="eventAction({ key: 'Alert', data: row, patientId: 'WorkOrder' }); $event.stopPropagation()"
+            [tooltipText]="(row.workOrderCount) === 1 ? (row.workOrderCount + ' ' + ('Work Order Open' | translate)): (row.workOrderCount + ' ' + ('Work Orders Open' | translate))"
+            style="color: rgb(57, 179, 158);cursor: pointer;padding:0px;position:relative;">fact_check</mat-icon>
+          <mat-icon *ngIf="row.routineCount" appTooltip class="grid-tab-action-icon ovi-fnt-sze18"
+            (click)="eventAction({ key: 'Alert', data: row, patientId: 'Maintenance' }); $event.stopPropagation()"
+            [tooltipText]="(row.routineCount) === 1 ? (row.routineCount + ' ' + ('Maintenance Open' | translate)): (row.routineCount + ' ' + ('Maintenances Open' | translate))"
+            style="color: rgb(158, 194, 228); cursor: pointer;padding:0px;">settings_suggest</mat-icon>
+          <mat-icon *ngIf="row.routineDueCount" appTooltip class="grid-tab-action-icon ovi-fnt-sze18"
+            (click)="eventAction({ key: 'Alert', data: row, patientId: 'Maintenance' }); $event.stopPropagation()"
+            [tooltipText]="(row.routineDueCount) === 1 ? (row.routineDueCount + ' ' + ('Maintenance Due' | translate)): (row.routineDueCount + ' ' + ('Maintenances Due' | translate))"
+            style="color: rgb(235, 170, 57); cursor: pointer;padding:0px;">settings_suggest</mat-icon>
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Linked Asset" let-row>
+        <div class="linked-asset-icon grid-tab-action-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+          <span class="count-badge" *ngIf="row?.[col] && row[col] > 0">{{ row[col] }}</span>
+        </div>
+      </ng-template>
+
+      <ng-template twCellDef="GatePass" let-row>
+        <span>
+          <mat-icon class="grid-tab-action-icon" *ngIf="row['gatePassStatusId'] === 'ATE-GISD'" appTooltip
+            tooltipText="{{'Gatepass Issued' | translate}}"
+            (click)="eventAction({ key: 'GatePass', data: row }); $event.stopPropagation()" cdkFocusInitial
+            style="color: #ffd300; cursor: pointer;">exit_to_app</mat-icon>
+          <mat-icon class="grid-tab-action-icon" *ngIf="row['gatePassStatusId'] === 'ATE-GEXP'" appTooltip
+            tooltipText="{{'Exit Approved' | translate}}"
+            (click)="eventAction({ key: 'GatePass', data: row }); $event.stopPropagation()" cdkFocusInitial
+            style="color: orange; cursor: pointer;">exit_to_app</mat-icon>
+          <mat-icon class="grid-tab-action-icon" *ngIf="row['gatePassStatusId'] === 'ATE-GENP'" appTooltip
+            tooltipText="{{'Entry Approved' | translate}}"
+            (click)="eventAction({ key: 'GatePass', data: row }); $event.stopPropagation()" cdkFocusInitial
+            style="color: green; cursor: pointer;">exit_to_app</mat-icon>
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Report" let-row>
+        <span>
+          <mat-icon class="ovi-prmry-clr ovi-fnt-sze18 grid-tab-action-icon" *ngIf="activate_btn.includes('BT_ASTRPT')"
+            appTooltip tooltipText="{{'Report'|translate}}" placement="bottom"
+            (click)="eventAction({ key: 'Report', data: row }); $event.stopPropagation()"
+            (keydown.enter)="fixClick()">description</mat-icon>
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Overview" let-row>
+        <span>
+          <mat-icon class="ovi-prmry-clr ovi-fnt-sze18 grid-tab-action-icon" appTooltip
+            tooltipText="{{'Overview'|translate}}" placement="bottom"
+            (click)="eventAction({ key: 'Overview', data: row }); $event.stopPropagation()"
+            (keydown.enter)="fixClick()">dashboard</mat-icon>
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Idle" let-row>
+        <span>
+          <img *ngIf="row['Idle'] === true" alt="floorplan" style="width:25px;" class="grid-tab-action-icon"
+            src="/assets/Floorplan/TAT-AS-OLD.svg" alt="Idle">
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Current Location" let-row>
+        <span style="color: var(--tdt-accent); cursor: pointer;"
+          (click)="eventAction({ key: 'Current Location', data: row }); $event.stopPropagation()"
+          (keydown.enter)="fixClick()" appTooltip
+          [tooltipText]="row['locationFromTime'] ? (row['locationFromTime'] | date : 'hh:mm a, d MMM') : ''">
+          {{row['currentLocationName']}}<span *ngIf="row['currentLocationName'] !== null && row['floorName'] !== null">,
+          </span>{{row['floorName']}}
+          <span *ngIf="row['currentLocationName'] !== null && row['floorName'] !== null && row['blockName']!= null">,
+          </span>{{row['blockName']}}
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Due Date" let-row>
+        <span>
+          <span *ngFor="let assets of row['assetAlerts']" style="cursor: pointer;">
+            <img class="grid-tab-action-icon" *ngIf="assets.amcDueAlert === 'red'"
+              style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red" appTooltip
+              [tooltipText]="assets.amcDueAlertText" placement="top" src="/assets/Alert/common_icons/warning.svg">
+            <img class="grid-tab-action-icon" *ngIf="assets.amcDueAlert === 'yellow'"
+              style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red" appTooltip
+              [tooltipText]="assets.amcDueAlertText" placement="top" src="/assets/Alert/common_icons/warning_.svg">
+            <img class="grid-tab-action-icon" *ngIf="assets.pmsDueAlert === 'red'"
+              style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red" appTooltip
+              [tooltipText]="assets.pmsDueAlertText" placement="top" src="/assets/Alert/common_icons/warning.svg">
+            <img class="grid-tab-action-icon" *ngIf="assets.pmsDueAlert === 'yellow'"
+              style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red" appTooltip
+              [tooltipText]="assets.pmsDueAlertText" placement="top" src="/assets/Alert/common_icons/warning_.svg">
+            <img class="grid-tab-action-icon" *ngIf="assets.caliDueAlert === 'red'"
+              style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red" appTooltip
+              [tooltipText]="assets.caliDueAlertText" placement="top" src="/assets/Alert/common_icons/warning.svg">
+            <img class="grid-tab-action-icon" *ngIf="assets.caliDueAlert === 'yellow'"
+              style="width:18px;margin-right:5px;cursor: pointer;" alt="amc-red" appTooltip
+              [tooltipText]="assets.caliDueAlertText" placement="top" src="/assets/Alert/common_icons/warning_.svg">
+          </span>
+        </span>
+      </ng-template>
+
+      <ng-template twCellDef="Event Status" let-row>
+        <span *ngIf="row.assetTransferTypeName !='Active'" style="color: var(--tdt-accent); cursor: pointer;">
+          {{row.assetTransferTypeName}} {{row.transferEventStatus}}
+        </span>
+      </ng-template>
+
+    </tw-data-table>
   </div>
 </div>

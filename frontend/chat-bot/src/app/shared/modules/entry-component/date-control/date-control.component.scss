@@ -1,0 +1,303 @@
+/* Calendar control — bordered box: blue calendar icon | From | → | To, divided cells */
+.dc {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  height: 34px;
+  border: 1px solid var(--quinary-color);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+/* Blue calendar toggle icon (first cell, no divider) */
+.dc-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--primary-bg-color, #2563eb);
+
+  mat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    width: 18px;
+    height: 18px;
+    line-height: 1;
+    padding: 0px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+}
+
+/* Range mode: two overlapping calendars (dual icon) */
+.dc-cal-stack {
+  position: relative;
+  display: inline-block;
+  width: 20px;
+  height: 18px;
+
+  mat-icon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    width: 15px;
+    height: 17px;
+    line-height: 1;
+  }
+}
+
+.dc-cal-back {
+  top: -1px;
+  right: 0;
+  opacity: 0.5;
+  /* the calendar behind */
+}
+
+.dc-cal-front {
+  bottom: -1px;
+  left: 0;
+  text-shadow: 0 0 2px #ffffff, 0 0 2px #ffffff;
+  /* halo separates it from the back */
+}
+
+/* Divided cells (everything after the icon) — inset vertical line on the left */
+.dc-cell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.dc-cell::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--quinary-color);
+}
+
+/* From / To / Date — label stacked over the value, left-aligned, vertically centred */
+.dc-group {
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.dc-label {
+  font-size: 10px;
+  line-height: 1;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.dc-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2d3d;
+  white-space: nowrap;
+}
+
+/* Blue arrow between From and To */
+.dc-arrow {
+  justify-content: center;
+  color: var(--primary-bg-color, #2563eb);
+
+  mat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    line-height: 1;
+  }
+}
+
+/* Hidden input the single-mode mat-datepicker anchors to */
+.dc-hidden {
+  position: absolute;
+  left: 46px;
+  bottom: 4px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* ── Two-month range calendar popup (independent From / To panels) ─────────── */
+.dc-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+}
+
+.dc-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+/* Combined header: month range on the left, prev / Today / next on the right */
+.dc-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px 10px;
+}
+
+.dc-range-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2d3d;
+}
+
+.dc-nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dc-pn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--primary-bg-color, #2563eb);
+
+  mat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+  }
+
+  &:hover {
+    background: #eef2f7;
+  }
+}
+
+.dc-today {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-bg-color, #2563eb);
+  padding: 4px 8px;
+  border-radius: 6px;
+
+  &:hover {
+    background: #eef2f7;
+  }
+}
+
+.dc-popup-cals {
+  display: flex;
+  gap: 8px;
+}
+
+.dc-cal {
+  width: 248px;
+}
+
+/* Each calendar's own header (month label + arrows) is hidden — the combined
+   header above drives navigation for both months. */
+::ng-deep .dc-popup .mat-calendar-header {
+  display: none;
+}
+
+.dc-year-select {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2d3d;
+  width: 60px;
+  min-width: 60px;
+  border: none;
+  background: transparent;
+
+  ::ng-deep .mat-select-value {
+    color: #1f2d3d !important;
+  }
+}
+
+/* Single mode up/down arrow buttons */
+.dc-arrows {
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0px 0px 0px 0px !important;
+  width: 22px !important;
+  box-sizing: border-box;
+  // gap: 1px;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.dc-arrow-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  height: 14px !important;
+  width: 100% !important;
+  padding: 0 !important;
+  color: var(--primary-bg-color, #0b63ce) !important;
+  transition: all 0.2s ease-in-out;
+
+  mat-icon {
+    font-size: 21px !important;
+    width: 20px !important;
+    height: 18px !important;
+    line-height: 18px !important;
+  }
+
+  &:hover {
+    color: #0954b0 !important;
+    transform: scale(1.15);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}

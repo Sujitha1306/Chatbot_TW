@@ -187,7 +187,7 @@ export class AssetMaintenanceComponent {
         departmentFilter.subFilters = res.results?.map(({ departmentId, departmentName }) => ({ code: departmentId, value: departmentName }));
       }
       if (this.departmentId != null) {
-        if (departmentFilter) departmentFilter.defaultSelected = this.departmentId;
+        departmentFilter.defaultSelected = this.departmentId;
         if (this.isOwnedDepartment) {
           ownershipFilter?.defaultSelected.push('owned');
         }
@@ -195,17 +195,15 @@ export class AssetMaintenanceComponent {
           ownershipFilter?.defaultSelected.push('assigned');
         }
       } else {
-        if (departmentFilter) {
-          departmentFilter.defaultSelected = departmentFilter.subFilters.map(item => item.code);
-          this.departmentId = departmentFilter.subFilters.map(item => item.code);
-        }
+        departmentFilter.defaultSelected = departmentFilter?.subFilters.map(item => item.code);
+        this.departmentId = departmentFilter?.subFilters.map(item => item.code);
         if (ownershipFilter) {
           ownershipFilter.defaultSelected = ownershipFilter?.subFilters.map(item => item.code);
         }
         this.isOwnedDepartment = true;
         this.isAssignedDepartment = true;
       }
-       if (this.isloadDepartmentBasedAssetType && departmentFilter) {
+       if (this.isloadDepartmentBasedAssetType) {
         departmentFilter.dependentFilter.push('assetType');
         departmentFilter.isLoadSubFilters = true;
       }

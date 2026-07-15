@@ -19,6 +19,7 @@ import { RouterModule } from '@angular/router';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { MaterialModule } from '../../../common/material.module';
 import { TwHeaderComponent, TwHeaderNewComponent } from './tw-header.component'
+import { DateControlComponent } from '../date-control/date-control.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SharedDirectivesModule } from './../../../directive/shared-directives.module';
 import { TranslateModule } from '@ngx-translate/core';
@@ -41,7 +42,7 @@ export const MY_DATE_FORMATS: MatDateFormats = {
 @NgModule({
 
     declarations: [
-        TwHeaderComponent,TwHeaderNewComponent
+        TwHeaderComponent,TwHeaderNewComponent,DateControlComponent
     ],
 
     imports: [
@@ -58,7 +59,7 @@ export const MY_DATE_FORMATS: MatDateFormats = {
     ],
 
     exports: [
-        TwHeaderComponent,TwHeaderNewComponent
+        TwHeaderComponent,TwHeaderNewComponent,DateControlComponent
     ],
        providers: [
         { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }

@@ -391,3 +391,353 @@ input.mat-input-element {
      color: var(--primary-bg-color) !important;
   }
 }
+
+// ===================================================================================
+// Reusable "modern form" building blocks. Opt-in via class name, so adding them here
+// does not change the look of any element that doesn't already reference them.
+// Introduced for the Create/Modify template dialog; safe for other dialogs to adopt.
+// ===================================================================================
+
+// consistent field label: sits above every input, same size/weight/color/spacing
+// everywhere it's used. Placed after .ovi-lbl-text-size above so — when both classes
+// are applied together — this one wins the (otherwise tied) cascade.
+.ovi-field-label {
+  display: block;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  font-style: normal;
+  color: #0e0e0e;
+  cursor: default;
+}
+
+// secondary / neutral action (e.g. Cancel). !important: mat-button's own
+// Material theme CSS (loaded earlier, via theme.scss) sets border/background
+// on the same button classes, so plain specificity isn't enough here.
+.ovi-btn-outline {
+  background: var(--primary-bg-hghl-color) !important;
+  color: #344054 !important;
+  border: 1px solid #D0D5DD !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 8px 18px !important;
+  margin-right: 8px !important;
+  line-height: normal !important;
+
+  &:disabled,
+  &.mat-button-disabled {
+    background: #F2F4F7 !important;
+    color: #98A2B3 !important;
+    border: 1px solid #EAECF0 !important;
+    cursor: not-allowed !important;
+  }
+}
+
+// primary action (e.g. Save / Create), keeps the app's own brand color
+.ovi-btn-primary {
+  background: var(--primary-bg-color) !important;
+  color: var(--primary-bg-hghl-color) !important;
+  border: 1px solid var(--primary-bg-color) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 8px 18px !important;
+  line-height: normal !important;
+
+  &:disabled,
+  &.mat-button-disabled {
+    background: #EAECF0 !important;
+    color: #98A2B3 !important;
+    border: 1px solid #EAECF0 !important;
+    cursor: not-allowed !important;
+  }
+}
+.create-template-dialog {
+
+  .popup-margin {
+    margin: 0px 0px 0px 25px;
+    max-width: 1500px;
+  }
+  // ---- title bar: plain white header with a bold title, kept compact so it
+  // doesn't push the tab content into a second (double) scrollbar ----
+  .ovi-pop-hdr {
+    background: var(--primary-bg-hghl-color) !important;
+    color: #101828 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 4px 24px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #E5E7EB;
+
+    mat-icon {
+      color: #667085;
+    }
+  }
+
+  // ---- one spacing scale for every row, top row included ----
+  // align-items:flex-start (instead of the flex default "stretch") keeps
+  // every field's label+input pinned to the top of its row — otherwise a
+  // taller sibling in the same row (a two-line label, a wrapped hint) drags
+  // the whole item's box down and its content re-centers/stretches inside
+  // it, which is why fields that should line up (Purchase Order No/Date,
+  // Retired Date, etc.) rendered at different heights.
+  .ovi-row-gap,
+  .ovi-row-gap-four-fld {
+    gap: 12px 24px !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    padding-top: 10px;
+  }
+
+  // ---- consistent label typography + spacing above every field ----
+  // nowrap + ellipsis: a label with a trailing icon (e.g. "Additional Cost
+  // (USD/INR)" + the add-circle toggle) must stay one line — letting it wrap
+  // to two lines was what pushed that field's input down relative to its
+  // row neighbors (Expenses, the depreciation summary).
+  .label-with-icon {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-bottom: 6px;
+
+    .ovi-field-label {
+      margin-bottom: 0;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    mat-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  // ---- helpers for field-pairs that used to be one-off inline flex styles ----
+  .ovi-subfield-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .ovi-subfield-col {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .ovi-subfield-col-fixed {
+    flex: 0 0 64px;
+  }
+
+  .ovi-subfield-col-grow {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .ovi-subfield-label-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  // // ---- field box size: match the reference's ~40px-tall, evenly-padded
+  // // inputs. The app's global .ovi-matfrmfld hack (a 10px transparent
+  // // border-top spacer plus a negative margin-top on the flex box) was built
+  // // for the old cramped size and fights any padding change, so it's
+  // // neutralized here rather than layered on top of. ----
+  // .mat-form-field-appearance-outline .mat-form-field-outline {
+  //   color: #D0D5DD !important;
+  //   top: 0 !important;
+  // }
+
+  // .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+  //   color: var(--primary-bg-color) !important;
+  // }
+
+  // .mat-form-field-appearance-outline .mat-form-field-outline-start {
+  //   border-radius: 8px 0 0 8px !important;
+  // }
+
+  // .mat-form-field-appearance-outline .mat-form-field-outline-end {
+  //   border-radius: 0 8px 8px 0 !important;
+  // }
+
+  // .mat-form-field-appearance-outline .mat-form-field-flex {
+  //   padding: 0 12px !important;
+  //   margin-top: 0 !important;
+  //   align-items: center !important;
+  // }
+
+  // .mat-form-field-appearance-outline .mat-form-field-infix {
+  //   padding: 12px 0 !important;
+  //   border-top: 0 !important;
+  //   width: auto !important;
+  // }
+
+  // // A plain text input (e.g. Purchase Order No) has nothing in its suffix,
+  // // while its row neighbors (Purchase Order Date, Retired Date, Expected
+  // // Arriving Date...) carry a full-size 40px mat-icon-button datepicker
+  // // toggle plus a 25px "clear" icon. With the flex row's align-items:center,
+  // // that oversized suffix — not the input — was what made those fields
+  // // taller than a plain text field sitting right next to them. Capping every
+  // // suffix icon/button to a small, uniform size keeps every field in a row
+  // // the same height regardless of what's in its suffix.
+  // .mat-form-field-appearance-outline .mat-form-field-suffix {
+  //   display: inline-flex !important;
+  //   align-items: center !important;
+
+  //   .mat-icon-button {
+  //     width: 26px !important;
+  //     height: 26px !important;
+  //     line-height: 26px !important;
+  //     padding: 0 !important;
+  //   }
+
+  //   .mat-icon {
+  //     height: 18px !important;
+  //     width: 18px !important;
+  //     font-size: 18px !important;
+  //     line-height: 18px !important;
+  //   }
+
+  //   // the datepicker toggle's default calendar glyph is a raw <svg>, not a
+  //   // <mat-icon> — needs its own selector.
+  //   .mat-datepicker-toggle-default-icon {
+  //     height: 18px !important;
+  //     width: 18px !important;
+  //   }
+  // }
+
+  // This dialog now renders as a full-width page rather than a fixed-width
+  // modal, so the existing 45%/30%/22% column widths stretch every field
+  // absurdly wide. Capping the column keeps each field a sane, readable
+  // size regardless of how wide the page is.
+  .ovi-row-two-clmn {
+    max-width: 480px;
+  }
+
+  .ovi-row-three-clmn {
+    max-width: 320px;
+  }
+
+  .ovi-row-four-clmn {
+    max-width: 260px;
+  }
+
+  .ovi-row-one-clmn {
+    max-width: 600px;
+  }
+
+  .mat-form-field-wrapper {
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+  }
+
+  // The app reserves room for hint/error text by giving the wrapper a fixed
+  // padding-bottom while the text itself floats via position:absolute — with
+  // the padding zeroed out above, that absolute text now has nowhere
+  // reserved to go and overlaps the next row (the "Model Number" hint
+  // bug). Putting it back in normal flow makes the spacing deterministic:
+  // empty errors/hints take next to no space, and a real error message
+  // pushes the next row down instead of overlapping it.
+  .mat-form-field-subscript-wrapper {
+    position: static !important;
+    padding: 0 !important;
+    margin-top: 2px !important;
+    min-height: 0 !important;
+  }
+
+  input.mat-input-element,
+  .mat-select,
+  .mat-select-value-text {
+    font-size: 13px !important;
+  }
+
+  // AutoPlaceholderDirective (placeholder.service.ts) sets an inline
+  // font-style: italic on the input/select while empty — override it here so
+  // this dialog's placeholders render upright like the reference design.
+  input.mat-input-element {
+    font-style: normal !important;
+  }
+
+  .mat-select-placeholder {
+    font-style: normal !important;
+  }
+
+  // ---- section headers (Purchase Details / Connectivity / OWNERSHIP / SERVICE) ----
+  .ovi-popup-title-text-size {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #1a1a1a !important;
+  }
+
+  .ovi-pop-dvd {
+    border-top-color: #E5E7EB !important;
+    margin: 6px 0 16px !important;
+  }
+
+  // ---- roomier, larger tab strip ----
+  .template-mat-tab {
+    .mat-tab-header {
+      margin-left: -10px;
+    }
+    .mat-tab-label {
+      // the pre-existing min-width:105px (see .template-mat-tab rule above)
+      // only kicks in for short labels like "KPI"/"Form" — longer ones
+      // like "Connectivity Details" already exceed it and size to their
+      // own content, so the two end up with different amounts of empty
+      // space around them. Sizing every tab purely by content + this
+      // uniform padding keeps the gap between every pair of tabs equal.
+      min-width: auto !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      padding: 0 20px !important;
+      opacity: 1 !important;
+      color: #71717a !important;
+    }
+
+    .mat-tab-label-content {
+      font-size: 13px !important;
+      font-weight: 600 !important;
+    }
+
+    .mat-tab-label.mat-tab-label-active {
+      color: var(--primary-bg-color) !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+    }
+
+    .mat-ink-bar {
+      height: 2px !important;
+    }
+  }
+
+  // ---- footer: horizontal breathing room only — kept vertically tight so it
+  // doesn't add to the header's double-scroll problem ----
+  .ovi-pop-ftr {
+    padding: 8px 24px !important;
+  }
+}
+.template-details-toggle-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+
+  &.close-only {
+    justify-content: flex-end;
+  }
+}
+
+.tw-mat-v2-tab {
+  .tw-content1 {
+    margin: 0 16px !important;
+  }
+
+  .tdt-wrapper {
+    margin: 5px 0 0 0 !important;
+  }
+}

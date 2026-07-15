@@ -1,0 +1,605 @@
+/* ════════════════ Staff Mustering Dashboard (AI Staff Mustering) ════════════════ */
+.ai-stmust-wrapper {
+  --primary: #1565C0;
+  --primary-light: #E3F2FD;
+  --primary-dark: #0D47A1;
+  --accent-green: #2E7D32;
+  --accent-green-light: #E8F5E9;
+  --accent-orange: #E65100;
+  --accent-orange-light: #FFF3E0;
+  --accent-red: #C62828;
+  --accent-red-light: #FFEBEE;
+  --accent-purple: #6A1B9A;
+  --accent-purple-light: #F3E5F5;
+  --accent-teal: #00695C;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+  --text-primary: #1A202C;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+
+  padding: 10px 16px 20px;
+  position: relative;
+  background: #F0F4F8;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* When opened inside a mat-dialog (.medium-popup), the dialog container has
+   overflow:hidden with a fixed height. The header stays fixed at the top —
+   only .ai-stmust-content (below) scrolls, via the flex column below. */
+.ai-stmust-wrapper.ai-stmust-popup-mode {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Popup header (history tab drill-down) ────────────────────────────────
+   .ovi-pop-hdr is the project-wide popup header (see header.scss); pulled out
+   to the dialog edges since .ai-stmust-wrapper itself carries the content
+   padding. */
+.ai-stmust-wrapper .ovi-pop-hdr {
+  margin: -10px -16px 10px;
+  flex-shrink: 0;
+}
+
+.ai-stmust-popup-mode .ai-stmust-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ── Mustering Summary dashboard ─────────────────────────────────────────── */
+.ai-stmust-wrapper .smry-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.ai-stmust-wrapper .smry-kpi-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .kpi-card {
+    flex: 1;
+    min-width: 160px;
+  }
+}
+
+.ai-stmust-wrapper .smry-row {
+  display: flex;
+  gap: 12px;
+  height : 400px;
+  align-items: stretch;
+}
+
+.ai-stmust-wrapper .smry-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+
+  .table-wrap { padding: 0; }
+}
+
+.ai-stmust-wrapper .smry-flex-2 { flex: 2; }
+.ai-stmust-wrapper .smry-flex-1 { flex: 1; }
+
+.ai-stmust-wrapper .eff-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+
+  &.eff-high { background: #E8F5E9; color: #2E7D32; }
+  &.eff-mid  { background: #FFF3E0; color: #E65100; }
+  &.eff-low  { background: #FFEBEE; color: #C62828; }
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+.ai-stmust-wrapper .ai-top-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 8px 4px 10px;
+  flex-wrap: wrap;
+}
+
+.ai-stmust-wrapper .layout-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+
+  .layout-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .layout-select {
+    height: 30px;
+    padding: 0 10px;
+    border: 1.5px solid #c8dff0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--surface);
+    cursor: pointer;
+    outline: none;
+    min-width: 160px;
+
+    &:focus { border-color: var(--primary); }
+  }
+}
+
+.ai-stmust-wrapper .ai-activity-select {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding-left: 2px;
+  }
+
+  select {
+    height: 36px;
+    min-width: 280px;
+    padding: 0 30px 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23718096'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+
+    &:focus { outline: none; border-color: var(--primary); }
+  }
+}
+
+.ai-stmust-wrapper .ai-get-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  i { font-size: 16px; }
+  &:hover { background: var(--primary-dark); }
+}
+
+.ai-stmust-wrapper .loading-spinner { display: flex; justify-content: center; padding: 40px; }
+
+.ai-stmust-wrapper .muted { color: var(--text-muted); font-weight: 400; font-size: 11px; }
+
+/* ── GridStack shell ─────────────────────────────────────────────────────── */
+.ai-stmust-grid .grid-stack-item-content {
+  background: var(--surface);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.ai-stmust-grid.grid-stack > .grid-stack-item > .grid-stack-item-content {
+  height: auto !important;
+  width:  auto !important;
+}
+/* The floor-plan widget fills its container via flex (no explicit JS-driven
+   height like the ECharts widgets get from initOpts), so it needs the normal
+   GridStack absolute-fill sizing restored — otherwise its Three.js canvas
+   collapses to ~0px height and renders blank. */
+.ai-stmust-grid.grid-stack > .grid-stack-item.gs-floorplan-item > .grid-stack-item-content {
+  height: 100% !important;
+  width:  100% !important;
+}
+
+/* ── Widget header (shared) ──────────────────────────────────────────────── */
+.ai-stmust-wrapper .widget-header {
+  padding: 12px 16px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── ECharts wrap (shared) ───────────────────────────────────────────────── */
+.ai-stmust-wrapper .echart-wrap {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.ai-stmust-wrapper .no-chart-data {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── KPI cards (shared) ──────────────────────────────────────────────────── */
+.ai-stmust-grid .kpi-shell { background: transparent; border: none; box-shadow: none; }
+.ai-stmust-grid .kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  height: 100%;
+  width: 100%;
+}
+
+.ai-stmust-wrapper .kpi-card {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: box-shadow .2s;
+  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+}
+
+.ai-stmust-wrapper .kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  i { font-size: 21px; }
+
+  &.blue   { background: var(--primary-light);       i { color: var(--primary); } }
+  &.green  { background: var(--accent-green-light);  i { color: var(--accent-green); } }
+  &.red    { background: var(--accent-red-light);    i { color: var(--accent-red); } }
+  &.orange { background: var(--accent-orange-light); i { color: var(--accent-orange); } }
+  &.purple { background: var(--accent-purple-light); i { color: var(--accent-purple); } }
+  &.teal   { background: #E0F2F1;                    i { color: var(--accent-teal); } }
+}
+
+.ai-stmust-wrapper .kpi-body { flex: 1; min-width: 0; }
+.ai-stmust-wrapper .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 4px; }
+.ai-stmust-wrapper .kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  &.small { font-size: 18px; }
+  &.blue { color: var(--primary); }
+  &.green { color: var(--accent-green); }
+  &.red { color: var(--accent-red); }
+  &.orange { color: var(--accent-orange); }
+  &.purple { color: var(--accent-purple); }
+  &.teal { color: var(--accent-teal); }
+}
+.ai-stmust-wrapper .kpi-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.ai-stmust-wrapper .kpi-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 4px;
+  &.badge-green { background: var(--accent-green-light); color: var(--accent-green); }
+  &.badge-red   { background: var(--accent-red-light);   color: var(--accent-red); }
+}
+
+/* ── Mustering replay (3D floor plan) ─────────────────────────────────────── */
+.ai-stmust-grid .floorplan-replay {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+
+  /* app-live-tracking's own stylesheet sizes its canvas wrapper with a
+     percentage/calc height, which needs a *definite* parent height to resolve.
+     A flex:1 chain doesn't reliably give it one inside GridStack's layout, so
+     pin it with absolute inset instead — an unambiguous definite box. */
+  ::ng-deep app-live-tracking {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+}
+
+/* ── Mustering Summary (donut + legend, shared) ──────────────────────────── */
+.ai-stmust-wrapper .summary-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+}
+.ai-stmust-wrapper .summary-chart { flex: 1; height: 100%; }
+.ai-stmust-wrapper .donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px;
+  width: 48%;
+  flex-shrink: 0;
+}
+.ai-stmust-wrapper .donut-legend-item { display: flex; align-items: center; justify-content: space-between; }
+.ai-stmust-wrapper .dl-left { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+.ai-stmust-wrapper .dl-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.ai-stmust-wrapper .dl-count { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.ai-stmust-wrapper .dl-pct { font-size: 11px; color: var(--text-muted); margin-left: 4px; }
+
+/* ── Event timeline ──────────────────────────────────────────────────────── */
+.ai-stmust-grid .timeline-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-stmust-grid .tl-item { display: flex; align-items: flex-start; gap: 10px; }
+.ai-stmust-grid .tl-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  i { font-size: 16px; }
+
+  &.detection { background: var(--accent-red-light);    i { color: var(--accent-red); } }
+  &.alarm     { background: var(--accent-orange-light); i { color: var(--accent-orange); } }
+  &.started   { background: #FFF8E1;                    i { color: #F9A825; } }
+  &.progress  { background: var(--primary-light);       i { color: var(--primary); } }
+  &.complete  { background: var(--accent-green-light);  i { color: var(--accent-green); } }
+}
+.ai-stmust-grid .tl-body { flex: 1; min-width: 0; }
+.ai-stmust-grid .tl-time { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+.ai-stmust-grid .tl-label { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Most congested zones ────────────────────────────────────────────────── */
+.ai-stmust-grid .congest-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ai-stmust-grid .congest-item { display: flex; flex-direction: column; gap: 4px; }
+.ai-stmust-grid .congest-top { display: flex; align-items: center; justify-content: space-between; }
+.ai-stmust-grid .congest-zone { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.ai-stmust-grid .congest-lvl {
+  font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+  &.lvl-high { background: var(--accent-red-light);   color: var(--accent-red); }
+  &.lvl-med  { background: var(--accent-orange-light); color: var(--accent-orange); }
+  &.lvl-low  { background: var(--accent-green-light); color: var(--accent-green); }
+}
+.ai-stmust-grid .congest-bar { height: 8px; border-radius: 4px; background: #EDF2F7; overflow: hidden; }
+.ai-stmust-grid .congest-fill {
+  height: 100%; border-radius: 4px;
+  &.lvl-high { background: #EF5350; }
+  &.lvl-med  { background: #FB8C00; }
+  &.lvl-low  { background: #66BB6A; }
+}
+.ai-stmust-grid .congest-val { font-size: 10px; color: var(--text-muted); font-weight: 600; text-align: right; }
+
+/* ── Incident details ────────────────────────────────────────────────────── */
+.ai-stmust-grid .incident-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 16px 10px;
+  display: flex;
+  flex-direction: column;
+}
+.ai-stmust-grid .incident-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 11px;
+}
+.ai-stmust-grid .incident-row:last-child { border-bottom: none; }
+.ai-stmust-grid .inc-label { color: var(--text-muted); flex-shrink: 0; }
+.ai-stmust-grid .inc-value { color: var(--text-primary); font-weight: 600; text-align: right; }
+.ai-stmust-grid .inc-value.danger { color: var(--accent-red); }
+.ai-stmust-grid .inc-value.warn  { color: var(--accent-orange); }
+
+/* ── Efficiency caption ──────────────────────────────────────────────────── */
+.ai-stmust-grid .efficiency-caption {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-green);
+  padding: 0 0 12px;
+  flex-shrink: 0;
+}
+
+/* ── Personnel / activity table (shared) ─────────────────────────────────── */
+.ai-stmust-wrapper .table-search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #F7FAFC;
+
+  &:focus-within { border-color: var(--primary); background: #fff; }
+
+  i { font-size: 16px; color: var(--text-muted); }
+  .clear-search { cursor: pointer; }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: var(--text-primary);
+    width: 160px;
+  }
+}
+
+.ai-stmust-wrapper .table-wrap { flex: 1; min-height: 0; overflow: auto; width: 100%; }
+.ai-stmust-wrapper .ai-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead th {
+    background: #F7FAFC;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--text-secondary); }
+  .th-inner { display: inline-flex; align-items: center; gap: 3px; }
+  .sort-ico {
+    font-size: 14px;
+    color: #CBD5E0;
+    transition: color .15s;
+    &.active { color: var(--primary); }
+  }
+  thead th.sortable:hover .sort-ico { color: var(--text-muted); }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+  tbody tr:hover { background: #F7FAFC; }
+  tbody td { padding: 9px 12px; color: var(--text-primary); white-space: nowrap; }
+}
+
+.ai-stmust-wrapper .td-num { color: var(--text-muted); font-weight: 600; }
+.ai-stmust-wrapper .td-center { text-align: center; }
+.ai-stmust-wrapper .td-uhid { font-family: monospace; font-size: 11px; color: var(--primary); }
+.ai-stmust-wrapper .td-strong { font-weight: 600; }
+.ai-stmust-wrapper .td-room {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.ai-stmust-wrapper .reach-ico {
+  font-size: 18px;
+  &.reached { color: var(--accent-green); }
+  &.not-reached { color: var(--accent-red); }
+}
+
+.ai-stmust-wrapper .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.ai-stmust-wrapper .status-completed  { background: var(--accent-green-light); color: var(--accent-green); }
+.ai-stmust-wrapper .status-inprogress { background: var(--primary-light);      color: var(--primary); }
+.ai-stmust-wrapper .status-cancelled  { background: var(--accent-red-light);   color: var(--accent-red); }
+.ai-stmust-wrapper .status-visitor    { background: var(--accent-purple-light); color: var(--accent-purple); }
+
+.ai-stmust-wrapper .no-data { text-align: center; color: #999; padding: 20px; }
+
+/* ── Activity table fixed height ─────────────────────────────────────────── */
+.ai-stmust-wrapper .smry-activity-wrap {
+  max-height: 420px;
+  overflow-y: auto;
+  flex: none;
+}
+
+/* ── Pager ───────────────────────────────────────────────────────────────── */
+.ai-stmust-wrapper .table-footer {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ai-stmust-wrapper .page-info { font-size: 11px; color: var(--text-muted); }
+
+.ai-stmust-wrapper .smry-pagination,
+.ai-stmust-grid .pagination {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.ai-stmust-wrapper .page-ellipsis {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 0 2px;
+  line-height: 28px;
+}
+
+.ai-stmust-wrapper .page-btn,
+.ai-stmust-grid .page-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all .15s;
+
+  &.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  &:hover:not(.active):not(:disabled) { background: #F0F4F8; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}

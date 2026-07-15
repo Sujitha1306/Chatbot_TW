@@ -75,3 +75,28 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Cache OpenStreetMap and basemap tiles to speed up reloading
+const MAP_TILES_CACHE = 'osm-map-tiles-v1';
+
+self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+  
+  if (url.includes('tile.openstreetmap.org') || url.includes('basemaps.cartocdn.com')) {
+    event.respondWith(
+      caches.open(MAP_TILES_CACHE).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          return fetch(event.request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              cache.put(event.request, networkResponse.clone());
+            }
+            return networkResponse;
+          });
+        });
+      })
+    );
+  }
+});

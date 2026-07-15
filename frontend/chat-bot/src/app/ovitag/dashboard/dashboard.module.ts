@@ -28,6 +28,8 @@ import { DashboardEmpComponent } from './dashboard-emp/dashboard-emp.component';
 import { GridsterModule } from 'angular-gridster2';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { DashboardV2EmpModule } from '../dashboard-v2/dashboard-v2-emp/dashboard-v2-emp.module';
+import { ReportModule } from '../report/report.module';
 
 @NgModule({
   imports: [
@@ -42,8 +44,10 @@ import { TranslateModule } from '@ngx-translate/core';
     GridsterModule,
     FormsModule,
     ReactiveFormsModule,
+    DashboardV2EmpModule,
     EntryComponentModule.forRoot(),
     SharedPipesModule.forRoot(),
+    ReportModule
   ],
   declarations: [
     DashboardComponent,

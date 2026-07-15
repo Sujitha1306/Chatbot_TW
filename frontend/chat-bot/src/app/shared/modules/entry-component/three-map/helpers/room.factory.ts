@@ -15,7 +15,7 @@ import {
 /**
  * Create a floor mesh from polygon coordinates
  */
-export function createFloorMesh(coordinates: number[][], color: number, opacity?: number): THREE.Mesh | null {
+export function createFloorMesh(coordinates: number[][], color: number, opacity?: number, strokeColor?: number): THREE.Mesh | null {
     if (coordinates.length < 3) return null;
 
     const shape = new THREE.Shape();
@@ -31,20 +31,35 @@ export function createFloorMesh(coordinates: number[][], color: number, opacity?
 
     const geometry = new THREE.ShapeGeometry(shape);
     const resolvedOpacity = opacity !== undefined ? opacity : FLOOR_OPACITY;
-    const material = new THREE.MeshStandardMaterial({
+    const material = new THREE.MeshBasicMaterial({
         color: color,
         side: THREE.DoubleSide,
         transparent: true,
         depthWrite: false,
-        opacity: resolvedOpacity,
-        roughness: 0.8,
-        metalness: 0.0
+        opacity: resolvedOpacity
     });
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = Math.PI / 2;
     mesh.position.y = 0.1;
     mesh.receiveShadow = false;
+    mesh.renderOrder = 4;
+
+    // Create and add the outline (border) matching Leaflet style!
+    const points: THREE.Vector3[] = [];
+    coordinates.forEach(coord => {
+        points.push(new THREE.Vector3(coord[0], coord[1], 0.005));
+    });
+    const outlineGeo = new THREE.BufferGeometry().setFromPoints(points);
+    const resolvedStrokeColor = strokeColor !== undefined ? strokeColor : color;
+    const outlineMat = new THREE.LineBasicMaterial({
+        color: resolvedStrokeColor,
+        transparent: true,
+        opacity: 0.8
+    });
+    const outline = new THREE.LineLoop(outlineGeo, outlineMat);
+    outline.renderOrder = 6;
+    mesh.add(outline);
 
     return mesh;
 }
@@ -55,7 +70,7 @@ export function createFloorMesh(coordinates: number[][], color: number, opacity?
  * goes downward. We compensate by lifting position.y = FLOOR_3D_EXTRUDE_HEIGHT + 0.05
  * so the top face sits at that height and the bottom face sits at y ≈ 0.05.
  */
-export function createExtrudedFloorMesh(coordinates: number[][], color: number): THREE.Mesh | null {
+export function createExtrudedFloorMesh(coordinates: number[][], color: number, height: number = FLOOR_3D_EXTRUDE_HEIGHT): THREE.Mesh | null {
     if (coordinates.length < 3) return null;
 
     const shape = new THREE.Shape();
@@ -67,7 +82,7 @@ export function createExtrudedFloorMesh(coordinates: number[][], color: number):
 
     const geometry = new THREE.ExtrudeGeometry(shape, {
         steps: 1,
-        depth: FLOOR_3D_EXTRUDE_HEIGHT,
+        depth: height,
         bevelEnabled: false
     });
 
@@ -81,7 +96,7 @@ export function createExtrudedFloorMesh(coordinates: number[][], color: number):
 
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = Math.PI / 2;
-    mesh.position.y = FLOOR_3D_EXTRUDE_HEIGHT + 0.05;
+    mesh.position.y = height + 0.05;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
 
@@ -100,7 +115,7 @@ export interface WallGap {
 /**
  * Create wall meshes from polygon coordinates, optionally with gaps for doors
  */
-export function createWallsFromCoordinates(coordinates: number[][], gaps: WallGap[] = [], wallThickness: number = WALL_THICKNESS): THREE.Mesh[] {
+export function createWallsFromCoordinates(coordinates: number[][], gaps: WallGap[] = [], wallThickness: number = WALL_THICKNESS, wallHeight: number = WALL_HEIGHT): THREE.Mesh[] {
     const walls: THREE.Mesh[] = [];
 
     for (let i = 0; i < coordinates.length - 1; i++) {
@@ -111,24 +126,24 @@ export function createWallsFromCoordinates(coordinates: number[][], gaps: WallGa
 
         if (gap) {
             // Create two partial walls instead of one full wall
-            createSplitWall(x1, z1, x2, z2, gap.width, walls, wallThickness);
+            createSplitWall(x1, z1, x2, z2, gap.width, walls, wallThickness, wallHeight);
         } else {
             // Standard wall
-            createSingleWallSegment(x1, z1, x2, z2, walls, wallThickness);
+            createSingleWallSegment(x1, z1, x2, z2, walls, wallThickness, wallHeight);
         }
     }
 
     return walls;
 }
 
-function createSingleWallSegment(x1: number, z1: number, x2: number, z2: number, walls: THREE.Mesh[], wallThickness: number): void {
+function createSingleWallSegment(x1: number, z1: number, x2: number, z2: number, walls: THREE.Mesh[], wallThickness: number, wallHeight: number = WALL_HEIGHT): void {
     const dx = x2 - x1;
     const dz = z2 - z1;
     const length = Math.sqrt(dx * dx + dz * dz);
 
     if (length < MIN_WALL_LENGTH) return;
 
-    const geometry = new THREE.BoxGeometry(length, WALL_HEIGHT, wallThickness);
+    const geometry = new THREE.BoxGeometry(length, wallHeight, wallThickness);
     const material = new THREE.MeshStandardMaterial({
         color: WALL_COLOR,
         transparent: true,
@@ -143,18 +158,19 @@ function createSingleWallSegment(x1: number, z1: number, x2: number, z2: number,
 
     const midX = (x1 + x2) / 2;
     const midZ = (z1 + z2) / 2;
-    wall.position.set(midX, WALL_HEIGHT / 2, midZ);
+    wall.position.set(midX, wallHeight / 2, midZ);
 
     const angle = Math.atan2(dz, dx);
     wall.rotation.y = -angle;
 
     wall.castShadow = true;
     wall.receiveShadow = false;
+    wall.renderOrder = 5;
 
     walls.push(wall);
 }
 
-function createSplitWall(x1: number, z1: number, x2: number, z2: number, gapWidth: number, walls: THREE.Mesh[], wallThickness: number): void {
+function createSplitWall(x1: number, z1: number, x2: number, z2: number, gapWidth: number, walls: THREE.Mesh[], wallThickness: number, wallHeight: number = WALL_HEIGHT): void {
     const dx = x2 - x1;
     const dz = z2 - z1;
     const fullLength = Math.sqrt(dx * dx + dz * dz);
@@ -175,16 +191,16 @@ function createSplitWall(x1: number, z1: number, x2: number, z2: number, gapWidt
     // Segment 1: Start to (Start + partLength)
     const sx1 = x1 + unitX * (partLength / 2);
     const sz1 = z1 + unitZ * (partLength / 2);
-    createWallParams(sx1, sz1, partLength, Math.atan2(dz, dx), walls, wallThickness);
+    createWallParams(sx1, sz1, partLength, Math.atan2(dz, dx), walls, wallThickness, wallHeight);
 
     // Segment 2: (End - partLength) to End
     const sx2 = x2 - unitX * (partLength / 2);
     const sz2 = z2 - unitZ * (partLength / 2);
-    createWallParams(sx2, sz2, partLength, Math.atan2(dz, dx), walls, wallThickness);
+    createWallParams(sx2, sz2, partLength, Math.atan2(dz, dx), walls, wallThickness, wallHeight);
 }
 
-function createWallParams(cx: number, cz: number, length: number, angle: number, walls: THREE.Mesh[], wallThickness: number): void {
-    const geometry = new THREE.BoxGeometry(length, WALL_HEIGHT, wallThickness);
+function createWallParams(cx: number, cz: number, length: number, angle: number, walls: THREE.Mesh[], wallThickness: number, wallHeight: number = WALL_HEIGHT): void {
+    const geometry = new THREE.BoxGeometry(length, wallHeight, wallThickness);
     const material = new THREE.MeshStandardMaterial({
         color: WALL_COLOR,
         transparent: true,
@@ -196,9 +212,10 @@ function createWallParams(cx: number, cz: number, length: number, angle: number,
     });
 
     const wall = new THREE.Mesh(geometry, material);
-    wall.position.set(cx, WALL_HEIGHT / 2, cz);
+    wall.position.set(cx, wallHeight / 2, cz);
     wall.rotation.y = -angle;
     wall.castShadow = true;
     wall.receiveShadow = false;
+    wall.renderOrder = 5;
     walls.push(wall);
 }

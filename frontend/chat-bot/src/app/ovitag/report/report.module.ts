@@ -59,6 +59,8 @@ import { TwHeaderModule } from '../../shared/modules/entry-component/tw-header/t
 import { NgxEchartsModule } from 'ngx-echarts';
 import { PorterDateSelectorComponent } from '../../shared/modules/entry-component/ai-date-selector/porter-date-selector.component';
 import { PorterV2ReportComponent } from './porter-v2-report/porter-v2-report.component';
+import { AiStMustComponent } from './staffMustering-Report/ai-stmust.component';
+import { MusteringDateSelectorComponent } from './staffMustering-Report/mustering-dateselector.component';
 
 
 @NgModule({
@@ -119,9 +121,10 @@ import { PorterV2ReportComponent } from './porter-v2-report/porter-v2-report.com
         LocationHistComponent,
      InfantsecurityReportComponent,
      ScheduleReportComponent, CreateScheduleComponent, KynReviewpostManagementComponent,
-     PorterDateSelectorComponent,PorterV2ReportComponent
+     PorterDateSelectorComponent,PorterV2ReportComponent,
+     AiStMustComponent, MusteringDateSelectorComponent
 
      ],
-     exports: [],
+     exports: [PorterV2ReportComponent],
 })
 export class ReportModule { }

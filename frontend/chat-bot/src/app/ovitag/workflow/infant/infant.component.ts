@@ -31,6 +31,8 @@ import { PatientInfoComponent } from '../../../shared/modules/entry-component/pa
 import { AcknowledgementComponent } from '../../../shared/modules/entry-component/acknowledgement/acknowledgement.component';
 import { WorkflowManagementComponent } from '../../../shared/modules/entry-component/workflow-management/workflow-management.component';
 import { ConfirmationDialog } from '../../../shared/modules/entry-component/confirmation-dialog/confirmation-dialog.component';
+import { InfantAlertDialogComponent } from './infant-alert-dialog/infant-alert-dialog.component';
+import { NotificationAlertPopupComponent } from '../../../shared/modules/entry-component/notification-alert-popup/notification-alert-popup.component';
 import { Subject, Subscription } from 'rxjs';
 import { CommonDialogComponent } from '../../../shared/modules/entry-component/common-dialog-component/common-dialog.component';
 import { AppToastService } from '../../../shared/services/toaster.service';
@@ -136,12 +138,14 @@ export class InfantComponent implements OnInit,AfterViewInit,OnDestroy {
   public spinLoader: boolean = false;
   public tamperCount = 0;
   public geofenceCount = 0;
+  public wrongParentCount = 0;
   public alertDateFilter: any = null;
   pageStart = 0;
   public get alertCardData(): any[] {
     return [
       { code: 'CE-TAM', name: 'Tampering', count: this.tamperCount, icon: '/assets/Alert/CE-TAM.svg' },
-      { code: 'RU-GO', name: 'Geofence', count: this.geofenceCount, icon: '/assets/Alert/IP/geofence.svg' }
+      { code: 'RU-GO', name: 'Geofence', count: this.geofenceCount, icon: '/assets/Alert/IP/geofence.svg' },
+      { code: 'CE-WRP', name: 'Wrong Mother', count: this.wrongParentCount, icon: '/assets/Alert/CE-WRP.svg' }
     ];
   }
   
@@ -457,8 +461,10 @@ export class InfantComponent implements OnInit,AfterViewInit,OnDestroy {
       if(res.results !== null) {
         const geofence = res.results?.alerts?.filter(x => x.alertCode === 'RU-GO');
         const tamper = res.results?.events?.filter(x => x.alertCode === 'CE-TAM');
+        const wrongParent = res.results?.events?.filter(x => x.alertCode === 'CE-WRP');
         this.tamperCount = tamper?.length > 0 ? tamper[0]?.count : 0;
         this.geofenceCount = geofence?.length > 0 ? geofence[0]?.count : 0;
+        this.wrongParentCount = wrongParent?.length > 0 ? wrongParent[0]?.count : 0;
       }
     })
   }
@@ -689,24 +695,147 @@ export class InfantComponent implements OnInit,AfterViewInit,OnDestroy {
       });
     }
   }
-  cancelAlert(data) {
-    if (data.iotAlertId != null) {
-      data['alertId'] = data.iotAlertId;
-    }
+  cancelAlert(alertData: any, patient?: any) {
 
-    const dialogRef = this.dialog.open(ConfirmationDialog, {
-      panelClass:['confirmation-popup'], disableClose: true,
-      data: {
-        title: 'Cancel Notification', message: '',
-        buttonText: { ok: 'Ok', cancel: 'Cancel' },
-        'alertDetails': data, 'cancelAlert': true,
+    const currentAlertCode = alertData.eventCode || alertData.alertCode || alertData.ruleTypeId;
+    const code = String(currentAlertCode || '').toUpperCase().trim();
+    const isThreeAlerts = code === 'RU-GO' || code === 'CE-TAM' || code === 'CE-WRP';
+
+    const getAlertDateTime = (alert: any) => {
+      if (alert.sentDatetime) return alert.sentDatetime;
+      if (alert.sentDateTime) return alert.sentDateTime;
+      if (alert.eventTime) return alert.eventTime;
+      if (alert.message) {
+        const match = alert.message.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/i);
+        if (match) return match[0];
+        const match2 = alert.message.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}/);
+        if (match2) return match2[0];
       }
-    });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'confirm') {
-        this.refreshPage();
+      return new Date().toISOString();
+    };
+
+    if (isThreeAlerts) {
+      let alertName = alertData.eventName || alertData.eventCode || alertData.alertCode;
+      if (!alertName || ['RU-GO', 'CE-TAM', 'CE-WRP'].includes(String(alertName).toUpperCase().trim())) {
+        if (code === 'RU-GO') alertName = 'Geofence';
+        else if (code === 'CE-TAM') alertName = 'Tampered';
+        else if (code === 'CE-WRP') alertName = 'Wrong Mother';
+        else alertName = currentAlertCode || 'Alert';
       }
-    });
+
+      const selectedAlertMapped = {
+        id: alertData.iotAlertId || alertData.alertId || alertData.id,
+        configName: alertName,
+        message: alertData.message,
+        sentDatetime: getAlertDateTime(alertData),
+        alertTypeId: 'AT-AL',
+        ruleTypeId: code,
+        identifyingType: 'Patient',
+        identifyingId: patient?.patientId || patient?.id,
+        alertDetails: [
+          { identifyingType: 'Location', identifyingValue: patient?.locationId || patient?.wardId },
+          { identifyingType: 'Tag', identifyingValue: patient?.tagId || patient?.tagSerialNumber },
+          { identifyingType: 'Patient', identifyingValue: patient?.patientId || patient?.id, identifyingValueName: patient?.patientName || patient?.fullName || patient?.name },
+          ...(currentAlertCode ? [{ identifyingType: 'Event', identifyingValue: currentAlertCode }] : [])
+        ]
+      };
+
+      const allPatientAlerts: any[] = [];
+      if (patient) {
+        if (patient.alerts && Array.isArray(patient.alerts)) {
+          patient.alerts.forEach((alt: any) => {
+            const altCode = String(alt.alertCode || alt.ruleTypeId || '').toUpperCase().trim();
+            if (altCode === 'RU-GO') {
+              let altName = alt.eventName || alt.alertCode;
+              if (!altName || altName === 'RU-GO') altName = 'Geofence';
+              allPatientAlerts.push({
+                id: alt.iotAlertId || alt.alertId || alt.id,
+                configName: altName,
+                message: alt.message,
+                sentDatetime: getAlertDateTime(alt),
+                alertTypeId: 'AT-AL',
+                ruleTypeId: altCode,
+                identifyingType: 'Patient',
+                identifyingId: patient.patientId || patient.id,
+                alertDetails: [
+                  { identifyingType: 'Location', identifyingValue: patient.locationId || patient.wardId },
+                  { identifyingType: 'Tag', identifyingValue: patient.tagId || patient.tagSerialNumber },
+                  { identifyingType: 'Patient', identifyingValue: patient.patientId || patient.id, identifyingValueName: patient.patientName || patient.fullName || patient.name }
+                ]
+              });
+            }
+          });
+        }
+
+        if (patient.events && Array.isArray(patient.events)) {
+          patient.events.forEach((evt: any) => {
+            const evtCode = String(evt.eventCode || '').toUpperCase().trim();
+            if (evtCode === 'CE-TAM' || evtCode === 'CE-WRP') {
+              let evtName = evt.eventName || evt.eventCode;
+              if (!evtName || evtName === 'CE-TAM' || evtName === 'CE-WRP') {
+                evtName = evtCode === 'CE-TAM' ? 'Tampered' : 'Wrong Mother';
+              }
+              allPatientAlerts.push({
+                id: evt.iotAlertId || evt.alertId || evt.id,
+                configName: evtName,
+                message: evt.message,
+                sentDatetime: getAlertDateTime(evt),
+                alertTypeId: 'AT-AL',
+                ruleTypeId: evtCode,
+                identifyingType: 'Patient',
+                identifyingId: patient.patientId || patient.id,
+                alertDetails: [
+                  { identifyingType: 'Location', identifyingValue: patient.locationId || patient.wardId },
+                  { identifyingType: 'Tag', identifyingValue: patient.tagId || patient.tagSerialNumber },
+                  { identifyingType: 'Patient', identifyingValue: patient.patientId || patient.id, identifyingValueName: patient.patientName || patient.fullName || patient.name },
+                  { identifyingType: 'Event', identifyingValue: evt.eventCode }
+                ]
+              });
+            }
+          });
+        }
+      }
+
+      const exists = allPatientAlerts.some(a => a.id === selectedAlertMapped.id);
+      if (!exists) {
+        allPatientAlerts.unshift(selectedAlertMapped);
+      }
+
+      const dialogRef = this.dialog.open(NotificationAlertPopupComponent, {
+        data: {
+          selectedAlert: selectedAlertMapped,
+          allAlerts: allPatientAlerts,
+          ruleFilterList: [],
+          hideCamera: false,
+          hideSidebar: false,
+          patientDetails: patient
+        },
+        panelClass: ['medium-popup'],
+        disableClose: true,
+      });
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === 'confirm') {
+          this.refreshPage();
+        }
+      });
+    } else {
+      if (alertData.iotAlertId != null) {
+        alertData['alertId'] = alertData.iotAlertId;
+      } else if (alertData.id != null) {
+        alertData['alertId'] = alertData.id;
+      }
+
+      const dialogRef = this.dialog.open(InfantAlertDialogComponent, {
+        panelClass: ['infant-alert-popup'],
+        disableClose: true,
+        data: { alert: alertData, patient: patient || null },
+      });
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === 'confirm') {
+          this.refreshPage();
+        }
+      });
+    }
   }
   enrollInfant(data) {
     const parent =  this.tableData?.filter(x => x.id === data.motherId);

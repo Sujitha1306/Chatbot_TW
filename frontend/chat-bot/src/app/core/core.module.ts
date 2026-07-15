@@ -43,6 +43,7 @@ import { EntryComponentModule } from './../shared';
 import { GlobalNotificationComponent, TimeAgoPipe } from './global-notification/global-notification.component';
 import { NotificationCameraViewComponent } from './global-notification/notification-camera-view/notification-camera-view.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { ChatBotModule } from '../chat-bot/chat-bot.module';
 
 
 @NgModule({
@@ -80,7 +81,8 @@ import { TranslateModule } from '@ngx-translate/core';
         MatCardModule,
         MatSliderModule,
         MatProgressBarModule,
-        MaterialModule
+        MaterialModule,
+        ChatBotModule
     ],
     exports: [
         
@@ -88,7 +90,7 @@ import { TranslateModule } from '@ngx-translate/core';
         ToolbarComponent,
         NavbarComponent,
         SidebarComponent,
-        
+        TimeAgoPipe
     ]
 })
 export class CoreModule { }

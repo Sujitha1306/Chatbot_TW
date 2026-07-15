@@ -16,8 +16,6 @@ import { TwTableModule } from '../../shared/modules/entry-component/tw-table/tw-
 import { TwHeaderModule } from '../../shared/modules/entry-component/tw-header/tw-header.module';
 import { TranslateModule } from '@ngx-translate/core';
 import { ShareModule } from '../../shared/shared.module';
-import { CommonLeafletComponent } from '../floor-plan/leaflet/common-leaflet/common-leaflet.component';
-import { ManageLocationLeafletComponent } from '../floor-plan/leaflet/common-leaflet/manage-location-leaflet/manage-location-leaflet.component';
 import { MatListModule } from '@angular/material/list';
 
 
@@ -27,6 +25,7 @@ import { MatListModule } from '@angular/material/list';
     CommonModule,
     FloorplanRoutingModule,
     SidemenuModule,
+    EntryComponentModule,
     MaterialModule,
     FormsModule,
     ReactiveFormsModule,
@@ -44,14 +43,11 @@ import { MatListModule } from '@angular/material/list';
   ],
 
   declarations: [
-    FloorPlanComponent,
-    CommonLeafletComponent,
-    ManageLocationLeafletComponent
+    FloorPlanComponent
   ],
 
   exports: [
-    CommonLeafletComponent,
-    ManageLocationLeafletComponent
+    FloorPlanComponent
   ]
 })
 export class  FloorPlanModule { }

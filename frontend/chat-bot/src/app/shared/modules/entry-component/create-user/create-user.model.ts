@@ -111,6 +111,7 @@ export class CreateStudent {
     public title: string,
     public userStatusId: string,
     public designationId: string,
+    public employeeId: string
   ) { }
 }
 
@@ -137,6 +138,7 @@ export class EditStudent {
       public studentGroupId: string,
       public title: string,
       public userStatusId: string,
-      public designationId: string
+      public designationId: string,
+      public employeeId: string
     ) { }
   }

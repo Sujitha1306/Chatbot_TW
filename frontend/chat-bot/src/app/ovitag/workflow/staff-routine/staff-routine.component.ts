@@ -32,6 +32,7 @@
 import { ErrorStateMatcherService } from "../../../shared/services/error-state-matcher.service";
 import { CreateUserComponent } from "../../../shared/modules/entry-component/create-user/create-user.component";
 import { StatusEventComponent } from "../../../shared/modules/entry-component/status-event/status-event.component";
+import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-component/notification-alert-popup/notification-alert-popup.component";
  
  @Component({
    selector: "app-staff-routine",
@@ -60,7 +61,7 @@ import { StatusEventComponent } from "../../../shared/modules/entry-component/st
    iconColumn = ['ID', 'Gender', 'Task', 'Current Location', 'Device', 'Alert'];
    sortColumn = ['ID'];
    permissionControl = ['BT_ALLE'];
-   eventColumn = ['Task', 'Device', 'Status', 'Name'];
+   eventColumn = ['Task', 'Device', 'Status', 'Name', 'Last Seen Location'];
    responseColumns = [];
    public rowFilter: any = [];
    public selectFilter: any = [{ id: "depart", value: "DEPARTMENT" }];
@@ -301,7 +302,41 @@ import { StatusEventComponent } from "../../../shared/modules/entry-component/st
      }  else if (event.key === 'Current Location') {
        this.currentLocationData(event.data, '');
      }  else if (event.key === 'nurse-call' || event.key === 'fall-risk') {
-       this.cancelAlert(event.data, event.key);
+       if (event.data && (event.data.eventCode === 'CE-SO' || event.data.alertCode === 'RU-GO')) {
+         const patientDetails = this.tableData?.find((p: any) =>
+           p.patientId === event.patientId || p.id === event.patientId
+         ) || event.data;
+         const alertObj = {
+           id: event.data.iotAlertId,
+           configName: event.data.eventName || 'Patient Care',
+           message: event.data.message || 'Patient Care Alert',
+           sentDatetime: event.data.message?.match(/\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(?:AM|PM)/)?.[0],
+           alertTypeId: 'AT-AL',
+           ruleTypeId: 'CE-PC',
+           identifyingType: 'Patient',
+           identifyingId: patientDetails?.patientId || event.patientId,
+           alertDetails: [
+             { identifyingType: 'Location', identifyingValue: patientDetails?.locationId || patientDetails?.wardId },
+             { identifyingType: 'Tag', identifyingValue: patientDetails?.tagId },
+             { identifyingType: 'Patient', identifyingValue: patientDetails?.patientId, identifyingValueName: patientDetails?.patientName }
+           ]
+         };
+         const dialogRef = this.dialog.open(NotificationAlertPopupComponent, {
+           data: {
+             selectedAlert: alertObj,
+             allAlerts: [],
+             ruleFilterList: [],
+             hideCamera: true,
+             hideSidebar: true,
+             patientDetails: patientDetails
+           },
+           panelClass: ['medium-popup'],
+           disableClose: true
+         });
+         dialogRef.afterClosed().subscribe(() => { this.refreshPage(); });
+       } else {
+         this.cancelAlert(event.data, event.key);
+       }
      } else if (event.key === "Task") {
       this.manageAction('routine', event.data)
     }  else if (event.key == "pagination"){
@@ -327,6 +362,8 @@ import { StatusEventComponent } from "../../../shared/modules/entry-component/st
       this.sortDirection = event.data.direction.toUpperCase();
       this.sortColumnName = this.responseColumns[index];
       this.getStaffRoutineList(null, null);
+    } else if (event.key === 'Last Seen Location') {
+      this.currentLocationData(event.data, event.key);
     }
    }
    cancelAlert(data, type) {
@@ -385,15 +422,34 @@ import { StatusEventComponent } from "../../../shared/modules/entry-component/st
      this.rowData = rowData;
      this.selectedName = rowData.userId;
      rowData['tagType'] = 'User';
-     if (rowData.tagId != null && rowData.floorId != null) {
-       const dialogRef = this.dialog.open(CommonDialogComponent, {
-         data: rowData,
-         panelClass: 'medium-popup',
-         disableClose: true,
+     const openDialog = (data) => {
+       if (data.tagId != null && data.floorId != null) {
+         data.tagSerialNumber = data.tagId;
+         const dialogRef = this.dialog.open(CommonDialogComponent, {
+           data: data,
+           panelClass: 'medium-popup',
+           disableClose: true,
+         });
+         dialogRef.afterClosed().subscribe((result) => {
+           this.getStaffRoutineList();
+         });
+       }
+     };
+
+     if (event === 'Last Seen Location' && rowData['lastSeenLocationId'] != null) {
+       this.commonService.getLocationById(rowData['lastSeenLocationId']).subscribe(res => {
+         if (res && res.statusCode === 1 && res.results) {
+           rowData['floorId'] = res.results.parentId;
+         } else {
+           rowData['floorId'] = rowData['lastSeenLocationId'];
+         }
+         openDialog(rowData);
+       }, err => {
+         rowData['floorId'] = rowData['lastSeenLocationId'];
+         openDialog(rowData);
        });
-       dialogRef.afterClosed().subscribe((result) => {
-         this.getStaffRoutineList();
-       });
+     } else {
+       openDialog(rowData);
      }
    }
    getRoutineHistory(id, type) {

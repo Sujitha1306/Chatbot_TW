@@ -1,243 +1,105 @@
-<div #canvasContainer class="three-container">
+<div #canvasContainer class="three-container" [class.is-floor-plan]="isFloorPlanPage">
     <!-- Selectors Wrapper -->
-    <div class="selectors-wrapper" *ngIf="!compactUi">
-        <!-- Block Selector -->
-        <div class="block-selector">
-            <label for="blockSelect">Block</label>
-            <select id="blockSelect" (change)="onBlockChange($event)" [(ngModel)]="selectedBlockId">
-                <option *ngFor="let block of blocks" [value]="block.id">
-                    {{ block.name }}
-                </option>
-            </select>
-        </div>
-
-        <!-- Floor Selector -->
-        <div class="floor-selector">
-            <label for="floorSelect">Floor</label>
-            <select id="floorSelect" (change)="onFloorChange($event)" [(ngModel)]="selectedFloorId">
-                <option *ngFor="let floor of filteredFloors" [value]="floor.id">
-                    {{ floor.name }}
-                </option>
-            </select>
-        </div>
-
-        <!-- Config Button and Dropdown -->
-        <div class="config-container">
-            <button class="config-btn-inline" (click)="toggleConfigMenu()" [class.active]="isConfigOpen"
-                title="Configuration Settings">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                Config
+    <div class="selectors-wrapper" *ngIf="!compactUi && !routeDistance" [class.shifted]="isConfigOpen">
+        <!-- Floor Selector as Chips -->
+        <div class="mv-floor-chips-row" *ngIf="filteredFloors.length > 1">
+            <button
+                class="mv-floor-chip"
+                *ngFor="let floor of filteredFloors; let i = index"
+                [class.active]="floor.id === selectedFloorId"
+                [title]="floor.name"
+                (click)="onFloorSelect(floor)">
+                {{ i }}F
             </button>
+        </div>
 
-            <!-- Settings Dropdown -->
-            <div class="config-dropdown" *ngIf="isConfigOpen">
-                <div class="dropdown-header">
-                    <div class="dh-title">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9"/>
+        <div class="mv-floor-divider" *ngIf="blocks.length > 1 && filteredFloors.length > 1"></div>
+
+        <!-- Block selector — Floating Dropdown Pill, shown when multiple blocks -->
+        <ng-container *ngIf="blocks.length > 1">
+            <div class="mv-block-pill" [class.active]="isBlockDropdownOpen"
+                [title]="selectedBlock?.name || 'Block'"
+                (click)="isBlockDropdownOpen = !isBlockDropdownOpen; $event.stopPropagation()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <div class="mv-block-dropdown" *ngIf="isBlockDropdownOpen" (mousedown)="$event.stopPropagation()">
+                    <div class="mv-block-dropdown-header">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                         </svg>
-                        <h4>Map Settings</h4>
+                        <span>Select Block</span>
                     </div>
-                </div>
-                <div class="dropdown-content">
-
-                    <div class="cfg-section-label">Appearance</div>
-
-                    <div class="setting-item vertical-group">
-                        <span class="setting-label">Wall Color</span>
-                        <div class="color-picker-row">
-                            <input type="color" [(ngModel)]="tempWallColor" title="Choose Wall Color">
-                            <input type="text" [(ngModel)]="tempWallColor" class="hex-input" placeholder="#000000">
-                            <button class="apply-color-btn" (click)="applyWallColor()">OK</button>
-                        </div>
+                    <div class="mv-block-options-list">
+                        <button class="mv-block-option"
+                            *ngFor="let block of blocks"
+                            [class.active]="block.id === selectedBlockId"
+                            (click)="onBlockSelect(block); isBlockDropdownOpen = false; $event.stopPropagation()">
+                            <span class="mv-block-radio">
+                                <span class="mv-block-radio-dot" *ngIf="block.id === selectedBlockId"></span>
+                            </span>
+                            <span class="mv-block-option-name">{{ block.name }}</span>
+                        </button>
                     </div>
-                    <div class="setting-item vertical-group">
-                        <span class="setting-label">Foundation Color</span>
-                        <div class="color-picker-row">
-                            <input type="color" [(ngModel)]="tempFoundationColor" title="Choose Foundation Color">
-                            <input type="text" [(ngModel)]="tempFoundationColor" class="hex-input" placeholder="#000000">
-                            <button class="apply-color-btn" (click)="applyFoundationColor()">OK</button>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <span class="setting-label">Wall Width</span>
-                        <div class="color-picker-row" style="width: auto;">
-                            <input type="number" [(ngModel)]="tempWallWidth" class="hex-input" step="0.05" min="0.05" max="1.0" style="width: 64px;">
-                            <button class="apply-color-btn" (click)="applyWallWidth()">OK</button>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <span class="setting-label">Label Height</span>
-                        <div class="color-picker-row" style="width: auto;">
-                            <input type="number" [(ngModel)]="tempLabelHeight" class="hex-input" step="0.1" min="0.1" max="5.0" style="width: 64px;">
-                            <button class="apply-color-btn" (click)="applyLabelHeight()">OK</button>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <span class="setting-label">Label Size</span>
-                        <div class="color-picker-row" style="width: auto;">
-                            <input type="number" [(ngModel)]="tempLabelScale" class="hex-input" step="0.1" min="0.1" max="5.0" style="width: 64px;">
-                            <button class="apply-color-btn" (click)="applyLabelScale()">OK</button>
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <span class="setting-label">Map View</span>
-                        <select [(ngModel)]="mapViewMode" (change)="onMapViewModeChange()" class="view-select">
-                            <option value="landscape">Landscape</option>
-                            <option value="urban">Urban</option>
-                            <option value="default">Standard</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <span class="setting-label">Map Tiles</span>
-                        <select [(ngModel)]="mapConfig.mapTileType" (change)="onTileTypeChange()" class="view-select">
-                            <option value="google_road">Google Road</option>
-                            <option value="google_satellite">Google Satellite</option>
-                            <option value="google_hybrid">Google Hybrid</option>
-                            <option value="google_terrain">Google Terrain</option>
-                            <option value="osm">OpenStreetMap</option>
-                        </select>
-                    </div>
-
-                    <div class="cfg-section-label">Visibility</div>
-
-                    <div class="toggle-grid">
-                        <div class="tg-item">
-                            <span>Show Path</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="isGraphVisible" (change)="toggleGraph()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Wire Frame</span>
-                            <label class="toggle-switch"><input type="checkbox" (change)="toggleWireframe()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Persp. Lock</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="isPerspectiveLock" (change)="togglePerspectiveLock()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Eagle View</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="isEagleTopView" (change)="toggleEagleTopView()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Pan Only</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="isPanOnlyMode" (change)="togglePanOnlyMode()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Show Rooms</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showRooms" (change)="toggleRooms()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Labels</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showLabels" (change)="toggleLabels()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Icons</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showIcons" (change)="toggleIcons()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Readers</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showReaders" (change)="toggleReaders()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Live Tags</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showMqttMarkers" (change)="toggleMqttMarkers()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Levels</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showLevels" (change)="toggleShowLevels()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Room Select</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="canSelectRooms" (change)="toggleRoomSelection()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Floor Image</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showFloorImage" (change)="toggleFloorImage()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Foundation</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showFoundation" (change)="toggleFoundation()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Corr. Walls</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showCorridorWalls" (change)="toggleCorridorWalls()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Room Walls</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showRoomWalls" (change)="toggleRoomWalls()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Doors</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showDoors" (change)="toggleDoors()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Geo Boundary</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showGeoPolygon" (change)="toggleGeoPolygon()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Surroundings</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showSurroundings" (change)="toggleSurroundings()"><span class="slider"></span></label>
-                        </div>
-                        <div class="tg-item">
-                            <span>Fog</span>
-                            <label class="toggle-switch"><input type="checkbox" [checked]="showFog" (change)="toggleFog()"><span class="slider"></span></label>
-                        </div>
-                    </div>
-
-                    <div class="cfg-section-label">Floor Default View</div>
-
-                    <div class="floor-default-panel">
-                        <div class="fdp-floor-name">{{ selectedFloor?.name || 'No floor selected' }}</div>
-
-                        <div class="fdp-row">
-                            <span class="fdp-label">Current Zoom</span>
-                            <span class="fdp-value">{{ zoomValue }}%</span>
-                        </div>
-                        <div class="fdp-row">
-                            <span class="fdp-label">Current Rotation</span>
-                            <span class="fdp-value">{{ currentRotationDeg }}°</span>
-                        </div>
-
-                        <div class="fdp-saved" *ngIf="floorDefaultExists">
-                            <span class="fdp-saved-label">Saved:</span>
-                            <span class="fdp-saved-vals">Zoom {{ savedFloorDefaultZoom }}%&nbsp;/&nbsp;Rot {{ savedFloorDefaultTheta }}°</span>
-                        </div>
-                        <div class="fdp-saved fdp-no-default" *ngIf="!floorDefaultExists">
-                            No default saved for this floor
-                        </div>
-
-                        <div class="fdp-actions">
-                            <button class="fdp-btn fdp-save-btn"
-                                (click)="saveFloorDefaultView()"
-                                [disabled]="isFloorDefaultSaving || !selectedFloorId">
-                                <span *ngIf="!isFloorDefaultSaving">Save Current View</span>
-                                <span *ngIf="isFloorDefaultSaving">Saving…</span>
-                            </button>
-                            <button class="fdp-btn fdp-clear-btn"
-                                *ngIf="floorDefaultExists"
-                                (click)="clearFloorDefault()"
-                                [disabled]="isFloorDefaultSaving">
-                                Clear
-                            </button>
-                        </div>
-
-                        <div class="fdp-status fdp-status-success" *ngIf="floorDefaultSaveStatus === 'success'">
-                            ✓ Saved successfully
-                        </div>
-                        <div class="fdp-status fdp-status-error" *ngIf="floorDefaultSaveStatus === 'error'">
-                            ✕ Save failed
-                        </div>
-                    </div>
-
                 </div>
             </div>
-        </div>
+        </ng-container>
+    </div>
+
+    <!-- ── Route Floor selector (bottom-right, visible when route is active) ── -->
+    <div class="mv-route-floor-selector" *ngIf="!isLoading && routeDistance" [class.shifted]="isConfigOpen">
+      <!-- Same Floor Scenario -->
+      <ng-container *ngIf="!isMultiFloorScenario() && selectedStartLocation">
+        <button 
+          class="mv-route-floor-card active"
+          [title]="selectedStartLocation.floorName"
+          (click)="switchToFloor(selectedStartLocation.floorId)">
+          <span class="mv-rfc-icon-wrap same">
+            <svg class="mv-rfc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </span>
+          <span class="mv-rfc-text">{{ getFormattedFloorName(selectedStartLocation.floorName) }}</span>
+        </button>
+      </ng-container>
+
+      <!-- Multi-Floor Scenario -->
+      <ng-container *ngIf="isMultiFloorScenario() && selectedStartLocation && selectedDestinationLocation">
+        <!-- Start Floor Card -->
+        <button 
+          class="mv-route-floor-card" 
+          [class.active]="selectedFloor?.id === selectedStartLocation.floorId"
+          [title]="selectedStartLocation.floorName"
+          (click)="switchToFloor(selectedStartLocation.floorId)">
+          <span class="mv-rfc-icon-wrap start">
+            <svg class="mv-rfc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </span>
+          <span class="mv-rfc-text">{{ getFormattedFloorName(selectedStartLocation.floorName) }}</span>
+        </button>
+
+        <!-- Destination Floor Card -->
+        <button 
+          class="mv-route-floor-card" 
+          [class.active]="selectedFloor?.id === selectedDestinationLocation.floorId"
+          [title]="selectedDestinationLocation.floorName"
+          (click)="switchToFloor(selectedDestinationLocation.floorId)">
+          <span class="mv-rfc-icon-wrap dest">
+            <svg class="mv-rfc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </span>
+          <span class="mv-rfc-text">{{ getFormattedFloorName(selectedDestinationLocation.floorName) }}</span>
+        </button>
+      </ng-container>
     </div>
 
     <!-- Action Loading Indicator -->
@@ -250,6 +112,21 @@
     <div class="loading-overlay" *ngIf="isLoading">
         <div class="spinner"></div>
         <p>Loading Floor Plan...</p>
+    </div>
+
+    <!-- Quick Access Trigger Button -->
+    <div class="mv-qa-trigger-container" *ngIf="isQuickAccessConfigOn && !isQaOpen && !routeDistance">
+      <button class="mv-qa-topbar-btn" (click)="openQa()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f97316"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>Quick Access</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
     </div>
 
     <!-- No Data Overlay -->
@@ -329,7 +206,7 @@
                     </svg>
                 </div>
                 <div class="room-title">
-                    <h3>{{ selectedRoom.name }}</h3>
+                    <h3>{{ selectedRoom.displayName || selectedRoom.name }}</h3>
                     <span class="room-type">{{ selectedRoom.locationTypeName }}</span>
                 </div>
                 <button class="close-btn" (click)="deselectRoom()" title="Close">×</button>
@@ -351,142 +228,12 @@
                 </div>
             </div>
 
-            <div class="routing-section">
-                <div class="routing-card">
-                    <div class="route-inputs">
-                        <div class="route-input-group">
-                            <div class="route-autocomplete">
-                                <div class="input-prefix">
-                                    <div class="dot-icon start"></div>
-                                </div>
-                                <input class="route-input" type="text" [(ngModel)]="startSearchValue"
-                                    (ngModelChange)="onStartInputChanged()" (focus)="openStartDropdown()"
-                                    (blur)="closeStartDropdown()" placeholder="Start" autocomplete="off"
-                                    [class.selected-start]="hasValidStartSelection()" />
-                                <button class="route-clear-input-btn" type="button" *ngIf="startSearchValue"
-                                    (mousedown)="$event.preventDefault()" (click)="clearStartInput()" title="Clear">
-                                    ×
-                                </button>
-                                <div class="route-suggestions" *ngIf="isStartDropdownOpen">
-                                    <button class="route-suggestion" type="button"
-                                        *ngFor="let room of getStartSuggestions()"
-                                        (mousedown)="selectStartSuggestion(room)">
-                                        <i class="fas fa-location-dot suggestion-icon"></i>
-                                        <span class="route-suggestion-id">{{ getRoomDisplayLabel(room) }}</span>
-                                    </button>
-                                    <div class="route-no-results" *ngIf="getStartSuggestions().length === 0">
-                                        <i class="fas fa-search-minus no-results-icon"></i>
-                                        <span>No rooms found for "{{ startSearchValue }}"</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="route-icon-btn" type="button" (click)="confirmStartFromInput()"
-                                title="Set start" [class.disabled]="!hasValidStartSelection()"
-                                [disabled]="!hasValidStartSelection()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 22V4" />
-                                    <path d="M4 4h14l-2 5 2 5H4" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <div class="route-input-group">
-                            <div class="route-autocomplete">
-                                <div class="input-prefix">
-                                    <i class="fas fa-location-dot pin-icon text-rose"></i>
-                                </div>
-                                <input class="route-input" type="text" [(ngModel)]="destinationSearchValue"
-                                    (ngModelChange)="onDestinationInputChanged()" (focus)="openDestinationDropdown()"
-                                    (blur)="closeDestinationDropdown()" placeholder="Destination" autocomplete="off"
-                                    [class.selected-destination]="hasValidDestinationSelection()" />
-                                <button class="route-clear-input-btn" type="button" *ngIf="destinationSearchValue"
-                                    (mousedown)="$event.preventDefault()" (click)="clearDestinationInput()"
-                                    title="Clear">
-                                    ×
-                                </button>
-                                <div class="route-suggestions" *ngIf="isDestinationDropdownOpen">
-                                    <button class="route-suggestion" type="button"
-                                        *ngFor="let room of getDestinationSuggestions()"
-                                        (mousedown)="selectDestinationSuggestion(room)">
-                                        <i class="fas fa-location-dot suggestion-icon"></i>
-                                        <span class="route-suggestion-id">{{ getRoomDisplayLabel(room) }}</span>
-                                    </button>
-                                    <div class="route-no-results" *ngIf="getDestinationSuggestions().length === 0">
-                                        <i class="fas fa-search-minus no-results-icon"></i>
-                                        <span>No rooms found for "{{ destinationSearchValue }}"</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="route-icon-btn" type="button" (click)="confirmDestinationFromInput()"
-                                title="Set destination" [class.disabled]="!hasValidDestinationSelection()"
-                                [disabled]="!hasValidDestinationSelection()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0Z" />
-                                    <path d="M12 10a3 3 0 1 0 0.001 0Z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="route-swap-container">
-                        <button class="route-swap-btn" type="button" (click)="swapStartAndDestination()" title="Swap">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M8 7l-3 3" />
-                                <path d="M8 7l3 3" />
-                                <path d="M8 21V7" />
-                                <path d="M16 17l-3-3" />
-                                <path d="M16 17l3-3" />
-                                <path d="M16 3v14" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="route-stats" *ngIf="startRoom && endRoom && routeDistance && routeTime">
-                <div class="stat-item">
-                    <i class="fas fa-ruler-combined"></i>
-                    <div class="stat-info">
-                        <span class="stat-label">Distance</span>
-                        <span class="stat-value">{{ routeDistance }}</span>
-                    </div>
-                </div>
-                <div class="stat-item">
-                    <i class="fas fa-clock"></i>
-                    <div class="stat-info">
-                        <span class="stat-label">Est. Time</span>
-                        <span class="stat-value">{{ routeTime }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="journey-action" *ngIf="startRoom && endRoom">
-                <button class="journey-btn" (click)="startJourney()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 8v8" />
-                        <path d="m8 12 4 4 4-4" />
-                    </svg>
-                    Start
-                </button>
-                <button class="control-btn route-clear-btn" (click)="clearRoute()" title="Clear Navigation">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 12H5" />
-                        <path d="M12 19l-7-7 7-7" />
-                    </svg>
-                    Clear Route
-                </button>
-            </div>
-
             <p class="deselect-hint">Click the room again or press × to deselect</p>
         </div>
     </div>
 
     <!-- Navigation Controls (Bottom Right) -->
-    <div class="navigation-controls" *ngIf="!compactUi">
+    <div class="navigation-controls" *ngIf="!compactUi && isRotateMode" [class.shifted]="isConfigOpen">
         <div class="rotation-control">
             <button class="nav-btn compass-btn" (mousedown)="onCompassMouseDown($event)" title="Drag to Rotate">
                 <div class="compass-icon">
@@ -505,30 +252,59 @@
                 </div>
             </button>
         </div>
-        <div class="zoom-controls">
-            <div class="zoom-value-display">{{ zoomValue }}%</div>
-            <button class="nav-btn zoom-btn" (click)="resetCamera()" title="Reset Camera View" *ngIf="!compactUi">
-                <mat-icon>center_focus_strong</mat-icon>
-            </button>    
-            <button class="nav-btn zoom-btn" (click)="zoomIn()" title="Zoom In">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-            </button>
-            <button class="nav-btn zoom-btn" (click)="zoomOut()" title="Zoom Out">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-            </button>
-        </div>
     </div>
 
-    <!-- Instructions -->
-    <div class="instructions" *ngIf="!compactUi">
-        <p><strong>Hospital Floor Plan:</strong> Drag Building to Rotate | Drag Background (or Shift+Drag) to Pan |
-            Scroll to Zoom | Click Rooms for Details</p>
+    <!-- Right Controls (Top Right) -->
+    <div class="map-right-controls" *ngIf="!compactUi" [class.shifted]="isConfigOpen">
+        <!-- Config Button -->
+        <button class="map-ctrl-btn settings-toggle-btn" (click)="toggleConfigMenu()" [class.active]="isConfigOpen"
+            title="Configuration Settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+        </button>
+
+        <!-- Refresh Button -->
+        <button class="map-ctrl-btn refresh-btn" (click)="refreshMapView()" title="Refresh Map View">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 4v6h-6"></path>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+        </button>
+
+        <button class="map-ctrl-btn" (click)="zoomIn()" title="Zoom In">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="3" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+        </button>
+        <button class="map-ctrl-btn" (click)="zoomOut()" title="Zoom Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="3" stroke-linecap="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+        </button>
+        <div class="map-zoom-value">{{ zoomValue }}%</div>
+        <div class="map-ctrl-divider"></div>
+        <button class="map-ctrl-btn" (click)="resetCamera()" title="Reset View">
+            <mat-icon>center_focus_strong</mat-icon>
+        </button>
+        <button class="map-ctrl-btn" *ngIf="viewMode !== '2d'" [class.active]="isRotateMode" (click)="toggleRotateMode()"
+            [title]="isRotateMode ? 'Rotate ON — click to disable' : 'Enable 3D Rotate'">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="round">
+                <path d="M22 10 A10 4 0 1 0 14 13.9"/>
+                <polyline points="10.5 12 14 13.9 11.5 16.8" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+        </button>
     </div>
+
+
 
     <!-- Reader Information Tooltip -->
     <div class="reader-tooltip" *ngIf="activeReader" [style.left.px]="readerDialogPos.x"
@@ -539,4 +315,612 @@
         </div>
         <div class="tooltip-arrow"></div>
     </div>
+
+    <!-- Settings Sidebar Panel -->
+    <div class="config-dropdown" *ngIf="isConfigOpen">
+        <div class="dropdown-header">
+            <div class="dh-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9"/>
+                </svg>
+                <h4>Map Settings</h4>
+            </div>
+            <button class="panel-close-btn" (click)="toggleConfigMenu()" title="Close Settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="dropdown-content">
+
+            <div class="cfg-section-label">Floor Default View</div>
+
+            <div class="floor-default-panel">
+                <div class="fdp-floor-name">{{ selectedFloor?.name || 'No floor selected' }}</div>
+
+                <div class="fdp-row">
+                    <span class="fdp-label">Zoom / Rotation</span>
+                    <span class="fdp-value">{{ zoomValue }}% / {{ currentRotationDeg }}°</span>
+                </div>
+
+                <div class="fdp-saved" *ngIf="floorDefaultExists">
+                    <span class="fdp-saved-label">Saved:</span>
+                    <span class="fdp-saved-vals">Zoom {{ savedFloorDefaultZoom }}%&nbsp;/&nbsp;Rot {{ savedFloorDefaultTheta }}°</span>
+                </div>
+                <div class="fdp-saved fdp-no-default" *ngIf="!floorDefaultExists">
+                    No default saved for this floor
+                </div>
+
+                <div class="fdp-actions">
+                    <button class="fdp-btn fdp-save-btn"
+                        (click)="saveFloorDefaultView()"
+                        [disabled]="isFloorDefaultSaving || !selectedFloorId">
+                        <span *ngIf="!isFloorDefaultSaving">Save Current View</span>
+                        <span *ngIf="isFloorDefaultSaving">Saving…</span>
+                    </button>
+                    <button class="fdp-btn fdp-clear-btn"
+                        *ngIf="floorDefaultExists"
+                        (click)="clearFloorDefault()"
+                        [disabled]="isFloorDefaultSaving">
+                        Clear
+                    </button>
+                </div>
+
+                <div class="fdp-status fdp-status-success" *ngIf="floorDefaultSaveStatus === 'success'">
+                    ✓ Saved successfully
+                </div>
+                <div class="fdp-status fdp-status-error" *ngIf="floorDefaultSaveStatus === 'error'">
+                    ✕ Save failed
+                </div>
+            </div>
+
+            <div class="cfg-section-label">Appearance</div>
+
+            <div class="setting-item columns-row">
+                <div class="column-setting">
+                    <span class="setting-label">Map View</span>
+                    <select [(ngModel)]="mapViewMode" (change)="onMapViewModeChange()" class="view-select">
+                        <!-- <option value="landscape">Landscape</option> -->
+                        <option value="urban">Urban</option>
+                        <option value="default">Standard</option>
+                    </select>
+                </div>
+                <div class="column-setting" [style.visibility]="mapViewMode === 'urban' ? 'visible' : 'hidden'">
+                    <span class="setting-label">Map Tiles</span>
+                    <select [(ngModel)]="mapConfig.mapTileType" (change)="onTileTypeChange()" class="view-select">
+                        <!-- <option value="google_road">Google Road</option>
+                        <option value="google_satellite">Google Satellite</option>
+                        <option value="google_hybrid">Google Hybrid</option>
+                        <option value="google_terrain">Google Terrain</option> -->
+                        <option value="osm">OpenStreetMap</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="cfg-section-label">Visibility</div>
+
+            <div class="toggle-grid">
+                <div class="tg-item">
+                    <span>Show Path</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="isGraphVisible" (change)="toggleGraph()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Wire Frame</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="isWireframe" (change)="toggleWireframe()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Persp. Lock</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="isPerspectiveLock" (change)="togglePerspectiveLock()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Eagle View</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="isEagleTopView" (change)="toggleEagleTopView()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Pan Only</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="isPanOnlyMode" (change)="togglePanOnlyMode()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Show Rooms</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showRooms" (change)="toggleRooms()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Labels</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showLabels" (change)="toggleLabels()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Icons</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showIcons" (change)="toggleIcons()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Readers</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showReaders" (change)="toggleReaders()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Live Tags</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showMqttMarkers" (change)="toggleMqttMarkers()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Levels</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showLevels" (change)="toggleShowLevels()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Room Select</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="canSelectRooms" (change)="toggleRoomSelection()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Floor Image</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showFloorImage" (change)="toggleFloorImage()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Foundation</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showFoundation" (change)="toggleFoundation()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Corr. Walls</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showCorridorWalls" (change)="toggleCorridorWalls()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Walls</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showRoomWalls" (change)="toggleRoomWalls()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Doors</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showDoors" (change)="toggleDoors()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Geo Boundary</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showGeoPolygon" (change)="toggleGeoPolygon()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Surroundings</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showSurroundings" (change)="toggleSurroundings()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Fog</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="showFog" (change)="toggleFog()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item">
+                    <span>Quick Access</span>
+                    <label class="toggle-switch"><input type="checkbox" [checked]="isQuickAccessConfigOn" (change)="toggleQuickAccessConfig()"><span class="slider"></span></label>
+                </div>
+                <div class="tg-item view-toggle-row">
+                    <span>View</span>
+                    <div class="mv-settings-chips">
+                        <button class="mv-settings-chip" [class.active]="viewMode === '3d'" (click)="onViewModeChange('3d')">3D</button>
+                        <button class="mv-settings-chip" [class.active]="viewMode === '2d'" (click)="onViewModeChange('2d')">2D</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cfg-section-label">Styling</div>
+
+            <div class="setting-item columns-row colors-compact-row">
+                <div class="column-setting inline-color">
+                    <span class="setting-label">Wall Color</span>
+                    <div class="color-picker-row-compact">
+                        <input type="color" [(ngModel)]="tempWallColor" (change)="applyWallColor()" title="Choose Wall Color">
+                    </div>
+                </div>
+                <div class="column-setting inline-color">
+                    <span class="setting-label">Foundation Color</span>
+                    <div class="color-picker-row-compact">
+                        <input type="color" [(ngModel)]="tempFoundationColor" (change)="applyFoundationColor()" title="Choose Foundation Color">
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item columns-row numeric-row">
+                <div class="column-setting">
+                    <span class="setting-label">Wall Width</span>
+                    <div class="color-picker-row">
+                        <input type="number" [(ngModel)]="tempWallWidth" class="hex-input" step="0.05" min="0.05" max="1.0">
+                        <button class="apply-color-btn" (click)="applyWallWidth()">OK</button>
+                    </div>
+                </div>
+                <div class="column-setting">
+                    <span class="setting-label">Wall Height</span>
+                    <div class="color-picker-row">
+                        <input type="number" [(ngModel)]="tempWallHeight" class="hex-input" step="0.05" min="0.05" max="5.0">
+                        <button class="apply-color-btn" (click)="applyWallHeight()">OK</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item columns-row numeric-row">
+                <div class="column-setting">
+                    <span class="setting-label">Label Height</span>
+                    <div class="color-picker-row">
+                        <input type="number" [(ngModel)]="tempLabelHeight" class="hex-input" step="0.1" min="0.1" max="5.0">
+                        <button class="apply-color-btn" (click)="applyLabelHeight()">OK</button>
+                    </div>
+                </div>
+                <div class="column-setting">
+                    <span class="setting-label">Label Size</span>
+                    <div class="color-picker-row">
+                        <input type="number" [(ngModel)]="tempLabelScale" class="hex-input" step="0.1" min="0.1" max="5.0">
+                        <button class="apply-color-btn" (click)="applyLabelScale()">OK</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Quick Access Panel Overlay -->
+    <div class="mv-qa-wrap" *ngIf="isQuickAccessConfigOn && isQaOpen">
+      <!-- Card 1: Category list -->
+      <div class="mv-qa-panel">
+        <div class="mv-qa-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f97316"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span class="mv-qa-title">Quick Access</span>
+          <button class="mv-qa-close" (click)="closeQa()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mv-qa-list">
+          <button
+            class="mv-qa-cat-item"
+            [class.active]="selectedQaCategory?.catId === cat.catId"
+            *ngFor="let cat of getFilteredQaCategories()"
+            (click)="onQaCategoryClick(cat, $event)">
+            <div class="mv-qa-cat-icon" [style.background]="cat.color">
+              <span class="material-icons mv-qa-mat-icon">{{ cat.icon }}</span>
+            </div>
+            <div class="mv-qa-cat-info">
+              <span class="mv-qa-cat-name">{{ cat.name }}</span>
+              <span class="mv-qa-cat-sub" *ngIf="getQaCategoryCount(cat) !== 1">
+                {{ getQaCategoryCount(cat) }} locations
+              </span>
+              <span class="mv-qa-cat-sub mv-qa-cat-sub--loc" *ngIf="getQaCategoryCount(cat) === 1">
+                {{ getOptionDisplayName(getQaSingleLocation(cat)) }}
+              </span>
+            </div>
+            <svg class="mv-qa-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <div class="mv-qa-empty" *ngIf="qaCategories.length === 0">
+            No navigable rooms on this floor
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Location list -->
+      <div class="mv-qa-panel mv-qa-loc-list-panel" *ngIf="selectedQaCategory"
+        [style.margin-top]="qaLocCardTop + 'px'"
+        [style.max-height]="'calc(480px - ' + qaLocCardTop + 'px)'">
+        <div class="mv-qa-header">
+          <div class="mv-qa-cat-icon sm" [style.background]="selectedQaCategory.color">
+            <span class="material-icons mv-qa-mat-icon sm">{{ selectedQaCategory.icon }}</span>
+          </div>
+          <div class="mv-qa-cat-info">
+            <span class="mv-qa-cat-name" [style.color]="selectedQaCategory.color">{{ selectedQaCategory.name }}</span>
+            <span class="mv-qa-cat-sub">{{ getQaLocations().length }} Location{{ getQaLocations().length !== 1 ? 's' : '' }}</span>
+          </div>
+          <button class="mv-qa-close" (click)="selectedQaCategory = null">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mv-qa-list">
+          <button
+            class="mv-qa-loc-item"
+            *ngFor="let option of getQaLocations()"
+            (click)="selectFromQa(option)">
+            <svg class="mv-qa-pin" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <div class="mv-qa-loc-info">
+              <span class="mv-qa-loc-name">{{ getOptionDisplayName(option) }}</span>
+              <span class="mv-qa-loc-floor">{{ option.floorName }}</span>
+            </div>
+          </button>
+          <div class="mv-qa-empty" *ngIf="getQaLocations().length === 0">
+            No locations in this category
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Destination Search Box -->
+    <div class="mv-search-wrap" *ngIf="isQuickAccessConfigOn && selectedStartLocation && !routeDistance">
+      <!-- Selected destination chip -->
+      <div class="mv-search-box mv-dest-selected" *ngIf="endRoom">
+        <svg class="mv-dest-pin" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+        <span class="mv-dest-name">{{ destinationSearchValue || (endRoom?.data?.name ?? endRoom?.name) }}</span>
+        <button class="mv-search-clear" (click)="clearDestination()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search Input box -->
+      <div class="mv-search-box" [class.focused]="isDestDropdownOpen" *ngIf="!endRoom">
+        <svg class="mv-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          class="mv-search-input"
+          type="text"
+          placeholder="Search destination…"
+          [(ngModel)]="destinationSearchValue"
+          (input)="onDestinationInput()"
+          (focus)="openDestDropdown()"
+          autocomplete="off"
+        />
+        <button class="mv-search-clear" *ngIf="destinationSearchValue" (click)="clearDestination()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Suggestions dropdown -->
+      <div class="mv-suggestions" *ngIf="isDestDropdownOpen && !endRoom" (mousedown)="$event.preventDefault()">
+        <div
+          class="mv-suggestion-item"
+          *ngFor="let option of getDestSuggestions()"
+          (click)="selectDestination(option)">
+          <span class="mv-sugg-pin">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </span>
+          <span class="mv-sugg-name">{{ getOptionDisplayName(option) }}</span>
+          <span class="mv-sugg-type">{{ option.typeName }} - {{ option.floorName }}</span>
+        </div>
+        <div class="mv-sugg-empty" *ngIf="isNavSearchLoading && getDestSuggestions().length === 0">
+          Loading rooms...
+        </div>
+        <div class="mv-sugg-empty" *ngIf="!isNavSearchLoading && getDestSuggestions().length === 0">
+          No matching rooms found
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps Sheet Turn-by-turn Overlay -->
+    <div class="mv-steps-sheet" *ngIf="isQuickAccessConfigOn && isStepsOpen && pathSteps.length > 0">
+      <div class="mv-steps-sheet-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <span>Turn-by-turn ({{ pathSteps.length - 2 }} steps)</span>
+        <button class="mv-steps-sheet-close" (click)="isStepsOpen = false">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="mv-steps-list">
+        <div class="mv-step" *ngFor="let step of pathSteps"
+          [class.first]="step.icon === 'start'"
+          [class.last]="step.icon === 'arrive'">
+          <div class="mv-step-icon" [class]="'mv-step-icon--' + step.icon">
+            <svg *ngIf="step.icon === 'start'" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2a10 10 0 0 1 10 10c0 5.52-10 20-10 20S2 17.52 2 12A10 10 0 0 1 12 2z"/>
+            </svg>
+            <svg *ngIf="step.icon === 'straight'" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+            </svg>
+            <svg *ngIf="step.icon === 'turn-left'" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <svg *ngIf="step.icon === 'turn-right'" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            <svg *ngIf="step.icon === 'arrive'" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="mv-step-body">
+            <span class="mv-step-instruction">{{ step.instruction }}</span>
+            <span class="mv-step-dist" *ngIf="step.distance">{{ step.distance }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Route Bar -->
+    <div class="mv-route-bar" *ngIf="isQuickAccessConfigOn && selectedStartLocation && selectedDestinationLocation">
+      <div class="mv-route-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+      </div>
+      <div class="mv-route-info">
+        <div class="mv-route-title">{{ sourceLabel }} → {{ destinationSearchValue || (endRoom?.data?.name ?? endRoom?.name) }}</div>
+        <div class="mv-route-sub" *ngIf="routeDistance">{{ routeDistance }} • ~{{ routeTime }} walk</div>
+        <div class="mv-route-sub" *ngIf="!routeDistance">Tap Direction to navigate</div>
+      </div>
+      <div class="mv-route-actions">
+        <!-- Direction button -->
+        <button class="mv-direction-btn" *ngIf="!routeDistance" (click)="onDirectionClick()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+          Direction
+        </button>
+        <!-- Steps button -->
+        <button class="mv-steps-btn" [class.active]="isStepsOpen" *ngIf="routeDistance && pathSteps.length > 0"
+          (click)="isStepsOpen = !isStepsOpen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Steps
+        </button>
+        <!-- Start/Walk button -->
+        <button class="mv-start-btn" *ngIf="routeDistance && pathAnimComplete" (click)="startJourney()" title="Start journey">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+        <button class="mv-route-clear-btn" (click)="clearNavigation()" title="Clear route">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── You Are Here callout (3D-tracked, follows source room on screen) ─── -->
+    <div class="mv-you-are-here" #youAreHereEl
+      *ngIf="isQuickAccessConfigOn && startRoom && selectedStartLocation && selectedStartLocation.floorId === selectedFloor?.id && !routeDistance"
+      style="visibility:hidden">
+      <div class="mv-yah-pin">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+      </div>
+      <div class="mv-yah-info">
+        <span class="mv-yah-label">You are here</span>
+        <span class="mv-yah-name">{{ sourceLabel }}</span>
+      </div>
+    </div>
+
+    <!-- Destination Direction callout (3D-tracked, shown when both rooms set, no route yet) -->
+    <div class="mv-dest-callout" #destCalloutEl
+      *ngIf="isQuickAccessConfigOn && endRoom && selectedDestinationLocation && selectedDestinationLocation.floorId === selectedFloor?.id && !routeDistance"
+      style="visibility:hidden">
+      <div class="mv-dest-callout-body">
+        <div class="mv-dest-callout-name">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#ef4444" stroke="none">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          </svg>
+          {{ destinationSearchValue }}
+        </div>
+        <button class="mv-dest-callout-btn" (click)="onDirectionClick()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+          Direction
+        </button>
+      </div>
+      <div class="mv-dest-callout-tail"></div>
+    </div>
+
+    <!-- ── Nav Markers — visible only when direction/route is active ── -->
+    <div class="mv-nav-marker mv-nav-marker--source" 
+         [class.mv-nav-marker--transition-mode]="isMultiFloorScenario() && selectedFloor?.id !== selectedStartLocation?.floorId"
+         #sourceMarkerEl
+         *ngIf="!isLoading && activePathStartNode && !!routeDistance" style="visibility:hidden">
+      <!-- Standard blue pin (only if on start floor or not multi-floor) -->
+      <ng-container *ngIf="!isMultiFloorScenario() || selectedFloor?.id === selectedStartLocation?.floorId">
+        <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
+                fill="#1d4ed8" stroke="#1e40af" stroke-width="0.8"/>
+          <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+        </svg>
+      </ng-container>
+      <!-- Transition ENTER badge (if on destination floor in multi-floor) -->
+      <ng-container *ngIf="isMultiFloorScenario() && selectedFloor?.id !== selectedStartLocation?.floorId">
+        <div class="mv-floor-switch-card" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+          <div class="mv-card-header">
+            <svg class="mv-card-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <span class="mv-card-title">{{ getFormattedFloorName(selectedStartLocation?.floorName) }}</span>
+          </div>
+          <button class="mv-card-button" (click)="switchToFloor(selectedStartLocation?.floorId)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <span>Switch</span>
+          </button>
+        </div>
+        <div class="mv-nav-marker-transition mv-transition-enter">
+          <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 8 2 L 18 2 L 18 22 L 8 22" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 8 2 L 1 4 L 1 20 L 8 22 Z" fill="#22c55e"/>
+            <line x1="3" y1="12" x2="5" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 10 7 L 15 12 L 10 17 L 10 14 L 5 14 L 5 10 L 10 10 Z" fill="#22c55e"/>
+          </svg>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="mv-nav-marker mv-nav-marker--dest" 
+         [class.mv-nav-marker--transition-mode]="isMultiFloorScenario() && selectedFloor?.id !== selectedDestinationLocation?.floorId"
+         #destMarkerEl
+         *ngIf="!isLoading && activePathEndNode && pathAnimComplete" style="visibility:hidden">
+      <!-- Standard red pin (only if on destination floor or not multi-floor) -->
+      <ng-container *ngIf="!isMultiFloorScenario() || selectedFloor?.id === selectedDestinationLocation?.floorId">
+        <svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 1C6.82 1 1 6.82 1 14c0 9.33 13 26 13 26s13-16.67 13-26C27 6.82 21.18 1 14 1Z"
+                fill="#ef4444" stroke="#c53030" stroke-width="0.8"/>
+          <circle cx="14" cy="14" r="6" fill="#ffffff"/>
+        </svg>
+      </ng-container>
+      <!-- Transition EXIT badge (if on start floor in multi-floor) -->
+      <ng-container *ngIf="isMultiFloorScenario() && selectedFloor?.id !== selectedDestinationLocation?.floorId">
+        <div class="mv-floor-switch-card" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+          <div class="mv-card-header">
+            <svg class="mv-card-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <span class="mv-card-title">{{ getFormattedFloorName(selectedDestinationLocation?.floorName) }}</span>
+          </div>
+          <button class="mv-card-button" (click)="switchToFloor(selectedDestinationLocation?.floorId)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 1 21 5 17 9"></polyline>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+              <polyline points="7 23 3 19 7 15"></polyline>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <span>Switch</span>
+          </button>
+        </div>
+        <div class="mv-nav-marker-transition mv-transition-exit">
+          <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 16 2 L 6 2 L 6 22 L 16 22" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 16 2 L 23 4 L 23 20 L 16 22 Z" fill="#ef4444"/>
+            <line x1="21" y1="12" x2="19" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 14 7 L 9 12 L 14 17 L 14 14 L 19 14 L 19 10 L 14 10 Z" fill="#ef4444"/>
+          </svg>
+        </div>
+      </ng-container>
+    </div>
+
 </div>

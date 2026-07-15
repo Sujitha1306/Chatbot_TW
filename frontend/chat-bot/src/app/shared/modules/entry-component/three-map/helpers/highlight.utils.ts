@@ -17,24 +17,38 @@ import {
  * Apply visual highlight to a room (selected or hovered)
  */
 export function applyRoomHighlight(roomMesh: RoomMesh, selected: boolean, hover: boolean, isStart: boolean = false, isEnd: boolean = false): void {
-    const floorMaterial = roomMesh.floor.material as THREE.MeshStandardMaterial;
-    floorMaterial.color.setHex(roomMesh.originalColor);
+    const floorMaterial = roomMesh.floor.material as any;
 
-    if (isStart) {
-        floorMaterial.emissive.setHex(HIGHLIGHT_START_COLOR);
-        floorMaterial.emissiveIntensity = HIGHLIGHT_SELECTED_INTENSITY;
-    } else if (isEnd) {
-        floorMaterial.emissive.setHex(HIGHLIGHT_DESTINATION_COLOR);
-        floorMaterial.emissiveIntensity = HIGHLIGHT_SELECTED_INTENSITY;
-    } else if (selected) {
-        floorMaterial.emissive.setHex(HIGHLIGHT_SELECTED_COLOR);
-        floorMaterial.emissiveIntensity = HIGHLIGHT_SELECTED_INTENSITY;
-    } else if (hover) {
-        floorMaterial.emissive.setHex(HIGHLIGHT_HOVER_COLOR);
-        floorMaterial.emissiveIntensity = HIGHLIGHT_HOVER_INTENSITY;
+    if (floorMaterial.emissive) {
+        floorMaterial.color.setHex(roomMesh.originalColor);
+        if (isStart) {
+            floorMaterial.emissive.setHex(HIGHLIGHT_START_COLOR);
+            floorMaterial.emissiveIntensity = HIGHLIGHT_SELECTED_INTENSITY;
+        } else if (isEnd) {
+            floorMaterial.emissive.setHex(HIGHLIGHT_DESTINATION_COLOR);
+            floorMaterial.emissiveIntensity = HIGHLIGHT_SELECTED_INTENSITY;
+        } else if (selected) {
+            floorMaterial.emissive.setHex(HIGHLIGHT_SELECTED_COLOR);
+            floorMaterial.emissiveIntensity = HIGHLIGHT_SELECTED_INTENSITY;
+        } else if (hover) {
+            floorMaterial.emissive.setHex(HIGHLIGHT_HOVER_COLOR);
+            floorMaterial.emissiveIntensity = HIGHLIGHT_HOVER_INTENSITY;
+        } else {
+            floorMaterial.emissive.setHex(0x000000);
+            floorMaterial.emissiveIntensity = 0;
+        }
     } else {
-        floorMaterial.emissive.setHex(0x000000);
-        floorMaterial.emissiveIntensity = 0;
+        if (isStart) {
+            floorMaterial.color.setHex(HIGHLIGHT_START_COLOR);
+        } else if (isEnd) {
+            floorMaterial.color.setHex(HIGHLIGHT_DESTINATION_COLOR);
+        } else if (selected) {
+            floorMaterial.color.setHex(HIGHLIGHT_SELECTED_COLOR);
+        } else if (hover) {
+            floorMaterial.color.setHex(HIGHLIGHT_HOVER_COLOR);
+        } else {
+            floorMaterial.color.setHex(roomMesh.originalColor);
+        }
     }
 
     roomMesh.walls.forEach(wall => {

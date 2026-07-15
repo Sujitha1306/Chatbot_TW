@@ -161,6 +161,12 @@ export class TooltipDirective implements OnDestroy {
         left = hostPos.left + (hostPos.width - tooltipPos.width) / 4;
       }
 
+      if (left < 4) {
+        left = 4;
+      } else if (left + tooltipPos.width > window.innerWidth - 4) {
+        left = window.innerWidth - tooltipPos.width - 4;
+      }
+
       this.renderer.setStyle(this.tooltip, 'top', `${top + scrollPos}px`);
       this.renderer.setStyle(this.tooltip, 'left', `${left}px`);
     }

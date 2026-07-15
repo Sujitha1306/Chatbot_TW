@@ -122,9 +122,13 @@ export class ManageControlComponent implements OnInit, OnChanges {
           this.nowFacility = (customer.length ? customer[0].name + ', ' : '') + (region.length ? region[0].name + ', ' : '') + (facility.length ? facility[0].name : '');
           const facilityText = this.nowFacility;
           const parts = facilityText.split(", "); 
-          if (parts.length >= 2) {
-            const formattedText = `<span style="font-size: 13px;font-weight: 600;font-family: 'Open Sans', sans-serif; color: #000000;">${parts[0]}</span><br>
-            <span style="font-size: 10px;font-weight: 100;font-family: 'Open Sans', sans-serif; color: #bababa;">${parts.slice(1,).join(", ")}</span>`;
+          if (parts.length >= 3) {
+            const formattedText = `<span style="font-size: 13px;font-weight: 600;font-family: 'Open Sans', sans-serif; color: #000000;">${parts[2]}</span><br>
+            <span style="font-size: 10px;font-weight: 100;font-family: 'Open Sans', sans-serif; color: #bababa;">${parts[1]}, ${parts[0]}</span>`;
+            document.getElementById("output")!.innerHTML = formattedText;
+          } else if (parts.length === 2) {
+            const formattedText = `<span style="font-size: 13px;font-weight: 600;font-family: 'Open Sans', sans-serif; color: #000000;">${parts[1]}</span><br>
+            <span style="font-size: 10px;font-weight: 100;font-family: 'Open Sans', sans-serif; color: #bababa;">${parts[0]}</span>`;
             document.getElementById("output")!.innerHTML = formattedText;
           }
           this.nowCustomer = (customer.length ? customer[0].name : '');
@@ -247,9 +251,13 @@ export class ManageControlComponent implements OnInit, OnChanges {
     this.nowCustomer = (customer.length ? customer[0].name : '')
     const facilityText = this.nowFacility;
     const parts = facilityText.split(", "); 
-    if (parts.length >= 2) {
-      const formattedText = `<strong style="font-size: 13px;font-weight: 600;font-family: 'Open Sans', sans-serif; color: #000000;">${parts[0]}</strong><br>
-      <span style="font-size: 10px;font-weight: 100;font-family: 'Open Sans', sans-serif; color: #bababa;">${parts.slice(1,).join(", ")}</span>`;
+    if (parts.length >= 3) {
+      const formattedText = `<strong style="font-size: 13px;font-weight: 600;font-family: 'Open Sans', sans-serif; color: #000000;">${parts[2]}</strong><br>
+      <span style="font-size: 10px;font-weight: 100;font-family: 'Open Sans', sans-serif; color: #bababa;">${parts[1]}, ${parts[0]}</span>`;
+      document.getElementById("output")!.innerHTML = formattedText;
+    } else if (parts.length === 2) {
+      const formattedText = `<strong style="font-size: 13px;font-weight: 600;font-family: 'Open Sans', sans-serif; color: #000000;">${parts[1]}</strong><br>
+      <span style="font-size: 10px;font-weight: 100;font-family: 'Open Sans', sans-serif; color: #bababa;">${parts[0]}</span>`;
       document.getElementById("output")!.innerHTML = formattedText;
     }
     localStorage.setItem(btoa('facilityId'), this.controlForm.value.facility);
@@ -272,6 +280,7 @@ export class ManageControlComponent implements OnInit, OnChanges {
     this.preexternalfacilityId = localStorage.getItem(btoa('externalfacilityId'));
     this.PushNotificationsService.triggerNotificationRefresh();
     this.colorThemeService.loadTheme();
+    this.commonService.getFacilityConfig();
   }
   }
   fixClick() {

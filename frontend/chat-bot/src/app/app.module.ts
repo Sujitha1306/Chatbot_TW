@@ -69,6 +69,7 @@ import {
   RuleResolver,
   HealthCheckResolver,
   BrokerResolver,
+  PoeInjectorResolver,
   ServerResolver,
   ConfigResolver,
   PermissionGroupResolver
@@ -102,7 +103,8 @@ import {
   ItemMasterResolver,
   InventoryResolver,
   IntendResolver,
-  LocationManagementNewResolver
+  LocationManagementNewResolver,
+  FacilityManagementResolver
 } from "./shared/services/workflow.resolver";
 import { SharedPipesModule } from "./shared/pipes/shared-pipes.module";
 import { CookieService } from "ngx-cookie-service";
@@ -175,7 +177,7 @@ export function HttpLoaderFactory(http:HttpClient){
     ShareModule
   ],
   providers: [
-    // {provide: ErrorHandler, useClass: GlobalErrorHandler},
+     {provide: ErrorHandler, useClass: GlobalErrorHandler},
     {
       provide: HTTP_INTERCEPTORS,
       useClass: Http_Interceptor,
@@ -207,6 +209,7 @@ export function HttpLoaderFactory(http:HttpClient){
     GatewayResolver,
     GatewayManagementResolver,
     BrokerResolver,
+    PoeInjectorResolver,
     ServerResolver,
     ReaderResolver,
     DeviceResolver,
@@ -263,7 +266,8 @@ export function HttpLoaderFactory(http:HttpClient){
     SupplierResolver,
     InventoryResolver,
     IntendResolver,
-    LocationManagementNewResolver
+    LocationManagementNewResolver,
+    FacilityManagementResolver
   ],
   bootstrap: [AppComponent],
 })

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChatService } from '../../services/chat.service';
 import { FacilityService } from '../../services/facility.service';
@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./chat-thread.component.scss']
 })
 export class ChatThreadComponent implements OnInit, OnDestroy {
+  @Input() conversationId?: string;
   @ViewChild('scrollAnchor') scrollAnchor!: ElementRef;
   private scrollScheduled = false;
 
@@ -33,12 +34,18 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('conversationId');
-      if (id && id !== 'current' && id !== this.chat.activeConvId) {
-        this.chat.selectConversation(id);
+    if (this.conversationId) {
+      if (this.conversationId !== this.chat.activeConvId) {
+        this.chat.selectConversation(this.conversationId);
       }
-    });
+    } else {
+      this.route.paramMap.subscribe(params => {
+        const id = params.get('conversationId');
+        if (id && id !== 'current' && id !== this.chat.activeConvId) {
+          this.chat.selectConversation(id);
+        }
+      });
+    }
 
     this.sub = new Subscription();
     this.sub.add(this.chat.fillInput$.subscribe(val => {

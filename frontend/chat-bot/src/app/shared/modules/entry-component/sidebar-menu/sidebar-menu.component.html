@@ -7,7 +7,9 @@
              <ng-container *ngIf="reorderable"><div *cdkDragPlaceholder class="v3-drag-placeholder"></div></ng-container>
              <mat-list-item *ngIf="menu.subMenus?.length === 0"  [id]="menu.code"
                  (click)="menu.open = !menu.open; toggleView(this.menu.parentId);subMenuExpand(menu.parentId);menuDetails(this.menu)" [routerLink]="[menu.link]"
-                 [routerLinkActive]="['active']" appTooltip [tooltipText]="menu.name|translate" tooltipType="sidebar" (keydown.enter)="fixClick()">
+                 [routerLinkActive]="['active']" appTooltip 
+                 [tooltipText]="(code?.includes('FAV') || menName?.toLowerCase()?.includes('fav')) ? (menu._level === 3 ? ((menu._parentName | translate) + ' / ' + (menu._subParentName | translate) + ' / ' + (menu.name | translate)) : ((menu._parentName | translate) + ' / ' + (menu.name | translate))) : (menu.name | translate)"
+                 tooltipType="sidebar" (keydown.enter)="fixClick()">
                  <div class="menu-icon">
                      <img  [ngClass]="menu.iconName ?  'svg-icon Logo' : 'wthoutsvg-icon' " matListIcon  alt="Menus" 
                          src="/assets/Menus/{{ menu.iconName }}.svg" (error)="handleImgError($event)">
@@ -20,14 +22,13 @@
                  <mat-icon *ngIf="menu.subMenus?.length !== 0" class="sidenav-dropdown-indicator rotate sidemenu"
                      [ngStyle]="{'margin-top': menu.open ? '0px' : '0px'}" [ngClass]="{'indicateOpen':menu.open}">
                      expand_more</mat-icon>
-                 <!-- <mat-icon *ngIf="showFavStar && menu.subMenus?.length === 0"
-                   class="v3-star-icon" style="position: relative;top: 6px;right: 10px;"
+                 <mat-icon *ngIf="showFavStar && menu.subMenus?.length === 0"
+                   class="v3-star-icon" style="position: relative;top: 6px;"
                    [class.v3-star-filled]="isFavSub(menu.code)"
                    [class.v3-star-outline]="!isFavSub(menu.code)"
-                   (click)="toggleSubFav(menu.code, code, $event)"
-                   matTooltip="{{ isFavSub(menu.code) ? 'Remove from favorites' : 'Add to favorites' }}">
+                   (click)="toggleSubFav(menu.code, code, $event)">
                    {{ isFavSub(menu.code) ? 'star' : 'star_border' }}
-                 </mat-icon> -->
+                 </mat-icon> 
              </mat-list-item>
              <mat-list-item [id]="menu.code" *ngIf="menu.subMenus?.length !== 0 && this.submenuId !== menu.id" (click)="menu.open = !menu.open;" appTooltip [tooltipText]="menu.name|translate"  tooltipType="sidebar" (keydown.enter)="fixClick()">
                  <div class="menu-icon">
@@ -67,17 +68,17 @@
                              src="/assets/Menus/{{ submenu.iconName }}.svg" (error)="handleImgError($event)">
                          <h3 matLine class="menu-name-styl" *ngIf="!iconOnly" placement="bottom">{{ submenu.name |translate }} </h3>
                           <span *ngIf="showFavStar && submenu.subMenus?.length === 0">
-                            <mat-icon class="v3-star-icon"
-                                [class.v3-star-filled]="isFavSub(submenu.code)" style="padding: 10px 0px 0px 9px;"
-                                [class.v3-star-outline]="!isFavSub(submenu.code)" (click)="toggleSubFav(submenu.code, code, $event)">
-                                {{ isFavSub(submenu.code) ? 'star' : 'star_border' }}
-                            </mat-icon>
                         </span>
                      </div>
                      <!-- <mat-divider></mat-divider> -->
                      <mat-icon *ngIf="submenu.subMenus.length !== 0" class="sidenav-dropdown-indicator rotate sidemenu"
                          [ngStyle]="{'margin-top': submenu.open ? '0px' : '0px'}"
                          [ngClass]="{'indicateOpen':submenu.open}"> expand_more</mat-icon>
+                    <mat-icon *ngIf="showFavStar && submenu.subMenus?.length === 0" class="v3-star-icon"
+                        style="position: relative;top: 6px;right: 0px;" [class.v3-star-filled]="isFavSub(submenu.code)"
+                        [class.v3-star-outline]="!isFavSub(submenu.code)" (click)="toggleSubFav(submenu.code, code, $event)">
+                        {{ isFavSub(submenu.code) ? 'star' : 'star_border' }}
+                    </mat-icon>
                  </mat-list-item>
              </mat-nav-list>
          </mat-nav-list>

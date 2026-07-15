@@ -13,7 +13,8 @@ export class FilterOptions {
         public navigateFilter: boolean = false,
         public tagPAFilter: boolean = false,
         public tagASFilter: boolean = false,
-        public tagINFilter: boolean = false
+        public tagINFilter: boolean = false,
+        public cctvFilter: boolean = false
     ) { }
 }
 export class SearchFilter {
@@ -43,6 +44,9 @@ export class MapFilter {
         public noOfLinks: any = 0,
         public heatData: Array<any> = [],
         public heat: any = null,
+        public floorCctvAssets: Array<any> = [],
+        public injectorList: Array<any> = [],
+        public floorInjectors: Array<any> = [],
     ) { }
 }
 export class TagOptions {
@@ -62,6 +66,10 @@ export class MapLayers {
         public reader_points: Array<any> = [],
         public dispenser_points: Array<any> = [],
         public sensor_points: Array<any> = [],
+        public cctv_points: Array<any> = [],
+        public injector_points: Array<any> = [],
+        public injector_postion: any = {},
+        public injector_wires: any = {},
         public bed_space_images: Array<any> = [],
         public bed_space_polygon: Array<any> = [],
         

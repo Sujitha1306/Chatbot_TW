@@ -1,0 +1,732 @@
+<div class="ovi-font-family alert-popup-container">
+  <!-- Dialog Header (Common) -->
+  <div class="ovi-pop-hdr alert-dialog-header">
+    <div class="header-title-section">
+      <mat-icon style="padding: 0px;" class="header-icon">security</mat-icon>
+      <span>{{ "Real-time Alert Insights" | translate }}</span>
+    </div>
+    <div class="close-btn" (click)="closeDialog()" role="button" tabindex="0" (keydown.enter)="closeDialog()">
+      <mat-icon>highlight_off</mat-icon>
+    </div>
+  </div>
+
+  <!-- Dialog Body (Split Screen) -->
+  <div class="alert-popup-body">
+
+    <!-- Vertical Tab Toggle (New design toggle handle) -->
+    <div *ngIf="layoutType === 'new' && !data.hideSidebar && !isFitToViewActive && selectedAlert && isSidebarCollapsed"
+      class="new-vertical-sidebar-toggle" (click)="toggleSidebar()" [class.collapsed]="isSidebarCollapsed">
+      <mat-icon class="bell-icon">notifications_none</mat-icon>
+      <div class="vertical-text">{{ "Alert" | translate }}</div>
+      <div class="alert-count-badge">{{ allAlerts?.length || 0 }}</div>
+      <mat-icon class="arrow-icon">
+        {{ isSidebarCollapsed ? 'keyboard_arrow_right' : 'keyboard_arrow_left' }}
+      </mat-icon>
+    </div>
+
+    <!-- Left Section: Grouped Accordion List -->
+    <div *ngIf="!data.hideSidebar" class="alert-left-panel" [class.collapsed]="(isSidebarCollapsed || isFitToViewActive) && selectedAlert">
+      <div *ngIf="layoutType === 'new' && !data.hideSidebar && !isFitToViewActive && selectedAlert && !isSidebarCollapsed"
+        class="new-vertical-sidebar-toggle1" (click)="toggleSidebar()" [class.collapsed]="isSidebarCollapsed">
+        <mat-icon class="bell-icon">notifications_none</mat-icon>
+        <div class="vertical-text1">{{ "Alert Categories" | translate }}</div>
+        <!-- <div class="alert-count-badge">{{ allAlerts?.length || 0 }}</div> -->
+        <mat-icon class="arrow-icon">
+          {{ isSidebarCollapsed ? 'keyboard_arrow_right' : 'keyboard_arrow_left' }}
+        </mat-icon>
+      </div>
+      <div class="panel-content scrollable" (scroll)="onScroll($event)">
+        <mat-accordion class="alert-accordion" multi="false">
+          <mat-expansion-panel *ngFor="let group of groupedAlerts" [(expanded)]="group.expanded" class="category-panel">
+            <mat-expansion-panel-header class="category-header">
+              <mat-panel-title class="category-title">
+                <span class="group-name">{{ group.name | translate }}</span>
+                <span class="group-count">{{ group.alerts.length }}</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <div class="alert-list-items">
+              <div *ngFor="let alert of group.alerts" class="alert-list-item"
+                [class.active]="selectedAlert?.id === alert.id" (click)="selectAlert(alert)" role="button" tabindex="0"
+                (keydown.enter)="selectAlert(alert)">
+                <div class="alert-status-indicator" [class.unread]="!alert.isSeen"></div>
+                <div class="alert-item-info">
+                  <div class="alert-title">{{ alert.configName | titlecase }}</div>
+                  <div class="alert-message">{{ stripHtml(alert.message) }}</div>
+                  <div class="alert-time">
+                    <mat-icon style="padding: 0px;">schedule</mat-icon>
+                    <span>{{ alert.sentDatetime | timeAgo }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-expansion-panel>
+        </mat-accordion>
+
+        <div *ngIf="allAlerts.length > 0 && !isMore" class="load-more-container">
+          <button (click)="loadMoreAlerts()" class="btn-load-more" [disabled]="isLoadingMore">
+            <span *ngIf="!isLoadingMore">{{ "Load More" | translate }}</span>
+            <mat-spinner *ngIf="isLoadingMore" diameter="20" color="accent"></mat-spinner>
+          </button>
+        </div>
+
+        <div *ngIf="allAlerts.length === 0" class="no-alerts-placeholder">
+          <mat-icon>notifications_off</mat-icon>
+          <p>{{ "No alerts available" | translate }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapse / Expand Toggle Divider -->
+    <div *ngIf="!data.hideSidebar && !isFitToViewActive && layoutType === 'old'" class="sidebar-toggle-container" [class.collapsed]="isSidebarCollapsed">
+      <button class="sidebar-toggle-btn" (click)="toggleSidebar()">
+        <mat-icon style="padding: 0px;position: relative; right: 1px;">
+          {{ isSidebarCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Right Section: Details, Map and Camera Workspace -->
+    <div class="alert-right-panel" [class.no-scroll]="activeView && layoutType === 'old'" [class.new-layout]="layoutType === 'new'">
+      <ng-container *ngIf="selectedAlert; else noSelectionTemplate">
+        
+        <!-- Old Design Layout -->
+        <ng-container *ngIf="layoutType === 'old'">
+          <!-- Selected Alert Banner Card -->
+          <div class="alert-detail-banner animate-fade-in" [class.collapsed]="isBannerCollapsed">
+            <div class="banner-overlay"></div>
+            <div class="banner-content">
+              <div class="banner-left">
+                <div class="banner-title-row" [ngStyle]="{'margin-bottom': !isBannerCollapsed ? '35px' : '0px'}">
+                  <div class="banner-title-left">
+                    <span class="alert-badge" [class.critical]="selectedAlert.alertTypeId === 'AT-AL'">
+                      {{ (selectedAlert.alertTypeId === 'AT-AL' ? 'ALERT' : 'REMINDER') | translate }}
+                    </span>
+                    <div class="banner-title-container">
+                      <h2>{{ selectedAlert.configName | titlecase }}</h2>
+                      <div class="banner-title-time animate-fade-in"
+                        *ngIf="selectedAlert.sentDatetime && !isBannerCollapsed">
+                        <mat-icon style="padding: 0px;">schedule</mat-icon>
+                        <span style="font-size: 11px;">{{ selectedAlert.sentDatetime | date: 'yyyy-MM-dd hh:mm:ss a'
+                          }}</span>
+                      </div>
+                      <!-- Collapsed state summary details row -->
+                      <div class="banner-summary-line animate-fade-in" *ngIf="isBannerCollapsed && parsedDetails">
+                        <span class="summary-item" *ngIf="parsedDetails.name">
+                          <strong>{{ (parsedDetails.isStaff ? 'Staff' : (parsedDetails.isInfant ? 'Infant' : 'Patient')) | translate }}:</strong> {{
+                          parsedDetails.name }}
+                        </span>
+                        <span class="summary-divider" *ngIf="parsedDetails.name && parsedDetails.tagId">|</span>
+                        <span class="summary-item" *ngIf="parsedDetails.tagId">
+                          <strong>{{ 'Tag ID' | translate }}:</strong> {{ parsedDetails.tagId }}
+                        </span>
+                        <span class="summary-divider" *ngIf="parsedDetails.tagId && parsedDetails.location">|</span>
+                        <span class="summary-item" *ngIf="parsedDetails.location">
+                          <strong>{{ 'Location' | translate }}:</strong> {{ parsedDetails.location }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="action-buttons-group">
+                    <button class="action-toggle-btn" [class.active]="!activeView" (click)="showDetails()">
+                      <mat-icon style="padding: 0px;">info</mat-icon>
+                      <span>{{ "Details" | translate }}</span>
+                    </button>
+                    <button class="action-toggle-btn" [class.active]="activeView === 'map'" (click)="setView('map')">
+                      <mat-icon style="padding: 0px;">map</mat-icon>
+                      <span>{{ "Map" | translate }}</span>
+                    </button>
+                    <button *ngIf="isCameraNeeded" class="action-toggle-btn" [class.active]="activeView === 'camera'"
+                      (click)="setView('camera')">
+                      <mat-icon style="padding: 0px;">videocam</mat-icon>
+                      <span>{{ "Camera" | translate }}</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="banner-collapsible-content" *ngIf="!isBannerCollapsed">
+                  <!-- Unified alert dialog details card layout -->
+                  <div *ngIf="parsedDetails; else rawMessageTemplate" class="iad-details-wrapper">
+
+                    <!-- Alert Message Header -->
+                    <div class="iad-section-label">
+                      <mat-icon style="padding: 0px;" class="iad-section-label__icon">message</mat-icon>
+                      <span>{{ "ALERT MESSAGE" | translate }}</span>
+                    </div>
+
+                    <!-- Alert Message Content Card -->
+                    <div class="iad-msg-card">
+
+                      <!-- Key-Value Grid -->
+                      <div class="iad-kv-grid">
+                        <ng-container *ngIf="parsedDetails.name">
+                          <span class="iad-kv-grid__key">{{ (parsedDetails.isStaff ? "Staff Name" : (parsedDetails.isInfant ? "Infant Name" : "Patient Name")) |
+                            translate }}</span>
+                          <span class="iad-kv-grid__val">{{ parsedDetails.name }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="patientDetails?.uhid">
+                          <span class="iad-kv-grid__key">{{ "UHID" | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ patientDetails.uhid }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="patientDetails?.visitIdentifier">
+                          <span class="iad-kv-grid__key">{{ "IP No" | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ patientDetails.visitIdentifier }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="parsedDetails.locationName || patientDetails?.currentLocationName || patientDetails?.locationName || patientDetails?.wardName">
+                          <span class="iad-kv-grid__key">{{ "Location" | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ parsedDetails.locationName || patientDetails.currentLocationName || patientDetails.locationName || patientDetails.wardName }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="patientDetails?.age || patientDetails?.gender">
+                          <span class="iad-kv-grid__key">{{ "Age / Gender" | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ (patientDetails.age ? patientDetails.age + ' yrs' : '') + (patientDetails.gender ? (patientDetails.age ? ' / ' : '') + patientDetails.gender : '') }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="patientDetails?.doctor">
+                          <span class="iad-kv-grid__key">{{ "Doctor" | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ patientDetails.doctor }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="patientDetails?.visitStatus">
+                          <span class="iad-kv-grid__key">{{ "Status" | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ patientDetails.visitStatus }}</span>
+                        </ng-container>
+
+                        <ng-container *ngIf="parsedDetails.wrongMotherTag">
+                          <span class="iad-kv-grid__key">{{ "Wrong Mother Tag ID" | translate }}</span>
+                          <span class="iad-kv-grid__val font-mono">{{ parsedDetails.wrongMotherTag }}</span>
+                        </ng-container>
+
+                        <ng-container *ngFor="let item of parsedDetails.additionalDetails">
+                          <span class="iad-kv-grid__key">{{ item.identifyingType | translate }}</span>
+                          <span class="iad-kv-grid__val">{{ item.identifyingValue }}</span>
+                        </ng-container>
+
+                        <!-- Description row -->
+                        <span class="iad-kv-grid__key">{{ "Description" | translate }}</span>
+                        <span class="iad-kv-grid__val">{{ stripHtml(selectedAlert.message) }}</span>
+                      </div>
+                    </div>
+                    <div *ngIf="realtimeLocation && realtimeLocation.length" class="iad-realtime-container animate-fade-in">
+                      <div class="iad-realtime-card__header">
+                        <span class="live-badge">
+                          <span class="live-dot"></span>
+                          {{ "REAL-TIME TRACKING" | translate }}
+                        </span>
+                      </div>
+
+                      <div class="iad-realtime-small-list">
+                        <div *ngFor="let item of realtimeLocation" 
+                             class="iad-realtime-small-card"
+                             [ngClass]="{
+                               'type-patient': item.tagtype === 'TAT-PA',
+                               'type-infant': item.tagtype === 'TAT-IN',
+                               'type-staff': item.tagtype === 'TAT-US',
+                               'type-porter': item.tagtype === 'TAT-PO',
+                               'type-asset': item.tagtype === 'TAT-AS',
+                               'type-medical-record': item.tagtype === 'TAT-MR'
+                             }">
+                          <mat-icon style="padding:0px;" class="card-icon">
+                            <ng-container [ngSwitch]="item.tagtype">
+                              <ng-container *ngSwitchCase="'TAT-PA'">person</ng-container>
+                              <ng-container *ngSwitchCase="'TAT-IN'">child_care</ng-container>
+                              <ng-container *ngSwitchCase="'TAT-US'">badge</ng-container>
+                              <ng-container *ngSwitchCase="'TAT-PO'">directions_run</ng-container>
+                              <ng-container *ngSwitchCase="'TAT-AS'">local_shipping</ng-container>
+                              <ng-container *ngSwitchCase="'TAT-MR'">folder</ng-container>
+                              <ng-container *ngSwitchDefault>label</ng-container>
+                            </ng-container>
+                          </mat-icon>
+                          <div class="card-details">
+                            <span class="tag-name" [matTooltip]="((item.tagtype === 'TAT-PA' || item.tagtype === 'TAT-IN') ? (parsedDetails.name || patientDetails?.patientName) : item.tagAssociatedName) || parsedDetails.name">
+                              {{ ((item.tagtype === 'TAT-PA' || item.tagtype === 'TAT-IN') ? (parsedDetails.name || patientDetails?.patientName) : item.tagAssociatedName) || parsedDetails.name }}
+                            </span>
+                            <span class="tag-id font-mono">Tag ID: {{ item.tagid }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Remarks Section -->
+                    <div class="iad-section-label" style="margin-top:16px;">
+                      <mat-icon style="padding: 0px;" class="iad-section-label__icon">edit_note</mat-icon>
+                      <span>{{ "REMARKS" | translate }}</span>
+                    </div>
+
+                    <div [formGroup]="remarksForm" class="iad-remarks-wrapper">
+                      <mat-form-field appearance="outline" class="iad-remarks-field">
+                        <textarea matInput formControlName="comments"
+                          placeholder="{{ 'Add a remark (optional)' | translate }}" rows="3" maxlength="200"></textarea>
+                        <mat-hint align="end">{{ remarksForm.value.comments?.length || 0 }}/200</mat-hint>
+                      </mat-form-field>
+                    </div>
+
+                    <!-- Footer Buttons -->
+                    <div class="iad-footer">
+                      <button class="iad-btn iad-btn--ghost" mat-stroked-button (click)="closeDialog()">{{ "Close" |
+                        translate }}</button>
+                      <button class="iad-btn iad-btn--danger" mat-raised-button [disabled]="isLoading"
+                        (click)="onCancelAlert()">
+                        <mat-spinner *ngIf="isLoading" diameter="16" class="iad-spinner"></mat-spinner>
+                        {{ (isLoading ? 'Cancelling…' : 'Cancel Alert') | translate }}
+                      </button>
+                    </div>
+
+                  </div>
+
+                  <ng-template #rawMessageTemplate>
+                    <p class="banner-desc" [innerHTML]="selectedAlert.message"></p>
+                  </ng-template>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View Content Area (Floor Plan or Camera Stream) -->
+          <div class="alert-workspace-viewer" [class.placeholder-mode]="!activeView" *ngIf="activeView">
+
+            <!-- Details Placeholder Mode -->
+            <div class="details-placeholder-wrapper animate-fade-in" *ngIf="!activeView">
+              <div class="placeholder-content">
+                <mat-icon class="placeholder-icon">analytics</mat-icon>
+                <h3>{{ "Event Visualizer" | translate }}</h3>
+                <p>{{ "Choose an option to inspect this alert details." | translate }}</p>
+                <div class="placeholder-actions">
+                  <button class="placeholder-action-btn map" (click)="setView('map')">
+                    <mat-icon>map</mat-icon>
+                    <span>{{ "Open Floor Map" | translate }}</span>
+                  </button>
+                  <button *ngIf="isCameraNeeded" class="placeholder-action-btn camera" (click)="setView('camera')">
+                    <mat-icon>videocam</mat-icon>
+                    <span>{{ "Watch CCTV Feed" | translate }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Leaflet Floor Map Mode -->
+            <div class="map-view-wrapper" [class.hidden]="activeView !== 'map'">
+              <div *ngIf="isLoadingMap" class="viewer-loader">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>{{ "Loading floor map..." | translate }}</p>
+              </div>
+              <div class="map-container-inner" *ngIf="mapData && mapData.selectedFloor && !isLoadingMap">
+                <tw-common-leaflet *ngIf="false" [leafRef]="'popup'" [blockSelect]="mapData.selectedBlock"
+                  [floorSelect]="mapData.selectedFloor" [locFlr]="mapData.selectedLoc" [tagId]="mapData.tagId"
+                  [tagType]="mapData.tagType" [type]="mapData.type" [options]="contextOptions"
+                  [reqTagDetail]="mapData.reqDetail" [reqType]="mapData.reqType">
+                </tw-common-leaflet>
+               <app-live-tracking [blockId]="mapData.selectedBlock"
+                [floorId]="mapData.selectedFloor" [locFlr]="mapData.selectedLoc" [tagId]="mapData.tagId"
+                [tagType]="mapData.tagType" [type]="mapData.type">
+              </app-live-tracking>
+              </div>
+              <div class="error-placeholder" *ngIf="(!mapData || !mapData.selectedFloor) && !isLoadingMap">
+                <mat-icon>map_off</mat-icon>
+                <p *ngIf="mapData?.tagId">{{ "Floor map is not configured for this location." | translate }}</p>
+                <p *ngIf="!mapData?.tagId">{{ "No active tag associated for real-time tracking." | translate }}</p>
+              </div>
+            </div>
+
+            <!-- CCTV WebRTC Camera Mode -->
+            <div class="camera-view-wrapper" [class.hidden]="activeView !== 'camera'">
+              <div *ngIf="isLoadingCamera" class="viewer-loader">
+                <mat-spinner diameter="40"></mat-spinner>
+                <p>{{ "Searching for configured CCTV cameras..." | translate }}</p>
+              </div>
+
+              <ng-container *ngIf="!isLoadingCamera">
+                <!-- If CCTV Camera Stream is Available -->
+                <div *ngIf="selectedCamera; else noCameraTemplate" class="camera-player-container animate-scale-up">
+                  <div class="video-container">
+                    <!-- Video loading state -->
+                    <div *ngIf="(isLoadingCamera || !isPlaying) && !errorMessage" class="video-overlay-loader">
+                      <mat-spinner diameter="35"></mat-spinner>
+                    </div>
+
+                    <!-- Video error state -->
+                    <div *ngIf="errorMessage" class="video-overlay-error animate-fade-in">
+                      <mat-icon class="error-icon">videocam_off</mat-icon>
+                      <span class="error-title">{{ "Live Stream Unavailable" | translate }}</span>
+                      <span class="error-msg">{{ errorMessage | translate }}</span>
+                      <button class="retry-btn" (click)="startStream()">
+                        <mat-icon>replay</mat-icon>
+                        <span>{{ "Retry" | translate }}</span>
+                      </button>
+                    </div>
+
+                    <video #videoPlayer autoplay playsinline class="video-element" [class.hidden]="errorMessage"></video>
+
+                    <!-- Video Custom Controller Overlay -->
+                    <div class="video-controls-overlay">
+                      <div class="control-left">
+                        <button (click)="togglePlay()" class="control-btn">
+                          <mat-icon>{{ isPlaying ? 'pause' : 'play_arrow' }}</mat-icon>
+                        </button>
+                        <button (click)="toggleVolume()" class="control-btn">
+                          <mat-icon>{{ isVolumeMuted ? 'volume_off' : 'volume_up' }}</mat-icon>
+                        </button>
+                        <span class="live-badge">
+                          <span class="live-dot"></span>
+                          LIVE
+                        </span>
+                      </div>
+                      <div class="control-right">
+                        <span class="time-display">{{ timeDisplay }}</span>
+                        <button (click)="toggleFullscreen()" class="control-btn">
+                          <mat-icon style="padding: 0px;">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Camera Select Dropdown (Multiple cameras in location) -->
+                  <div class="camera-footer-controls" *ngIf="cameras.length > 1">
+                    <span class="camera-count-info">{{ cameras.length }} {{ "cameras available" | translate }}</span>
+                    <div class="select-wrapper">
+                      <mat-form-field class="camera-selector-field" appearance="outline">
+                        <mat-select [value]="selectedCamera" (selectionChange)="selectCamera($event.value)">
+                          <mat-option *ngFor="let cam of cameras" [value]="cam">
+                            {{ cam.streamName }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- If No CCTV Camera Stream is Configured -->
+                <ng-template #noCameraTemplate>
+                  <div class="error-placeholder camera-error">
+                    <mat-icon>videocam_off</mat-icon>
+                    <h3>{{ "No CCTV Feed Configured" | translate }}</h3>
+                    <p>{{ "There are no security cameras configured for this alert location." | translate }}</p>
+                  </div>
+                </ng-template>
+              </ng-container>
+            </div>
+
+          </div>
+        </ng-container>
+
+        <!-- New Design Layout (Split Dashboard screen) -->
+        <div *ngIf="layoutType === 'new'" class="new-design-workspace">
+          <!-- Left Column: Alert Details Card -->
+          <div class="new-left-column" [class.hidden]="isFitToViewActive">
+            <div class="new-alert-info-card">
+              <div class="card-header alert-info-header-new" style="cursor: pointer;">
+                <div class="header-left-group">
+                  <span class="new-alert-badge" [class.critical]="selectedAlert?.alertTypeId === 'AT-AL'">
+                    {{ (selectedAlert?.alertTypeId === 'AT-AL' ? 'ALERT' : 'REMINDER') | translate }}
+                  </span>
+                  <div class="alert-title-time-col">
+                    <div class="alert-title-row-inner">
+                      <h3 class="alert-name">{{ selectedAlert?.configName | titlecase }}</h3>
+                      <span class="severity-badge-new critical" *ngIf="selectedAlert?.alertTypeId === 'AT-AL'">{{ "Critical" | translate }}</span>
+                      <span class="status-badge-new active-status">
+                        <span class="status-dot animate-pulse"></span> {{ "Active" | translate }}
+                      </span>
+                    </div>
+                    <div class="header-timestamp" *ngIf="selectedAlert?.sentDatetime">
+                      <mat-icon style="padding: 0px;">schedule</mat-icon>
+                      <span>{{ selectedAlert.sentDatetime | date: 'dd MMM yyyy | hh:mm:ss a' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-body" *ngIf="!isAlertInfoCollapsed">
+                <!-- Incident Summary block -->
+                <div class="incident-summary-block animate-fade-in">
+                  <div class="block-label">
+                    <mat-icon style="padding: 0px;">description</mat-icon>
+                    <span>{{ "INCIDENT SUMMARY" | translate }}</span>
+                  </div>
+                  <div class="incident-description">
+                    {{ stripHtml(selectedAlert.message) }}
+                  </div>
+                </div>
+
+                <!-- Key-Value list details -->
+                <div class="new-details-list">
+                  <div class="detail-item" *ngIf="parsedDetails?.name">
+                    <div class="detail-label">
+                      <mat-icon style="padding: 0px;">person</mat-icon>
+                      <span>{{ (parsedDetails.isStaff ? "Staff" : (parsedDetails.isInfant ? "Infant" : "Patient")) | translate }}</span>
+                    </div>
+                    <div class="detail-value">{{ parsedDetails.name }}</div>
+                  </div>
+
+                  <div class="detail-item" *ngIf="parsedDetails?.locationName || parsedDetails?.location || patientDetails?.currentLocationName || patientDetails?.locationName">
+                    <div class="detail-label">
+                      <mat-icon style="padding: 0px;">place</mat-icon>
+                      <span>{{ "Location" | translate }}</span>
+                    </div>
+                    <div class="detail-value">
+                      {{ parsedDetails.locationName || parsedDetails.location || patientDetails?.currentLocationName || patientDetails?.locationName }}
+                    </div>
+                  </div>
+
+                  <!-- Proximity tags comparison visual comparison box -->
+                  <div class="proximity-tags-row" *ngIf="parsedDetails?.wrongMotherTag && selectedAlert?.ruleTypeId === 'RU-GO' && selectedAlert.identifyingType !== user">
+                    <div class="tag-box expected-tag">
+                      <div class="tag-box-header">
+                        <mat-icon style="padding: 0px">badge</mat-icon>
+                        <span>{{ "Expected Mother Tag" | translate }}</span>
+                      </div>
+                      <div class="tag-box-value">{{ patientDetails?.associatedTagSerialNumber || 'N/A' }}</div>
+                    </div>
+                    <div class="vs-indicator">
+                      <span>VS</span>
+                    </div>
+                    <div class="tag-box detected-tag">
+                      <div class="tag-box-header">
+                        <mat-icon style="padding: 0px;">badge</mat-icon>
+                        <span>{{ "Detected (Wrong) Mother Tag" | translate }}</span>
+                      </div>
+                      <div class="tag-box-value">{{ parsedDetails?.wrongMotherTag || 'N/A'}}</div>
+                    </div>
+                  </div>
+
+                  <!-- <div class="detail-item" *ngIf="selectedAlert?.sentDatetime">
+                    <div class="detail-label">
+                      <mat-icon style="padding: 0px;">schedule</mat-icon>
+                      <span>{{ "Detected At" | translate }}</span>
+                    </div>
+                    <div class="detail-value">
+                      {{ selectedAlert.sentDatetime | date: 'dd MMM yyyy' }} &nbsp;&nbsp;|&nbsp;&nbsp; {{ selectedAlert.sentDatetime | date: 'hh:mm:ss a' }}
+                    </div>
+                  </div> -->
+
+                  <!-- <div class="detail-item" *ngIf="selectedAlert?.duration || selectedAlert?.durationSeconds || true">
+                    <div class="detail-label">
+                      <mat-icon style="padding:0px;">timer</mat-icon>
+                      <span>{{ "Alert Duration" | translate }}</span>
+                    </div>
+                    <div class="detail-value">
+                      <span class="duration-badge">
+                        {{ formatDuration(selectedAlert.durationSeconds || selectedAlert.duration) || '00:01:42' }}
+                      </span>
+                    </div>
+                  </div> -->
+
+                  <div class="detail-item" *ngIf="parsedDetails?.additionalDetails?.length && parsedDetails.identifyingType !== user">
+                    <div class="detail-label">
+                      <mat-icon>list</mat-icon>
+                      <span>{{ "Additional Details" | translate }}</span>
+                    </div>
+                    <div class="detail-value">
+                      <div *ngFor="let item of parsedDetails.additionalDetails" class="addon-detail-line">
+                        <strong>{{ item.identifyingType | translate }}:</strong> {{ item.identifyingValue }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Remarks box -->
+                <div class="new-remarks-block" [formGroup]="remarksForm">
+                  <div class="block-label">
+                    <mat-icon style="padding: 0px;">edit_note</mat-icon>
+                    <span>{{ "Remarks" | translate }}</span>
+                  </div>
+                  <div class="remarks-textarea-container">
+                    <textarea formControlName="comments" placeholder="{{ 'Add investigation notes or remarks...' | translate }}" maxlength="500"></textarea>
+                    <div class="char-count">{{ remarksForm.value.comments?.length || 0 }}/500</div>
+                  </div>
+                </div>
+
+                <!-- Card Action buttons (Close and Cancel Alert only) -->
+                <div class="iad-footer">
+                  <button class="iad-btn iad-btn--ghost" mat-stroked-button (click)="closeDialog()">
+                    <!-- <mat-icon class="iad-btn__icon">close</mat-icon> -->
+                    <span>{{ "Close" | translate }}</span>
+                  </button>
+                  <button class="iad-btn iad-btn--resolve" mat-raised-button [disabled]="isLoading" (click)="onCancelAlert()">
+                    <mat-spinner *ngIf="isLoading" diameter="16" class="iad-spinner"></mat-spinner>
+                    <!-- <mat-icon class="iad-btn__icon" *ngIf="!isLoading">check_circle_outline</mat-icon> -->
+                    <span>{{ "Close Alert" | translate }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Map and Camera Vertical layout -->
+          <div class="new-right-column">
+            <!-- Map Card block -->
+            <div class="new-map-section-card" [class.expanded]="isMapExpanded || fitToViewType === 'map'" [class.hidden]="isCameraExpanded || fitToViewType === 'camera' || (!isLoadingMap && (!mapData || !mapData.selectedFloor) && (cameras && cameras.length > 0))">
+              <div class="card-header">
+                <div class="card-header-title">
+                  <mat-icon class="map-icon" style="padding: 0px;">place</mat-icon>
+                  <span>{{ "LIVE LOCATION MAP" | translate }}</span>
+                </div>
+                <div class="card-header-actions">
+                  <button class="header-action-btn-new" (click)="toggleFitToView('map')" [class.active]="fitToViewType === 'map'">
+                    <mat-icon style="padding: 0px;">center_focus_strong</mat-icon>
+                    <span>{{ (fitToViewType === 'map' ? "Show Details" : "Fit to View") | translate }}</span>
+                  </button>
+                  <button class="header-action-btn-icon" (click)="toggleMapExpand()" *ngIf="cameras && cameras.length > 0 && !isFitToViewActive">
+                    <mat-icon style="padding: 0px;">{{ isMapExpanded ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body map-body-container">
+                <div *ngIf="isLoadingMap" class="viewer-loader">
+                  <mat-spinner diameter="35"></mat-spinner>
+                  <p>{{ "Loading floor map..." | translate }}</p>
+                </div>
+                <div class="map-container-inner" *ngIf="mapData && mapData.selectedFloor && !isLoadingMap">
+                  <tw-common-leaflet *ngIf="false" [leafRef]="'popup'" [blockSelect]="mapData.selectedBlock"
+                    [floorSelect]="mapData.selectedFloor" [locFlr]="mapData.selectedLoc" [tagId]="mapData.tagId"
+                    [tagType]="mapData.tagType" [type]="mapData.type" [options]="contextOptions"
+                    [reqTagDetail]="mapData.reqDetail" [reqType]="mapData.reqType">
+                  </tw-common-leaflet>
+                  <app-live-tracking [blockId]="mapData.selectedBlock" [floorId]="mapData.selectedFloor" [locFlr]="mapData.selectedLoc"
+                    [tagId]="mapData.tagId" [tagType]="mapData.tagType" [type]="mapData.type">
+                  </app-live-tracking>
+                </div>
+                <div class="clean-empty-placeholder" *ngIf="(!mapData || !mapData.selectedFloor) && !isLoadingMap">
+                  <span>{{ "Map View" | translate }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- CCTV Camera Card block -->
+            <div class="new-camera-section-card" *ngIf="isCameraNeeded" [class.expanded]="isCameraExpanded || fitToViewType === 'camera'" [class.hidden]="isMapExpanded || fitToViewType === 'map' || (!isLoadingCamera && (cameras && cameras.length === 0) && (mapData && mapData.selectedFloor))">
+              <div class="card-header">
+                <div class="card-header-title">
+                  <mat-icon class="cam-icon" style="padding: 0px;">videocam</mat-icon>
+                  <span>{{ "LIVE CAMERA FEED" | translate }}</span>
+                </div>
+                <div class="card-header-actions">
+                  <span class="camera-label-text" *ngIf="selectedCamera">{{ "Camera:" | translate }} {{ selectedCamera.streamName }}</span>
+                  <button class="header-action-btn-new" (click)="toggleFitToView('camera')" [class.active]="fitToViewType === 'camera'">
+                    <mat-icon style="padding: 0px;">center_focus_strong</mat-icon>
+                    <span>{{ (fitToViewType === 'camera' ? "Show Details" : "Fit to View") | translate }}</span>
+                  </button>
+                  <button class="header-action-btn-icon" (click)="toggleCameraExpand()" *ngIf="mapData && mapData.selectedFloor && !isFitToViewActive">
+                    <mat-icon style="padding: 0px;">{{ isCameraExpanded ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body camera-body-container">
+                <div *ngIf="isLoadingCamera" class="viewer-loader">
+                  <mat-spinner diameter="35"></mat-spinner>
+                  <p>{{ "Searching for configured CCTV cameras..." | translate }}</p>
+                </div>
+
+                <ng-container *ngIf="!isLoadingCamera">
+                  <!-- Video stream player -->
+                  <div *ngIf="selectedCamera; else noCameraTemplateNew" class="camera-player-container-new animate-scale-up">
+                    <div class="video-container">
+                      <div *ngIf="(isLoadingCamera || !isPlaying) && !errorMessage && !noRecordingMessage" class="video-overlay-loader">
+                        <mat-spinner diameter="35"></mat-spinner>
+                      </div>
+                      <div *ngIf="errorMessage" class="video-overlay-error">
+                        <mat-icon class="error-icon">videocam_off</mat-icon>
+                        <span class="error-msg">{{ errorMessage | translate }}</span>
+                        <button class="retry-btn" (click)="startStream()">
+                          <mat-icon>replay</mat-icon>
+                          <span>{{ "Retry" | translate }}</span>
+                        </button>
+                      </div>
+                      <div *ngIf="noRecordingMessage" class="video-overlay-error no-recording-overlay">
+                        <mat-icon class="error-icon">movie_filter</mat-icon>
+                        <span class="error-msg">{{ noRecordingMessage | translate }}</span>
+                        <button class="retry-btn" (click)="goLive()">
+                          <span>{{ "Go Live" | translate }}</span>
+                        </button>
+                      </div>
+
+                      <video #videoPlayer autoplay playsinline class="video-element" [class.hidden]="errorMessage || noRecordingMessage"
+                        (ended)="onReplayEnded()" (timeupdate)="onVideoTick()"></video>
+
+                      <!-- DVR Seek Bar -->
+                      <div class="seek-bar-row" [class.active]="isSeekDragging || isSeekHovering">
+                        <div class="seek-tooltip" *ngIf="isSeekDragging || isSeekHovering"
+                          [style.left.%]="(isSeekDragging ? dragPreviewFraction : hoverPreviewFraction) * 100">
+                          <span class="seek-tooltip-time">{{ formatClock(isSeekDragging ? dragPreviewTime : hoverPreviewTime) }}</span>
+                          <span class="seek-tooltip-arrow"></span>
+                        </div>
+                        <div #seekTrack class="seek-track" (pointerdown)="onSeekPointerDown($event)"
+                          (pointermove)="onSeekHoverMove($event)" (pointerleave)="onSeekHoverLeave()">
+                          <div class="seek-progress" [style.width.%]="seekThumbFraction * 100"></div>
+                          <div class="seek-thumb" [style.left.%]="seekThumbFraction * 100"></div>
+                        </div>
+                      </div>
+
+                      <!-- Controls overlay -->
+                      <div class="video-controls-overlay">
+                        <div class="control-left">
+                          <button (click)="togglePlay()" class="control-btn">
+                            <mat-icon>{{ isPlaying ? 'pause' : 'play_arrow' }}</mat-icon>
+                          </button>
+                          <button (click)="toggleVolume()" class="control-btn">
+                            <mat-icon>{{ isVolumeMuted ? 'volume_off' : 'volume_up' }}</mat-icon>
+                          </button>
+                          <span class="live-badge" [class.replay-badge]="isReplayMode">
+                            <span class="live-dot"></span>
+                            {{ isReplayMode ? ('REPLAY' | translate) : ('LIVE' | translate) }}
+                          </span>
+                          <button *ngIf="isReplayMode" (click)="goLive()" class="player-pill go-live-btn">
+                            <span class="pill-live-dot"></span>
+                            <span>{{ "Go Live" | translate }}</span>
+                          </button>
+                          <button *ngIf="!isReplayMode" (click)="viewAlertRecording()" class="player-pill view-alert-btn">
+                            <span>{{ "View Recording" | translate }}</span>
+                          </button>
+                        </div>
+                        <div class="control-right">
+                          <span class="time-display">{{ isReplayMode ? formatClock(seekThumbTime) : timeDisplay }}</span>
+                          <button (click)="toggleFullscreen()" class="control-btn">
+                            <mat-icon style="padding: 0px;">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Multi camera dropdown -->
+                    <div class="camera-footer-controls" *ngIf="cameras.length > 1">
+                      <span class="camera-count-info">{{ cameras.length }} {{ "cameras available" | translate }}</span>
+                      <div class="select-wrapper">
+                        <mat-form-field class="camera-selector-field" appearance="outline">
+                          <mat-select [value]="selectedCamera" (selectionChange)="selectCamera($event.value)">
+                            <mat-option *ngFor="let cam of cameras" [value]="cam">
+                              {{ cam.streamName }}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ng-template #noCameraTemplateNew>
+                    <div class="error-placeholder camera-error">
+                      <mat-icon>videocam_off</mat-icon>
+                      <h3>{{ "No CCTV Feed Configured" | translate }}</h3>
+                      <p>{{ "There are no security cameras configured for this alert location." | translate }}</p>
+                    </div>
+                  </ng-template>
+                </ng-container>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </ng-container>
+
+      <ng-template #noSelectionTemplate>
+        <div class="no-selection-placeholder">
+          <mat-icon>security_update_warning</mat-icon>
+          <h3>{{ "Select an Alert" | translate }}</h3>
+          <p>{{ "Choose an alert from the left panel to review location maps, view camera streams, and investigate
+            details." | translate }}</p>
+        </div>
+      </ng-template>
+    </div>
+
+  </div>
+</div>

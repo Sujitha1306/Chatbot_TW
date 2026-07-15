@@ -82,6 +82,13 @@ export class RoomDisplayComponent implements OnInit, AfterViewInit, OnDestroy {
   speechDedup = new Set<string>();
   mqttUpdateTimer: any = null;
   routerSub: Subscription | null = null;
+  newBackgroundColor = '#a28970';
+  newColor = '#fff';
+  newFooterColor = '#6b584b';
+  watermarkLogo = null;
+  onlineAppNumber = null;
+  helplineLogo = null;
+  mainLogo = null;
 
   constructor(public dashboardService: DashboardService, private readonly router: Router, public dialog: MatDialog, public commonService : CommonService, private cdr: ChangeDetectorRef,
     public form: FormBuilder, private readonly configurationService: ConfigurationService, public toastr: AppToastService, private speechQueue: SpeechQueueService, private routers: Router) {
@@ -450,6 +457,31 @@ export class RoomDisplayComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           if(contentData[menuCode].hasOwnProperty('isNewVersion')) {
             this.isNew = contentData[menuCode]['isNewVersion'];
+          }
+          if (contentData[menuCode].hasOwnProperty('newVersion')) {
+            const newVersion = contentData[menuCode]['newVersion'];
+
+            if (newVersion.hasOwnProperty('newBackgroundColor')) {
+              this.newBackgroundColor = newVersion['newBackgroundColor'];
+            }
+            if (newVersion.hasOwnProperty('newColor')) {
+              this.newColor = newVersion['newColor'];
+            }
+            if (newVersion.hasOwnProperty('newFooterColor')) {
+              this.newFooterColor = newVersion['newFooterColor'];
+            }
+            if (newVersion.hasOwnProperty('onlineAppNumber')) {
+              this.onlineAppNumber = newVersion['onlineAppNumber'];
+            }
+            if (newVersion.hasOwnProperty('watermarkLogo')) {
+              this.watermarkLogo = newVersion['watermarkLogo']; // will be null here — correct per this payload
+            }
+            if (newVersion.hasOwnProperty('mainLogo')) {
+              this.mainLogo = newVersion['mainLogo'];
+            }
+            if (newVersion.hasOwnProperty('helplineLogo')) {
+              this.helplineLogo = newVersion['helplineLogo'];
+            }
           }
           if(contentData[menuCode].hasOwnProperty('colCount')){
             this.colCount = contentData[menuCode]['colCount']

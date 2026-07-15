@@ -110,6 +110,20 @@ export class SidebarMenuComponent implements OnInit, OnChanges {
     // } else {
     //   this.helpDocument = '/assets/help/rtls/index.htm';
     // }
+
+    const raw = localStorage.getItem('menuPreference');
+    let prefData: any = {};
+    try { prefData = raw ? JSON.parse(raw) : {}; } catch { prefData = {}; }
+    this.favSubCodes = Array.isArray(prefData.favSubMenuCodes) ? prefData.favSubMenuCodes : [];
+
+    if (this.common.facilityConfig?.sidebarmenuVersion === 1) {
+      this.showFavStar = true;
+    }
+
+    if (this.code?.includes('FAV') || this.menName?.toLowerCase().includes('fav')) {
+      this.showFavStar = false;
+    }
+
     const permission = JSON.parse(localStorage.getItem('permission'));
     if(permission) {
     const menu = permission.menuItems;
@@ -122,6 +136,8 @@ export class SidebarMenuComponent implements OnInit, OnChanges {
         }
       }
       this.menus = menu;
+    } else if (this.code?.includes('FAV') || this.menName?.toLowerCase().includes('fav')) {
+      this.loadFavorites(menu);
     } else {
       for (let i = 0; i < menu.length; i++) {
         if (this.code === menu[i].code) {
@@ -201,8 +217,55 @@ export class SidebarMenuComponent implements OnInit, OnChanges {
     return this.favSubCodes?.includes(code);
   }
 
+  loadFavorites(menu: any[]): void {
+    const raw = localStorage.getItem('menuPreference');
+    let prefData: any = {};
+    try { prefData = raw ? JSON.parse(raw) : {}; } catch { prefData = {}; }
+    const favSubCodes = new Set(Array.isArray(prefData.favSubMenuCodes) ? prefData.favSubMenuCodes : []);
+
+    const subs: any[] = [];
+    for (const m of menu) {
+      if (m.code === 'MN_ALL') { continue; }
+      const perm = menu.find(p => p.code === m.code);
+      if (!perm?.subMenus?.length) { continue; }
+      for (const sub of perm.subMenus) {
+        if (favSubCodes.has(sub.code)) {
+          subs.push({ ...sub, _level: 2, _parentName: m.name, subMenus: [] });
+        }
+        for (const ss of (sub.subMenus || [])) {
+          if (favSubCodes.has(ss.code)) {
+            subs.push({ ...ss, _level: 3, _parentName: m.name, _subParentName: sub.name, subMenus: [] });
+          }
+        }
+      }
+    }
+    this.menus = subs;
+  }
+
   toggleSubFav(subCode: string, parentCode: string, event: Event): void {
     event.stopPropagation();
+    const raw = localStorage.getItem('menuPreference');
+    let prefData: any = {};
+    try { prefData = raw ? JSON.parse(raw) : {}; } catch { prefData = {}; }
+    const favSubMenuCodes = Array.isArray(prefData.favSubMenuCodes) ? prefData.favSubMenuCodes : [];
+    const index = favSubMenuCodes.indexOf(subCode);
+    if (index > -1) {
+      favSubMenuCodes.splice(index, 1);
+    } else {
+      favSubMenuCodes.push(subCode);
+    }
+    prefData.favSubMenuCodes = favSubMenuCodes;
+    this.favSubCodes = favSubMenuCodes;
+    const value = JSON.stringify(prefData);
+    this.common.validateUserPreference('menuPreference', value);
+    localStorage.setItem('menuPreference', value);
+
+    if (this.code?.includes('FAV') || this.menName?.toLowerCase().includes('fav')) {
+      const permission = JSON.parse(localStorage.getItem('permission'));
+      if (permission) {
+        this.loadFavorites(permission.menuItems);
+      }
+    }
     this.favToggle.emit({ subCode, parentCode });
   }
 

@@ -1,0 +1,76 @@
+<div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+    <div class="ovi-pop-hdr">
+        <div *ngIf="!data">{{"Create POE Injector"|translate}}</div>
+        <div *ngIf="data">{{"Modify POE Injector"|translate}}</div>
+        <div mat-dialog-close><mat-icon>highlight_off</mat-icon></div>
+    </div>
+
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" style="overflow: auto;height:calc(100% - 140px);" [formGroup]="poeInjectorForm">
+        <div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Serial No"|translate}} <span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline" required>
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Serial No'|translate" formControlName="serialNumber"
+                            [errorStateMatcher]="matcher" autocomplete="off">
+                        <mat-error *ngIf="poeInjectorForm?.controls?.serialNumber?.invalid">
+                            <span [hidden]="!poeInjectorForm?.controls?.['serialNumber']?.errors?.required">{{"Serial No is
+                                required."|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"MAC Address"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'MAC Address'|translate" formControlName="macAddress"
+                            [errorStateMatcher]="matcher" autocomplete="off" placeholder="818319012812">
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"IP Address"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'IP Address'|translate" formControlName="ipAddress"
+                            [errorStateMatcher]="matcher" autocomplete="off" placeholder="192.168.1.1">
+                        <mat-error *ngIf="poeInjectorForm?.controls?.ipAddress?.invalid" class="error-txt-1">
+                            <span [hidden]="!poeInjectorForm?.controls?.['ipAddress']?.errors?.pattern">{{"Enter valid
+                                IP address (e.g. 192.168.1.1)"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div class="ovi-row-gap">
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Model"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model'|translate" formControlName="model"
+                            [errorStateMatcher]="matcher" autocomplete="off">
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                    <mat-label class="ovi-lbl-text-size">{{"Total No of Ports"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Total No of Ports'|translate" formControlName="totalPorts"
+                            [errorStateMatcher]="matcher" autocomplete="off">
+                        <mat-error *ngIf="poeInjectorForm?.controls?.totalPorts?.invalid" class="error-txt-1">
+                            <span [hidden]="!poeInjectorForm?.controls?.['totalPorts']?.errors?.pattern">{{"Enter valid
+                                port number (e.g. 1-24)"|translate}}</span>
+                        </mat-error>
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
+                    <mat-label class="ovi-lbl-text-size">{{"Status"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh  ovi-matfrmfld-err" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Status'|translate" formControlName="status" [disableOptionCentering]="true">
+                            <mat-option value="Active">{{"Active"|translate}}</mat-option>
+                            <mat-option value="Inactive">{{"Inactive"|translate}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="ovi-pop-ftr">
+        <button mat-button class="cancle-btn" mat-dialog-close>{{"Cancel"|translate}}</button>
+        <button mat-button class="active-btn" appDebounceClick (debounceClick)="data?.id ? updatePoeInjector() : savePoeInjector()" [debounceTime]="300" cdkFocusInitial [disabled]="poeInjectorForm?.invalid">{{ data?.id ? 'Update' : 'Create' }}</button>
+    </div>
+</div>

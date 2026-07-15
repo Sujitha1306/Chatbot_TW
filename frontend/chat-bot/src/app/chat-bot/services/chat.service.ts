@@ -81,7 +81,7 @@ export class ChatService {
 
   private buildApiUrl(path: string): string {
     const user = this.auth.getUser();
-    let url = `${environment.chatbotApiUrl}${path}`;
+    let url = `${environment.base_value.chatbotApiUrl}${path}`;
     if (user && user.id) {
       url += `?userId=${encodeURIComponent(user.id)}`;
     }

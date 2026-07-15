@@ -309,8 +309,10 @@ export class ConfigurationService implements Resolve<Observable<any>> {
         return this.apiService.post(environment.base_value.generate_bulk_qr_code, postBody);
     }
 
-    getAssetDepartment()  {
-       return this.apiService.get(environment.base_value. get_asset_department)
+    getAssetDepartment(facilityId?)  {
+       let url = environment.base_value.get_asset_department;
+       if (facilityId) url += `?facilityId=${facilityId}`;
+       return this.apiService.get(url);
     }
       
     // Component: Daily Management, Health Check
@@ -446,6 +448,29 @@ export class ConfigurationService implements Resolve<Observable<any>> {
     updateBroker(data, id) {
         return this.apiService.put(environment.base_value.update_broker + '/' + id, data);
     }
+    getAllPoeInjectors(id?: number, search?: string, pageStart?: number, pageSize?: number) {
+        let params = [];
+        if(id !== null && id !== undefined) {
+            params.push('id=' + id);
+        }
+        if(search !== null && search !== undefined && search !== '') {
+            params.push('search=' + search);
+        }
+        if(pageStart !== null && pageStart !== undefined) {
+            params.push('pageStart=' + pageStart);
+        }
+        if(pageSize !== null && pageSize !== undefined) {
+            params.push('pageSize=' + pageSize);
+        }
+        const queryString = params.length > 0 ? '?' + params.join('&') : '';
+        return this.apiService.get(environment.base_value.get_poe_injector + queryString);
+    }
+    createPoeInjector(data) {
+        return this.apiService.post(environment.base_value.create_poe_injector, data);
+    }
+    updatePoeInjector(data, id) {
+        return this.apiService.put(environment.base_value.update_poe_injector + '/' + id, data);
+    }
     getAllServers(id?: number) {
         if(id !== null && id !== undefined) {
             return this.apiService.get(environment.base_value.get_server + '?brokerId=' + id);
@@ -568,6 +593,9 @@ export class ConfigurationService implements Resolve<Observable<any>> {
     }
     getAllReaders() { // Need to Discuss
         return this.apiService.get(environment.base_value.get_all_reader);
+    }
+    getAllInjectors(pageStart: number = 0, pageSize: number = 100) {
+        return this.apiService.get(environment.base_value.get_all_injector + '?pageStart=' + pageStart + '&pageSize=' + pageSize);
     }
 
     getAllNewReaders( id?: any, sText?: string, pageStart?: number, pageSize?: number, type? : any) {
@@ -1166,5 +1194,11 @@ export class ConfigurationService implements Resolve<Observable<any>> {
 
     getformTemplatesByEntityFilter(data){
        return this.apiService.post(environment.base_value.get_formTemplate_entityfilter, data);
+    }
+
+    getFacilityTransferDetails(isFromFacility,isToFacility,pageStart?,pageSize?,sText?,fromDate?,toDate?){
+        const params = { isFromFacility, isToFacility, pageStart, pageSize, sText, fromDate, toDate };
+        const url = this.urlBuilder.buildUrl(environment.base_value.get_facility_transfer_details, params);
+        return this.apiService.get(url);
     }
 }

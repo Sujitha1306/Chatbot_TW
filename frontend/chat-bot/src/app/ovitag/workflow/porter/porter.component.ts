@@ -593,7 +593,7 @@ export class PorterNewComponent implements OnInit, OnDestroy {
       this.closeBreak(data)
     } else if (event.key === 'Current Location'){
       this.currentLocationData(event.data)
-    } else if(event.key ==='Rating'){
+    } else if(event.key ==='Rating' || event.key ==='rating'){
       this.addRating(event);
     } else if (event.key === 'Message') {
       this.getRequestById(event.data, event.key)
@@ -1828,10 +1828,10 @@ export class PorterNewComponent implements OnInit, OnDestroy {
     headerIcon: string[] = [],
     timeCols: string[] = ['Time', 'Drop Time', 'Order Time', 'Delivered Time'],
     dateTimeCols: string[]= ['Assigned Time'], 
-    width: string[] =  ['Porter Pool Location', 'Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name'],
-    minWidth: string[] =  ['Porter Pool Location', 'Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name'],
-    maxWidth: string[] =  ['Porter Pool Location', 'Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name'],
-    truncate: string[] =  ['Porter Pool Location', 'Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name'],
+    width: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
+    minWidth: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
+    maxWidth: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
+    truncate: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
     align: string[] = ['Location'],
     cellColorCols: Record<string, Record<string, string>> = this.selectedTabIndex === 3 ? null : this.PRGridConfig?.color
   ): TwColumnDef[] {
@@ -1840,11 +1840,11 @@ export class PorterNewComponent implements OnInit, OnDestroy {
       if (sortCols.includes(key)) def.sortable  = true;
       if (eventCols.includes(key)) def.clickable = true;
       if (timeCols.includes(key)) def.type = 'time';
-      if (width.includes(key)) def.width = key == 'Porter Pool / Location' ? '300px' : '150px';
-      if (minWidth.includes(key)) def.minWidth = key == 'Porter Pool / Location' ? '300px' : '150px';
-      if (maxWidth.includes(key)) def.maxWidth = key == 'Porter Pool / Location' ? '350px' : '180px';
+      if (width.includes(key)) def.width = key == 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || key === 'Group' || key === 'Porter' || key === 'Remarks' ? '85px' : '100px';
+      if (minWidth.includes(key)) def.minWidth = key == 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || key === 'Group' || key === 'Porter' || key === 'Remarks' ? '85px' : '100px';
+      if (maxWidth.includes(key)) def.maxWidth = key == 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || key === 'Group' || key === 'Porter' || key === 'Remarks' ? '85px' : '100px';
       if (truncate.includes(key)) def.truncate = key === 'Porter Pool / Location'? false : true;
-      if (headerIcon.includes(key)) def.headerIcon = { src: key === 'Priority' ? '/assets/Alert/common_icons/priority_high.svg' : key === 'Device' ? '/assets/Alert/common_icons/mob_coaster.svg' :'' };
+      if (headerIcon.includes(key)) def.headerIcon = { src: key === 'Priority' ? '/assets/Alert/common_icons/priority_high.svg' : key === 'Device' ? '/assets/Alert/common_icons/mob_coaster.svg' : '', matIcon: key === 'Message' ? 'chat' : ''};
       if (align.includes(key)) def.align = 'left';
       if ( this.selectedTabIndex !== 3) {
         if (cellColorCols[key]) { def.type = 'cellColor';  def.colorCellMap = cellColorCols[key]}

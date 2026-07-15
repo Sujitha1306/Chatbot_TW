@@ -147,7 +147,7 @@ export class CreateResourceTemplateComponent {
   
   getDepartment() {
      this.spinLoader = true;
-     this.commonService.getAllUser().subscribe(res => {
+     this.commonService.getAllUserSearch(null, 0, 5000).subscribe(res => {
       this.spinLoader = false;
       if (res.statusCode) {
         this.staffNameData = res.results;

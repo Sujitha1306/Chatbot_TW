@@ -14,7 +14,7 @@
  * ======================================================================================================
  ******************************************************************************/
 import { Component, Inject, OnInit } from "@angular/core";
-import { MatDialog, MAT_DIALOG_DATA } from "@angular/material/dialog";
+import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
 import { FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ConfigurationService, CommonService } from "../../../services";
 import { AppToastService } from "../../../services/toaster.service";
@@ -47,6 +47,7 @@ export class FacilityTransferComponent implements OnInit {
     public form: FormBuilder,
     public toastr: AppToastService,
     public dialog: MatDialog,
+    public dialogRef: MatDialogRef<FacilityTransferComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
     private readonly configurationService: ConfigurationService,
     private readonly commonService: CommonService,
@@ -70,6 +71,10 @@ export class FacilityTransferComponent implements OnInit {
           this.assetTransferTypeDetails = res.results;
         })
       }
+    });
+    this.transferForm.get('facilityId')?.valueChanges.subscribe(event => {
+      this.transferForm.patchValue({ departmentId: null, ownerId: null });
+      this.getDepartmentList();
     });
     this.transferForm.get('departmentId')?.valueChanges.subscribe(value => {
       this.transferForm.get('ownerId').setValue(null);
@@ -112,7 +117,8 @@ export class FacilityTransferComponent implements OnInit {
 
 
   getDepartmentList() {
-    this.configurationService.getAssetDepartment().subscribe(res => {
+    let facilityId = this.transferForm.controls.facilityId.value ?? null;
+    this.configurationService.getAssetDepartment(facilityId).subscribe(res => {
       this.departmentList = res.results.map(({ id, name }) => ({ id, name }));
     });
   }
@@ -262,19 +268,29 @@ export class FacilityTransferComponent implements OnInit {
 
   saveTransfer() {
     const payload = {
-      assetId: this.data?.id,
+      // assetId: this.data?.id,
+      // assetTransferType: this.transferForm.controls.assetTransferType.value,
+      // transferType: this.transferForm.controls.transferType.value,
+      // facilityId: this.transferForm.controls.facilityId.value,
+      // departmentId: this.transferForm.controls.departmentId.value,
+      // comments: this.transferForm.controls.comments.value,
+      // ownerId: this.transferForm.controls.ownerId.value,
+      // isTagAssociated: this.transferForm.controls.isTagAssociated.value,
+      id: this.data?.id,
       assetTransferType: this.transferForm.controls.assetTransferType.value,
       transferType: this.transferForm.controls.transferType.value,
-      facilityId: this.transferForm.controls.facilityId.value,
-      departmentId: this.transferForm.controls.departmentId.value,
       comments: this.transferForm.controls.comments.value,
-      ownerId: this.transferForm.controls.ownerId.value,
-      isTagAssociated: this.transferForm.controls.isTagAssociated.value,
+      linkedAsset: null,
+      isExcludeParent: false,
+      eventId : 'ATT-ACEV',
+      eventStatusId : 'ATE-INI',
+      sourceIdentifier : localStorage.getItem(btoa('facilityId')),
+      destinationIdentifier: this.transferForm.controls.facilityId.value,
     }
     console.log(payload)
-    return
     this.commonService.assetTransfer(payload).subscribe(res => {
       this.toastr.success('Success', `${res.message}`);
+      this.dialogRef.close('confirm');
     }, error => {
       this.toastr.error('Error', `${error.error.message}`);
     });

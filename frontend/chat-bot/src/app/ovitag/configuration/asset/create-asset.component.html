@@ -5,169 +5,197 @@
         <div class="spin3"></div>
     </div>
   </div>
-  <div class="input-component-holder ovi-font-family" style="height:100% ;width:100%;">
+  <div class="input-component-holder ovi-font-family create-template-dialog" style="height:96% ;width:100%;">
     <div class="ovi-pop-hdr" *ngIf="!disableAction">
         <div *ngIf="!data.id">{{"Create Asset"|translate}}</div>
         <div *ngIf="data.id">{{"Modify Asset"|translate}}
-        <span *ngIf="data.id != null" style="font-weight: 400;">
+        <!-- <span *ngIf="data.id != null" style="font-weight: 400;">
             (<ng-container *ngIf="data?.assetName">Asset Name: {{data?.assetName}}</ng-container>,
              <ng-container *ngIf="data?.assetSerialNumber">Asset Serial Number: {{data.assetSerialNumber}}</ng-container>)
-        </span>
+        </span> -->
         </div>
         <div mat-dialog-close (keydown.enter)="fixClick()" (click) ="onDialogClose()"><mat-icon>highlight_off</mat-icon></div>
     </div>
-    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="assetForm" style="overflow: auto;height:calc(100% - 80px);" >
-        <ng-container *ngIf="termsList?.length  === 0; else dynamicTerms">
-        <div class="ovi-row-gap-four-fld">
-            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label class="ovi-lbl-text-size" >{{"Asset Category"|translate}}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('assetCategoryId')" class="mandatory-field">*</span></mat-label>
-                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-                        <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Category'|translate" formControlName="assetCategoryId" [disableOptionCentering]="true" (openedChange)="onAssetCategoryOpened($event)">
-                            <mat-option>
-                            <ngx-mat-select-search [formControl]="assetCategorySearch" [placeholderLabel]="'Search' | translate"
-                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
-                            </mat-option>
-                            <mat-option *ngFor="let asset of filteredAssetCategory" [value]="asset.code">
-                                {{asset.value}}
-                            </mat-option>
-                        </mat-select>
-                        <mat-error *ngIf="assetForm.controls.assetCategoryId.invalid" class="error-txt">
-                            <span *ngIf="assetForm.controls['assetCategoryId'].hasError('required') && mandatoryFields.includes('assetCategoryId')">
-                            {{ "Asset Category is Required" | translate }}</span>
-                        </mat-error>
-                    </mat-form-field>
-            </div>
-            <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-                    <mat-label class="ovi-lbl-text-size" >{{"Asset Type"|translate}}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('assetTypeId')" class="mandatory-field">*</span></mat-label>
-                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-                        <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Type'|translate" formControlName="assetTypeId" [disableOptionCentering]="true" (openedChange)="onAssetTypeOpened($event)">
-                        <mat-option>
-                        <ngx-mat-select-search [formControl]="assetTypeSearch" [placeholderLabel]="'Search' | translate"
-                        [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
-                        </mat-option>
-                        <mat-option *ngFor="let assetType of filteredAssetTypes" [value]="assetType.code">
-                                {{assetType.value}}
-                            </mat-option>
-                        </mat-select>
-                        <mat-error *ngIf="assetForm.controls.assetTypeId.invalid" class="error-txt">
-                            <span *ngIf="assetForm.controls['assetTypeId'].hasError('required') && mandatoryFields.includes('assetTypeId')">
-                            {{ "Asset Type is Required" | translate }}</span>
-                        </mat-error>
-                    </mat-form-field>
-            </div>
-            <ng-container *ngTemplateOutlet="assetNo"></ng-container>
-            <ng-container *ngTemplateOutlet="assetName"></ng-container>
-        </div>
-        </ng-container>
-        <ng-template #dynamicTerms>
-        <div class="ovi-row-gap-four-fld" >
-        <div *ngFor="let field of termsList" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
-        <mat-label class="ovi-lbl-text-size">{{ field.labelName | translate }}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes(field.formcontrolName)" class="mandatory-field">*</span></mat-label>
-        <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-            <mat-select [formControlName]="field.formcontrolName"  appPlaceholder [showPlaceholder]="false" [placeholderText]="field.labelName | translate" [disabled]="field.disabled && data?.id" matSelectSearch>
-            <mat-option *ngFor="let option of dropdownOptionsMap[field.dropdownList] || []" [value]="option.code">
-                {{ option.value }}
-            </mat-option>
-            </mat-select>
-            <mat-error *ngIf="assetForm.get(field.formcontrolName)?.invalid" class="error-txt">
-                <span *ngIf="assetForm.get(field.formcontrolName)?.hasError('required') && mandatoryFields?.includes(field.formcontrolName)">
-                    {{ field.labelName | translate }} is Required
-                </span>
-            </mat-error>
-        </mat-form-field>
-        </div>
-        </div>
-        </ng-template>
-        <div class="ovi-row-gap-four-fld" >
-        <ng-container *ngIf="termsList?.length  !== 0">
-            <ng-container *ngTemplateOutlet="assetNo"></ng-container>
-            <ng-container *ngTemplateOutlet="assetName"></ng-container>
-        </ng-container>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Description')">
-            <mat-label class="ovi-lbl-text-size" >{{"Description"|translate}}</mat-label>
-            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-            <input  matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'comments'|translate"
-            formControlName="comments" />
-            </mat-form-field>
-        </div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Status')">
-            <mat-label class="ovi-lbl-text-size">{{"Status"| translate }}</mat-label>
-            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate" formControlName="assetStatus">
-                <mat-option *ngFor="let option of statusList" [value]="option.code">
-                    {{ option.value }}
-                </mat-option>
-                </mat-select>
-                    </mat-form-field>
-            </div>
-            <div *ngIf="termsList?.length  == 0" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"></div>
-            <div *ngIf="termsList?.length  == 0" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"></div>
-        </div>
-        <div class="ovi-row-gap-four-fld" *ngIf="!(excludeFields?.includes('Oracle Id')&& excludeFields?.includes('Oracle Description')&& excludeFields?.includes('BioMedTag Id'))">
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Oracle Id')">
-                <mat-label class="ovi-lbl-text-size">{{"Oracle Id"|translate}}</mat-label>
-                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Oracle Id'|translate"
-                        formControlName="oracleId" [readonly]="data.id">
-                </mat-form-field>
-                </div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Oracle Description')">
-                    <mat-label class="ovi-lbl-text-size">{{"Oracle Description"|translate}}</mat-label>
-                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Oracle Description'|translate"
-                            formControlName="oracleDescription" [readonly]="data.id">
-                    </mat-form-field>
-                </div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('BioMedTag Id')">
-                <mat-label class="ovi-lbl-text-size">{{"BioMedTag Id"|translate}}</mat-label>
-            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'BioMedTagId'|translate"
-                        formControlName="biomedTagId" [readonly]="data.id">
-                </mat-form-field>
-        </div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"></div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"*ngIf="excludeFields?.includes('Oracle Id')"></div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"*ngIf="excludeFields?.includes('Oracle Description')"></div>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"*ngIf="excludeFields?.includes('BioMedTag Id')"></div>
-        </div>
-        <ng-template #assetNo>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                    <mat-label class="ovi-lbl-text-size">{{"Asset No"|translate}} <span class="mandatory-field">*</span></mat-label>
-                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'assetSerialNumber'|translate"
-                     formControlName="assetSerialNumber"[readonly]="data.id != null" required />
-                    <mat-error *ngIf="assetForm.controls.assetSerialNumber.invalid" class="error-txt-1">
-                        <span [hidden]="!assetForm.controls['assetSerialNumber'].errors.required">{{"Asset
-                            number required"|translate}}</span>
-                        <span [hidden]="!assetForm.controls['assetSerialNumber'].errors.maxlength">{{"Maximmum
-                            allowed characters are 64"|translate}} </span>
-                    </mat-error>
-                    </mat-form-field>
-                </div>
-        </ng-template>
-        <ng-template #assetName>
-        <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
-                <mat-label class="ovi-lbl-text-size">{{"Asset Name"|translate}} <span class="mandatory-field">*</span></mat-label>
-            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
-                    <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'assetName'|translate"
-                        formControlName="assetName"[readonly]="data.id != null" required />
-                    <mat-error *ngIf="assetForm.controls.assetName.invalid" class="error-txt-1">
-                        <span [hidden]="!assetForm.controls['assetName'].errors.required">{{"Asset name
-                            required"|translate}}</span>
-                    </mat-error>
-                </mat-form-field>
-        </div>
-        </ng-template>
+    <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin" [formGroup]="assetForm" style="overflow: auto;height:calc(100% - 90px);" >
+        <div class="template-details-toggle-section" style="margin-top: 5px;">
 
-        <mat-tab-group style="width: calc(100% - 20px);position: relative;top: 10px;" class="asset-mat-tab " (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex" >
+        <div class="template-details-toggle-header" style="display:flex; justify-content:space-between; align-items:center; width:99%; min-height:28px;background: #eaf8ff;"
+            *ngIf="!isEditingAssetDetails">
+            <!-- <span class="ovi-fnt-sze14 ovi-field-label">
+                <ng-container *ngIf="data?.assetName || data?.assetSerialNumber">
+                    <ng-container *ngIf="data?.assetName"><span>{{"Name"|translate}} : </span>&nbsp;<span style="font-weight: normal;" class="ovi-fnt-sze13">{{data?.assetName}}</span></ng-container>&nbsp;&nbsp;
+                    <ng-container *ngIf="data?.assetSerialNumber"><span>{{"Serial Number"|translate}} : </span>&nbsp;<span style="font-weight: normal;" class="ovi-fnt-sze13">{{data.assetSerialNumber}}</span></ng-container>
+                </ng-container>
+            </span> -->
+            <app-banner style="width: 100%;" [type]="'new'" [bannerData]="bannerlabel"></app-banner>
+            <button mat-icon-button type="button" disableRipple (click)="isEditingAssetDetails = true"
+                    appTooltip [tooltipText]="'Edit'|translate" placement="bottom"
+                    style="flex-shrink:0; margin-left:auto; width:28px; height:28px; line-height:28px; padding:0;">
+                <mat-icon class="ovi-prmry-clr" style="font-size:18px; width:18px; height:18px; line-height:18px; display:flex; align-items:center; justify-content:center;">edit</mat-icon>
+            </button>
+        </div>
+
+        <div *ngIf="isEditingAssetDetails">
+            <div class="template-details-toggle-header"
+                style="display:flex; justify-content:flex-end; align-items:center; width:99%; height:5px;">
+                <button *ngIf="data?.id" mat-icon-button type="button" disableRipple (click)="isEditingAssetDetails = false"
+                        appTooltip [tooltipText]="'Close'|translate" placement="bottom"
+                        style="flex-shrink:0; width:28px; height:28px; line-height:28px; padding:0;">
+                    <mat-icon class="ovi-prmry-clr" style="font-size:18px; width:18px; height:18px; line-height:18px; display:flex; align-items:center; justify-content:center;margin-top: 10px;">close</mat-icon>
+                </button>
+            </div>
+                <ng-container *ngIf="termsList?.length  === 0; else dynamicTerms">
+                <div class="ovi-row-gap-four-fld">
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label" >{{"Asset Category"|translate}}&nbsp;<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('assetCategoryId')" class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Category'|translate" formControlName="assetCategoryId" [disableOptionCentering]="true" (openedChange)="onAssetCategoryOpened($event)">
+                                    <mat-option>
+                                    <ngx-mat-select-search [formControl]="assetCategorySearch" [placeholderLabel]="'Search' | translate"
+                                        [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                                    </mat-option>
+                                    <mat-option *ngFor="let asset of filteredAssetCategory" [value]="asset.code">
+                                        {{asset.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="assetForm.controls.assetCategoryId.invalid" class="error-txt">
+                                    <span *ngIf="assetForm.controls['assetCategoryId'].hasError('required') && mandatoryFields.includes('assetCategoryId')">
+                                    {{ "Asset Category is Required" | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <div class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label" >{{"Asset Type"|translate}}&nbsp;<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('assetTypeId')" class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                                <mat-select  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Type'|translate" formControlName="assetTypeId" [disableOptionCentering]="true" (openedChange)="onAssetTypeOpened($event)">
+                                <mat-option>
+                                <ngx-mat-select-search [formControl]="assetTypeSearch" [placeholderLabel]="'Search' | translate"
+                                [noEntriesFoundLabel]="'No matching options' | translate"></ngx-mat-select-search>
+                                </mat-option>
+                                <mat-option *ngFor="let assetType of filteredAssetTypes" [value]="assetType.code">
+                                        {{assetType.value}}
+                                    </mat-option>
+                                </mat-select>
+                                <mat-error *ngIf="assetForm.controls.assetTypeId.invalid" class="error-txt">
+                                    <span *ngIf="assetForm.controls['assetTypeId'].hasError('required') && mandatoryFields.includes('assetTypeId')">
+                                    {{ "Asset Type is Required" | translate }}</span>
+                                </mat-error>
+                            </mat-form-field>
+                    </div>
+                    <ng-container *ngTemplateOutlet="assetNo"></ng-container>
+                    <ng-container *ngTemplateOutlet="assetName"></ng-container>
+                </div>
+                </ng-container>
+                <ng-template #dynamicTerms>
+                <div class="ovi-row-gap-four-fld" >
+                <div *ngFor="let field of termsList" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box">
+                <mat-label class="ovi-lbl-text-size ovi-field-label">{{ field.labelName | translate }}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes(field.formcontrolName)" class="mandatory-field">*</span></mat-label>
+                <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <mat-select [formControlName]="field.formcontrolName"  appPlaceholder [showPlaceholder]="false" [placeholderText]="field.labelName | translate" [disabled]="field.disabled && data?.id" matSelectSearch>
+                    <mat-option *ngFor="let option of dropdownOptionsMap[field.dropdownList] || []" [value]="option.code">
+                        {{ option.value }}
+                    </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="assetForm.get(field.formcontrolName)?.invalid" class="error-txt">
+                        <span *ngIf="assetForm.get(field.formcontrolName)?.hasError('required') && mandatoryFields?.includes(field.formcontrolName)">
+                            {{ field.labelName | translate }} is Required
+                        </span>
+                    </mat-error>
+                </mat-form-field>
+                </div>
+                </div>
+                </ng-template>
+                <div class="ovi-row-gap-four-fld" style="padding-top: 5px;">
+                <ng-container *ngIf="termsList?.length  !== 0">
+                    <ng-container *ngTemplateOutlet="assetNo"></ng-container>
+                    <ng-container *ngTemplateOutlet="assetName"></ng-container>
+                </ng-container>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Description')">
+                    <mat-label class="ovi-lbl-text-size ovi-field-label" >{{"Description"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                    <input  matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'comments'|translate"
+                    formControlName="comments" />
+                    </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Status')">
+                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Status"| translate }}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'status'|translate" formControlName="assetStatus">
+                        <mat-option *ngFor="let option of statusList" [value]="option.code">
+                            {{ option.value }}
+                        </mat-option>
+                        </mat-select>
+                            </mat-form-field>
+                    </div>
+                    <div *ngIf="termsList?.length  == 0" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"></div>
+                    <div *ngIf="termsList?.length  == 0" class="ovi-row-four-clmn ovi-matfrmfld-drpdwn-top-box"></div>
+                </div>
+                <div class="ovi-row-gap-four-fld" *ngIf="!(excludeFields?.includes('Oracle Id')&& excludeFields?.includes('Oracle Description')&& excludeFields?.includes('BioMedTag Id'))">
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Oracle Id')">
+                        <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Oracle Id"|translate}}</mat-label>
+                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Oracle Id'|translate"
+                                formControlName="oracleId" [readonly]="data.id">
+                        </mat-form-field>
+                        </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('Oracle Description')">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Oracle Description"|translate}}</mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Oracle Description'|translate"
+                                    formControlName="oracleDescription" [readonly]="data.id">
+                            </mat-form-field>
+                        </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg" *ngIf="!excludeFields?.includes('BioMedTag Id')">
+                        <mat-label class="ovi-lbl-text-size ovi-field-label">{{"BioMedTag Id"|translate}}</mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'BioMedTagId'|translate"
+                                formControlName="biomedTagId" [readonly]="data.id">
+                        </mat-form-field>
+                </div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"></div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"*ngIf="excludeFields?.includes('Oracle Id')"></div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"*ngIf="excludeFields?.includes('Oracle Description')"></div>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg"*ngIf="excludeFields?.includes('BioMedTag Id')"></div>
+                </div>
+                <ng-template #assetNo>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Asset No"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
+                            <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'assetSerialNumber'|translate"
+                            formControlName="assetSerialNumber"[readonly]="data.id != null" required />
+                            <mat-error *ngIf="assetForm.controls.assetSerialNumber.invalid" class="error-txt-1">
+                                <span [hidden]="!assetForm.controls['assetSerialNumber'].errors.required">{{"Asset
+                                    number required"|translate}}</span>
+                                <span [hidden]="!assetForm.controls['assetSerialNumber'].errors.maxlength">{{"Maximmum
+                                    allowed characters are 64"|translate}} </span>
+                            </mat-error>
+                            </mat-form-field>
+                        </div>
+                </ng-template>
+                <ng-template #assetName>
+                <div class="ovi-row-four-clmn ovi-matfrmfld-input-box-pdg">
+                        <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Asset Name"|translate}}&nbsp;<span class="mandatory-field">*</span></mat-label>
+                    <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
+                            <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'assetName'|translate"
+                                formControlName="assetName"[readonly]="data.id != null" required />
+                            <mat-error *ngIf="assetForm.controls.assetName.invalid" class="error-txt-1">
+                                <span [hidden]="!assetForm.controls['assetName'].errors.required">{{"Asset name
+                                    required"|translate}}</span>
+                            </mat-error>
+                        </mat-form-field>
+                </div>
+                </ng-template>
+            </div>
+        </div>
+        <mat-tab-group style="width: calc(100% - 20px);position: relative;top: 10px;" class="template-mat-tab " (selectedTabChange)="onTabChanged($event)" [selectedIndex]="selectedIndex" >
        <ng-container *ngFor="let tab of tabOrder; let i = index;">
             <mat-tab *ngIf="tab === 'Basic Details' && activate_btn && activate_btn.includes('BT_AM_VBD')" label="{{'Basic Details'|translate}}">
                 <ng-template *ngIf="tab === 'Basic Details' && activate_btn && activate_btn.includes('BT_AM_VBD')  && !updateLoader" mat-tab-label >{{"Basic Details"|translate}}</ng-template>
-                <div style="overflow: hidden;">
+                <div style="overflow: hidden; padding-top: 5px;">
                 <div class="ovi-row-gap ">
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">{{"Criticality"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Criticality"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Critical or Non-critical'|translate" formControlName="criticalityId">
                                     <mat-option [value]="null">None</mat-option>
@@ -179,7 +207,7 @@
                     </div>
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">{{" Risk Classification"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{" Risk Classification"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Low / Moderate /High'|translate" formControlName="riskClassificationId">
                                     <mat-option *ngFor="let type of classificationList" [value]="type.code">
@@ -191,7 +219,7 @@
 
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                          <mat-label class="ovi-lbl-text-size">{{"Location Identifier"|translate}}</mat-label>
+                          <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Location Identifier"|translate}}</mat-label>
                           <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                             <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search location Identifier'|translate"  
                                    id="locationIdentifier" appTypeHit (typeHit)="searchLocationlist($event, 'identifier')"
@@ -209,7 +237,7 @@
                     </div>
                       
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                            <mat-label class="ovi-lbl-text-size">{{"Location Name"|translate}} <span *ngIf="modifyMandatoryFields?.length>0 && modifyMandatoryFields?.includes('locationDescription')" class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Location Name"|translate}}&nbsp;<span *ngIf="modifyMandatoryFields?.length>0 && modifyMandatoryFields?.includes('locationDescription')" class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                             <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Type here to search location'|translate"
                                    id="locationDescription" appTypeHit (typeHit)="searchLocationlist($event, 'description')"
@@ -241,7 +269,7 @@
                     </div>
                     
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                            <mat-label class="ovi-lbl-text-size">{{ "Manufacturer"|translate}} <span *ngIf="modifyMandatoryFields?.length>0 && modifyMandatoryFields?.includes('manufacturer')" class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{ "Manufacturer"|translate}}&nbsp;<span *ngIf="modifyMandatoryFields?.length>0 && modifyMandatoryFields?.includes('manufacturer')" class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Manufacturer' | translate"
                                     formControlName="manufacturer" [matAutocomplete]="auto">
@@ -260,7 +288,7 @@
                     </div>
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                            <mat-label class="ovi-lbl-text-size">{{"Software Version"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Software Version"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Software Version'|translate"
                                     formControlName="softwareVersion">
@@ -272,7 +300,7 @@
                     </div>
 
                     <div *ngIf="!data?.id"class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">{{"Warranty Status"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Warranty Status"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'In Warranty / Out of Warranty/Extended Warranty'|translate" formControlName="warrantyStatusId" [disableOptionCentering]="true"[disabled]="true">
                                     <mat-option *ngFor="let type of WarrantyStatus" [value]="type.code">
@@ -283,7 +311,7 @@
                     </div>
 
                     <div *ngIf="data?.id" class="ovi-row-two-clmn ovi-matfrmfld-type-datetime-local">
-                    <mat-label class="ovi-lbl-text-size">{{"Commissioned Date"|translate}}<span class="mandatory-field" *ngIf="isWarrantyStatus">*</span></mat-label>
+                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Commissioned Date"|translate}}&nbsp;<span class="mandatory-field" *ngIf="isWarrantyStatus">*</span></mat-label>
                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                         <input matInput [max]="today" [matDatepicker]="commissionedPicker"
                         appPlaceholder [showPlaceholder]="false" [placeholderText]="'Commissioned Date'|translate"
@@ -302,9 +330,9 @@
                     </mat-form-field>
                     </div>
 
-                    <div *ngIf="data?.id" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ovi-matfrmfld-drpdwn-top-box"style="display:flex;gap:10px;padding-top: 5px;">
-                        <div style="width:50%">
-                            <mat-label class="ovi-lbl-text-size">{{"Warranty Period"|translate}}<span *ngIf="isWarrantyStatus" class="mandatory-field">*</span></mat-label>
+                    <div *ngIf="data?.id" class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ovi-matfrmfld-drpdwn-top-box ovi-subfield-row">
+                        <div class="ovi-subfield-col">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Warranty Period"|translate}}&nbsp;<span *ngIf="isWarrantyStatus" class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                             <input matInput formControlName="warrantyPeriod"  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Warranty Period'|translate" [readonly]="data?.warrantyPeriod && data.warrantyPeriod.trim().charAt(0) >= '0' && data.warrantyPeriod.trim().charAt(0) <= '9'" (input)="calculateEndDate()">
                             <mat-error *ngIf="assetForm.controls.warrantyPeriod?.errors?.required">
@@ -319,8 +347,8 @@
                             </mat-form-field>
                         </div>
 
-                        <div style="width:50%">
-                            <mat-label class="ovi-lbl-text-size">{{"Period  Type"|translate}}</mat-label>
+                        <div class="ovi-subfield-col">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Period  Type"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                             <mat-select formControlName="warrantyFrequency" appPlaceholder [showPlaceholder]="true"
                                 [placeholderText]="'Month/Years'|translate" [disabled] ="data?.warrantyPeriod && data.warrantyPeriod.trim().charAt(0) >= '0' && data.warrantyPeriod.trim().charAt(0) <= '9'"(selectionChange)="calculateEndDate()">
@@ -331,9 +359,9 @@
                         </div>
                     </div>
 
-                    <div *ngIf="data?.id" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box"style="display:flex;gap:10px">
-                        <div style="width:50%">
-                            <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}}</mat-label>
+                    <div *ngIf="data?.id" class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ovi-subfield-row">
+                        <div class="ovi-subfield-col">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"End Date"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                             <input matInput [matDatepicker]="warrantyDuePicker"
                                 appPlaceholder [showPlaceholder]="false" [placeholderText]="'End Date'|translate"
@@ -342,9 +370,9 @@
                             <mat-datepicker #warrantyDuePicker></mat-datepicker>
                             </mat-form-field>
                         </div>
-                        <div style="width:50%">
-                            <div style="display: flex;gap:15px;" [style.padding-top]="(data?.id && data?.warrantyPeriod && data.warrantyPeriod.trim().charAt(0) >= '0'&& data.warrantyPeriod.trim().charAt(0) <= '9')? '0px': '5px'">
-                            <mat-label class="ovi-lbl-text-size">{{"Warranty Status"|translate}}</mat-label>
+                        <div class="ovi-subfield-col">
+                            <div class="ovi-subfield-label-icon" [style.padding-top]="(data?.id && data?.warrantyPeriod && data.warrantyPeriod.trim().charAt(0) >= '0'&& data.warrantyPeriod.trim().charAt(0) <= '9')? '0px': '5px'">
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Warranty Status"|translate}}</mat-label>
                             <mat-icon *ngIf="data?.id && data?.warrantyPeriod && data.warrantyPeriod.trim().charAt(0) >= '0' && data.warrantyPeriod.trim().charAt(0) <= '9'" class="ovi-prmry-clr ovi-fnt-sze20" style="height:22px;width:22px;padding-top:0px"
                             appTooltip tooltipText="{{'Navigate To Warranty'|translate}}" placement="bottom" (click)="createRoutine()"  (keydown.enter)="fixClick()">launch</mat-icon>
                         </div>
@@ -360,7 +388,7 @@
                     </div>
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box" *ngIf="!excludeFields?.includes('Guarantee Status')">
-                            <mat-label class="ovi-lbl-text-size">{{"Guarantee Status"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Guarantee Status"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'In Guarantee / Out Guarantee'|translate" formControlName="guaranteeStatusId" [disableOptionCentering]="true" [disabled]="true">
                                     <mat-option *ngFor="let type of WarrantyStatus" [value]="type.code">
@@ -371,7 +399,7 @@
                     </div>
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                            <mat-label class="ovi-lbl-text-size">{{"Vendor Name"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Vendor Name"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Vendor Name'|translate"
                                     formControlName="vendorName">
@@ -382,9 +410,9 @@
                             </mat-form-field>
                     </div>
 
-                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="display: flex;gap: 10px" >
-                        <div  style="width: 60px;">
-                          <mat-label class="ovi-lbl-text-size">{{"Code"|translate}} </mat-label>
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ovi-subfield-row">
+                        <div class="ovi-subfield-col-fixed">
+                          <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Code"|translate}} </mat-label>
                           <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
                               <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate"  matInput [readonly]="enableVendorContact==true"
                               formControlName="vendorCountryCode" [matAutocomplete]="vendorCountryCode">
@@ -395,8 +423,8 @@
                               </mat-autocomplete>
                           </mat-form-field>
                          </div>
-                         <div style="width:100%" >
-                          <mat-label class="ovi-lbl-text-size">{{"Vendor Contact"|translate}}</mat-label>
+                         <div class="ovi-subfield-col-grow">
+                          <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Vendor Contact"|translate}}</mat-label>
                           <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
                               <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Vendor Contact'|translate"  formControlName="vendorContact"[readonly]="enableVendorContact==true"
                                   [errorStateMatcher]="matcher" autocomplete="off">
@@ -418,7 +446,7 @@
                   
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                        <mat-label class="ovi-lbl-text-size">{{"Vendor Email"|translate}}</mat-label>
+                        <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Vendor Email"|translate}}</mat-label>
                         <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                             <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Vendor Email'|translate" formControlName="vendorEmail">
                                 <mat-error *ngIf="assetForm.controls.vendorEmail.invalid" class="error-txt">
@@ -433,7 +461,7 @@
                     </div>
                 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Model Number"|translate}}<span *ngIf="modifyMandatoryFields?.length>0 && modifyMandatoryFields?.includes('modelId')" class="mandatory-field">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Model Number"|translate}}&nbsp;<span *ngIf="modifyMandatoryFields?.length>0 && modifyMandatoryFields?.includes('modelId')" class="mandatory-field">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Model Number'|translate"
                                     formControlName="modelId" [readonly]="true">
@@ -448,7 +476,7 @@
                     </div>
 
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Product Serial Number"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Product Serial Number"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Product Serial Number'|translate"
                                     formControlName="productSerialNumber" [readonly]="data.id">
@@ -460,7 +488,7 @@
                     </div>
                     
                     <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Retired Date"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Retired Date"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <input matInput [matDatepicker]="RetiredDatepicker"  appPlaceholder [showPlaceholder]="false" [placeholderText]="'Retired Date'|translate"
                                  [min]="assetForm.controls.poDate.value" formControlName="endDate" [readonly]="!assetForm.get('poDate').value" [disabled]="!assetForm.get('poDate').value">
@@ -480,14 +508,14 @@
                     <mat-divider class="ovi-pop-dvd" style="margin-bottom: 10px;"></mat-divider>
                     <div class="ovi-row-gap">
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ">
-                            <mat-label class="ovi-lbl-text-size">{{"Purchase Order No"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Purchase Order No"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Purchase Order No'|translate"
                                     formControlName="poOrdrNo">
                             </mat-form-field>
                     </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Purshase Order Date"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Purshase Order Date"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <input matInput [max]="today" [matDatepicker]="PoDatepicker" appPlaceholder [showPlaceholder]="false"
                                     [placeholderText]="'Purshase Order Date'|translate" formControlName="poDate">
@@ -500,7 +528,7 @@
                             </mat-form-field>
                         </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Expected Arriving Date"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Expected Arriving Date"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <input matInput [max]="today" [matDatepicker]="ExpArrvgDatepicker" appPlaceholder [showPlaceholder]="false"
                                     [placeholderText]="'Expected Arriving Date'|translate" formControlName="expArrvgDate">
@@ -513,7 +541,7 @@
                             </mat-form-field>
                         </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Delivery Date"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Delivery Date"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                 <input matInput [max]="today" [matDatepicker]="delvryDatepicker" appPlaceholder [showPlaceholder]="false"
                                     [placeholderText]="'Delivery Date'|translate" formControlName="delvryDate">
@@ -526,65 +554,64 @@
                             </mat-form-field>
                         </div>
                     </div>
-                    <div class="ovi-row-gap" style="margin-top: 10px;">
-                        <div  class="ovi-popup-title-text-size">{{"Connectivity Details"|translate}}</div>
+            </div>
+            </mat-tab>
+            <mat-tab *ngIf="tab === 'Connectivity Details' && activate_btn && activate_btn.includes('BT_AM_VCD')" label="{{'Connectivity Details'|translate}}">
+                <ng-template *ngIf="tab === 'Connectivity Details' && activate_btn && activate_btn.includes('BT_AM_VCD') && !updateLoader" mat-tab-label>{{"Connectivity Details"|translate}}</ng-template>
+                <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                
+                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="margin: 10px 0px 10px 5px;">
+                        <mat-checkbox class="ovi-lbl-text-size ovi-field-label" formControlName="isNetwork">
+                            {{ "Network Connectivity" | translate }}
+                        </mat-checkbox>
                     </div>
-                    <mat-divider class="ovi-pop-dvd" style="margin-bottom: 10px;"></mat-divider>
-                    <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                    
-                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="margin: 10px 0px 10px 5px;">
-                            <mat-checkbox class="ovi-lbl-text-size" formControlName="isNetwork">
-                                {{ "Network Connectivity" | translate }}
-                            </mat-checkbox>
-                        </div>
-                    </div>
-                    <div class="ovi-row-gap ">
-                        <div *ngIf="assetForm.get('isNetwork')?.value">
-                            <div class="ovi-row-gap">
+                </div>
+                <div class="ovi-row-gap " style="padding-top: 0px;">
+                    <div *ngIf="assetForm.get('isNetwork')?.value">
+                        <div class="ovi-row-gap">
+                            <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">
+                                    {{"Connection Protocol"|translate}}
+                                </mat-label>
+                
+                                <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                    <mat-select formControlName="connectionProtocolId"
+                                        (selectionChange)="onProtocolChange($event.value)">
+                
+                                        <mat-option *ngFor="let type of connectionProtocolList" [value]="type.code">
+                                            {{type.value}}
+                                        </mat-option>
+                
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                
+                            <ng-container *ngIf="isWebRTC">
+                
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">
-                                        {{"Connection Protocol"|translate}}
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">
+                                        Stream Name
                                     </mat-label>
-                    
+                
                                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                                        <mat-select formControlName="connectionProtocolId"
-                                            (selectionChange)="onProtocolChange($event.value)">
-                    
-                                            <mat-option *ngFor="let type of connectionProtocolList" [value]="type.code">
-                                                {{type.value}}
-                                            </mat-option>
-                    
-                                        </mat-select>
+                                        <input matInput formControlName="streamName">
                                     </mat-form-field>
                                 </div>
-                    
-                                <ng-container *ngIf="isWebRTC">
-                    
-                                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                        <mat-label class="ovi-lbl-text-size">
-                                            Stream Name
-                                        </mat-label>
-                    
-                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                                            <input matInput formControlName="streamName">
-                                        </mat-form-field>
-                                    </div>
-                    
-                                    <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                        <mat-label class="ovi-lbl-text-size">
-                                            Stream URL
-                                        </mat-label>
-                    
-                                        <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
-                                            <input matInput formControlName="streamUrl">
-                                        </mat-form-field>
-                                    </div>
-                    
-                                </ng-container>
-
-                                <ng-container *ngIf="!isWebRTC">
+                
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Associated Device"|translate}}<span
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">
+                                        Stream URL
+                                    </mat-label>
+                
+                                    <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                        <input matInput formControlName="streamUrl">
+                                    </mat-form-field>
+                                </div>
+                
+                            </ng-container>
+                            <ng-container *ngIf="!isWebRTC">
+                                <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Associated Device"|translate}}&nbsp;<span
                                             class="mandatory-field">*</span></mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                         <input matInput appPlaceholder [showPlaceholder]="false"
@@ -606,21 +633,21 @@
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"AE Title"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"AE Title"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="aeTitle">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Solution Name"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Solution Name"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="solutionName">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Intended Solution Type"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Intended Solution Type"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <mat-select formControlName="intendedSolutionTypeId">
                                             <mat-option *ngFor="let type of intendedSolutionTypes" [value]="type.code">
@@ -631,7 +658,7 @@
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Operating System"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Operating System"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <mat-select formControlName="operatingSystemId">
                                             <mat-option *ngFor="let type of operatingSystem" [value]="type.code">
@@ -642,35 +669,35 @@
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"OS Version"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"OS Version"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="osVersion">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Antivirus"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Antivirus"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="antivirusName">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Antivirus Version"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Antivirus Version"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="antiVirusVersion">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"IP Address"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"IP Address"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="ipAddress">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Port Number"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Port Number"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput type="number" formControlName="portNumber">
                                     </mat-form-field>
@@ -678,14 +705,14 @@
                     
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Output Data"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Output Data"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <input matInput formControlName="outputData">
                                     </mat-form-field>
                                 </div>
                     
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Connectivity Status"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Connectivity Status"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                         <mat-select formControlName="connectivityStatusId">
                                             <mat-option *ngFor="let type of connectivityStatus" [value]="type.code">
@@ -696,25 +723,26 @@
                                 </div>
                                           
                                 <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg" style="padding-top: 20px;">
-                                   <button mat-raised-button class="active-btn" [disabled]="!assetForm.get('associatedDevice')?.value || assetForm.get('associatedDevice')?.hasError('invalidAsset')  "  (click)="addConnectivityDetails()">Add</button>
+                                    <button mat-raised-button class="ovi-btn-primary"
+                                        [disabled]="!assetForm.get('associatedDevice')?.value || assetForm.get('associatedDevice')?.hasError('invalidAsset')  "
+                                        (click)="addConnectivityDetails()">Add</button>
                                 </div>
                                  </ng-container>  
                             </div>
                         </div>
                         </div> 
-                        <div *ngIf="assetForm.get('isNetwork')?.value && !isWebRTC" style="margin-top: 10px;" >
-                        <angular-table-component [id]="'connectivityDetails'" [type]="'ng-table'" [tableData]="connectivityData"
-                        [columns]="['Associated Device', 'AE Title', 'Solution Name', 'Intended Solution Type', 'Operating System', 'OS Version', 'Antivirus', 'Antivirus Version', 'IP Address', 'Port Number', 'Connection Protocol', 'Output Data', 'Connectivity Status','Action']" 
+                <div *ngIf="assetForm.get('isNetwork')?.value && !isWebRTC" style="margin-top: 10px;">
+                    <angular-table-component [id]="'connectivityDetails'" [type]="'ng-table'" [tableData]="connectivityData"
+                        [columns]="['Associated Device', 'AE Title', 'Solution Name', 'Intended Solution Type', 'Operating System', 'OS Version', 'Antivirus', 'Antivirus Version', 'IP Address', 'Port Number', 'Connection Protocol', 'Output Data', 'Connectivity Status','Action']"
                         [columnData]="['associatedDevice','aeTitle','solutionName','intendedSolutionTypeName','operatingSystemName','osVersion','antivirusName','antivirusVersion','ipAddress','portNumber','connectionProtocolName','outputData','connectivityStatusName','']"
-                        (triggerAction)="connectivityEventAction($event)"></angular-table-component>    
-                        </div>  
-            </div>
+                        (triggerAction)="connectivityEventAction($event)"></angular-table-component>
+                </div>
             </mat-tab>
             <mat-tab *ngIf="tab === 'Financial' && activate_btn && activate_btn.includes('BT_AM_VFI')" label="Financial">
                 <ng-template *ngIf="tab === 'Financial' && activate_btn && activate_btn.includes('BT_AM_VFI') && !updateLoader" mat-tab-label>{{"Financial"|translate}}</ng-template>
                 <div class="ovi-row-gap ">
                      <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Asset Cost"|translate}} ({{currencyLabel}})<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Asset Cost"|translate}} ({{currencyLabel}})&nbsp;<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                     <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Cost'|translate" [readonly]="isNonEditable|| data?.assetCost !=null" 
                                         formControlName="assetCost" (blur)="formatAssetCost()">
@@ -729,7 +757,7 @@
                                 </mat-form-field>
                         </div>
                 <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">{{"Useful Life Term"|translate}}  <span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Useful Life Term"|translate}}&nbsp;<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <mat-select appPlaceholder [showPlaceholder]="true" [placeholderText]="'Useful Life Terms in Years'|translate" formControlName="usefulLife">
                                     <mat-option *ngFor="let type of usefulLifeList" [value]="type">
@@ -744,7 +772,7 @@
                             </mat-form-field>
                     </div>
                     <div [ngClass]="this.assetForm.controls['costTypeId'].value === 'CT-OW' ? 'ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box' : 'ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box'">
-                                <mat-label class="ovi-lbl-text-size">{{"Cost Type"|translate}}<span *ngIf="modifyMandatoryFields?.length > 0 && modifyMandatoryFields?.includes('costTypeId')" class="mandatory-field">*</span></mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Cost Type"|translate}}&nbsp;<span *ngIf="modifyMandatoryFields?.length > 0 && modifyMandatoryFields?.includes('costTypeId')" class="mandatory-field">*</span></mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                     <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Cost Type'|translate" formControlName="costTypeId" [disableOptionCentering]="true" [disabled]="isNonEditable">
                                         <mat-option *ngIf="!modifyMandatoryFields?.includes('costTypeId')" [value]="null">None</mat-option>
@@ -759,7 +787,7 @@
                                 </mat-form-field>
                         </div>
                         <div class="ovi-row-three-clmn ovi-matfrmfld-drpdwn-top-box">
-                            <mat-label class="ovi-lbl-text-size">{{"Depreciation Type"|translate}} <span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Depreciation Type"|translate}}&nbsp;<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Depreciation Type'|translate" formControlName="depreciationTypeId">
                                     <mat-option *ngFor="let type of depreciationType" [value]="type.code">
@@ -772,7 +800,7 @@
                             </mat-form-field>
                     </div>
                     <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Depreciation Percent"|translate}} <span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Depreciation Percent"|translate}}&nbsp;<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                     <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Depreciation Value'|translate"
                                     formControlName="depreciationPercent">
@@ -786,7 +814,7 @@
                                 </mat-form-field>
                         </div>
                          <div class="ovi-row-three-clmn ovi-matfrmfld-type-datetime-local">
-                            <mat-label class="ovi-lbl-text-size">{{"Commissioned Date"|translate}}<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Commissioned Date"|translate}}&nbsp;<span class="mandatory-field" *ngIf="isAssetCostFilled && assetCostDependentFieldsValidations">*</span></mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <input matInput [max]="today" [matDatepicker]="Commissionedpicker" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Commissioned Date'|translate"
                                  formControlName="commissionedOn" [readonly]="data?.commissionedOn != null">
@@ -802,12 +830,10 @@
                             </mat-form-field>
                     </div>
                      <div  *ngIf="data?.assetCost !=null" class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
-                                <div class="label-with-icon" style="display: flex; align-items: center; gap: 7px; margin-bottom: 6px;">
-                                    <mat-label class="ovi-lbl-text-size">
-                                        {{"Additional Cost" | translate}} ({{currencyLabel}})
-                                    </mat-label>
-                                    <mat-icon calss="addtoggle" style="cursor: pointer;" (keydown.enter)="fixClick()" (click)="toggleOverlay()">add_circle_outline</mat-icon> 
-                                    </div>
+                                <div style="display: flex;gap:15px;">
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Additional Cost"|translate}}</mat-label>
+                                    <mat-icon class="ovi-fnt-sze20" style="height:22px;width:22px;padding-top:0px;cursor: pointer;" (keydown.enter)="fixClick()" (click)="toggleOverlay()">add_circle_outline</mat-icon> 
+                                </div>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                     <span  style="display: flex;">
                                     <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Additional Cost'|translate" formControlName='additionalCost' readonly>
@@ -821,7 +847,7 @@
                         </div>
                         <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg">
                                 <div class="label-with-icon" style="display: flex; align-items: center; gap: 7px; margin-bottom: 6px;">
-                                    <mat-label class="ovi-lbl-text-size">
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">
                                         {{"Expenses" | translate}}
                                     </mat-label>
                                 </div>
@@ -851,7 +877,7 @@
                             <form [formGroup]="addForm">
                         
                                 <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
-                                    <mat-label class="ovi-lbl-text-size">{{"Type"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Type"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                         <mat-select formControlName="typeId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Type'|translate">
                                             <mat-option *ngFor="let option of AdditionalCostType" [value]="option.code">
@@ -862,21 +888,21 @@
                                 </div>
                         
                                 <div class="ovi-row-one-clmn ovi-matfrmfld-input-box-pdg">
-                                    <mat-label class="ovi-lbl-text-size">{{"Cost"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Cost"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                         <input matInput type="text" formControlName="cost" appPlaceholder [showPlaceholder]="false" [placeholderText]="'cost'|translate">
                                     </mat-form-field>
                                 </div>
                         
                                 <div class="ovi-row-one-clmn ovi-matfrmfld-type-datetime-local">
-                                    <mat-label class="ovi-lbl-text-size">{{"Date"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Date"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                         <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'datetime-local'|translate" type="datetime-local" formControlName="eventDate">
                                     </mat-form-field>
                                 </div>
                         
                                 <div class="ovi-row-one-clmn ovi-matfrmfld-drpdwn-top-box">
-                                    <mat-label class="ovi-lbl-text-size">{{"Remarks"|translate}}</mat-label>
+                                    <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Remarks"|translate}}</mat-label>
                                     <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                         <textarea matInput rows="2" formControlName="description" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Remarks'|translate"></textarea>
                                     </mat-form-field>
@@ -893,10 +919,10 @@
                 </div>
 
                 <div class="ovi-row-gap ">
-                <div style="margin: 45px 0px 0px 0px; overflow-x: auto; width: 100%; height: 100%; display: block;"> 
+                <div style="margin: 10px 0px 0px 0px; overflow-x: auto; width: 100%; height: 100%; display: block;"> 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <span  class="ovi-popup-title-text-size ovi-fnt-sze14">{{'Depreciation Schedule'|translate}}</span>
-                        <button mat-raised-button class="compute" (click)="computeDepreciation()" [disabled]="!isDepreciationSectionValid">
+                        <button mat-raised-button class="ovi-btn-primary" (click)="computeDepreciation()" [disabled]="!isDepreciationSectionValid">
                             {{"Compute"|translate}}
                         </button>
                     </div>
@@ -977,15 +1003,15 @@
             <mat-tab *ngIf="tab === 'Assigned' && activate_btn && activate_btn.includes('BT_AM_VAS')" label="{{'Assigned'|translate}}">
                 <ng-template *ngIf="tab === 'Assigned' &&activate_btn && activate_btn.includes('BT_AM_VAS') && !updateLoader"  mat-tab-label >{{"Assigned"|translate}}</ng-template>
                 <div class="mat-tab-content" style="overflow: hidden;">
-                    <mat-expansion-panel class="ovi-mat-epansional-hdr" [expanded]="isPreviousExpanded ? false : true">
+                    <mat-expansion-panel class="ovi-mat-epansional-hdr" [expanded]="isPreviousExpanded ? false : true" style="margin-left: -15px;">
                         <mat-expansion-panel-header>
                             <mat-panel-title class="ovi-popup-title-text-size top-styl">
                                 {{"OWNERSHIP"|translate}}        
                             </mat-panel-title>
                     </mat-expansion-panel-header>
-                    <div class="ovi-row-gap ">
+                    <div class="ovi-row-gap " style="padding-top: 0px;">
                         <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box ">
-                                <mat-label class="ovi-lbl-text-size">{{"Owned by Department"|translate}}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('ownerDepartmentId')" class="mandatory-field">*</span></mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Owned by Department"|translate}}&nbsp;<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('ownerDepartmentId')" class="mandatory-field">*</span></mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                     <mat-select formControlName="ownerDepartmentId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Owned by Department'|translate" [disabled]="isNonEditable" matSelectSearch >
                                     <mat-option [value]="null">None</mat-option>
@@ -1000,7 +1026,7 @@
                                   </mat-form-field>                                  
                         </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Asset Owner"|translate}}<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('ownerId')" class="mandatory-field">*</span></mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Asset Owner"|translate}}&nbsp;<span *ngIf="mandatoryFields?.length > 0 && mandatoryFields?.includes('ownerId')" class="mandatory-field">*</span></mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                     <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Owner'|translate" [readonly]="isNonEditable"
                                     formControlName="ownerId" appTypeHit (typeHit)="searchUserNameList($event,'owner')" [matAutocomplete]="autoOwner" autocomplete="off">
@@ -1015,11 +1041,13 @@
                             <mat-error *ngIf="assetForm.controls.ownerId.invalid" class="error-txt">
                                 <span *ngIf="assetForm.controls['ownerId'].hasError('required') && mandatoryFields.includes('ownerId')">
                                 {{ "Asset Owner is Required" | translate }}</span>
+                                <span *ngIf="assetForm.controls['ownerId'].hasError('requireOwnerMatch')">
+                                {{ "Please select valid user from dropdown" | translate }}</span>
                             </mat-error>
                             </mat-form-field>  
                         </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
-                                <mat-label class="ovi-lbl-text-size">{{"Used by Department"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Used by Department"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                     <mat-select formControlName="assignedDepartmentId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Used by Department'|translate" [disabled]="isNonEditable" matSelectSearch>
                                       <mat-option [value]="null">None</mat-option>
@@ -1030,7 +1058,7 @@
                                   </mat-form-field>                                  
                         </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Asset Used by"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Asset Used by"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                     <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Asset Used by'|translate" [readonly]="isNonEditable"
                                     formControlName="assetUserId" appTypeHit (typeHit)="searchUserNameList($event,'user')" [matAutocomplete]="autoUser" autocomplete="off">
@@ -1042,10 +1070,14 @@
                                     <span *ngIf="assetForm.get('assetUserId').value != null && !isNonEditable"style="padding-right:5px;" matSuffix (keydown.enter)="fixClick()" (click)="deleteData('assetUserId')">
                                         <mat-icon class="ovi-fnt-sze25" style=" color:#707070;display:contents">highlight_off</mat-icon>
                                     </span>
+                                    <mat-error *ngIf="assetForm.controls.assetUserId.invalid" class="error-txt">
+                                        <span *ngIf="assetForm.controls['assetUserId'].hasError('requireUserMatch')">
+                                        {{ "Please select valid user from dropdown" | translate }}</span>
+                                    </mat-error>
                                 </mat-form-field>
                         </div>
                         <div class="ovi-row-two-clmn ovi-matfrmfld-drpdwn-top-box">
-                                <mat-label class="ovi-lbl-text-size">{{"Cost Center Department"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Cost Center Department"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">
                                     <mat-select formControlName="costCenterId" appPlaceholder [showPlaceholder]="false" [placeholderText]="'Cost Center Department'|translate" [disabled]="isNonEditable" matSelectSearch>
                                         <mat-option [value]="null">None</mat-option>
@@ -1057,15 +1089,15 @@
                         </div>
                     </div>
                     </mat-expansion-panel>
-                    <mat-expansion-panel [expanded]="isPreviousExpanded ? false : true">
+                    <mat-expansion-panel [expanded]="isPreviousExpanded ? false : true" style="margin-left: -15px;">
                         <mat-expansion-panel-header>
                             <mat-panel-title class="ovi-popup-title-text-size top-styl">
                                 {{"SERVICE"|translate}}       
                             </mat-panel-title>
                     </mat-expansion-panel-header>
-                    <div class="ovi-row-gap ">
+                    <div class="ovi-row-gap " style="padding-top: 0px;">
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                            <mat-label class="ovi-lbl-text-size">{{"Service Person Name"|translate}}</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Service Person Name"|translate}}</mat-label>
                             <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                 <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Service Person Name'|translate" formControlName="servicePersonName" [errorStateMatcher]="matcher" [readonly]="isNonEditable">
                                 <mat-error *ngIf="assetForm.controls.servicePersonName.invalid" class="error-txt">
@@ -1075,9 +1107,9 @@
                             </mat-form-field>                                
                         </div>
 
-                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="display: flex;gap: 10px">
-                            <div  style="width: 60px;">
-                              <mat-label class="ovi-lbl-text-size">{{"Code"|translate}} </mat-label>
+                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg ovi-subfield-row">
+                            <div class="ovi-subfield-col-fixed">
+                              <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Code"|translate}} </mat-label>
                               <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
                                   <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Code'|translate" matInput [readonly]="enableServiceContact==true"
                                   formControlName="serviceCountryCode" [matAutocomplete]="serviceCountryCode">
@@ -1088,8 +1120,8 @@
                                   </mat-autocomplete>
                               </mat-form-field>
                              </div>
-                             <div style="width:100%" >
-                              <mat-label class="ovi-lbl-text-size">{{"Service Contact"|translate}}</mat-label>
+                             <div class="ovi-subfield-col-grow">
+                              <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Service Contact"|translate}}</mat-label>
                               <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err"appearance="outline">
                                   <input matInput  appPlaceholder [showPlaceholder]="false" [placeholderText]="'service Contact'|translate" formControlName="serviceContact" [readonly]="enableServiceContact==true"
                                       [errorStateMatcher]="matcher" autocomplete="off">
@@ -1109,7 +1141,7 @@
                       </div>
     
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Service Email"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Service Email"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err" appearance="outline">
                                     <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Service Person Email'|translate"  [readonly]="isNonEditable"
                                         formControlName="servicePersonEmail" [errorStateMatcher]="matcher" autocomplete="off">
@@ -1126,7 +1158,7 @@
                         </div>
 
                         <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Service Address"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Service Address"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh ovi-matfrmfld-err " appearance="outline">
                                     <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Service Address'|translate"
                                         formControlName="serviceAddress" [errorStateMatcher]="matcher"
@@ -1148,7 +1180,7 @@
                     <div class="ovi-font-family popup-tab-margin" style="margin-left: 0px;">
                         <span [formGroup]="dateForm" class="ovi-row-gap">
                             <div >
-                                <mat-label class="ovi-lbl-text-size">{{"Start Date"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Start Date"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh   ovi-matfrmfld-type-datetime-local" appearance="outline">
                                     <input matInput [matDatepicker]="StartDatepicker" formControlName="fromDate">
                                      <mat-datepicker-toggle matSuffix [for]="StartDatepicker"></mat-datepicker-toggle>
@@ -1156,15 +1188,15 @@
                                 </mat-form-field>
                             </div>
                             <div >
-                                <mat-label class="ovi-lbl-text-size">{{"End Date"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"End Date"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh   ovi-matfrmfld-type-datetime-local" appearance="outline">
                                     <input matInput [matDatepicker]="EndDatepicker" formControlName="toDate" />
                                           <mat-datepicker-toggle matSuffix [for]="EndDatepicker"></mat-datepicker-toggle>
                                            <mat-datepicker #EndDatepicker></mat-datepicker>
                                 </mat-form-field>
                             </div>
-                            <div class="ovi-row-three-clmn" style="position: relative;top: 20px;">
-                            <button mat-button class="active-btn" appDebounceClick (debounceClick)="getGoHistoryData()"
+                            <div class="ovi-row-three-clmn" style="position: relative;top: 15px;">
+                            <button mat-button class="ovi-btn-primary" appDebounceClick (debounceClick)="getGoHistoryData()"
                                 [debounceTime]="300" cdkFocusInitial>{{"Go"|translate}}</button>
                             </div>
                         </span>
@@ -1332,7 +1364,7 @@
                 <div class="mat-tab-content"style="overflow: hidden;">
                     <div class="ovi-row-gap " style="overflow-y: hidden; align-items: center;">
                         <div class="ovi-matfrmfld-input-box-pdg">
-                                <mat-label class="ovi-lbl-text-size">{{"Asset Search"|translate}}</mat-label>
+                                <mat-label class="ovi-lbl-text-size ovi-field-label">{{"Asset Search"|translate}}</mat-label>
                                 <mat-form-field class="ovi-row-frmfld-wdh " appearance="outline">   
                                     <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Select Asset No'|translate" formControlName="childAssetSerialNumber"
                                            [matAutocomplete]="autoid" appTypeHit (typeHit)="onUserTypeHit($event)">
@@ -1344,8 +1376,8 @@
                                 </mat-form-field>
                         </div>
 
-                        <div class="row-field" style="margin-top: 6px">
-                                    <button mat-button class="active-btn" *ngIf ="!isEditAsset"
+                        <div class="row-field" style="margin-top: 16px">
+                                    <button mat-button class="ovi-btn-primary" *ngIf ="!isEditAsset"
                                     (click)="add()" [disabled]="((!assetForm.controls['childAssetSerialNumber'].value || isEditAsset)||assetLinked != true)">{{"Add"|translate}}</button>
                         </div>
                     </div>
@@ -1626,7 +1658,7 @@
                     <div class="ovi-row-gap" style="margin-top: 8px;">
                         <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg"
                             style="display: flex; flex-direction: column;gap: 5px;">
-                            <mat-label class="ovi-lbl-text-size">Items</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">Items</mat-label>
                             <mat-form-field appearance="outline">
                                 <input matInput placeholder="Select Items" [formControl]="assetItemForm.controls['assetItemId']"
                                     [matAutocomplete]="autoLinked" appTypeHit (typeHit)="onTypeHit($event)">
@@ -1639,7 +1671,7 @@
                         </div>
                         <div class="ovi-row-three-clmn ovi-matfrmfld-input-box-pdg"
                             style="display: flex; flex-direction: column; gap: 5px;">
-                            <mat-label class="ovi-lbl-text-size">Description</mat-label>
+                            <mat-label class="ovi-lbl-text-size ovi-field-label">Description</mat-label>
                             <mat-form-field appearance="outline">
                                 <input matInput [formControl]="assetItemForm.controls['description']">
                             </mat-form-field>
@@ -1669,14 +1701,14 @@
     </div>
 
     <div class="ovi-pop-ftr" *ngIf="this.selectedTab !== 'Schedule'">
-        <button mat-button class="cancle-btn"  appDebounceClick (debounceClick) ="cancelAction()" [debounceTime]="300">{{"Cancel"|translate}}</button>
-        <button mat-button *ngIf="!data" class="active-btn " appDebounceClick
+        <button mat-button class="ovi-btn-outline"  appDebounceClick (debounceClick) ="cancelAction()" [debounceTime]="300">{{"Cancel"|translate}}</button>
+        <button mat-button *ngIf="!data" class="ovi-btn-primary" appDebounceClick
             [disabled]="assetForm.invalid || isDisabled " (debounceClick)="saveAsset(null);"
             [debounceTime]="300" cdkFocusInitial>{{"Create"|translate}}</button>
-        <button mat-button *ngIf="data" class="active-btn" appDebounceClick
+        <button mat-button *ngIf="data" class="ovi-btn-primary" appDebounceClick
             [disabled]=" editPermission === false|| assetForm.invalid || isDisabled " (debounceClick)="onSaveAsset(data.id,this.selectedTab);"
             [debounceTime]="300" cdkFocusInitial>{{"Save"|translate }}</button>
-        <button mat-button *ngIf="data" class="active-btn" appDebounceClick
+        <button mat-button *ngIf="data" class="ovi-btn-primary" appDebounceClick
             [disabled]=" editPermission === false|| assetForm.invalid || isDisabled " (debounceClick)="onSaveAsset(data.id);"
             [debounceTime]="300" cdkFocusInitial>{{"Save and Close"|translate }}</button>
     </div>

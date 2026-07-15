@@ -58,6 +58,7 @@ import {
   WidgetNewResolver,
   LayoutsResolver,
   BrokerResolver,
+  PoeInjectorResolver,
   ServerResolver,
   ConfigResolver,
   AlertManagementComponentResolver,
@@ -69,6 +70,7 @@ import { DataItemComponent } from "./data-item/data-item.component";
 import { AppTermsComponent } from "./app-terms/app-terms.component";
 import { BarCodeComponent } from "./bar-code/bar-code.component";
 import { BrokerComponent } from "./broker/broker.component";
+import { PoeInjectorComponent } from "./poe-injector/poe-injector.component";
 import { ServerComponent } from "./server-management/server.component";
 import { AlertManagementComponent } from "../../shared/modules/entry-component/alert-management/alert-management.component";
 import { HolidayComponent } from "./holiday/holiday.component";
@@ -93,6 +95,7 @@ import { ApiKeyComponent } from "./api-key/api-key.component";
 import { UserPreferencesComponent } from "./user-preferences/user-preferences.component";
 import { ShiftMasterComponent } from "./shift-master/shift-master.component";
 import { UserGuideComponent } from "./user-guide/user-guide.component";
+import { MapCropComponent } from "../../shared/modules/entry-component/map-crop/map-crop.component";
 
 export const routes: Routes = [
   {
@@ -118,6 +121,12 @@ export const routes: Routes = [
         component: BrokerComponent,
         canActivate: [AuthGuard],
         resolve: { broker: BrokerResolver },
+      },
+      {
+        path: "poe-injector",
+        component: PoeInjectorComponent,
+        canActivate: [AuthGuard],
+        resolve: { poeInjector: PoeInjectorResolver },
       },
       {
         path: "server-management",
@@ -371,6 +380,11 @@ export const routes: Routes = [
      {
       path: "user-guide",
       component: UserGuideComponent,
+      canActivate: [AuthGuard],
+     },
+     {
+      path: "map-crop",
+      component: MapCropComponent,
       canActivate: [AuthGuard],
      }
      ],

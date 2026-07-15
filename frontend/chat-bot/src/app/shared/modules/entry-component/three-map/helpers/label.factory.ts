@@ -19,6 +19,12 @@ function splitRoomNameIntoTwoLines(text: string): [string, string?] {
     return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
 }
 
+function getLabelLines(text: string): string[] {
+    const explicitLines = (text ?? '').split('\n').map(line => line.trim()).filter(Boolean);
+    if (explicitLines.length > 0) return explicitLines.slice(0, 2);
+    return splitRoomNameIntoTwoLines(text).filter(Boolean) as string[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Category → Material Icons ligature name
 // Uses keyword matching on the normalised category ID (LC_ / LC- prefix stripped).
@@ -161,18 +167,25 @@ export function createLabel(
     const showIcon = locationCategoryId !== null;
 
     // Canvas geometry — height is fixed; width expands to fit the full name.
-    const CH = 300;
-    const ICY = 150, IR = 118;
-    const TS = 150;
-    const ICON_TEXT_GAP = 20;
+    // Resolution doubled (Retina mode) for crisp rendering
+    const CH = 600;
+    const ICY = 300, IR = 236;
+    const lines = getLabelLines(text);
+    const hasSecondLine = lines.length > 1;
+    const TS = hasSecondLine ? 220 : 300;
+    const TS2 = 180;
+    const ICON_TEXT_GAP = 40;
     const fontSize = TS;
-    const PADDING = 16;
+    const PADDING = 32;
 
     // Pre-measure using bold font — bold glyphs are wider than normal, so measuring with
     // bold guarantees the canvas is large enough for both the default and selected states.
     const _mCtx = document.createElement('canvas').getContext('2d')!;
     _mCtx.font = `800 ${fontSize}px ${LABEL_FONT_FAMILY}`;
-    const fullTextWidth = _mCtx.measureText((text ?? '').trim()).width;
+    const primaryTextWidth = _mCtx.measureText(lines[0] ?? '').width;
+    _mCtx.font = `800 ${TS2}px ${LABEL_FONT_FAMILY}`;
+    const secondaryTextWidth = hasSecondLine ? _mCtx.measureText(lines[1] ?? '').width : 0;
+    const fullTextWidth = Math.max(primaryTextWidth, secondaryTextWidth);
 
     // The icon is always at canvas centre (CW/2) — this keeps the sprite anchored on the
     // room centroid with no X offset.  Text extends to one side of the icon, so the
@@ -201,8 +214,12 @@ export function createLabel(
     const catColor = showIcon ? getCategoryColor(locationCategoryId, categoryColors) : '#1a1a1a';
 
     const texture = new THREE.Texture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = 16;
 
-    let currentTextColor: string = '#1a1a1a';
+    let currentTextColor: string = '#555555';
     let currentBold: boolean = false;
     let resolvedGlyph: string | null = null;
 
@@ -213,38 +230,57 @@ export function createLabel(
             // ── icon circle background — always uses catColor, never the highlight ──
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.22)';
-            ctx.shadowBlur = 12;
-            ctx.shadowOffsetY = 3;
+            ctx.shadowBlur = 24;
+            ctx.shadowOffsetY = 6;
             ctx.fillStyle = catColor;
             ctx.beginPath();
             ctx.arc(ICX, ICY, IR, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
-            ctx.strokeStyle = 'rgba(255,255,255,0.78)';
-            ctx.lineWidth = 7;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 18;
             ctx.stroke();
             ctx.restore();
 
             // ── icon glyph (white Material Icon) ───────────────────────
             if (glyphName) {
                 ctx.save();
-                ctx.font = `100px "${MATERIAL_ICON_FONT}"`;
+                ctx.font = `330px "${MATERIAL_ICON_FONT}"`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillStyle = 'white';
-                ctx.fillText(glyphName, ICX, ICY + 5);
+                ctx.fillText(glyphName, ICX, ICY + 12);
                 ctx.restore();
             }
         }
 
         // ── flat text fill ──
         ctx.save();
-        ctx.font = `${bold ? '800 ' : '600 '}${fontSize}px ${LABEL_FONT_FAMILY}`;
+        ctx.font = `${bold ? '800 ' : '700 '}${fontSize}px ${LABEL_FONT_FAMILY}`;
         ctx.textAlign = textAlign;
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = textColor;
-        ctx.fillText((text ?? '').trim(), TX, TY);
+        // Draw white outline
+        /*
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 20; // Even bolder white outline for rich look
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        */
+        if (hasSecondLine) {
+            // ctx.strokeText(lines[0] ?? '', TX, TY - 95);
+            ctx.font = `${bold ? '800 ' : '700 '}${TS2}px ${LABEL_FONT_FAMILY}`;
+            // ctx.strokeText(lines[1] ?? '', TX, TY + 125);
+            ctx.font = `${bold ? '800 ' : '700 '}${fontSize}px ${LABEL_FONT_FAMILY}`;
+            ctx.fillStyle = textColor;
+            ctx.fillText(lines[0] ?? '', TX, TY - 95);
+            ctx.font = `${bold ? '800 ' : '700 '}${TS2}px ${LABEL_FONT_FAMILY}`;
+            ctx.fillText(lines[1] ?? '', TX, TY + 125);
+        } else {
+            // ctx.strokeText(lines[0] ?? '', TX, TY);
+            ctx.fillStyle = textColor;
+            ctx.fillText(lines[0] ?? '', TX, TY);
+        }
         ctx.restore();
 
         texture.needsUpdate = true;
@@ -266,12 +302,17 @@ export function createLabel(
 
     // Scale X proportionally to the dynamic canvas width so pixel density stays constant.
     // Reference: 1400 canvas px = 6.84 world units  →  204.8 px/wu
-    const BASE_SX = CW / 204.8;
-    const BASE_SY = 1.41; // CH=300 is fixed → 300/213.3 ≈ 1.41
+    const BASE_SX = CW / 409.6;
+    const BASE_SY = CH / 409.6; // Keep aspect ratio exact to ensure circle icons are perfectly round
     // ICX = CW/2, so (0.5 - ICX/CW) = 0 — sprite centre is exactly at the room centroid (x, z).
     // No X offset needed; sprite is anchored on the room regardless of camera tilt.
+    const parentScale = new THREE.Vector3(1, 1, 1);
+    parent.getWorldScale(parentScale);
+    const px = parentScale.x || 1;
+    const py = parentScale.y || 1;
+    const pz = parentScale.z || 1;
     sprite.position.set(x, labelHeight, z);
-    sprite.scale.set(BASE_SX * labelScale, BASE_SY * labelScale, 1);
+    sprite.scale.set((BASE_SX * labelScale) / px, (BASE_SY * labelScale) / py, 1 / pz);
     sprite.userData = {
         type: 'room-label',
         locationCategoryId,
@@ -281,19 +322,18 @@ export function createLabel(
         highlightScaleActive: false,
         // Called by highlight.utils to change the name text colour and weight.
         setTextColor: (hexCss: string | null, bold?: boolean) => {
-            currentTextColor = hexCss ?? '#1a1a1a';
+            currentTextColor = hexCss ?? '#555555';
             currentBold = bold ?? false;
             redrawTexture(resolvedGlyph, currentTextColor, currentBold);
         },
         // Called by highlight.utils to make the start/end label slightly larger.
-        // Only sets sprite.scale when boosting (active=true) so that zoom-adjusted
-        // scale set by LabelVisibilityService is never overridden on deactivation.
+        // Only updates fixedSX/fixedSY in userData so that LabelVisibilityService
+        // can apply zoom-adjusted scale properly on the next update.
         setHighlightScale: (active: boolean) => {
             const m = active ? 1.3 : 1.0;
             sprite.userData['fixedSX'] = BASE_SX * labelScale * m;
             sprite.userData['fixedSY'] = BASE_SY * labelScale * m;
             sprite.userData['highlightScaleActive'] = active;
-            sprite.scale.set(BASE_SX * labelScale * m, BASE_SY * labelScale * m, 1);
         }
     };
     parent.add(sprite);
@@ -340,9 +380,9 @@ export function createLabelIconSprite(
      *  dotOnly=false → adds the white ring border for the full icon style. */
     function drawBase(dotOnly = false) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.shadowColor = 'rgba(0,0,0,0.28)';
-        ctx.shadowBlur = dotOnly ? 0 : 16;
-        ctx.shadowOffsetY = dotOnly ? 0 : 4;
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = dotOnly ? 0 : 20;
+        ctx.shadowOffsetY = dotOnly ? 0 : 6;
         ctx.fillStyle = circleColor;
         ctx.beginPath();
         ctx.arc(CX, CY, dotOnly ? 128 : R, 0, Math.PI * 2); // full-radius fill for dot mode
@@ -350,8 +390,8 @@ export function createLabelIconSprite(
         ctx.shadowBlur = 0;
         ctx.shadowOffsetY = 0;
         if (!dotOnly) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 10;
             ctx.stroke();
         }
     }
@@ -365,37 +405,34 @@ export function createLabelIconSprite(
         ctx.fillText(iconName, CX, CY + 6); // +6 for optical vertical alignment
     }
 
-    // Initial render: solid dot (no ring, no icon) — looks crisp when sprite is tiny
-    drawBase(true);
+    // Render as a solid, category-colored dot with a clean white ring border and shadow
+    drawBase(false);
 
     const texture = new THREE.Texture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = 16;
     texture.needsUpdate = true;
 
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
         depthTest: false,
-        depthWrite: false
+        depthWrite: false,
+        toneMapped: false
     }));
     // Same as label sprite — must render after floor meshes to stay unaffected by camera tilt.
     sprite.renderOrder = 999;
     sprite.position.set(x, y, z);
-    sprite.scale.set(size, size, 1);
+    const parentScale = new THREE.Vector3(1, 1, 1);
+    parent.getWorldScale(parentScale);
+    const px = parentScale.x || 1;
+    const py = parentScale.y || 1;
+    const pz = parentScale.z || 1;
+    sprite.scale.set(size / px, size / py, 1 / pz);
     sprite.userData = { type: 'room-icon', locationCategoryId, disLocLevel, fullScale: size };
     parent.add(sprite);
-
-    // Async: once Material Icons font is available, bake the full icon into the texture.
-    // The LabelVisibilityService controls the sprite scale — at low zoom it stays
-    // at ICON_DOT_SCALE so only the solid blue fill is visible (dot appearance).
-    // At high zoom it grows to fullScale, revealing the icon + ring.
-    const iconName = getCategoryMaterialIcon(locationCategoryId, categoryIcons);
-    loadMaterialIconFont().then(loaded => {
-        drawBase(false); // full style: ring border + shadow
-        if (loaded) {
-            drawMaterialIcon(iconName);
-        }
-        texture.needsUpdate = true;
-    });
 
     return sprite;
 }

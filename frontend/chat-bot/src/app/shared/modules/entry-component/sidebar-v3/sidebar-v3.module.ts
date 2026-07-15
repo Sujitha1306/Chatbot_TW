@@ -6,6 +6,7 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { MaterialModule } from '../../../common/material.module';
 import { TranslateModule } from '@ngx-translate/core';
 import { SidebarMenuModule } from '../sidebar-menu/sidebar-menu.module';
+import { SharedDirectivesModule } from '../../../directive/shared-directives.module';
 import { SidebarV3Component } from './sidebar-v3.component';
 
 @NgModule({
@@ -18,6 +19,7 @@ import { SidebarV3Component } from './sidebar-v3.component';
     MaterialModule,
     TranslateModule,
     SidebarMenuModule,
+    SharedDirectivesModule,
   ],
   exports: [SidebarV3Component],
 })

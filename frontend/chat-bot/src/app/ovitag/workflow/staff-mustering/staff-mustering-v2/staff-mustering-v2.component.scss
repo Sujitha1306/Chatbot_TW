@@ -141,8 +141,17 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   vertical-align: middle;
 }
 
+// ── Tab layout: scroll + right panel side by side ─────────────
+.ms-tab-layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
 // ── Scroll container ──────────────────────────────────────────
 .ms-scroll {
+  flex: 1;
+  min-width: 0;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
@@ -156,6 +165,13 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: $bdr; border-radius: 5px; }
   &::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+
+  // Map maximized: the map card becomes the only child — let it fill the tab.
+  &.ms-scroll-max {
+    padding: 0;
+    overflow: hidden;
+    gap: 0;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -315,17 +331,22 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 // ═══════════════════════════════════════════════════════════════
 
 .ms-alert-bar {
-  display: flex;
+  // Grid (not flex) so the middle progress block sits at the bar's true center —
+  // with flex, unequal left/right content widths always drag the middle off-center.
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   background: linear-gradient(135deg, $danger-dk 0%, $danger 100%);
   border-radius: $rad;
   padding: 14px 18px;
   box-shadow: 0 4px 20px rgba(220,38,38,.30);
   animation: ms-bar-in .35s ease;
-  flex-wrap: wrap;
   flex-shrink: 0;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 @keyframes ms-bar-in {
@@ -333,7 +354,7 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.ms-alert-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.ms-alert-left { display: flex; align-items: center; gap: 14px; min-width: 0; justify-self: start; }
 
 .ms-pulse-wrap {
   position: relative;
@@ -376,7 +397,66 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 .ms-dot-sep   { margin: 0 6px; opacity: .5; }
 .ms-alert-timer { font-weight: 700; color: #FECACA; font-variant-numeric: tabular-nums; }
 
-.ms-alert-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ms-alert-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 260px;
+  justify-self: center;
+
+  @media (max-width: 720px) {
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+.ms-alert-progress-hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.ms-alert-progress-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,.78);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.ms-alert-progress-row { display: flex; align-items: center; gap: 10px; }
+
+.ms-alert-progress-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-alert-progress-track {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.22);
+  overflow: hidden;
+}
+
+.ms-alert-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #FFFFFF;
+  transition: width .35s ease, background-color .25s ease;
+
+  &.ms-alert-progress-full { background: $success; }
+}
+
+.ms-alert-progress-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: #FFFFFF;
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-alert-right { display: flex; align-items: center; gap: 8px; justify-self: end; }
 
 .ms-alert-status {
   display: inline-flex;
@@ -866,18 +946,34 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   @media (max-width: 1100px) {
     flex-direction: column;
   }
+
+  // Map maximized: single full-height/full-width child.
+  &.ms-dashboard-max {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
 }
 
 .ms-dashboard-left {
+  // Swapped to the right visually — Campus Live View sits after the summary/
+  // performance cards, widths (70/30) are unchanged, only the position flips.
+  order: 2;
   flex: 0 0 calc(70% - 10px);
   min-width: 0;
 
   @media (max-width: 1100px) {
     flex: none;
   }
+
+  .ms-dashboard-max & {
+    flex: 1 1 100%;
+    height: 100%;
+  }
 }
 
 .ms-dashboard-right {
+  order: 1;
   flex: 0 0 calc(30% - 10px);
   min-width: 0;
   display: flex;
@@ -908,6 +1004,13 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   flex-direction: column;
   height: 100%;
   min-height: 520px;
+
+  &.ms-map-hero-max {
+    min-height: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 .ms-map-hero-hd {
@@ -973,6 +1076,31 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   background: $success;
   animation: ms-live-pulse 1.4s ease-in-out infinite;
   flex-shrink: 0;
+}
+
+.ms-map-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ms-map-maximize-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid $bdr;
+  border-radius: $rad-sm;
+  background: $card;
+  color: $t2;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:hover { background: $primary-lt; color: $primary; }
 }
 
 .ms-map-hero-body {
@@ -1290,6 +1418,11 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  // Shares the column's full height 50/50 with .ms-summary-card (which was the
+  // only flex:1 item before) instead of sizing to its own content and leaving
+  // the leftover space blank underneath.
+  flex: 1;
+  min-height: 0;
 }
 
 .ms-perf-hd {
@@ -1319,94 +1452,27 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 .ms-perf-title { font-size: 13.5px; font-weight: 700; color: $t1; }
 .ms-perf-sub   { font-size: 11.5px; color: $t3; margin-top: 1px; }
 
-// ── Performance table (Time | % | Count — no progress bars) ──
+// ── Performance chart (Assembly Point counts) ──
 
-.ms-perf-tbl {
+.ms-perf-chart {
+  flex: 1;
+  min-height: 215px; // +15px floor, still grows to fill leftover space via flex:1
   display: flex;
   flex-direction: column;
+  padding: 10px 12px 8px;
+
+  div[echarts] { width: 100%; height: 100%; flex: 1; }
 }
 
-.ms-perf-thead {
-  display: flex;
-  align-items: center;
-  padding: 8px 16px;
-  background: $bdr-lt;
-  border-bottom: 1px solid $bdr;
-}
-
-.ms-perf-th-label {
+.ms-perf-empty {
   flex: 1;
-  font-size: 10px;
-  font-weight: 700;
-  color: $t4;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-
-.ms-perf-th-pct {
-  width: 58px;
-  font-size: 10px;
-  font-weight: 700;
-  color: $t4;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  text-align: center;
-}
-
-.ms-perf-th-cnt {
-  width: 50px;
-  font-size: 10px;
-  font-weight: 700;
-  color: $t4;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  text-align: right;
-}
-
-.ms-perf-trow {
   display: flex;
-  align-items: center;
-  padding: 11px 16px;
-  border-bottom: 1px solid $bdr-lt;
-  transition: background .12s;
-
-  &:hover { background: #F8FAFC; }
-  &:last-child { border-bottom: none; }
-}
-
-.ms-perf-ttime {
-  flex: 1;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: $t2;
-}
-
-.ms-perf-tbadge {
-  width: 54px;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3px 0;
-  border-radius: 20px;
+  padding: 24px 18px;
+  text-align: center;
   font-size: 12.5px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-
-.ms-pb-green  { background: #F0FDF4; color: $success; }
-.ms-pb-orange { background: #FFFBEB; color: #D97706;  }
-.ms-pb-blue   { background: #EFF6FF; color: $primary;  }
-.ms-pb-red    { background: #FEF2F2; color: $danger;   }
-
-.ms-perf-tcnt {
-  width: 46px;
-  font-size: 13px;
-  font-weight: 700;
-  color: $t3;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
+  color: $t4;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1497,11 +1563,23 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: box-shadow .18s, transform .15s;
+  transition: box-shadow .18s, transform .15s, border-color .15s;
+  cursor: pointer;
 
   &:hover {
     box-shadow: 0 4px 14px rgba(0,0,0,.10);
     transform: translateY(-2px);
+  }
+
+  &.ms-lc-alert {
+    border-color: $danger;
+    box-shadow: 0 0 0 1px rgba($danger,.15);
+  }
+
+  &.ms-lc-active {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba(37,99,235,.15), 0 4px 14px rgba(0,0,0,.10);
+    background: $primary-lt;
   }
 }
 
@@ -1540,6 +1618,21 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   white-space: nowrap;
   flex: 1;
   min-width: 0;
+}
+
+// Emergency-exit badge — shown on the incident location card(s) while an
+// emergency is active (all cards for earthquake, only the affected one(s) for fire)
+.ms-lc-exit-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 28px;
+    height: auto;
+    color: $danger;
+  }
 }
 
 // Row 2 — total count
@@ -1663,6 +1756,14 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 .ms-table-card .ms-card-bd { padding: 0; }
 .ms-table-card { min-height: 180px; }
 
+// Keep the Mustering Assignments table a fixed 10-row height so it doesn't
+// visually shrink/jump when a search filter matches fewer rows.
+.ms-table-card {
+  ::ng-deep .tw-mat-table-overflow {
+    min-height: 440px; // 40px header + 10 * 40px rows
+  }
+}
+
 .ms-slide-up { animation: ms-su .38s ease; }
 
 @keyframes ms-su {
@@ -1676,7 +1777,7 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 
 .ms-sap-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
 
@@ -1695,7 +1796,8 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 
 .ms-sap-hdr {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
   gap: 12px;
   padding: 16px 18px;
   background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
@@ -1716,15 +1818,23 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   mat-icon { font-size: 22px; width: 22px; height: 22px; color: $success; }
 }
 
-.ms-sap-hdr-info { flex: 1; min-width: 0; }
+.ms-sap-hdr-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 
 .ms-sap-hdr-name {
+  display: block;
+  max-width: 100%;
   font-size: 14px;
   font-weight: 700;
   color: #14532D;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .ms-sap-hdr-sub {
@@ -1737,15 +1847,16 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
 .ms-sap-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 11px;
+  gap: 4px;
+  padding: 2px 9px;
   border-radius: 20px;
-  font-size: 11.5px;
+  font-size: 10px;
   font-weight: 700;
   background: #F0FDF4;
   color: $success;
   border: 1px solid #BBF7D0;
   flex-shrink: 0;
+  margin-top: 5px;
   transition: all .2s;
 
   &.active { background: $success; color: #FFFFFF; border-color: $success; }
@@ -1904,11 +2015,294 @@ $sh-lg: 0 12px 40px rgba(0,0,0,.18);
   flex-direction: column;
   overflow: hidden;
 
-  ::ng-deep app-common-dialog {
+  ::ng-deep app-live-tracking {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  BLOCK DETAIL PANEL  (right-side static column)
+// ═══════════════════════════════════════════════════════════════
+
+.ms-blk-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: $card;
+  border-left: 1px solid $bdr;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $bdr; border-radius: 4px; }
+}
+
+.ms-blkp-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid $bdr-lt;
+  flex-shrink: 0;
+}
+
+.ms-blkp-hd-left { flex: 1; min-width: 0; }
+
+.ms-blkp-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: $t1;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-blkp-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-blkp-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: $primary;
+  background: $primary-lt;
+  border: 1px solid #BFDBFE;
+  border-radius: 20px;
+  padding: 1px 8px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.ms-blkp-live {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: $success;
+}
+
+.ms-blkp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $success;
+  animation: blkp-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes blkp-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(1.3); }
+}
+
+.ms-blkp-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 6px;
+  color: $t4;
+  display: flex;
+  align-items: center;
+  transition: background .15s, color .15s;
+
+  &:hover { background: $bdr-lt; color: $t1; }
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.ms-blkp-counts {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid $bdr-lt;
+  flex-shrink: 0;
+}
+
+.ms-blkp-cnt {
+  flex: 1;
+  text-align: center;
+}
+
+.ms-blkp-cnt-n {
+  font-size: 20px;
+  font-weight: 800;
+  color: $t1;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+
+  &.total { color: $primary; }
+}
+
+.ms-blkp-cnt-l {
+  font-size: 10px;
+  color: $t4;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 3px;
+}
+
+.ms-blkp-cnt-div {
+  width: 1px;
+  height: 32px;
+  background: $bdr;
+}
+
+.ms-blkp-tabs {
+  display: flex;
+  border-bottom: 1px solid $bdr;
+  flex-shrink: 0;
+}
+
+.ms-blkp-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $t3;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+  }
+}
+
+.ms-blkp-tab-cnt {
+  background: $bdr-lt;
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: $t3;
+
+  .ms-blkp-tab.active & {
+    background: $primary-lt;
+    color: $primary;
+  }
+}
+
+.ms-blkp-loading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.ms-blkp-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $bdr; border-radius: 4px; }
+}
+
+.ms-blkp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  transition: background .12s;
+  cursor: default;
+
+  &:hover { background: $bdr-lt; }
+}
+
+.ms-blkp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $primary-lt;
+  color: $primary;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+
+  &.vis {
+    background: $sky-lt;
+    color: $sky;
+  }
+}
+
+.ms-blkp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ms-blkp-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: $t1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-blkp-loc {
+  font-size: 11px;
+  color: $t4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.ms-blkp-time {
+  font-size: 10.5px;
+  color: $t3;
+  font-weight: 500;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-blkp-empty {
+  padding: 24px 14px;
+  text-align: center;
+  font-size: 12px;
+  color: $t4;
+}
+
+.ms-blkp-view-all {
+  padding: 10px 14px 4px;
+  text-align: right;
+  border-top: 1px solid $bdr-lt;
+  flex-shrink: 0;
+
+  button {
+    background: none;
+    border: none;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: $primary;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background .15s;
+
+    &:hover { background: $primary-lt; }
   }
 }

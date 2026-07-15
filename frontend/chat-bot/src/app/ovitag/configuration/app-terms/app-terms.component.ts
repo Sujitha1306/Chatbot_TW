@@ -37,6 +37,7 @@ export class AppTermsComponent implements OnInit {
   public applyFilterValue: any;
   public selectedView = "table";
   public activate_btn: any = [];
+  public groupFilter: any[] = [];
   public isLoading: boolean = false;
   filterValue = null;
   selectDropdown: any;
@@ -51,6 +52,7 @@ export class AppTermsComponent implements OnInit {
   selectedTabIndex = 0;
   public pageSize = 50;
   public pageStart = 0;
+  public length = 0;
   public selectedRow: any = null;
   constructor(public dialog: MatDialog,private readonly commonService: CommonService,private readonly route: ActivatedRoute, public toastr: AppToastService,
     private readonly configCacheService: ConfigCacheService, private readonly lookupTermService: LookupTermService
@@ -66,10 +68,17 @@ export class AppTermsComponent implements OnInit {
         this.displayedColumns = ['Code', 'Group Name'];
       }
       this.isLoading = true;
-      this.tableData = this.route.snapshot.data.appTerms.results;
-      const Columns = this.tableVersion === 1
-        ? ['ID','code', 'value']
-        : ['code', 'value'];
+      this.tableData = this.route.snapshot.data.appTerms.results.map(item => ({ ...item,
+        groupName: null
+      }));
+      let Columns = null;
+      if (this.tableVersion == 1) {
+        Columns = ['ID', 'code', 'value']
+      } else {
+        this.length = this.route.snapshot.data.appTerms.results.length;
+        Columns = ['code', 'value'];
+      }
+     
       for (let i = 0; i <= Columns.length; i++) {
           this.tableData.map(data => {
               data[this.displayedColumns[i]] = data[Columns[i]];
@@ -82,10 +91,17 @@ export class AppTermsComponent implements OnInit {
     this.isLoading = true;
     this.commonService.getAppTermsVerion2('LookupGroup').subscribe(res => {
       this.isLoading = false;
-      this.tableData = res.results;
-      const Columns = this.tableVersion === 1
-        ? ['ID','code', 'value']
-        : ['code', 'value'];
+      this.tableData = res.results.map(item => ({ ...item,
+        groupName: null
+      }));
+
+      let Columns = null;
+      if (this.tableVersion == 1) {
+        Columns = ['ID', 'code', 'value']
+      } else {
+        this.length = this.tableData.length;
+        Columns = ['code', 'value'];
+      }
       for (let i = 0; i <= Columns.length; i++) {
           this.tableData.map(data => {
               data[this.displayedColumns[i]] = data[Columns[i]];
@@ -253,5 +269,9 @@ export class AppTermsComponent implements OnInit {
 
   onPageChange(event: { pageIndex: number; pageSize: number }) {
     this.eventAction({ key: 'pagination', data: event });
+  }
+
+  get apptermsPaginationConfig(): TwPaginationConfig {
+    return { length: this.length, pageSize: this.pageSize, pageIndex: this.pageStart, pageSizeOptions: [20, 50, 100] };
   }
 }

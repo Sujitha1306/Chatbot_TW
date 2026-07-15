@@ -30,7 +30,7 @@ export class EntityRoutineActivityComponent implements OnInit {
   public titleName: string
   public groupFilter = []
   public showActions1 = [{ id: 'create', value: 'Create' }]
-  public displayedColumns:string[] = ['Type', 'Maintenance Type', 'Maintenance Name', 'Entity Name', 'Schedule Type', 'Start Time', 'From Date', 'To Date', 'Status', 'Next Due','Visit Type','Open Task','Report'];
+  public displayedColumns:string[] = ['Maintenance Type', 'Maintenance Name', 'Entity Name', 'Schedule Type', 'Start Time', 'From Date', 'To Date', 'Status', 'Next Due','Visit Type','Open Task','Report'];
   public iconHeader = ["Report"];
   public iconColumn = ["Start Time", "From Date", "To Date","Next Due","Open Task","Report"];
   public dateColumns = ['From Date', 'To Date',"Next Due"]
@@ -89,7 +89,7 @@ export class EntityRoutineActivityComponent implements OnInit {
       this.pageSize = event.data.pageSize;
       this.pageStart = event.data.pageIndex;
       this.getEntityRoutine();
-    } else if(event.key === 'Status'){
+    } else if(event.key === 'Status' ||event.key === 'Open Task'){
       this.entityRoutineEvent(event.data);
     } else if(event.key === 'Routine Name' || event.key === 'Maintenance Name'){
       this.createRoutine(event.data);
@@ -143,7 +143,7 @@ export class EntityRoutineActivityComponent implements OnInit {
       if(this.applyFilterValue !== null){
         this.applyFilterValue = this.applyFilterValue + ' ';
       }
-      const Columns = ["entityType", "routineTypeName", "pfRoutineName", "entityName", "scheduleTypeName", "scheduleStart", "fromDate", "toDate", "statusName","nextDueDate", "visitTypeName","noOfOpenTasks"];
+      const Columns = ["routineTypeName", "pfRoutineName", "entityName", "scheduleTypeName", "scheduleStart", "fromDate", "toDate", "statusName","nextDueDate", "visitTypeName","noOfOpenTasks"];
       for (let i = 0; i <= Columns.length; i++) {
         this.tableData.map(data => {
           data[this.displayedColumns[i]] = data[Columns[i]];

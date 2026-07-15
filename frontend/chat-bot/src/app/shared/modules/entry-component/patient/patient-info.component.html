@@ -1,4 +1,4 @@
-<div class="ovi-font-family" appWindowResize (resized)="onWindowResized($event)" (resizedWidth)="onWindowResizedWidth($event)" [component]="'pop-up'"
+<div class="ovi-font-family dq-container patient-info-popup-container" appWindowResize (resized)="onWindowResized($event)" (resizedWidth)="onWindowResizedWidth($event)" [component]="'pop-up'"
 [style.height.px]="popHeight" [style.width.px]="popWidth">
     <div class="div-styl_5">
         <mat-icon *ngIf="patientListView" class="ovi-fnt-sze22"  style="padding-left: 4px;float: inline-start;" (click)="enableSidebar=!enableSidebar;" (keydown.enter)="fixClick()">menu</mat-icon>
@@ -51,7 +51,57 @@
                 </mat-list>
             </div>
             <div class="patient-info patient-align ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg" style="position: relative;max-width: 1500px;overflow-x: hidden;bottom: 4px;" [ngStyle]="{width: patientListView ? '100%' : 'calc(100% - 65px)'}" *ngFor="let patient of patientInfo">
-            <app-banner [type]="'TW-PD'" [bannerData]="bannerlabel" (bannerAction)="getBannerAction($event)"></app-banner>
+            <div class="custom-patient-banner">
+                <div class="avatar-and-name">
+                    <div class="patient-avatar-wrapper">
+                        <div class="patient-avatar">{{ getPatientInitials(patient.patientName) }}</div>
+                        <span class="avatar-pulse-ring"></span>
+                    </div>
+                    <div class="patient-name-section">
+                        <div class="patient-name-row">
+                            <span class="patient-name">{{ patient.patientName }}</span>
+                            <span class="patient-meta-badge age" *ngIf="patient.dob">{{ calculateAge(patient.dob) }} yrs</span>
+                            <span class="patient-meta-badge gender" [ngClass]="patient.gender?.toLowerCase() || 'other'" *ngIf="patient.gender">{{ patient.gender }}</span>
+                        </div>
+                        <div class="patient-info-chips">
+                            <div class="info-chip id-chip">
+                                <mat-icon class="chip-icon" style="padding: 0px;">fingerprint</mat-icon>
+                                <span class="chip-label">{{"ID"|translate}}:</span>
+                                <span class="chip-val">{{ patient.uhid || patient.patientId }}</span>
+                            </div>
+                            <div class="info-chip surgery-chip">
+                                <mat-icon class="chip-icon" style="padding: 0px;">health_and_safety</mat-icon>
+                                <span class="chip-label">{{"Surgery"|translate}}:</span>
+                                <span class="chip-val">{{ patient.otProcedureName || patient.otProcedureNames || 'N/A' }}</span>
+                            </div>
+                            <div class="info-chip package-chip">
+                                <mat-icon class="chip-icon" style="padding: 0px;">layers</mat-icon>
+                                <span class="chip-label">{{"Package"|translate}}:</span>
+                                <span class="chip-val">{{ patient.healthPlanName || patient.packageName || 'Surgery' }}</span>
+                            </div>
+                            <div class="info-chip location-chip">
+                                <mat-icon class="chip-icon" style="padding: 0px;">location_on</mat-icon>
+                                <span class="chip-label">{{"Location"|translate}}:</span>
+                                <span class="chip-val">{{ patient.locationName || 'OT' }}<span *ngIf="patient.floorName"> ({{ patient.floorName }})</span></span>
+                            </div>
+                            <div class="info-chip doctor-chip" *ngIf="patient.consultantName || patient.doctorName">
+                                <mat-icon class="chip-icon" style="padding: 0px;">local_hospital</mat-icon>
+                                <span class="chip-label">{{"Doctor"|translate}}:</span>
+                                <span class="chip-val">{{ patient.consultantName || patient.doctorName }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="schedule-section-card" *ngIf="patient.visitDate || patient.scheduleStartTime">
+                    <div class="schedule-header">
+                        <mat-icon class="schedule-bell-icon" style="padding: 0px;">alarm</mat-icon>
+                        <span class="schedule-label">{{"Schedule Start Time"|translate}}</span>
+                    </div>
+                    <div class="schedule-time">
+                        <span>{{ (patient.visitDate || patient.scheduleStartTime) | date: 'dd MMM yyyy, hh:mm a' }}</span>
+                    </div>
+                </div>
+            </div>
                 <div *ngIf="visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP' || visitTypeId === 'VT-EC' || (visitTypeId === 'VT-IP' && visitEventTypeId === 'VE-OT') || (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant')" class="patient-test-details block-test"
                     [formGroup]="patientInfoForm" >
                     <div class="patient-test row-field-info">
@@ -151,8 +201,7 @@
                     </div>
                 </div>
                 <div class="mat-group-style mbl-view">
-                    <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
-                        <mat-tab *ngIf="visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP' || visitEventTypeId === 'VE-OT' || visitTypeId === 'VT-EC' || visitTypeId === 'VT-IP'" label="{{labeltext | translate}}">
+                    <ng-template #workflowTab>
                             <div style="margin-top: 10px;">
                                 <mat-accordion #accordion="matAccordion">
                                     <mat-expansion-panel  [expanded]="visitTypeId !== 'VT-EC' ? panelOpenState : ''" (opened)="panelOpenState = true"
@@ -304,299 +353,289 @@
                                 </mat-expansion-panel>
                                 </mat-accordion>
                             </div>
-                        </mat-tab>
-                        <mat-tab *ngIf="visitEventTypeId !== 'VE-OT'" label="{{'Plan Details'|translate}}">
-                            <div [style.height.px]="['VT-IP', 'VT-EC'].includes(visitTypeId) && visitEventTypeId !== 'VE-OT' ? 
-                            (visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP' || visitTypeId === 'VT-EC' || (visitTypeId === 'VT-IP' && visitEventTypeId === 'VE-OT') || (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant')) ? contentHeightIp: contentHeightIp + 90: contentHeight" style="width: 98%;margin-left: 10px;"
-                            [ngStyle]="{'margin-top': ['VT-IP', 'VT-EC'].includes(visitTypeId) && visitEventTypeId !== 'VE-OT' ? '0px' : '10px'}">
-                            <div *ngIf="['VT-IP', 'VT-EC'].includes(visitTypeId)" class="top-style mat-custom-form-field-box">
-                                <div class="patients-form-row block-3">
-                                    <div class="row-field-5">
-                                        <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                            <span class="ovi-lbl-text-size ">{{"Admit Date & Time "|translate}}: </span> <span
-                                                *ngIf="patient.admitDate != null" class="ovi-fnt-sze12"  style="font-weight: 600;">
-                                                {{patient.admitDate | date : 'dd/MM/yyyy h:mm a'}}</span>
-                                        </div>
-                                    </div>
-                                    <div class="row-field-5">
-                                        <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                            <span class="ovi-lbl-text-size ">{{"Admitting Doctor "|translate}}: </span> <span
-                                                *ngIf="patient.doctorName != null"class="ovi-fnt-sze12"  style="font-weight: 600;">
-                                                {{patient.doctorName}}</span>
-                                        </div>
-                                    </div>
+                    </ng-template>
 
-                                    <div class="row-field-5">
-                                        <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                            <span class="ovi-lbl-text-size ">{{"Length of Stay "|translate}}: </span>
-                                            <span *ngIf="patient.lengthOfStay != null" class="ovi-fnt-sze12" 
-                                                style="font-weight: 600;">{{patient.lengthOfStay}}</span>
-                                        </div>
+                    <ng-template #planDetailsTab>
+                        <div class="vd-layout ovi-matfrmfld" style="margin: 10px;">
+                            <!-- LEFT: Dark stat panel -->
+                            <div class="vd-stat-panel">
+                                <div class="vd-stat-panel-title">
+                                    <mat-icon style="padding:0px;font-size:16px;width:16px;height:16px;">assignment_ind</mat-icon>
+                                    <span>{{"Visit Summary"|translate}}</span>
+                                </div>
+                                <div class="vd-stat-item">
+                                    <div class="vd-stat-icon blue-glow">
+                                        <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">event</mat-icon>
                                     </div>
-                                    <div class="row-field-5">
-                                        <div class="example-form" style="margin: 15px 0px 8px 0px;">
-                                            <span class="ovi-lbl-text-size ">{{"DOB"|translate}} : </span> <span *ngIf="patient.dob != null" class="ovi-fnt-sze12" 
-                                                style="font-weight: 600;">{{patient.dob | date : 'dd/MM/yyyy'}}</span>
-                                        </div>
+                                    <div class="vd-stat-text">
+                                        <span class="vd-stat-label">{{"Admit Date & Time"|translate}}</span>
+                                        <span class="vd-stat-value">{{ patient.admitDate ? (patient.admitDate | date:'dd MMM yyyy, hh:mm a') : '—' }}</span>
+                                    </div>
+                                </div>
+                                <div class="vd-stat-item">
+                                    <div class="vd-stat-icon teal-glow">
+                                        <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">person</mat-icon>
+                                    </div>
+                                    <div class="vd-stat-text">
+                                        <span class="vd-stat-label">{{"Admitting Doctor"|translate}}</span>
+                                        <span class="vd-stat-value">{{ patient.doctorName || '—' }}</span>
+                                    </div>
+                                </div>
+                                <div class="vd-stat-item">
+                                    <div class="vd-stat-icon amber-glow">
+                                        <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">hotel</mat-icon>
+                                    </div>
+                                    <div class="vd-stat-text">
+                                        <span class="vd-stat-label">{{"Length of Stay"|translate}}</span>
+                                        <span class="vd-stat-value">{{ patient.lengthOfStay || '—' }} {{"days"|translate}}</span>
+                                    </div>
+                                </div>
+                                <div class="vd-stat-item">
+                                    <div class="vd-stat-icon purple-glow">
+                                        <mat-icon style="padding:0px;font-size:18px;width:18px;height:18px;">cake</mat-icon>
+                                    </div>
+                                    <div class="vd-stat-text">
+                                        <span class="vd-stat-label">{{"Date of Birth"|translate}}</span>
+                                        <span class="vd-stat-value">{{ patient.dob ? (patient.dob | date:'dd MMM yyyy') : '—' }}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row-field-5 custom-material-design" [formGroup]="patientInfoForm">
-                                <div class="example-form" style="padding: 0px 0px 10px 0px;">
-                                    <mat-label class="ovi-lbl-text-size" style="padding-right: 10px;"> {{"Diabetic "|translate}}<span *ngIf="mandatoryFields?.indexOf('isDiabetic') > -1" class="mandatory-field">*</span> :</mat-label>
-                                    <mat-radio-group class="example-radio-group" formControlName="isDiabetic">
-                                        <mat-radio-button [value]="null">{{'None' | translate}}</mat-radio-button>&nbsp;
-                                        <mat-radio-button (click)="onChangeClinicalDetails(true, 'isDiabetic')"
-                                            [value]="true" (keydown.enter)="fixClick()">
-                                            {{'Diabetic' | translate}}</mat-radio-button>&nbsp;
-                                        <mat-radio-button (click)="onChangeClinicalDetails(false, 'isDiabetic')"
-                                            [value]="false" (keydown.enter)="fixClick()">
-                                            {{"Non Diabetic"|translate}}</mat-radio-button>
-                                    </mat-radio-group>
+
+                            <!-- RIGHT: Editable panel -->
+                            <div class="vd-form-panel" style="overflow-y: auto;">
+                                <!-- Clinical Flags -->
+                                <div class="vd-section">
+                                    <div class="vd-section-label">
+                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;color:#00acc1;">health_and_safety</mat-icon>
+                                        <span>{{"Clinical Flags"|translate}}</span>
+                                    </div>
+                                    <!-- Diabetic Radio Group (Restored original logic and control) -->
+                                    <div class="vd-diabetic-radio-group" [formGroup]="patientInfoForm" style="display: flex; align-items: center; gap: 10px;">
+                                        <mat-label class="ovi-lbl-text-size" style="font-weight: 600; color: #455a64;padding-bottom: 14px;"> {{"Diabetic "|translate}}<span *ngIf="mandatoryFields?.indexOf('isDiabetic') > -1" class="mandatory-field">*</span> :</mat-label>
+                                        <mat-radio-group class="example-radio-group" formControlName="isDiabetic" style="display: flex; gap: 15px; align-items: center;">
+                                            <mat-radio-button [value]="null">{{'None' | translate}}</mat-radio-button>
+                                            <mat-radio-button (click)="onChangeClinicalDetails(true, 'isDiabetic')" [value]="true" (keydown.enter)="fixClick()">
+                                                {{'Diabetic' | translate}}
+                                            </mat-radio-button>
+                                            <mat-radio-button (click)="onChangeClinicalDetails(false, 'isDiabetic')" [value]="false" (keydown.enter)="fixClick()">
+                                                {{"Non Diabetic"|translate}}
+                                            </mat-radio-button>
+                                        </mat-radio-group>
+                                    </div>
+
+                                    <div class="vd-flag-row">
+                                        <div class="vd-flag-chip fasting" [class.active]="isFasting">
+                                            <mat-checkbox [checked]="isFasting" (change)="isFasting = $event.checked; onChangeClinicalDetails($event, 'isFasting')">
+                                                {{"Fasting"|translate}}
+                                            </mat-checkbox>
+                                        </div>
+                                        <div class="vd-flag-chip vulnerable" [class.active]="isVulnerable">
+                                            <mat-checkbox [checked]="isVulnerable" (change)="isVulnerable = $event.checked; onChangeClinicalDetails($event, 'isVulnerable')">
+                                                {{"Vulnerable"|translate}}
+                                            </mat-checkbox>
+                                        </div>
+                                        <div class="vd-flag-chip pregnant" [class.active]="isPregnant" [class.disabled]="patient.gender === 'Male'">
+                                            <mat-checkbox [checked]="isPregnant" [disabled]="patient.gender === 'Male'" (change)="isPregnant = $event.checked; onChangeClinicalDetails($event, 'isPregnant')">
+                                                {{"Pregnant"|translate}}
+                                            </mat-checkbox>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="top-style" *ngFor="let patient of patientInfo">
-                                <!-- <span class="info-space-around">
-                                    <mat-checkbox [checked]="patient.isDiabetic"
-                                        (change)="onChangeClinicalDetails($event, 'isDiabetic')"> {{"Diabetic"|translate}}</mat-checkbox>
-                                </span> -->
 
-                                <span class="info-space-around">
-                                    <mat-checkbox [checked]="patient.isFasting"
-                                        (change)="onChangeClinicalDetails($event, 'isFasting')">
-                                        {{"Fasting"|translate}}</mat-checkbox>
-                                </span>
+                                <!-- Threats -->
+                                <div class="vd-section" *ngIf="patient?.threats">
+                                    <div class="vd-section-label">
+                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;color:#e53935;">warning</mat-icon>
+                                        <span>{{"Threats"|translate}}</span>
+                                    </div>
+                                    <div class="vd-threats-row">
+                                        <span class="vd-threat-chip" *ngIf="patient.threats">
+                                            <mat-icon style="padding:0px;font-size:11px;width:11px;height:11px;">warning</mat-icon>
+                                            {{patient.threats}}
+                                        </span>
+                                        <span *ngIf="patient.threats==null" class="vd-no-threats">{{"No threats added"|translate}}</span>
+                                    </div>
+                                </div>
 
-                                <span class="info-space-around">
-                                    <mat-checkbox [checked]="patient.isVulnerable"
-                                        (change)="onChangeClinicalDetails($event, 'isVulnerable')"> {{"Vulnerable"|translate}}
-                                    </mat-checkbox>
-                                </span>
-
-                                <span class="info-space-around">
-                                    <mat-checkbox [checked]="patient.isPregnant" [disabled]="patient.gender === 'Male'"
-                                        (change)="onChangeClinicalDetails($event, 'isPregnant')"> {{"Pregnant"|translate}}</mat-checkbox>
-                                </span>
-                            </div>
-
-                            <div class="top-style mat-custom-form-field-box" style="padding-top: 10px;" [formGroup]="patientInfoForm">
-                                <div class="patients-form-row block-3">
-                                    <div class="row-field-5">
-                                        <div class="example-form">
-                                            <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"VIP "|translate}}<span *ngIf="mandatoryFields?.indexOf('vipTypeId') > -1" class="mandatory-field">*</span></mat-label>
-                                            <mat-form-field class="example-full-width form-field" appearance="outline">
+                                <!-- Preferences / Tag Details -->
+                                <div class="vd-section vd-preferences" [formGroup]="patientInfoForm">
+                                    <div class="vd-section-label">
+                                        <mat-icon style="padding:0px;font-size:14px;width:14px;height:14px;color:#7b1fa2;">tune</mat-icon>
+                                        <span>{{"Preferences & Tag Details"|translate}}</span>
+                                    </div>
+                                    <div class="vd-pref-row ovi-row-gap">
+                                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                            <mat-label class="ovi-lbl-text-size">{{"VIP"|translate}}<span *ngIf="mandatoryFields?.indexOf('vipTypeId') > -1" class="mandatory-field">*</span></mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
                                                 <mat-select formControlName="vipTypeId">
-                                                    <mat-option *ngFor="let data of vipList" [value]="data.code">{{data.value | translate}}
-                                                    </mat-option>
+                                                    <mat-option [value]="'null'">{{"None"|translate}}</mat-option>
+                                                    <mat-option *ngFor="let data of vipList" [value]="data.code">{{data.value | translate}}</mat-option>
                                                 </mat-select>
-                                                 <mat-error *ngIf="patientInfoForm.controls.vipTypeId.invalid" class="ovi-fnt-sze10" style="padding-top: 5px;">
+                                                <mat-error *ngIf="patientInfoForm.controls.vipTypeId.invalid" class="ovi-fnt-sze10" style="padding-top: 5px;">
                                                     <span [hidden]="!patientInfoForm.controls['vipTypeId'].errors.required">{{"VIP is required"|translate}}.</span>
-                                                 </mat-error>
-                                                            
+                                                </mat-error>
                                             </mat-form-field>
                                         </div>
-                                    </div>
-                                    <div class="row-field-5">
-                                        <div class="example-form">
-                                            <mat-label class="ovi-lbl-text-size ovi-font-family ">{{"Preferred Language"|translate}}</mat-label>
-                                            <mat-form-field class="example-full-width form-field" appearance="outline">
-                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Preferred Language'|translate" formControlName="preferedLanguage">
-                                                    <mat-option *ngFor="let data of languageList" [value]="data.code">
-                                                        {{data.value | translate}}
-                                                    </mat-option>
+                                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg">
+                                            <mat-label class="ovi-lbl-text-size">{{"Preferred Language"|translate}}</mat-label>
+                                            <mat-form-field class="ovi-row-frmfld-wdh" appearance="outline">
+                                                <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Language'|translate" formControlName="preferedLanguage">
+                                                    <mat-option *ngFor="let data of languageList" [value]="data.code">{{data.value | translate}}</mat-option>
                                                 </mat-select>
                                             </mat-form-field>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div *ngIf="allowTokenEnroll">
-                                    <div class="patients-form-row block-3">
-                                        <div *ngIf="patient.visitTypeId === 'VT-HC' || patient.visitTypeId === 'VT-OP'"
-                                            class="row-field-5 custom-material-design">
-                                            <div class="example-form">
-                                                <div *ngIf="!enableAssignToken">
-                                                    <div>
-                                                        <mat-radio-group class="example-radio-group" formControlName="tokenType"
-                                                            *ngIf="isTempPatient">
-                                                            <mat-radio-button (click)="tokenType='assign'" value="assign"
-                                                                [checked]="patientInfoForm.controls.tokenType.value === 'assign'" (keydown.enter)="fixClick()">
-                                                                {{'Assign Token' | translate}}</mat-radio-button>&nbsp;
-                                                            <mat-radio-button
-                                                                (click)="tokenType='generate';patientInfoForm.controls['token'].value=''" (keydown.enter)="fixClick()"
-                                                                value="generate"
-                                                                [checked]="patientInfoForm.controls.tokenType.value === 'generate'">
-                                                                {{"Generate Token"|translate}}</mat-radio-button>
-                                                        </mat-radio-group>
-                                                        <mat-label class="ovi-lbl-text-size" *ngIf="!isTempPatient">{{'Token' | translate}} *
-                                                        </mat-label>
+                                        <!-- Token enrollment block -->
+                                        <div *ngIf="allowTokenEnroll" class="tot-wid-styl ovi-row-gap" style="display: flex; gap: 15px; width: 100%;">
+                                            <div *ngIf="patient.visitTypeId === 'VT-HC' || patient.visitTypeId === 'VT-OP'" class="ovi-row-two-clmn custom-material-design" style="width: 100%;">
+                                                <div class="example-form">
+                                                    <div *ngIf="!enableAssignToken">
+                                                        <div style="margin-bottom: 5px;">
+                                                            <mat-radio-group class="example-radio-group" formControlName="tokenType" *ngIf="isTempPatient">
+                                                                <mat-radio-button (click)="tokenType='assign'" value="assign" [checked]="patientInfoForm.controls.tokenType.value === 'assign'" (keydown.enter)="fixClick()">
+                                                                    {{'Assign Token' | translate}}
+                                                                </mat-radio-button>&nbsp;
+                                                                <mat-radio-button (click)="tokenType='generate';patientInfoForm.controls['token'].value=''" (keydown.enter)="fixClick()" value="generate" [checked]="patientInfoForm.controls.tokenType.value === 'generate'">
+                                                                    {{"Generate Token"|translate}}
+                                                                </mat-radio-button>
+                                                            </mat-radio-group>
+                                                            <mat-label class="ovi-lbl-text-size" *ngIf="!isTempPatient">{{'Token' | translate}} *</mat-label>
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                                            <mat-form-field class="form-field" appearance="outline" style="flex: 1;">
+                                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Token'|translate" [readonly]="!isTempPatient || tokenType == 'generate'" formControlName="token" [errorStateMatcher]="matcher" autocomplete="off" (keyup)="tokenDetail = null">
+                                                                <mat-hint *ngIf="tokenMsg !=null || tokenDetail !=null" class="ovi-fnt-sze14">
+                                                                    <span *ngIf="tokenMsg !=null" style="color:red;">* {{tokenMsg | translate}}</span>
+                                                                    <span *ngIf="tokenDetail !=null">*{{'Click on' | translate}} <b>{{'Assign' | translate}}</b> {{'to associate token' | translate}} <b>{{tokenDetail.tokenNo | translate}}<br />({{tokenDetail.fullName | translate}})</b></span>
+                                                                </mat-hint>
+                                                                <mat-error *ngIf="patientInfoForm.controls.token.invalid">
+                                                                    <span [hidden]="!patientInfoForm.controls['token'].errors.required">{{"Token number is required"|translate}}.</span>
+                                                                    <span [hidden]="!patientInfoForm.controls['token'].errors.pattern">{{"Please enter valid Token number"|translate}}</span>
+                                                                </mat-error>
+                                                            </mat-form-field>
+                                                            <div *ngIf="isTempPatient && tokenType == 'assign'">
+                                                                <button mat-button class="active-btn" *ngIf="tokenDetail == null" (click)="checkToken()">{{"Validate"|translate}}</button>
+                                                                <button mat-button class="active-btn" *ngIf="tokenDetail != null" (click)="AssignToken()">{{"Assign"|translate}}</button>
+                                                            </div>
+                                                            <div *ngIf="isTempPatient && tokenType == 'generate'">
+                                                                <button mat-button class="active-btn" appDebounceClick [debounceTime]="300" (debounceClick)="generateToken()">{{"Generate"|translate}}</button>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <mat-form-field class="example-full-width form-field" appearance="outline"
-                                                        [ngClass]="isTempPatient ? 'generate-token' : ''" style="float:left;">
-                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Token'|translate"
-                                                            [readonly]="!isTempPatient || tokenType == 'generate'"
-                                                            formControlName="token" [errorStateMatcher]="matcher"
-                                                            autocomplete="off" (keyup)="tokenDetail = null">
-                                                        <mat-hint *ngIf="tokenMsg !=null || tokenDetail !=null"
-                                                            class="ovi-fnt-sze14">
-                                                            <span *ngIf="tokenMsg !=null" style="color:red;">*
-                                                                {{tokenMsg | translate}}</span>
-                                                            <span *ngIf="tokenDetail !=null">*{{'Click on' | translate}} <b>{{'Assign' | translate}}</b> {{'to
-                                                                associate
-                                                                token' | translate}}
-                                                                <b>{{tokenDetail.tokenNo | translate}}<br />({{tokenDetail.fullName | translate}})</b></span>
-                                                        </mat-hint>
-                                                        <mat-error *ngIf="patientInfoForm.controls.token.invalid">
-                                                            <span
-                                                                [hidden]="!patientInfoForm.controls['token'].errors.required">{{"Token number is required"|translate}}.</span>
-                                                            <span
-                                                                [hidden]="!patientInfoForm.controls['token'].errors.pattern">{{"Please enter valid Token number"|translate}} </span>
-                                                        </mat-error>
-                                                    </mat-form-field>
-                                                    <div style="float:right;margin-top:3px;"
-                                                        *ngIf="isTempPatient && tokenType == 'assign'">
-                                                        <button mat-button class="active-btn" *ngIf="tokenDetail == null"
-                                                            (click)="checkToken()">{{"Validate"|translate}}</button>&nbsp;
-                                                        <button mat-button class="active-btn" *ngIf="tokenDetail != null"
-                                                            (click)="AssignToken()">{{"Assign"|translate}}</button>&nbsp;
-                                                    </div>
-                                                    <div style="float:right;margin-top:3px;"
-                                                        *ngIf="isTempPatient  && tokenType == 'generate'">
-                                                        <button mat-button class="active-btn"
-                                                        appDebounceClick [debounceTime]="300"
-                                                        (debounceClick)="generateToken()">{{"Generate"|translate}}</button>&nbsp;
-                                                    </div>
-                                                </div>
-                                                <div *ngIf="enableAssignToken">
-                                                    <div>
-                                                        <mat-label class="ovi-lbl-text-size">{{"Token"|translate}} <span class="mandatory-field">*</span> </mat-label>
-                                                    </div>
-                                                    <mat-form-field class="example-full-width form-field" appearance="outline"
-                                                        [ngClass]="isTempPatient ? 'generate-token' : ''" style="float:left;">
-                                                        <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Token'|translate"
-                                                            [readonly]="!isTempPatient || tokenType == 'generate'"
-                                                            formControlName="token" [errorStateMatcher]="matcher"
-                                                            autocomplete="off" (keyup)="tokenDetail = null" appTypeHit (typeHit)="searchToken($event)"  [matAutocomplete]="auto">
-                                                            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" >
-                                                                <mat-option *ngFor="let token of TokenList" value="{{token.tokenNumber}}" (click)="tokenId = token.id" (keydown.enter)="fixClick()">
-                                                                {{token.tokenNumber}}
-                                                                </mat-option>
-                                                            </mat-autocomplete>
-                                                        <mat-hint *ngIf="tokenMsg !=null || tokenDetail !=null" class="ovi-fnt-sze14">
-                                                            <span *ngIf="tokenMsg !=null" style="color:red;">*
-                                                                {{tokenMsg | translate}}</span>
-                                                            <span *ngIf="tokenDetail !=null">*{{'Click on' | translate}} <b>{{'Assign' | translate}}</b>{{' to
-                                                                associate
-                                                                token' | translate}}
-                                                                <b>{{tokenDetail.tokenNo | translate}}<br />({{tokenDetail.fullName | translate}})</b></span>
-                                                        </mat-hint>
-                                                        <mat-error *ngIf="patientInfoForm.controls.token.invalid">
-                                                            <span
-                                                                [hidden]="!patientInfoForm.controls['token'].errors.required">{{"Token number is required"|translate}}.</span>
-                                                            <span
-                                                                [hidden]="!patientInfoForm.controls['token'].errors.pattern">{{"Please enter valid Token number"|translate}} </span>
-                                                        </mat-error>
-                                                    </mat-form-field>
-                                                    <div style="float:right;margin-top:3px;"
-                                                        *ngIf="isTempPatient && tokenType == 'assign'">
-                                                        <button mat-button class="active-btn" [disabled] ="patientInfoForm.controls['token'].value == null"
-                                                            (click)="generateToken(true)">{{"Generate Token"|translate}}</button>&nbsp;
+                                                    <div *ngIf="enableAssignToken">
+                                                        <div>
+                                                            <mat-label class="ovi-lbl-text-size">{{"Token"|translate}} <span class="mandatory-field">*</span></mat-label>
+                                                        </div>
+                                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                                            <mat-form-field class="form-field" appearance="outline" style="flex: 1;">
+                                                                <input matInput appPlaceholder [showPlaceholder]="false" [placeholderText]="'Token'|translate" [readonly]="!isTempPatient || tokenType == 'generate'" formControlName="token" [errorStateMatcher]="matcher" autocomplete="off" (keyup)="tokenDetail = null" appTypeHit (typeHit)="searchToken($event)" [matAutocomplete]="auto">
+                                                                <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                                                                    <mat-option *ngFor="let token of TokenList" value="{{token.tokenNumber}}" (click)="tokenId = token.id" (keydown.enter)="fixClick()">
+                                                                        {{token.tokenNumber}}
+                                                                    </mat-option>
+                                                                </mat-autocomplete>
+                                                                <mat-hint *ngIf="tokenMsg !=null || tokenDetail !=null" class="ovi-fnt-sze14">
+                                                                    <span *ngIf="tokenMsg !=null" style="color:red;">* {{tokenMsg | translate}}</span>
+                                                                    <span *ngIf="tokenDetail !=null">*{{'Click on' | translate}} <b>{{'Assign' | translate}}</b>{{' to associate token' | translate}} <b>{{tokenDetail.tokenNo | translate}}<br />({{tokenDetail.fullName | translate}})</b></span>
+                                                                </mat-hint>
+                                                                <mat-error *ngIf="patientInfoForm.controls.token.invalid">
+                                                                    <span [hidden]="!patientInfoForm.controls['token'].errors.required">{{"Token number is required"|translate}}.</span>
+                                                                    <span [hidden]="!patientInfoForm.controls['token'].errors.pattern">{{"Please enter valid Token number"|translate}}</span>
+                                                                </mat-error>
+                                                            </mat-form-field>
+                                                            <div *ngIf="isTempPatient && tokenType == 'assign'">
+                                                                <button mat-button class="active-btn" [disabled]="patientInfoForm.controls['token'].value == null" (click)="generateToken(true)">{{"Generate Token"|translate}}</button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-
                                         </div>
-                                        <div class="row-field-5" [ngStyle]="{'margin-top': visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC' && isEnableCosterDropdown === false ? '12px' : visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC' ? '-5px' : '','width': tagId !== null ? '30%' : ''}">
-                                            <div class="example-form" *ngIf="!isTempPatient">
-                                                <div *ngIf="visitEventTypeId === 'VE-OT' || visitTypeId === 'VT-EC'"> {{"Associate Tag"|translate}}</div>
+
+                                        <!-- Tag association block -->
+                                        <div class="ovi-row-two-clmn ovi-matfrmfld-input-box-pdg" style="display: flex; gap: 15px; align-items: flex-end; width: 100%;">
+                                            <div class="example-form" *ngIf="!isTempPatient" style="flex: 1;">
+                                                <div *ngIf="visitEventTypeId === 'VE-OT' || visitTypeId === 'VT-EC'">{{"Associate Tag"|translate}}</div>
                                                 <div *ngIf="visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'">
-                                                    <mat-radio-group class="example-radio-group"
-                                                        [disabled]="isEnableCoasterMobile" formControlName="coster">
-                                                        <mat-radio-button (click)="isEnableCoster('coaster')"
-                                                            value="coaster" (keydown.enter)="fixClick()"
-                                                            [checked]="patientInfoForm.controls.coster.value === 'coaster'">
+                                                    <mat-radio-group class="example-radio-group" [disabled]="isEnableCoasterMobile" formControlName="coster">
+                                                        <mat-radio-button (click)="isEnableCoster('coaster')" value="coaster" (keydown.enter)="fixClick()" [checked]="patientInfoForm.controls.coster.value === 'coaster'">
                                                             {{"Tag"|translate}}
                                                         </mat-radio-button>&nbsp;
-                                                        <mat-radio-button (click)="isEnableCoster('mobile')" value="mobile"
-                                                            [checked]="patientInfoForm.controls.coster.value === 'mobile'" (keydown.enter)="fixClick()">
+                                                        <mat-radio-button (click)="isEnableCoster('mobile')" value="mobile" [checked]="patientInfoForm.controls.coster.value === 'mobile'" (keydown.enter)="fixClick()">
                                                             {{"Mobile"|translate}}
                                                         </mat-radio-button>
                                                     </mat-radio-group>
                                                 </div>
-                                                <mat-form-field  [ngClass]="{'radio-btn-margin': visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'}"
-                                                    *ngIf="isEnableCosterDropdown === true || tag_type_name == 'mobile'"
-                                                    class="example-full-width form-field" appearance="outline">
-                                                    <input  matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Tag ID'|translate" id="costerTagId"
-                                                    appTypeHit (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom"
-                                                        formControlName="tagSerialNumber" #tagSerialNumber="matInput"
-                                                        autofocus autocomplete="off" [readonly]="tagId != null">
+                                                <mat-form-field [ngClass]="{'radio-btn-margin': visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'}" *ngIf="isEnableCosterDropdown === true || tag_type_name == 'mobile'" class="form-field" appearance="outline" style="width: 100%;">
+                                                    <input matInput appPlaceholder [showPlaceholder]="true" [placeholderText]="'Tag ID'|translate" id="costerTagId" appTypeHit (typeHit)="searchToCoster($event)" [matAutocomplete]="autoFrom" formControlName="tagSerialNumber" #tagSerialNumber="matInput" autofocus autocomplete="off" [readonly]="tagId != null">
                                                     <mat-autocomplete autoActiveFirstOption #autoFrom="matAutocomplete">
                                                         <mat-option *ngFor="let option of searchCosterlist" [value]="option.tagId">
                                                             <div class="tot-wid-styl" (click)="getTagTypeId(option.tagTypeId)" (keydown.enter)="fixClick()">{{option.tagId}}</div>
                                                         </mat-option>
                                                     </mat-autocomplete>
                                                     <mat-error *ngIf="patientInfoForm.controls.tagSerialNumber.invalid">
-                                                        <span
-                                                            [hidden]="!patientInfoForm.controls['tagSerialNumber'].errors.required">{{"Device is required"|translate}}.</span>
+                                                        <span [hidden]="!patientInfoForm.controls['tagSerialNumber'].errors.required">{{"Device is required"|translate}}.</span>
                                                         <span [hidden]="!patientInfoForm.controls['tagSerialNumber'].errors.requireMatch">{{"Please select value from the option"|translate}}</span>
                                                     </mat-error>
                                                 </mat-form-field>
                                             </div>
+                                            <div *ngIf="this.tagId !== null" style="margin-bottom: 2px;">
+                                                <button mat-button class="active-btn" (click)="disAssociateCoaster(this.tagId)" cdkFocusInitial>{{"Disassociate"|translate}}</button>
+                                            </div>
                                         </div>
-                                        <div *ngIf="this.tagId !== null">
-                                            <button mat-button class="active-btn" style="margin-top: 25px;"
-                                            (click)="disAssociateCoaster(this.tagId)" cdkFocusInitial>{{"Disassociate"|translate}}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row-field-5 custom-material-design">
-                                        <div class="example-form">
-                                            <div *ngFor="let patient of patientInfo">
-                                                <span class="info-space-around"
-                                                *ngIf="(visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP') && patient.tokenNo && checkProcessTest?.length === 0 && isChkPendingProcessTest?.length > 0">
+
+                                        <!-- Checkout and Assigned Floor -->
+                                        <div class="tot-wid-styl ovi-row-gap" style="display: flex; gap: 15px; width: 100%;" *ngIf="(visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP') && patient.tokenNo && checkProcessTest?.length === 0 && isChkPendingProcessTest?.length > 0">
+                                            <div class="ovi-row-two-clmn custom-material-design" style="width: 100%;">
+                                                <span class="info-space-around">
                                                     <mat-checkbox formControlName="PCTestCheck" checked="true" (change)="processCounter($event, patient)" [disabled]="disablePatientCheckout">
-                                                        {{"Checkout "|translate}}?</mat-checkbox>
+                                                        {{"Checkout "|translate}}?
+                                                    </mat-checkbox>
                                                 </span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="row-field-5 custom-material-design">
-                                        <div class="example-form" *ngIf="assignFloorDetails?.length > 0 && PCTestStatus">
-                                                <mat-label class="ovi-lbl-text-size"> {{"Assigned Floor"|translate}} :</mat-label>
-                                                <mat-form-field class="example-full-width form-field" appearance="outline">
+
+                                        <div class="tot-wid-styl ovi-row-gap" style="display: flex; gap: 15px; width: 100%;" *ngIf="assignFloorDetails?.length > 0 && PCTestStatus">
+                                            <div class="ovi-row-two-clmn custom-material-design" style="width: 100%;">
+                                                <mat-label class="ovi-lbl-text-size">{{"Assigned Floor"|translate}} :</mat-label>
+                                                <mat-form-field class="form-field" appearance="outline" style="width: 100%;">
                                                     <mat-select appPlaceholder [showPlaceholder]="false" [placeholderText]="'Assigned Floor'|translate" formControlName="assignFloorId">
-                                                        <mat-option *ngFor="let o of assignFloorDetails; let i = index"
-                                                            [value]="o.floorId" (click)="assignedFloorCookie(o.floorId)"  (keydown.enter)="fixClick()">{{o.floorName}}</mat-option>
+                                                        <mat-option *ngFor="let o of assignFloorDetails; let i = index" [value]="o.floorId" (click)="assignedFloorCookie(o.floorId)" (keydown.enter)="fixClick()">{{o.floorName}}</mat-option>
                                                     </mat-select>
                                                 </mat-form-field>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Print token preview (legacy layout kept but styled) -->
+                        <div *ngIf="this.token_no && patient.visitTypeId === 'VT-HC'" class="ovi-lbl-text-size ovi-fnt-sze14" style="font-weight: 600; padding: 10px;">
+                            {{"Preview Token"|translate}}
+                            <div id="tokenData" style="display: flex; flex-wrap: wrap; margin-top: 5px; gap: 40px; padding: 10px;">
+                                <div class="ovi-fnt-sze18" style="border: 2px solid #000; width: 305px; font-weight: 600; background-color: #f9f9f9; display: flex; flex-direction: column;">
+                                    <div style="display: flex; align-items: center; width: 100%; justify-content: space-between;">
+                                        <img [src]="customerLogo" alt="Logo" style="height: 40px; width: 40px; object-fit: contain; padding-left: 5px" />
+                                        <div class="ovi-fnt-sze14" style="display: flex; gap: 100px; padding: 0 5px">
+                                            <span>{{ currentDate | date: 'dd-MMM-yyyy' }}</span>
+                                            <span>{{ currentDate | date: 'hh:mm a' }}</span>
                                         </div>
                                     </div>
-
-                            </div>
-                            <div *ngIf="this.token_no && patient.visitTypeId === 'VT-HC'" class="ovi-lbl-text-size ovi-fnt-sze14" style="font-weight: 600;padding: 10px">{{"Preview Token"|translate}}
-                                <div id="tokenData" style="display: flex; flex-wrap: wrap; margin-top: 5px; gap: 40px; padding: 10px;">
-                                    <div class="ovi-fnt-sze18" style="border: 2px solid #000; width: 305px;font-weight: 600; background-color: #f9f9f9; display: flex; flex-direction: column;">
-                                    <div style="display: flex; align-items: center; width: 100%; justify-content: space-between;">
-                                    <img [src]="customerLogo" alt="Logo" style="height: 40px; width: 40px; object-fit: contain; padding-left: 5px" />
-                                    <div  class="ovi-fnt-sze14" style="display: flex; gap: 100px; padding: 0 5px">
-                                        <span>{{ currentDate | date: 'dd-MMM-yyyy' }}</span>
-                                        <span>{{ currentDate | date: 'hh:mm a' }}</span>
-                                    </div>
-                                    </div>
                                     <div style="text-align: center;">
-                                    <div class="ovi-fnt-sze20" style="display: flex; flex-direction: column; align-items: center;">
-                                        {{ "Token Number" | translate }} 
-                                        <br>
-                                        <span class="ovi-fnt-sze-xxlrg " style="font-weight: bolder; padding-bottom: 10px">{{this.patientInfoForm.controls.token.value}}</span>
-                                    </div>            
+                                        <div class="ovi-fnt-sze20" style="display: flex; flex-direction: column; align-items: center;">
+                                            {{ "Token Number" | translate }}
+                                            <br>
+                                            <span class="ovi-fnt-sze-xxlrg " style="font-weight: bolder; padding-bottom: 10px">{{this.patientInfoForm.controls.token.value}}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                </div>
                             </div>
-                            </div>
-                        </mat-tab>
-                        <mat-tab *ngIf="activate_btn && activate_btn.includes('TB_VITL') && visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'" label="{{'Vitals'|translate}}"
-                        [ngStyle]="{display: vitalsChartData['lineShow'] ? 'block' : 'none'}">
+                        </div>
+                    </ng-template>
+
+                    <ng-template #vitalsTab>
                             <div [hidden]="vitalData" class ="tab-3" [ngClass]="visitTypeId === 'VT-IP'?'vitals-height-ip':'vitals-height'">
                                 <div style="text-align: center; margin-top: 60px;">{{"No Vital Available "|translate}}!!</div>
                             </div>
@@ -642,9 +681,8 @@
                                 <span style="cursor: pointer;" [ngStyle]="{color: vitalTime == 15 ? 'blue' : 'black'}" (click)="vitalTime = 15;vitalsService();" (keydown.enter)="fixClick()">{{"15 Mins"|translate}}</span>
                             </div>
 
-                        </mat-tab>
-                        <mat-tab *ngIf="visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'" label="{{'Visit History'|translate}}">
-                            <ng-template mat-tab-label>{{"Visit History"|translate}}</ng-template>
+                    </ng-template>
+                    <ng-template #visitHistoryTab>
                             <div class="top-style" *ngIf="isNoDataVH"
                                 style="text-align: center; margin-top: 100px;">
                                 {{"No Visit History Available "|translate}}!!
@@ -660,7 +698,7 @@
                                 <div class="tw-content1 table-align">
                                     <div fxLayout="column" class="mat-elevation-z4 manage-component table-h-50"
                                     [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px"
-                                    [style.height.px]="visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC' ? (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant') ? contentHeightVisitHis: contentHeightVisitHis + 90: contentHeight">
+                                    style="height: 100%;">
                                     <div class="mat-table-overflow">
                                         <table mat-table #table [dataSource]="VHdataSource" matSort>
 
@@ -730,7 +768,8 @@
 
                                         <mat-header-row *matHeaderRowDef="VHDisplayedColumns;sticky: true" class="manage-table-header-row"></mat-header-row>
                                         <mat-row *matRowDef="let row; columns: VHDisplayedColumns;" (toggleChange)="onToggleChange($event,row)"
-                                            [cdkDetailRowTpl]="tpl" [cdkDetailRow]="row">
+                                            [cdkDetailRowTpl]="tpl" [cdkDetailRow]="row"
+                                            [cdkDetailRowExpanded]="visitTypeId === 'VT-IP' && row === VHdataSource.data[0]">
                                         </mat-row>
                                         </table>
                                     </div>
@@ -810,9 +849,8 @@
                                     </div>
                                 </div>
                             </div>
-                        </mat-tab>
-                        <mat-tab *ngIf="visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'" label="{{'Alert History'|translate}}">
-                            <ng-template mat-tab-label>{{"Alert History"|translate}}</ng-template>
+                    </ng-template>
+                    <ng-template #alertHistoryTab>
                             <div class="top-style" *ngIf="noData"
                                 style="text-align: center; margin-top: 100px;">
                                 {{"No Alert History Available "|translate}}!!
@@ -827,7 +865,7 @@
                             <div (window:resize)="onResize($event)" *ngIf="!noData" style="margin-top: 10px;">
                                 <div fxLayout="column" class="mat-elevation-z4 manage-component table-h-50"
                                     [ngClass.xs]="'components-container-xs'" fxLayoutGap="5px"
-                                    [style.max-height.px]="visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP' || visitTypeId === 'VT-EC' || (visitTypeId === 'VT-IP' && visitEventTypeId === 'VE-OT') || (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant') ? maxHeight - 90 : maxHeight">
+                                    [style.max-height.px]="379">
                                     <div class="mat-table-overflow">
                                         <table mat-table [dataSource]="AHdataSource">
                                             <ng-container matColumnDef="Alert">
@@ -949,8 +987,8 @@
                                     </mat-paginator>
                                 </div>
                             </div>
-                        </mat-tab>
-                        <mat-tab *ngIf="activate_btn && activate_btn.includes('TB_RUTN') && visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'" label="{{'Routine'|translate}}">
+                    </ng-template>
+                    <ng-template #routineTab>
                                 <div class="mat-custom-form-field-box" [formGroup]="patientInfoForm">
                                 <div>
                                     <div class="row-field-1" style=" width: 17%;">
@@ -1024,9 +1062,8 @@
                                         </mat-paginator>
                                     </div>
                                 </div>
-                        </mat-tab>
-
-                        <mat-tab *ngIf="activate_btn && activate_btn.includes('TB_AU')" label="{{'Asset Utilisation'|translate}}">
+                    </ng-template>
+                    <ng-template #assetUtilisationTab>
                             <div class="top-style" *ngIf="noAssetUtilData"
                                 style="text-align: center; margin-top: 100px; ">
                                 {{"No Asset Utilisation Available "|translate}}!!
@@ -1083,13 +1120,13 @@
                                     </mat-paginator>
                                 </div>
                             </div>
-                        </mat-tab>
-                        <mat-tab *ngIf="activate_btn && activate_btn.includes('TB_MDCN') && visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' && visitTypeId !== 'VT-EC'" label="{{'Medication'|translate}}">
+                    </ng-template>
+                    <ng-template #medicationTab>
                             <div class="top-style" style="text-align: center; margin-top: 100px;">
                                 {{"No Medication Available "|translate}}!!
                             </div>
-                        </mat-tab>
-                        <mat-tab *ngIf="visitTypeId === 'VT-EC' || (visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT')" label="{{'Movement History'|translate}}">
+                    </ng-template>
+                    <ng-template #movementHistoryTab>
                             <div class="mat-tab-content-hist">
                             <div class="ovi-matfrmfld ovi-matfrmfld-box-top-btm-pdg popup-margin">
                                     <span [formGroup]="dateForm" class="ovi-row-gap" style="margin-left: 5px;">
@@ -1119,52 +1156,72 @@
                             </div>
 
                             <div *ngIf="this.movementList.length == 0" style="text-align: center; margin-top: 20px;">{{"No Movement History Available "|translate}}!!</div>
-                        </mat-tab>
-                        <mat-tab *ngIf="visitTypeId === 'VT-HC' && activate_btn && activate_btn.includes('TB_HCRDS')" label="{{'Report'|translate}}">
+                    </ng-template>
+                    <ng-template #reportTab>
                             <div *ngIf="this.patientReportList.length != 0"  style="padding:10px 10px 10px 15px;">
                                 <tw-table-component [component]="'patient-report-history'" [columns]="PRHDisplayedColumn" [tableData]="patientReportList" [iconHeader]="[]" [iconColumn]="['Reported Date']" [sortColumn]="[]"
                                 [eventColumn]="[]" [permissionControl]="permissionControl" [pagination]="[{length: lengthPRH, pageSize: pageSizePRH}]" ></tw-table-component>
                             </div>
 
                             <div *ngIf="this.patientReportList.length == 0" style="text-align: center; margin-top: 20px;">{{"No Report History Available "|translate}}!!</div>
-                        </mat-tab>
-                    </mat-tab-group>
+                    </ng-template>
+
+                    <ng-container *ngIf="{
+                        workflow: workflowTab,
+                        planDetails: planDetailsTab,
+                        vitals: vitalsTab,
+                        visitHistory: visitHistoryTab,
+                        alertHistory: alertHistoryTab,
+                        routine: routineTab,
+                        assetUtilisation: assetUtilisationTab,
+                        medication: medicationTab,
+                        movementHistory: movementHistoryTab,
+                        report: reportTab
+                    } as tabTemplates">
+                        <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="tabChanged($event)">
+                            <mat-tab *ngFor="let key of visibleTabKeys; trackBy: trackByTabKey" [label]="tabLabel(key) | translate"
+                                [ngStyle]="key === 'vitals' ? {display: vitalsChartData['lineShow'] ? 'block' : 'none'} : null">
+                                <ng-container *ngTemplateOutlet="tabTemplates[key]"></ng-container>
+                            </mat-tab>
+                        </mat-tab-group>
+                    </ng-container>
                 </div>
-                <div style="margin-top: 5px;margin-bottom: 50px;" class="mbl-view">
+                <div class="custom-visit-footer" *ngIf="selectedTabKey === 'planDetails'">
                     <div class="patient-footer-cancel"
-                        *ngIf="selectedTab!='0' && selectedTab!='2' && selectedTab!='3' && selectedTab!='4' && patient.tokenNo && patient.visitStatus != 'Completed' && (visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP')"
+                        *ngIf="patient.tokenNo && patient.visitStatus != 'Completed' && (visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP')"
                         >
-                        <button mat-button class="active-btn" appDebounceClick (debounceClick)="cancelBilling()"
+                        <button mat-button class="discharge-btn" appDebounceClick (debounceClick)="cancelBilling()"
                             [debounceTime]="300" style="margin-left: 10px"> {{"Cancel Billing"|translate}} </button>
                     </div>
                     <div class="patient-footer-cancel"
-                        *ngIf="selectedTab!='0' && selectedTab!='2' && selectedTab!='3' && selectedTab!='4' && selectedTab!='5' && selectedTab!='6' && selectedTab!='7' && ['VT-IP', 'VT-EC'].includes(visitTypeId) && visitEventTypeId !== 'VE-OT'"
+                        *ngIf="['VT-IP', 'VT-EC'].includes(visitTypeId) && visitEventTypeId !== 'VE-OT'"
                         >
-                        <button *ngIf="activate_btn && activate_btn.indexOf('BT_DSRGE') > -1" mat-button class="active-btn" appDebounceClick (debounceClick)="discharge(data)"
+                        <button *ngIf="activate_btn && activate_btn.indexOf('BT_DSRGE') > -1" mat-button class="discharge-btn" appDebounceClick (debounceClick)="discharge(data)"
                         style="margin-left: 20px;"  [debounceTime]="300"> {{"Discharge"|translate}} </button>
                     </div>
 
                     <div class="patient-footer"
-                        *ngIf="visitTypeId != 'VT-IP' && visitTypeId !== 'VT-EC' && selectedTab!='0' && selectedTab!='2' && selectedTab!='3' && selectedTab!='4' && selectedTab!='6' && selectedTab!='7'" >
-                        <button *ngIf="this.token_no && visitTypeId === 'VT-HC'"  mat-button class="active-btn"  appDebounceClick (debounceClick)="printToken()"
+                        *ngIf="visitTypeId != 'VT-IP' && visitTypeId !== 'VT-EC'" >
+                        <button *ngIf="this.token_no && visitTypeId === 'VT-HC'"  mat-button class="cancel-btn"  appDebounceClick (debounceClick)="printToken()"
                         [debounceTime]="300" [disabled]="patientInfoForm.controls['token'].value == null">{{"Print Token"|translate}} </button>&nbsp;
-                        <button mat-button class="cancle-btn" mat-dialog-close> {{"Cancel"|translate}} </button>&nbsp;
-                        <button mat-button class="active-btn" appDebounceClick (debounceClick)="updateClinicalDetails()"
+                        <button mat-button class="cancel-btn" mat-dialog-close> {{"Cancel"|translate}} </button>&nbsp;
+                        <button mat-button class="save-btn" appDebounceClick (debounceClick)="updateClinicalDetails()"
                             [debounceTime]="300" [disabled]="isTempPatient || this.patientInfoForm.invalid || this.patientInfoForm.controls.isDiabetic.value === null"> {{"Submit"|translate}} </button>
                     </div>
                     <div class="patient-footer"
-                        *ngIf="((visitTypeId === 'VT-IP' && visitEventTypeId === 'VE-OT') || visitTypeId === 'VT-EC') && selectedTab!='0' && selectedTab!='1' && selectedTab!='2' && selectedTab!='3' && selectedTab!='4' && selectedTab!='5' && selectedTab!='6' && selectedTab!='7'" >
-                        <button mat-button class="cancle-btn" mat-dialog-close> {{"Cancel"|translate}} </button>&nbsp;
-                        <button mat-button class="active-btn" appDebounceClick (debounceClick)="updateClinicalDetails()"
+                        *ngIf="((visitTypeId === 'VT-IP' && visitEventTypeId === 'VE-OT') || visitTypeId === 'VT-EC')" >
+                        <button mat-button class="cancel-btn" mat-dialog-close> {{"Cancel"|translate}} </button>&nbsp;
+                        <button mat-button class="save-btn" appDebounceClick (debounceClick)="updateClinicalDetails()"
                             [debounceTime]="300" [disabled]="isTempPatient"> {{"Submit"|translate}} </button>
                     </div>
                     <div class="patient-footer"
-                        *ngIf="['VT-IP', 'VT-EC'].includes(visitTypeId) && visitEventTypeId !== 'VE-OT' && selectedTab!='0' && selectedTab!='2' && selectedTab!='3' && selectedTab!='4' && selectedTab!='5' && selectedTab!='6' && selectedTab!='7'" >
-                        <button mat-button class="cancle-btn" mat-dialog-close> {{"Cancel"|translate}} </button>&nbsp;
-                        <button mat-button class="active-btn" appDebounceClick (debounceClick)="updateClinicalDetails()"
+                        *ngIf="['VT-IP', 'VT-EC'].includes(visitTypeId) && visitEventTypeId !== 'VE-OT'" >
+                        <button mat-button class="cancel-btn" mat-dialog-close> {{"Cancel"|translate}} </button>&nbsp;
+                        <button mat-button class="save-btn" appDebounceClick (debounceClick)="updateClinicalDetails()"
                             [debounceTime]="300" [disabled]="isTempPatient || this.patientInfoForm.invalid"> {{"Submit"|translate}} </button>
                     </div>
                 </div>
+
             </div>
         </div>
    </div>

@@ -87,6 +87,7 @@ export class MultiFloorViewerComponent implements AfterViewInit, OnDestroy {
 
   selectedRoom: LocationData | null = null;
   isLoading = true;
+  isRotateMode = false;
   private floorSize = 200;
   public zoomValue: number = 0; // Zoom percentage (0-200)
 
@@ -136,6 +137,8 @@ export class MultiFloorViewerComponent implements AfterViewInit, OnDestroy {
     { name: 'Ground Floor', id: 22456, xOffset: 150, zOffset: 0, yOffset: 0 }
   ];
 
+  private resizeListener: () => void;
+
   constructor(
     private sceneService: SceneService,
     private cameraService: CameraService,
@@ -151,20 +154,32 @@ export class MultiFloorViewerComponent implements AfterViewInit, OnDestroy {
     private compassControlService: CompassControlService,
     private labelVisibilityService: LabelVisibilityService,
     private personMovementService: PersonMovementService
-  ) { }
+  ) {
+    this.resizeListener = this.onResize.bind(this);
+  }
 
   ngAfterViewInit(): void {
     this.initScene();
     this.loadMultipleFloors();
     this.setupInteraction();
     this.animationService.startAnimation(() => this.animate());
-    window.addEventListener('resize', () => this.onResize());
+    window.addEventListener('resize', this.resizeListener);
   }
 
   ngOnDestroy(): void {
     this.animationService.stopAnimation();
+    if (this.scene) {
+      this.cleanupService.clearMapObjects(this.scene);
+    }
+    if (this.controls) {
+      try {
+        this.controls.dispose();
+      } catch (e) {
+        console.warn('Controls dispose failed:', e);
+      }
+    }
     this.rendererService.dispose();
-    window.removeEventListener('resize', () => this.onResize());
+    window.removeEventListener('resize', this.resizeListener);
   }
 
   private initScene(): void {
@@ -177,6 +192,7 @@ export class MultiFloorViewerComponent implements AfterViewInit, OnDestroy {
     this.container.nativeElement.appendChild(this.renderer.domElement);
 
     this.controls = this.controlsService.initControls(this.camera, this.renderer.domElement);
+    this.controls.enableRotate = this.isRotateMode;
   }
 
   private async loadMultipleFloors(): Promise<void> {
@@ -241,7 +257,10 @@ export class MultiFloorViewerComponent implements AfterViewInit, OnDestroy {
 
       const isOverBuilding = this.interactionService.isPointOnBuilding(this.camera, this.roomMeshes);
 
-      if (isOverBuilding) {
+      if (!this.isRotateMode) {
+        // Left drag pans when 3D rotate is disabled
+        this.controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+      } else if (isOverBuilding) {
         // Dragging building -> Rotate
         this.controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
       } else {
@@ -360,6 +379,13 @@ export class MultiFloorViewerComponent implements AfterViewInit, OnDestroy {
       0.85,
       () => this.updateLabelVisibility()
     );
+  }
+
+  public toggleRotateMode(): void {
+    this.isRotateMode = !this.isRotateMode;
+    if (this.controls) {
+      this.controls.enableRotate = this.isRotateMode;
+    }
   }
 
   public toggleWireframe(): void {

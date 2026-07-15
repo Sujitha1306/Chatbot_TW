@@ -1573,7 +1573,7 @@ async readerImport(event) {
 
 downloadUser() {
   this.loading=true;
-  const headers = ['Role', 'First Name', 'Last Name', 'Email', 'Country Code', 'Phone Number', 'Birth Date','Gender','Employee ID'];
+  const headers = ['Role', 'First Name', 'Last Name', 'Email', 'Country Code', 'Phone Number', 'Birth Date','Gender','Employee ID','Password'];
   const mandatoryFields =['Role', 'First Name', 'Last Name', 'Email', 'Country Code', 'Phone Number',];
   const workbook = new ExcelJS.Workbook();
   const mainSheet = workbook.addWorksheet('Sheet1');
@@ -1665,65 +1665,51 @@ downloadUser() {
 
 async userImport(event){
     this.loading = true;
-    try {
-    const [RoleRes] = await Promise.all([
-      this.commonService.getAllRole().toPromise()
-    ])
-      this.roleList = RoleRes.results.map(({ id, name }) => ({ id, name }));
       const file = event.target.files[0];
       if (!file) {
-        this.loading = false;
         return;
       }
+    try {
+      const roleResponse: any = await this.commonService.getAllRole().toPromise();
+      this.roleList = (roleResponse?.results || []).map(({ id, name }: any) => ({ id, name }));
+      const roleMap = new Map<string, string>(this.roleList.map(role => [role.name.trim().toLowerCase(), role.id]));
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array", cellText: false, cellDates: true });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const headerRow = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0] as string[];
-      const header = ['Role', 'First Name', 'Last Name', 'Email', 'Country Code', 'Phone Number', 'Birth Date','Gender','Employee ID'];
+      const header = ['Role', 'First Name', 'Last Name', 'Email', 'Country Code', 'Phone Number', 'Birth Date','Gender','Employee ID','Password'];
         if (headerRow.join(",") !== header.join(",")) {
           this.toastr.warning('Warning', 'Invalid column headers. Please check the file.');
-          this.loading = false;
-          event.target.value = null;
-          return;
-      }
-  
-      const arrayList = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: null, dateNF: 'yyyy-MM-dd;@' });
-      const jsonData = arrayList.map(data => {
-      const safeTrim = (value) => value ? value.trim() : null;
-      const roleName = safeTrim(data['Role']);
-      const role = this.roleList.find(r => r.name.trim().toLowerCase() === roleName.toLowerCase());
-      const roleId = role ? role.id : null;
-      const countryCode = safeTrim(data['Country Code']);
-      const phone = safeTrim(data['Phone Number']);
-        let facilityId = localStorage.getItem(btoa('facilityId'));
-        let phoneNumber = null;
-        if (countryCode && phone) {
-          const normalizedCode = countryCode.startsWith('+') ? countryCode : `+${countryCode}`;
-          phoneNumber = `${normalizedCode}${phone}`;
-        }
-        return {
-          customerId: facilityId,
-          roleIds: [roleId],
-          firstName: safeTrim(data['First Name']),
-          lastName: safeTrim(data['Last Name']),
-          email: safeTrim(data['Email']),
-          phoneNumber : phoneNumber,
-          birthDate: safeTrim(data['Birth Date']),
-          gender: safeTrim(data['Gender']),
-          employeeId: safeTrim(data['Employee ID']),
-          userName: safeTrim(data['Email']),
-        };
-      });
-  
-      this.loading = false;
-      event.target.value = null; 
-      if (!jsonData.length) {
-        this.toastr.warning('Warning', 'Invalid data for Import. Please check the file.');
-        this.loading = false; 
-        event.target.value = null;
         return;
       }
-      this.hospitalService.importBulkUser(jsonData).subscribe(res => {
+  
+      const safeTrim = (value: any): string | null => value?.toString().trim() || null;
+      const facilityId = localStorage.getItem(btoa('facilityId'));
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: null, dateNF: 'yyyy-MM-dd' });
+      const users = rows.map(row => {
+      const roleName = safeTrim(row['Role']);
+      const roleId = roleName ? roleMap.get(roleName.toLowerCase()) : null;
+      const countryCode = safeTrim(row['Country Code']);
+      const phone = safeTrim(row['Phone Number']);
+        return {
+          customerId: facilityId,
+          roleIds: roleId ? [roleId] : null,
+          firstName: safeTrim(row['First Name']),
+          lastName: safeTrim(row['Last Name']),
+          email: safeTrim(row['Email']),
+          phoneNumber: countryCode && phone ? `${countryCode.startsWith('+') ? countryCode : '+' + countryCode}${phone}` : null,
+          birthDate: safeTrim(row['Birth Date']),
+          gender: safeTrim(row['Gender']),
+          employeeId: safeTrim(row['Employee ID']),
+          userName: safeTrim(row['Email']),
+          password: safeTrim(row['Password'])
+        };
+      }).filter(user => user.roleIds);
+      if (!users.length) {
+        this.toastr.warning('Warning', 'Invalid data for import. Please check the Role column.');
+        return;
+      }
+      this.hospitalService.importBulkUser(users).subscribe(res => {
           if (res.statusCode === 0) {
             this.toastr.error('Error', `${res.results.errors}`);
           } else {
@@ -1735,9 +1721,10 @@ async userImport(event){
         }
       );
     }catch(err) {
+      this.toastr.warning('Warning', 'Failed to load necessary data from API. Please try again later.');
+    } finally {
       this.loading = false;
       event.target.value = null;
-      this.toastr.warning('Warning', 'Failed to load necessary data from API. Please try again later.');
     }
   }
 

@@ -1,0 +1,230 @@
+<div class="iad-container">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       BANNER  (always visible — the "header" the TL asked for)
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="iad-banner" [ngClass]="alertColorClass">
+    <div class="iad-banner__icon-wrap">
+      <img *ngIf="alertIcon" [src]="alertIcon" alt="alert icon" class="iad-banner__img" />
+      <mat-icon *ngIf="!alertIcon" class="iad-banner__mat-icon">notifications_active</mat-icon>
+    </div>
+
+    <div class="iad-banner__info">
+      <div class="iad-banner__type">{{ alertTitle }}</div>
+      <div class="iad-banner__code-chip">{{ alertCode }}</div>
+
+      <div class="iad-banner__patient" *ngIf="data.patient">
+        <mat-icon class="iad-banner__meta-icon">person</mat-icon>
+        <span>{{ data.patient.fullName || '—' }}</span>
+        <span class="iad-banner__divider">|</span>
+        <mat-icon class="iad-banner__meta-icon">bed</mat-icon>
+        <span>Bed {{ data.patient.bedNo || '—' }}</span>
+      </div>
+
+      <div class="iad-banner__meta-row" *ngIf="data.patient?.locationName">
+        <mat-icon class="iad-banner__meta-icon">location_on</mat-icon>
+        <span>{{ data.patient.locationName }}</span>
+      </div>
+
+      <div class="iad-banner__meta-row" *ngIf="data.alert?.alertDatetime">
+        <mat-icon class="iad-banner__meta-icon">schedule</mat-icon>
+        <span>{{ data.alert.alertDatetime | date: 'hh:mm a, d MMM yyyy' }}</span>
+      </div>
+    </div>
+
+    <!-- Action buttons pinned to the right of the banner -->
+    <div class="iad-banner__actions">
+      <!-- Back to alert (only visible in video mode) -->
+      <button *ngIf="showVideo" class="iad-banner__action-btn" mat-icon-button
+              matTooltip="Back to Alert" matTooltipPosition="below"
+              (click)="closeVideoPanel()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <!-- Close -->
+      <button class="iad-banner__action-btn" mat-icon-button
+              matTooltip="Close" matTooltipPosition="below"
+              (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       MODE A — Alert message + remarks + footer (default)
+  ══════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="!showVideo">
+
+    <div class="iad-body">
+
+      <div class="iad-section-label">
+        <mat-icon class="iad-section-label__icon">message</mat-icon>
+        Alert Message
+      </div>
+
+      <div class="iad-msg-card">
+        <!-- Video launch button -->
+        <button class="iad-video-btn" mat-icon-button (click)="onVideoClick()"
+                matTooltip="View Camera" matTooltipPosition="left">
+          <mat-icon class="iad-video-btn__icon">videocam</mat-icon>
+        </button>
+
+        <!-- Structured message -->
+        <ng-container *ngIf="!parsedMsg.isPlain">
+          <div class="iad-msg__title" *ngIf="parsedMsg.title">{{ parsedMsg.title }}</div>
+          <div class="iad-msg__description" *ngIf="parsedMsg.description">{{ parsedMsg.description }}</div>
+          <div class="iad-kv-grid">
+            <ng-container *ngFor="let pair of parsedMsg.pairs">
+              <span class="iad-kv-grid__key">{{ pair.key }}</span>
+              <span class="iad-kv-grid__val">{{ pair.value || '—' }}</span>
+            </ng-container>
+          </div>
+        </ng-container>
+
+        <!-- Plain text -->
+        <div class="iad-msg__plain" *ngIf="parsedMsg.isPlain">
+          {{ parsedMsg.description || data.alert?.message || 'No message available.' }}
+        </div>
+      </div>
+
+      <!-- Remarks -->
+      <div class="iad-section-label" style="margin-top:16px;">
+        <mat-icon class="iad-section-label__icon">edit_note</mat-icon>
+        Remarks
+      </div>
+      <div [formGroup]="remarksForm">
+        <mat-form-field appearance="outline" class="iad-remarks-field">
+          <textarea matInput formControlName="comments"
+                    placeholder="Add a remark (optional)"
+                    rows="3" maxlength="200"></textarea>
+          <mat-hint align="end">{{ remarksForm.value.comments?.length || 0 }}/200</mat-hint>
+        </mat-form-field>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="iad-footer">
+      <button class="iad-btn iad-btn--ghost" mat-stroked-button (click)="close()">Close</button>
+      <button class="iad-btn iad-btn--danger" mat-raised-button
+              [disabled]="isLoading" (click)="onCancelAlert()">
+        <mat-spinner *ngIf="isLoading" diameter="16" class="iad-spinner"></mat-spinner>
+        {{ isLoading ? 'Cancelling…' : 'Cancel Alert' }}
+      </button>
+    </div>
+
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════
+       MODE B — Full camera view (matches notification-camera-view)
+  ══════════════════════════════════════════════════════════════ -->
+  <div class="ncv-body" *ngIf="showVideo">
+
+    <!-- Fetching cameras spinner -->
+    <div *ngIf="cameraLoading" class="ncv-empty-state">
+      <mat-spinner diameter="48" color="accent"></mat-spinner>
+      <div>Fetching cameras…</div>
+    </div>
+
+    <!-- No camera / error -->
+    <div *ngIf="!cameraLoading && cameraError" class="ncv-empty-state">
+      <span class="material-icons ncv-empty-icon">videocam_off</span>
+      <div>{{ cameraError }}</div>
+    </div>
+
+    <!-- Camera selection list (multiple cameras, none selected) -->
+    <div *ngIf="!cameraLoading && !cameraError && cameras.length > 1 && !selectedCamera"
+         class="ncv-camera-list">
+      <div class="ncv-camera-list-title">Select a camera to view</div>
+      <div class="ncv-camera-item" *ngFor="let cam of cameras; let i = index"
+           (click)="selectCamera(cam)" role="button" tabindex="0"
+           (keydown.enter)="selectCamera(cam)">
+        <span class="material-icons ncv-cam-item-icon">videocam</span>
+        <div class="ncv-cam-item-info">
+          <div class="ncv-cam-item-name">Camera {{ i + 1 }} — {{ cam.name }}</div>
+          <div class="ncv-cam-item-location">{{ cam.locationName }}</div>
+        </div>
+        <span class="material-icons ncv-cam-item-arrow">chevron_right</span>
+      </div>
+    </div>
+
+    <!-- Back bar when one is chosen from many -->
+    <div *ngIf="!cameraLoading && cameras.length > 1 && selectedCamera"
+         class="ncv-cam-back-bar">
+      <span class="ncv-back-link" (click)="backToCameraList()" role="button" tabindex="0"
+            (keydown.enter)="backToCameraList()">
+        <span class="material-icons" style="font-size:16px;vertical-align:middle;">arrow_back</span>
+        Back to camera list
+      </span>
+      <span class="ncv-active-cam-name">{{ selectedCamera.name }}</span>
+    </div>
+
+    <!-- Video player -->
+    <div *ngIf="!cameraLoading && !cameraError && selectedCamera"
+         class="ncv-video-container">
+
+      <div class="live-badge">
+        <span class="pulse-dot"></span>
+        <span class="live-label">LIVE</span>
+      </div>
+
+      <div *ngIf="isStreamLoading" class="ncv-loading-overlay">
+        <mat-spinner diameter="48" color="accent"></mat-spinner>
+        <div class="ncv-loading-text">Connecting to stream…</div>
+      </div>
+
+      <div *ngIf="streamError && !isStreamLoading" class="ncv-error-overlay">
+        <span class="material-icons ncv-error-icon">error_outline</span>
+        <div class="ncv-error-text">{{ streamError }}</div>
+      </div>
+
+      <video #videoPlayer autoplay playsinline
+             [class.ncv-hidden]="isStreamLoading || !!streamError"></video>
+
+      <!-- Progress bar -->
+      <div class="progress-wrap">
+        <div class="progress-fill"></div>
+      </div>
+
+      <!-- Controls bar -->
+      <div class="controls-bar">
+        <div class="ctrl-left">
+          <button class="ctrl-btn" (click)="togglePlay()" [title]="isPlaying ? 'Pause' : 'Play'">
+            <svg *ngIf="!isPlaying" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            <svg *ngIf="isPlaying" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <rect x="6" y="4" width="4" height="16" rx="1"/>
+              <rect x="14" y="4" width="4" height="16" rx="1"/>
+            </svg>
+          </button>
+
+          <button class="ctrl-btn" (click)="toggleVolume()" [title]="isVolumeMuted ? 'Unmute' : 'Mute'">
+            <svg *ngIf="!isVolumeMuted" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+            </svg>
+            <svg *ngIf="isVolumeMuted" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+            </svg>
+          </button>
+
+          <input class="vol-slider" type="range" min="0" max="100" value="75" (input)="setVolume($event)" />
+          <span class="time-display">{{ timeDisplay }}</span>
+        </div>
+
+        <div class="ctrl-right">
+          <button class="ctrl-btn" (click)="toggleFullscreen()" title="Fullscreen">
+            <svg *ngIf="!isFullscreen" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+            </svg>
+            <svg *ngIf="isFullscreen" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /ncv-video-container -->
+
+  </div><!-- /ncv-body -->
+
+</div>

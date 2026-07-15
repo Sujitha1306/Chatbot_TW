@@ -1,13 +1,14 @@
 ﻿<div class="ai-porter-wrapper ovi-font-family">
 
   <!-- Top bar: Date selector + Layout selector + Export buttons -->
-  <div class="ai-top-bar">
+  <div class="ai-top-bar" *ngIf="!showHeader">
 
     <!-- Date period selector -->
     <porter-date-selector
       [periodType]="aiPeriodType"
       [initialFrom]="aiDateFrom"
       [initialTo]="aiDateTo"
+      [maxDate]="maxSelectableDate"
       [mode]="selectedLayout === 'v5' ? 'year' : 'default'"
       (dateChange)="onAiDateChange($event)">
     </porter-date-selector>
@@ -623,7 +624,7 @@
     <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="0" gs-y="13">
       <div class="grid-stack-item-content v4-card">
         <div class="v4-card-header">
-          Request Volume Trend (Hourly)
+          Avg Request Trend (Hourly)
           <span class="v4-badge">By Hour</span>
         </div>
         <div class="echart-wrap">
@@ -636,7 +637,7 @@
     <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="5" gs-y="13">
       <div class="grid-stack-item-content v4-card">
         <div class="v4-card-header">
-          Request Volume Heatmap (Hourly Ã— Day)
+          Average Request Heatmap (Weekday × Hour)
           <span class="v4-badge">By Hour</span>
         </div>
         <div class="echart-wrap">
@@ -998,7 +999,7 @@
     <!-- Row 2: Dept Top 10 (w=5) + Time Slot (w=5) + Monthly Table (w=12 full row below) -->
     <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="0" gs-y="8">
       <div class="grid-stack-item-content v4-card">
-        <div class="v4-card-header">Requests by Department (Top 10) <span class="v4-badge">YoY</span></div>
+        <div class="v4-card-header">Poolwise Comparison (Top 10)<span class="v4-badge">YoY</span></div>
         <div class="echart-wrap">
           <div echarts [options]="v5DeptBarOpt" [initOpts]="io5" [autoResize]="true"
                (chartInit)="onChartInit('v5dept',$event)" style="width:100%;height:100%;"></div>
@@ -1008,7 +1009,7 @@
 
     <div class="grid-stack-item" gs-w="5" gs-h="5" gs-x="5" gs-y="8">
       <div class="grid-stack-item-content v4-card">
-        <div class="v4-card-header">Requests by Time Slot
+        <div class="v4-card-header">Avg Requests by Time Slot
           <span class="v4-badge">{{v5PeriodLabels.current}} vs {{v5PeriodLabels.previous}}</span>
         </div>
         <div class="echart-wrap">

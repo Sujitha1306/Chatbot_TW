@@ -26,6 +26,7 @@ import { AppToastService } from '../../shared/services/toaster.service';
 import { GatePassComponent } from '../../shared/modules/entry-component/gate-pass/gate-pass.component';
 import { AuditScheduleManagementComponent } from '../../shared/modules/entry-component/CAFM/audit-schedule-management/audit-schedule-management.component';
 import { NotificationCameraViewComponent } from './notification-camera-view/notification-camera-view.component';
+import { NotificationAlertPopupComponent } from '../../shared/modules/entry-component/notification-alert-popup/notification-alert-popup.component';
 
 
 @Component({
@@ -78,6 +79,8 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
   performerId = null;
   notifyAlert = "false";
   private audioCoolDownTime = 10000; // 10 seconds
+  private mqttRefreshTimer: any = null;
+  public mqttRefreshDelay = 3; // seconds — throttle window for MQTT alert refresh
 
   constructor(private readonly elementRef: ElementRef, private readonly commonService: CommonService, public dialog: MatDialog, public toastr: AppToastService,
     private readonly configurationService: ConfigurationService, private readonly workflowService: WorkflowService,private readonly _notificationService: PushNotificationsService) {
@@ -210,11 +213,8 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
       }
     }
     let userId = parseInt(localStorage.getItem(btoa('userId')))
-    if (alert_data.data.length && alert_data.operation === "update" && alert_data.data[0]['recipientId'] == userId && alert_data.data[0]['recipientType'] == 'RT-US') { 
-      this.refreshNotification();
-    }
-    if(alert_data.data.length && alert_data.data[0]['recipientUserIds'] != null && alert_data.data[0]['recipientUserIds'].includes(userId)) {
-      this.refreshNotification();
+    if ((alert_data.data.length && alert_data.operation === "update" && alert_data.data[0]['recipientId'] == userId && alert_data.data[0]['recipientType'] == 'RT-US') || (alert_data.data.length && alert_data.data[0]['recipientUserIds'] != null && alert_data.data[0]['recipientUserIds'].includes(userId))) {
+      this.debouncedMqttRefresh();
     }
     this.newAlert(null, alert_data);
   }
@@ -317,13 +317,31 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
 
   viewNotification(type, id){
     if(type === 'open'){
-      this.isPreview = true;
       const viewData = this.notificationData.find(val => val.id === id);
       if(viewData){
-        this.previewNotifiData = viewData;
-        this.previewMessage = viewData.message
-        // this.previewMessage = "<p style='font-family: Arial, sans-serif; font-size: 14px; color: #333;'> Dear User,<br><br> The asset <b><i>A1</i></b> identified by the serial number <span style='font-weight: bold; color: #007bff;'>100</span> has been successfully transferred from <span style='font-style: italic; color: #28a745;'>IT</span> to <span style='font-style: italic; color: #dc3545;'>Cardiology</span>. This process was initiated by <b>Sam Admin Admin</b> on <span style='font-family: 'Courier New', monospace;'><b>2025-02-08 05:59:24.0</b></span>. </p>"
-        this.updateNotification('single', this.previewNotifiData)
+        if (viewData.ruleTypeId === 'RU-GO' || this.hasEvent(viewData.alertDetails)) {
+          this.isOpen = false;
+          const dialogRef = this.dialog.open(NotificationAlertPopupComponent, {
+            data: {
+              selectedAlert: viewData,
+              allAlerts: this.notificationInfo,
+              ruleFilterList: this.ruleFilterList
+            },
+           panelClass: ['medium-popup'], disableClose: true
+          });
+
+          dialogRef.afterClosed().subscribe(() => {
+            this.getNotification(this.loginUserId, this.selectedTab);
+            this.getNotificationCount();
+          });
+
+          this.updateNotification('single', viewData);
+        } else {
+          this.isPreview = true;
+          this.previewNotifiData = viewData;
+          this.previewMessage = viewData.message;
+          this.updateNotification('single', this.previewNotifiData);
+        }
       }
     } else {
       this.isPreview = false;
@@ -770,7 +788,7 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
   }
 
   hasEvent(alertDetails: any[]): boolean {
-    return alertDetails?.some(item => item.identifyingType === 'Event' && item.identifyingValue === 'CE-TAM');
+    return alertDetails?.some(item => ((item.identifyingType === 'Event'|| item.identifyingType === 'SensorType') && (item.identifyingValue === 'CE-TAM' || item.identifyingValue === 'CE-WRP'|| item.identifyingValue === 'DVIT-TEMP')));
   }
 
   openCameraView(notification: any) {
@@ -801,6 +819,7 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
                 id: item.id,
                 name: item.name,
                 streamUrl,
+                playUrl: outputData?.playUrl,
                 streamName: outputData?.streamName || item.name,
                 locationName: item.locationName || ''
               });
@@ -829,29 +848,14 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
     });
   }
 
-  getAlertLocation(event) {
-    let locationId = null;
-    if (event?.alertDetails?.some(x => x.identifyingType == 'Location')) {
-      const alertDetails = event.alertDetails?.find(obj => obj.identifyingType == 'Location')
-      locationId = Number(alertDetails.identifyingValue) ?? null 
+  private debouncedMqttRefresh() {
+    if (this.mqttRefreshTimer) {
+      return;
     }
-    this.commonService.getInfantDets(event.identifyingId).subscribe(res => {
-      const alertsData = res.results[0];
-      alertsData['currentLocationId'] =  alertsData['currentLocationId'] ? alertsData['currentLocationId'] : locationId;
-      alertsData['tagTypeId'] = alertsData?.tagAssociationTypeId;
-      alertsData['tagSerialNumber'] = alertsData.tagSerialNumber === null ? alertsData?.associatedTagSerialNumber : alertsData.tagSerialNumber;
-      if (alertsData.associatedTagSerialNumber != null && alertsData.bedId != null) {
-        const dialogRef = this.dialog.open(CommonDialogComponent, {
-          data: alertsData,
-          panelClass: 'medium-popup',
-          disableClose: true,
-        });
-        dialogRef.afterClosed().subscribe((result) => {
-        });
-      }
-    }, error => {
-      this.toastr.error('Error', `${error.error.message}`);
-    })
+    this.mqttRefreshTimer = setTimeout(() => {
+      this.mqttRefreshTimer = null;
+      this.refreshNotification();
+    }, this.mqttRefreshDelay * 1000);
   }
 
 }
