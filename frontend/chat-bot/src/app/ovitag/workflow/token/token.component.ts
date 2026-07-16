@@ -475,8 +475,8 @@ export class TokenComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dashboardService.getHealthPlanLocations(category).subscribe(res => {
       this.locationListDisplay = res.results;
       this.locationList = this.locationListDisplay.slice();
+      this.loading = false;
       if (this.locationList.length > 0) {
-        this.loading = false;
         if (this.cookieService.check(
           'TK_DQ_Location_' + localStorage.getItem(btoa('facilityId')) + '_' + localStorage.getItem(btoa('userId'))
         )) {

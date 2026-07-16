@@ -321,6 +321,7 @@ export class FormManagementComponent implements OnInit {
 
       complete: () => {
         this.isUploading = false;
+        this.getFormTemplate();
       }
     });
   }

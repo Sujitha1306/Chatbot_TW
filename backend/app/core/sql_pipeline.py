@@ -91,6 +91,9 @@ RULE 4 — NATURAL LANGUAGE & NO DATABASE JARGON:
 - Use plain, generic English terms instead: "requests", "facilities", "pool names", "locations", "departments", etc.
 - Do NOT say "in the table", "in the sample", or "in the available data". Just state the summary directly.
 
+RULE 5 — IGNORE NULL/UNASSIGNED CATEGORIES:
+- If the data contains any category that is "null", "unassigned", or empty (e.g., a location or department with no name), do NOT mention it in your summary. Completely ignore it and summarize only the valid, named categories as if the unassigned ones do not exist.
+
 4. Use percentages and relative language — not raw number dumps
 5. Lead with the most important finding first
 6. Plain language for hospital administrators — no technical jargon
@@ -137,10 +140,7 @@ Based on this summary, generate 2-3 brief operational suggestions or
 questions worth investigating further.
 
 CRITICAL RULES:
-1. These are SUGGESTIONS, not facts. They are explicitly labelled as
-   speculative/inferential — the user knows this. You may use phrases
-   like "It may be worth investigating", "Consider reviewing",
-   "One question this raises is..."
+1. These are SUGGESTIONS, not facts. They are speculative/inferential — the user knows this. Make the start of each suggestion unique, diverse, and tailored directly to the specific context of the data. Do NOT use fixed, repetitive prefixes like "It may be worth investigating" or "Consider reviewing" for everything.
 2. Keep each suggestion to 1 sentence. Use plain language. Do NOT use database column names with underscores (e.g., use "pool names" instead of "pool_name_id"). Do NOT mention table names like "fact_porter_request".
 3. Do NOT repeat what the data already showed — add something
    the data SUGGESTS but doesn't prove.
@@ -184,8 +184,9 @@ that can be fully answered using ONLY the RECENT CONTEXT provided above:
 - Greetings, thanks, closings
 - Statements sharing personal information ("my name is tw") — just acknowledge them.
 - Questions about the user ("what is my name?", "do you remember what I just said?")
-  ONLY IF the answer is explicitly visible in the RECENT CONTEXT.
 - Generic capability questions ("what can you do").
+
+CATEGORY "facility_rejection": IMPORTANT! The user's currently mapped facility is ONLY "Teynampet" (or facility 0459). If the user explicitly asks about a SPECIFIC hospital or facility by name (e.g. "Gurugram", "BLK Max Hospital", "Apollo", "0039", etc.) that is NOT "Teynampet" or "0459", you MUST classify it as "facility_rejection" and reply that you are restricted to answering questions ONLY about their currently mapped facility (Teynampet).
 
 CRITICAL DISTINCTION for Memory Questions:
 - If user asks "what is my name" and the RECENT CONTEXT shows they just told you,
@@ -195,8 +196,8 @@ CRITICAL DISTINCTION for Memory Questions:
 
 Return JSON:
 {{
-  "category": "data_question" | "conversational",
-  "reply": "If category is conversational, a brief friendly response.
+  "category": "data_question" | "conversational" | "facility_rejection",
+  "reply": "If category is conversational or facility_rejection, provide the response here.
             If data_question, empty string — this will be handled by
             the memory/data pipeline, not by you."
 }}"""
@@ -222,7 +223,7 @@ Return JSON:
             # with it, than to silently swallow a real question)
             return {"needs_data": True, "response": None, "reason": "router_parse_failed"}
 
-        needs_data = result.get("category") != "conversational"
+        needs_data = result.get("category") == "data_question"
         return {
             "needs_data": needs_data,
             "response": None if needs_data else result.get("reply", "Hello! How can I help with your operations data today?"),
@@ -603,7 +604,8 @@ Requirements:
 - Apply ALL ClickHouse SQL rules from the schema (including rules #1-12:
   date functions, conditional aggregates, sanity bounds on dates, etc.)
 - For ranking or "who is highest/lowest" questions, ALWAYS use LIMIT 5 or LIMIT 10, NEVER LIMIT 1, so the user can see comparative context.
-- If the question asks about specific entities (e.g. "which porter", "which asset"), ALWAYS filter out NULLs and empty strings for that entity ID (e.g. WHERE porter_user_id IS NOT NULL AND porter_user_id != '').
+- If the question asks about specific entities (e.g. "which porter", "which asset"), ALWAYS filter out NULLs for that entity ID (e.g. WHERE porter_user_id IS NOT NULL). DO NOT use `!= ''` on integer IDs like porter_user_id or you will cause a crash.
+- CRITICAL NULL FILTERING: If your query has a GROUP BY clause, you MUST explicitly add `WHERE [group_by_column] IS NOT NULL` for every column you are grouping by. If the column is a String, ALSO add `AND [group_by_column] != ''`. Do NOT add `!= ''` for integer columns.
 - Default LIMIT 500 for general queries unless specified otherwise.
 - CRITICAL: Any column in your SELECT clause that is NOT inside an aggregate function MUST be explicitly listed in your GROUP BY clause.
 - Return ONLY the SQL, nothing else"""

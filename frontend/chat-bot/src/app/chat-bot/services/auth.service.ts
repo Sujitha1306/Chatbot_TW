@@ -48,7 +48,7 @@ export class AuthService {
     if (parentUserId || parentName) {
       return {
         id: parentUserId || 'TW',
-        name: parentName ? atob(parentName) : 'User', // Usually parent apps base64 encode the values too! Let's just use it raw for now.
+        name: parentName ? parentName : 'User', // Usually parent apps base64 encode the values too! Let's just use it raw for now.
         email: '',
         role: 'user'
       };

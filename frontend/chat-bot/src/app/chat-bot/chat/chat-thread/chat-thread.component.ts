@@ -54,9 +54,15 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     }));
-    
+
     this.sub.add(this.chat.isStreaming$.subscribe(streaming => {
       this.isStreaming = streaming;
+    }));
+
+    // When a previous conversation's history finishes loading, jump straight
+    // to its most recent message instead of leaving the view at the top.
+    this.sub.add(this.chat.conversationLoaded$.subscribe(() => {
+      this.scheduleScroll(true);
     }));
   }
 
@@ -64,11 +70,11 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
     this.sub?.unsubscribe();
   }
 
-  private scheduleScroll(): void {
+  private scheduleScroll(instant = false): void {
     if (this.scrollScheduled) return;
     this.scrollScheduled = true;
     requestAnimationFrame(() => {
-      this.scrollAnchor?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
+      this.scrollAnchor?.nativeElement?.scrollIntoView({ behavior: instant ? 'auto' : 'smooth' });
       this.scrollScheduled = false;
     });
   }

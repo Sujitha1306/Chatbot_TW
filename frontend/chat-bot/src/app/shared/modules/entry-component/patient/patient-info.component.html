@@ -356,7 +356,8 @@
                     </ng-template>
 
                     <ng-template #planDetailsTab>
-                        <div class="vd-layout ovi-matfrmfld" style="margin: 10px;">
+                        <div class="vd-layout ovi-matfrmfld" style="margin: 10px;"
+                            [style.height.px]="visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP' || visitTypeId === 'VT-EC' || (visitTypeId === 'VT-IP' && visitEventTypeId === 'VE-OT') || (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant') ? contentHeightIp : contentHeight">
                             <!-- LEFT: Dark stat panel -->
                             <div class="vd-stat-panel">
                                 <div class="vd-stat-panel-title">
@@ -584,6 +585,29 @@
                                             </div>
                                         </div>
 
+                                        <!-- Print token preview (legacy layout kept but styled) -->
+                                        <div *ngIf="this.token_no && patient.visitTypeId === 'VT-HC'" class="ovi-lbl-text-size ovi-fnt-sze14" style="font-weight: 600; padding: 10px; width: 100%;">
+                                            {{"Preview Token"|translate}}
+                                            <div id="tokenData" style="display: flex; flex-wrap: wrap; margin-top: 5px; gap: 40px; padding: 10px;">
+                                                <div class="ovi-fnt-sze18" style="border: 2px solid #000; width: 305px; font-weight: 600; background-color: #f9f9f9; display: flex; flex-direction: column;">
+                                                    <div style="display: flex; align-items: center; width: 100%; justify-content: space-between;">
+                                                        <img [src]="customerLogo" alt="Logo" style="height: 40px; width: 40px; object-fit: contain; padding-left: 5px" />
+                                                        <div class="ovi-fnt-sze14" style="display: flex; gap: 100px; padding: 0 5px">
+                                                            <span>{{ currentDate | date: 'dd-MMM-yyyy' }}</span>
+                                                            <span>{{ currentDate | date: 'hh:mm a' }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div style="text-align: center;">
+                                                        <div class="ovi-fnt-sze20" style="display: flex; flex-direction: column; align-items: center;">
+                                                            {{ "Token Number" | translate }}
+                                                            <br>
+                                                            <span class="ovi-fnt-sze-xxlrg " style="font-weight: bolder; padding-bottom: 10px">{{this.patientInfoForm.controls.token.value}}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <!-- Checkout and Assigned Floor -->
                                         <div class="tot-wid-styl ovi-row-gap" style="display: flex; gap: 15px; width: 100%;" *ngIf="(visitTypeId === 'VT-HC' || visitTypeId === 'VT-OP') && patient.tokenNo && checkProcessTest?.length === 0 && isChkPendingProcessTest?.length > 0">
                                             <div class="ovi-row-two-clmn custom-material-design" style="width: 100%;">
@@ -611,28 +635,7 @@
                             </div>
                         </div>
 
-                        <!-- Print token preview (legacy layout kept but styled) -->
-                        <div *ngIf="this.token_no && patient.visitTypeId === 'VT-HC'" class="ovi-lbl-text-size ovi-fnt-sze14" style="font-weight: 600; padding: 10px;">
-                            {{"Preview Token"|translate}}
-                            <div id="tokenData" style="display: flex; flex-wrap: wrap; margin-top: 5px; gap: 40px; padding: 10px;">
-                                <div class="ovi-fnt-sze18" style="border: 2px solid #000; width: 305px; font-weight: 600; background-color: #f9f9f9; display: flex; flex-direction: column;">
-                                    <div style="display: flex; align-items: center; width: 100%; justify-content: space-between;">
-                                        <img [src]="customerLogo" alt="Logo" style="height: 40px; width: 40px; object-fit: contain; padding-left: 5px" />
-                                        <div class="ovi-fnt-sze14" style="display: flex; gap: 100px; padding: 0 5px">
-                                            <span>{{ currentDate | date: 'dd-MMM-yyyy' }}</span>
-                                            <span>{{ currentDate | date: 'hh:mm a' }}</span>
-                                        </div>
-                                    </div>
-                                    <div style="text-align: center;">
-                                        <div class="ovi-fnt-sze20" style="display: flex; flex-direction: column; align-items: center;">
-                                            {{ "Token Number" | translate }}
-                                            <br>
-                                            <span class="ovi-fnt-sze-xxlrg " style="font-weight: bolder; padding-bottom: 10px">{{this.patientInfoForm.controls.token.value}}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
                     </ng-template>
 
                     <ng-template #vitalsTab>
@@ -1152,7 +1155,7 @@
                             <div *ngIf="this.movementList.length != 0"  style="padding:10px 10px 10px 15px;">
                                 <tw-table-component [component]="'patientmovehistory'" [columns]="displayedColumn" [tableData]="movementList" [iconHeader]="iconHeader" [iconColumn]="['From Time', 'To Time']" [sortColumn]="sortColumn"
                                 [eventColumn]="eventColumn" (eventAction)="eventAction($event)" [permissionControl]="permissionControl" [pagination]="[{length: length, pageSize: pageSize, pageStart: pageStart}]" 
-                                [tableSize]="visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' ? (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant') ? '380px': '280px': '380px'"></tw-table-component>
+                                [tableSize]="visitTypeId === 'VT-IP' && visitEventTypeId !== 'VE-OT' ? (visitTypeId === 'VT-IP' && data.workflow === 'DayCare') || (visitTypeId === 'VT-IP' && data.workflow !== 'Infant') ? '430px': '330px': '430px'"></tw-table-component>
                             </div>
 
                             <div *ngIf="this.movementList.length == 0" style="text-align: center; margin-top: 20px;">{{"No Movement History Available "|translate}}!!</div>

@@ -782,7 +782,7 @@ export class InpatientComponent implements OnInit, OnDestroy, AfterViewInit {
     if (event.key === "Patient Name") {
       this.registerPatient(event.data.patientVisitId, null, event.data.uhid);
     } else if (event.key === "nurse-call" || event.key === "fall-risk") {
-      if (event.data && (event.data.eventCode === 'CE-PC' || event.data.alertCode === 'RU-GO')) {
+      if (event.data && (event.data.eventCode === 'CE-PC' || event.data.alertCode === 'RU-GO' || event.data.eventCode === 'CE-SO')) {
         const patientDetails = this.infiniteScrollIPInfo?.find((p: any) =>
           p.patientId === event.patientId || p.id === event.patientId
         ) || event.data;

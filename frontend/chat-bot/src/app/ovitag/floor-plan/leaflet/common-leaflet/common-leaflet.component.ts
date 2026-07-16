@@ -77,8 +77,8 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     public activate_btn: any = [];
     isPolygonEditing = false;
 
-    @Input () blockSelect : any;
-    @Input () floorSelect : any;
+    @Input () blockSelect : any = null;
+    @Input () floorSelect : any = null;
     @Input () locFlr : any;
     @Input () tagId : any;
     @Input () tagType : any;
@@ -258,7 +258,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     strokeWidth = 0.2;
     hideLabelTypeIds: number[] = [];
     @HostListener('window:resize')  onResize(): void {
-    this.updateButtonVisibility();
+        requestAnimationFrame(() => this.updateButtonVisibility());
     }
 
     icons = [
@@ -315,6 +315,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     showRightButton = true;
     activeFilter: string | null = null
     private resizeListener: () => void;
+    private resizeObserver: ResizeObserver;
     selectedFilters: string[] = [];
     selectedTagFilters: string[] = [];
     selectedDisassociateFilters: any[] = ['TAT-AT'];
@@ -330,7 +331,6 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.maps = new MapLayers();
         this.activate_btn = this.commonService.getActivePermission('button');
         this.getMqtt();
-        this.getBlockList();
     }
     ngOnInit(){
         this.styleLoader.loadStyleByType('leaflet')
@@ -462,11 +462,13 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
           'key':"floorPlan",
           'roleId': localStorage.getItem('userlevel'),
           'userId': localStorage.getItem(btoa('userId')),
+          'facilityId': this.facilityId,
           'value':  JSON.stringify({
-              floorId: this.floorId.value, 
+              floorId: this.floorId.value,
               blockId: this.blockId.value,
               zoom : this.allFloorMap[this.floorId.value].getZoom(),
-              center : this.allFloorMap[this.floorId.value].getCenter()
+              center : this.allFloorMap[this.floorId.value].getCenter(),
+              blockView : this.blockView.active
             })
         }
         if(preference != null) {
@@ -478,8 +480,9 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                         let result = this.commonService.userPreference;
                         if(result != null && result.hasOwnProperty('floorPlan')) {
                             this.userPre = JSON.parse(result.floorPlan.value)
-                            this.userPre.floorId ? this.floorSelect = this.userPre.floorId : this.floorSelect = null;
-                            this.userPre.blockId ? this.blockSelect = this.userPre.blockId : this.blockSelect = null;
+                            this.floorSelect = this.userPre?.floorId ? this.userPre.floorId : this.floorSelect;
+                            this.blockSelect = this.userPre?.blockId ? this.userPre.blockId : this.blockSelect;
+                            this.blockView.active = this.userPre?.blockView ?? this.blockView.active;
                         }
                     });
                 }
@@ -489,8 +492,9 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                 let result = this.commonService.userPreference;
                 if(result != null && result.hasOwnProperty('floorPlan')) {
                     this.userPre = JSON.parse(result.floorPlan.value)
-                    this.userPre.floorId ? this.floorSelect = this.userPre.floorId : this.floorSelect = null;
-                    this.userPre.blockId ? this.blockSelect = this.userPre.blockId : this.blockSelect = null;
+                    this.floorSelect = this.userPre?.floorId ? this.userPre.floorId : this.floorSelect;
+                    this.blockSelect = this.userPre?.blockId ? this.userPre.blockId : this.blockSelect;
+                    this.blockView.active = this.userPre?.blockView ?? this.blockView.active;
                 }
               });
             }
@@ -509,12 +513,13 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
             this.commonService.getPreference(userId, roleId).subscribe(res => {
                 let preference = res.results;
                 this.userPre = null;
-                console.log(this.blockList)
-                if (this.blockList.length && preference != null && preference.hasOwnProperty('floorPlan')) {
+                if (preference != null && preference.hasOwnProperty('floorPlan')) {
                     this.userPre = JSON.parse(preference.floorPlan.value)
-                    this.userPre.floorId ? this.floorSelect = this.userPre.floorId : this.floorSelect = null;
-                    this.userPre.blockId ? this.blockSelect = this.userPre.blockId : this.blockSelect = null;
+                    this.floorSelect = this.userPre?.floorId ? this.userPre.floorId : this.floorSelect;
+                    this.blockSelect = this.userPre?.blockId ? this.userPre.blockId : this.blockSelect;
+                    this.blockView.active = this.userPre?.blockView ?? false;
                 }
+
                 this.getBasicDetail()
             });
         }
@@ -532,6 +537,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
     getBasicDetail() {
         this.activeRoute.queryParams.subscribe(params => {
             if(params.hasOwnProperty('rid')) {
+                this.blockView.active = false;
                 this.workflowService.getPorterRequest(params['rid']).subscribe((res) => {
                     // console.log(res)
                     if(res.results.length){
@@ -544,6 +550,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                 })
             } else if(params.hasOwnProperty('nav')) {
                 this.isLoading = true;
+                this.blockView.active = false;
                 let navData = JSON.parse(decode(params.nav));
                 let slpId = navData.hasOwnProperty('slp') ? navData.slp : null; 
                 let dlpId = navData.hasOwnProperty('dlp') ? navData.slp : null; 
@@ -576,10 +583,9 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                     this.getFloorChildren(navData.dfi);
                 }
                 this.getBlockList();
-            } 
-            // else{
-            //     this.getRequestFloor();
-            // }
+            } else {
+                this.getBlockList();
+            }
         });
         // this.getRequestFloor();
         this.getAllPorter()
@@ -709,7 +715,14 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
                     this.getBedspacing('check');
                 }
                 // this.getBlockMap(this.blockImage);
-                this.getLocationsByFloor(this.floorId.value);
+                if(this.blockView.active && this.reqType != 'track') {
+                    this.blockView.col = Math.ceil(this.floorList.length/2);
+                    for(let i = 0; i < this.floorList.length; i++){
+                        this.getLocationsByFloor(this.floorList[i]['id']);
+                    }
+                } else {
+                    this.getLocationsByFloor(this.floorId.value);
+                }
             } else{
                 this.options.show.navbar = false;
                 this.blockExist = false;
@@ -2645,7 +2658,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         // popup.setContent("<div style = 'height: 120px;width: 175px'><div style = 'height: 75%; width: 100%'><div style='height: 100%; width: 5%;float:left'><img style='height: 37px; padding: 10px 0px 0px 0px;' src=" +  '/assets/Floorplan/' + tagData.icon + '.svg' + "></div><div style= 'height: 100%; width: 95%;float: right'>" + tagDetailDiv + "<div style='height: 26%;font-weight: 600; font-size: 12px; text-align: left;text-overflow: ellipsis; overflow: hidden; white-space: nowrap;padding-top:2px; font-family:" +'Open Sans'+ "'>" + tagData.lnm + ', '+ tagData.fln + "</div></div></div>" + dateDiv + poolLocation + "</div>")
         // .openOn(this.allFloorMap[tagData.flr])
         let tagContentHeight = this.entityDetail[tagData.ttp+'_'+tagData.tvl] ? '75%' : '65%';
-        popup.setContent(`<div style="height: 145px; width: 175px; overflow -x : hidden"><div style="height: ${tagContentHeight}; width: 100%;"><div style="height: 100%; width: 5%; float: left;display:flex;align-items-center"><img style="height: 35px; padding: 20px 0px 0px 0px;" src="/assets/Floorplan/${tagData.icon}.svg"></div><div style="height: 100%; width: 95%; float: right;">${tagDetailDiv}<div style="height: 26%; font-weight: 600; font-size: 12px; text-align: left; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-top: 5px; font-family: 'Open Sans';">${tagData.lnm}, ${tagData.fln}</div></div></div>${porterMobileNo}${dateDiv}${poolLocation} 
+        popup.setContent(`<div style="height: 145px; width: 175px; overflow -x : hidden"><div style="height: ${tagContentHeight}; width: 100%;"><div style="height: 100%; width: 5%; float: left;display:flex;align-items-center"><img style="height: 35px; padding: 20px 0px 0px 0px;" src="/assets/Floorplan/${tagData.icon}.svg"></div><div style="height: 100%; width: 95%; float: right;">${tagDetailDiv}<div style="height: 26%; font-weight: 600; font-size: 12px; text-align: center; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-top: 5px; font-family: 'Open Sans';">${tagData.lnm}, ${tagData.fln}</div></div></div>${porterMobileNo}${dateDiv}${poolLocation} 
             ${tagActionsDiv}
             
             </div>`)
@@ -5942,6 +5955,9 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         if (this.resizeListener) {
             window.removeEventListener('resize', this.resizeListener);
         }
+        if (this.resizeObserver) {
+            this.resizeObserver.disconnect();
+        }
     }
     downloadPdf(map) {
         const mapElement = document.getElementById(map);
@@ -6073,10 +6089,16 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
 
     mapFilterOpen(){
         this.isNewMapFilter = !this.isNewMapFilter;
-        this.resizeListener = () => this.updateContainerWidth();
-        window.addEventListener('resize', this.resizeListener);
-        this.updateDisabledStates;
-        this.updateContainerWidth;
+        this.updateDisabledStates();
+        setTimeout(() => {
+            this.updateContainerWidth();
+        }, 150);
+    }
+
+    onSidebarToggle(): void {
+        setTimeout(() => {
+            this.updateButtonVisibility();
+        }, 350);
     }
 
     navigate() {
@@ -6087,6 +6109,7 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.updateContainerWidth();
         this.updateButtonVisibility();
         this.getAssociatedTags();
+        this.setupFilterContainerObserver();
     }
 
     scrollLeft(): void {
@@ -6110,21 +6133,15 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
             console.warn('Filter container not initialized!');
             return;
         }
-        const zoomFactor = window.devicePixelRatio || 1;
-        let viewportWidth = window.innerWidth;
-        if (viewportWidth <= 768) {
-            viewportWidth += 250;
-        } else {
-            viewportWidth -= 100;
-        }
-        const containerWidth = Math.min(viewportWidth * 0.8, 1000) / zoomFactor;
         const element = this.filterContainer.nativeElement;
-        element.style.width = `${containerWidth}px`;
-    
+        element.style.width = '';
         this.updateButtonVisibility();
     }
     
     private updateButtonVisibility(): void {
+        if (!this.scrollContainer?.nativeElement) {
+            return;
+        }
         const element = this.scrollContainer.nativeElement;
         const isScrollable = element.scrollWidth > element.offsetWidth;
         const tolerance = 1;
@@ -6134,6 +6151,15 @@ export class CommonLeafletComponent implements OnInit, OnDestroy{
         this.showLeftButton = isScrollable && !isAtStart;
         this.showRightButton = isScrollable && !isAtEnd;
         this.cdr.detectChanges();
+    }
+
+    private setupFilterContainerObserver(): void {
+        if (typeof ResizeObserver !== 'undefined' && this.filterContainer?.nativeElement) {
+            this.resizeObserver = new ResizeObserver(() => {
+                this.updateButtonVisibility();
+            });
+            this.resizeObserver.observe(this.filterContainer.nativeElement);
+        }
     }
 
     polygonEditMode(){

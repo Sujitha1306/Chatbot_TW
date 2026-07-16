@@ -498,7 +498,9 @@ export class HealthCheckupComponent implements OnInit, AfterViewInit {
                 this.toastr.error('Error', `${error.error.message}`);
               });
             this.selection.clear();
-            this.refreshPage();
+            setTimeout(() => {
+              this.refreshPage();
+            }, 2000);
           }
         });
       });

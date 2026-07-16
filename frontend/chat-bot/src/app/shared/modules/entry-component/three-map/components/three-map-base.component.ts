@@ -13,7 +13,8 @@ import {
   NavigationService,
   CameraAnimationService,
   LabelVisibilityService,
-  RegionalLocationNameService
+  RegionalLocationNameService,
+  ThreeMapCacheService
 } from '../services';
 import {
   FLOOR_MAX_DISTANCE_MULTIPLIER,
@@ -21,7 +22,8 @@ import {
   FLOOR_MIN_DISTANCE_ABSOLUTE,
   WALL_THICKNESS,
   WALL_HEIGHT,
-  LABEL_HEIGHT
+  LABEL_HEIGHT,
+  WALL_COLOR
 } from '../constants/map.constants';
 import { HospitalService, CommonService } from '../../../../services';
 
@@ -36,6 +38,7 @@ export interface MapConfig {
   categoryQuickAccess?: Record<string, boolean>;
   floorDefaults?: Record<string, { distance: number; theta: number; phi: number }>;
   mapTileType?: string;
+  showWall?: boolean;
   webIndoor?: {
     sourceRoomId?: number;
     sourceFloorId?: number;
@@ -89,8 +92,6 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
 
   protected navNodes: NavNode[] = [];
   protected allNodes: Record<number, NavNode[]> = {};
-  private nodeFetchPromises: Record<number, Promise<void>> = {};
-  private floorDetailFetchPromises: Record<number, Promise<void>> = {};
   protected nodeNavigationGraph = new Map<number, number[]>();
   protected navigationGraph = new Map<number, number[]>();
 
@@ -115,6 +116,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   protected foundationColor = '#ffffff';
   protected wallWidth = WALL_THICKNESS;
   protected wallHeight = WALL_HEIGHT;
+  protected wallColor = WALL_COLOR;
   protected labelHeight = LABEL_HEIGHT;
   protected labelScale = 4.0;
   protected zoomValue = 0;
@@ -124,6 +126,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
 
   protected savedMapState: any = null;
   private pendingFloorLoad = false;
+  private destroyed = false;
 
   protected readonly sceneService: SceneService;
   protected readonly cameraService: CameraService;
@@ -138,6 +141,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   protected readonly regionalLocationNameService: RegionalLocationNameService;
   protected readonly hospitalService: HospitalService;
   protected readonly commonService: CommonService;
+  protected readonly threeMapCache: ThreeMapCacheService;
 
   private readonly _onResize: () => void;
 
@@ -155,6 +159,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     this.regionalLocationNameService = injector.get(RegionalLocationNameService);
     this.hospitalService = injector.get(HospitalService);
     this.commonService = injector.get(CommonService);
+    this.threeMapCache = injector.get(ThreeMapCacheService);
     this.animate = this.animate.bind(this);
     this._onResize = this.onResize.bind(this);
   }
@@ -163,15 +168,36 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     const prefsReady = this.loadUserPreferences();
     this.loadMapConfig();
     this.getBlockWithFloor(prefsReady);
-    setTimeout(() => {
+    this.waitForContainer().then(() => {
+      if (this.destroyed) return;
       this.initScene();
       this.setupBaseInteraction();
       this.animationService.startAnimation(() => this.animate());
       window.addEventListener('resize', this._onResize);
       prefsReady.then(() => {
-        if (this.pendingFloorLoad) this.loadBlockFloors();
+        if (!this.destroyed && this.pendingFloorLoad) this.loadBlockFloors();
       });
-    }, 2000);
+    });
+  }
+
+  // Resolves as soon as the canvas container has a layout size, so the scene
+  // initializes immediately instead of after the previous fixed 2 s delay.
+  // The ceiling preserves the old behavior for containers that stay hidden
+  // (e.g. *ngIf-gated tabs that render before becoming visible).
+  private waitForContainer(maxWaitMs = 2000): Promise<void> {
+    return new Promise<void>(resolve => {
+      const start = Date.now();
+      const check = () => {
+        if (this.destroyed) { resolve(); return; }
+        const el = this.container?.nativeElement;
+        if ((el && el.clientWidth > 0 && el.clientHeight > 0) || Date.now() - start >= maxWaitMs) {
+          resolve();
+        } else {
+          requestAnimationFrame(check);
+        }
+      };
+      check();
+    });
   }
 
   private loadUserPreferences(): Promise<void> {
@@ -179,7 +205,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
       const fallback = setTimeout(resolve, 3000);
       const userId = localStorage.getItem(btoa('userId'));
       const roleId = localStorage.getItem('userlevel');
-      const obs = this.commonService.getPreference(userId, roleId);
+      const obs = this.threeMapCache.getPreference(userId, roleId);
       if (!obs) { clearTimeout(fallback); resolve(); return; }
       obs.subscribe({
         next: res => {
@@ -195,7 +221,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   }
 
   protected loadMapConfig(): void {
-    this.commonService.getConfigFile('map-config').subscribe(res => {
+    this.threeMapCache.getMapConfig().subscribe(res => {
       if (res?.results) {
         this.mapConfigRecord = res.results;
         this.mapConfigId = res.results.ids ?? null;
@@ -224,6 +250,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
         categoryQuickAccess: Object.keys(catQuickAccess).length ? catQuickAccess : undefined,
         floorDefaults: cfg.floorDefaults ?? {},
         mapTileType: cfg.mapTileType ?? 'osm',
+        showWall: typeof cfg.showWall === 'boolean' ? cfg.showWall : undefined,
         webIndoor: cfg.webIndoor && typeof cfg.webIndoor === 'object' ? {
           sourceRoomId: cfg.webIndoor.sourceRoomId,
           sourceFloorId: cfg.webIndoor.sourceFloorId,
@@ -235,6 +262,8 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
           labelScale: typeof cfg.webIndoor.labelScale === 'number' ? cfg.webIndoor.labelScale : undefined,
         } : undefined,
       };
+      this.showCorridorWalls = !!this.mapConfig.showWall;
+      this.showRoomWalls = !!this.mapConfig.showWall;
       this.onMapConfigLoaded();
     });
   }
@@ -242,7 +271,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   protected onMapConfigLoaded(): void {}
 
   private getBlockWithFloor(prefsReady: Promise<void>): void {
-    this.hospitalService.getBlockWithFloors().subscribe(res => {
+    this.threeMapCache.getBlockWithFloors().subscribe(res => {
       if (res.statusCode !== 1) return;
       prefsReady.then(() => {
         this.blockWithFloorList = res.results.filter((v: any) =>
@@ -283,39 +312,41 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
 
   protected fetchFloorLocationDetails(floorData: any): Promise<void> {
     if (this.floorDetails.hasOwnProperty(floorData.id)) return Promise.resolve();
-    if (this.floorDetailFetchPromises[floorData.id]) return this.floorDetailFetchPromises[floorData.id];
 
-    this.floorDetailFetchPromises[floorData.id] = new Promise<void>(resolve => {
-      this.hospitalService.getLogicalLocationWithChildren(floorData.id).subscribe({
-        next: res => {
-          const floorLayout = this.unwrapApiResult(res);
-          this.floorDetails[floorData.id] = floorLayout;
-          this.regionalLocationNameService.applyToFloor(floorData.id, floorLayout).finally(resolve);
-        },
-        error: () => resolve()
-      });
+    // Shared session cache stores the post-processed layout (regional names
+    // already applied) and dedupes concurrent fetches across all instances.
+    return this.threeMapCache.getOrFetchFloorDetails(floorData.id, () =>
+      new Promise<any>(resolve => {
+        this.hospitalService.getLogicalLocationWithChildren(floorData.id).subscribe({
+          next: res => {
+            const floorLayout = this.unwrapApiResult(res);
+            this.regionalLocationNameService.applyToFloor(floorData.id, floorLayout)
+              .finally(() => resolve(floorLayout));
+          },
+          error: () => resolve(null)
+        });
+      })
+    ).then(layout => {
+      if (layout != null) this.floorDetails[floorData.id] = layout;
     });
-    return this.floorDetailFetchPromises[floorData.id];
   }
 
   protected fetchFloorNodes(floorId: number): Promise<void> {
     if (this.allNodes.hasOwnProperty(floorId)) return Promise.resolve();
-    if (this.nodeFetchPromises[floorId]) return this.nodeFetchPromises[floorId];
 
-    this.nodeFetchPromises[floorId] = new Promise<void>(resolve => {
-      this.hospitalService.getNodePoints(floorId).subscribe({
-        next: res => {
-          const nodes = this.unwrapApiResult(res);
-          this.allNodes[floorId] = Array.isArray(nodes) ? nodes : [];
-          resolve();
-        },
-        error: () => {
-          this.allNodes[floorId] = [];
-          resolve();
-        }
-      });
+    return this.threeMapCache.getOrFetchFloorNodes(floorId, () =>
+      new Promise<NavNode[]>(resolve => {
+        this.hospitalService.getNodePoints(floorId).subscribe({
+          next: res => {
+            const nodes = this.unwrapApiResult(res);
+            resolve(Array.isArray(nodes) ? nodes : []);
+          },
+          error: () => resolve([])
+        });
+      })
+    ).then(nodes => {
+      this.allNodes[floorId] = nodes ?? [];
     });
-    return this.nodeFetchPromises[floorId];
   }
 
   private unwrapApiResult(res: any): any {
@@ -335,7 +366,9 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
     this.selectedFloor = floor;
     this.selectedFloorId = floor.id;
     this.blocks = this.blockWithFloorList;
-    this.prefetchBlockFloorData(blockA);
+    if (this.type !== 'popup') {
+      this.prefetchBlockFloorData(blockA);
+    }
     this.loadBlockFloors();
   }
 
@@ -419,7 +452,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
 
       const floorGroup = new THREE.Group();
       const result = this.floorPlanService.buildFloorPlan(
-        layout, floorGroup, 0, 0, 0, true, this.showSurroundings, true,
+        layout, floorGroup, 0, 0, 0, true, true, this.showSurroundings,
         this.foundationColor, this.wallWidth, this.wallHeight, this.labelHeight, this.labelScale,
         this.showCorridorWalls, this.mapConfig,
         () => {
@@ -443,7 +476,14 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
         this.doorMeshes.push(d);
       });
       result.roomMeshes.forEach((room: any) => {
-        room.walls.forEach((wall: any) => { wall.visible = this.showRoomWalls; });
+        room.walls.forEach((wall: any) => {
+          wall.visible = this.showRoomWalls;
+          if (this.wallColor && wall.material instanceof THREE.MeshStandardMaterial) {
+            const color = new THREE.Color(this.wallColor);
+            wall.material.color.copy(color);
+            wall.material.emissive.copy(color);
+          }
+        });
       });
 
       if (result.hasGeoAlign) {
@@ -577,6 +617,7 @@ export abstract class ThreeMapBase implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.animationService.stopAnimation();
     if (this.scene) {
       this.cleanupService.clearMapObjects(this.scene);

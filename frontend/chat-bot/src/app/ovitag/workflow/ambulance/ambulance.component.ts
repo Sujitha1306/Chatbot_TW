@@ -314,6 +314,7 @@ export class AmbulanceComponent implements OnInit, OnDestroy {
       }
   }
   ngOnDestroy() {
+    this.subscription.unsubscribe();
     clearInterval(this.porterInterval);
   }
 

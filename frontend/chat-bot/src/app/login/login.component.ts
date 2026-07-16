@@ -23,7 +23,6 @@ import { CookieService } from 'ngx-cookie-service';
 import { LoginModel, ResetModel, ForgetModel, ForgotPasswordModel } from '../shared/model/common.model';
 import { ErrorService } from './../shared/services/error.service';
 import { ColorThemeService, CommonService, CookieConsentService, PwaDetectionService } from '../shared';
-import { PrivacyComponent } from './../shared/modules/entry-component/privacy/privacy.component';
 import { TermsComponent } from './../shared/modules/entry-component/terms/terms.component';
 import { CreateTicketComponent } from './../shared/modules/entry-component/support-ticket/support-ticket.component';
 import { environment } from '../../environments/environment';
@@ -202,6 +201,9 @@ export class LoginComponent implements OnInit {
     }
     if (window.location.hostname.includes("medanta")) {
       this.customerName = "medanta"
+    }
+    if (window.location.hostname.includes("hw.trackerwave.com")) {
+      this.customerName = "hw"
     }
     if (window.location.hostname.includes("kyn")) {
       this.customerName = "kyn"
@@ -762,10 +764,7 @@ export class LoginComponent implements OnInit {
   }
 
   privacyDialog() {
-    this.dialog.open(PrivacyComponent, {
-    panelClass:[ 'small-popup'], disableClose: true
-
-    });
+    window.open('https://trackerwave.com/privacy.html', '_blank', 'noopener,noreferrer');
   }
 
   termsDialog() {

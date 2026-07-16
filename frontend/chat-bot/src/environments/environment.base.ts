@@ -17,7 +17,8 @@ export const base_value = {
   geminiApiKey : '',
   topic_sw_update: 'tw/web/ota',
   topic_gw_cache: 'tw/reader/location',
-  chatbotApiUrl: 'https://gen.trackerwave.com/',
+  //chatbotApiUrl: 'https://gen.trackerwave.com/',
+  chatbotApiUrl: 'http://localhost:8000/',
 
   lockingTimeout: 10000, /* <----- locking Timeout  (10 seconds) */
   idle_time_out: 14400, /* <----- Idle Time Out  (default : 14400 = 4 hours) */

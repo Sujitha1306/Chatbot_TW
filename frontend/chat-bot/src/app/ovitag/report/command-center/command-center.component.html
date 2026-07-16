@@ -1,0 +1,317 @@
+<div class="cc-wrapper ovi-font-family">
+
+  <!-- Loading -->
+  <div class="loading-spinner" *ngIf="loading">
+    <div class="spinnerload"><div class="spin1"></div><div class="spin2"></div><div class="spin3"></div></div>
+  </div>
+
+  <!-- No records -->
+  <div *ngIf="noRecords && !loading"
+       style="text-align:center;margin:4% 0;color:#019F96;font-size:16px;">No Records Found</div>
+
+  <ng-container *ngIf="data && !loading">
+
+    <!-- Live status bar -->
+    <div class="cc-topbar">
+      <span class="live-dot"></span>
+      <span class="live-label">Live</span>
+      <span class="last-updated">Last updated: {{lastUpdated | date:'shortTime'}}</span>
+    </div>
+
+    <!-- ═══════════════════════════ STAFF ═══════════════════════════ -->
+    <div class="cc-row cc-row-staff">
+
+      <div class="cc-section-card section-staff">
+        <div class="section-icon"><i class="material-icons">groups</i></div>
+        <div class="section-title">STAFF</div>
+        <div class="section-sub">Tracking &amp; Safety</div>
+        <div class="section-desc">Real-time staff location, safety and mustering status</div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Total Staff <span class="muted">(On Duty)</span></div>
+        <div class="stat-row">
+          <div class="stat-icon stat-icon-blue"><i class="material-icons">badge</i></div>
+          <div>
+            <div class="stat-value">{{data.staff.summary.onDuty | number}}<span class="stat-denom"> / {{data.staff.summary.totalStaff | number}}</span></div>
+            <div class="stat-note note-blue">{{data.staff.summary.checkedInPercentage}}% Checked-In</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">SOS Raised <span class="muted">(Today)</span></div>
+        <div class="stat-row">
+          <div class="stat-icon stat-icon-red"><i class="material-icons">notification_important</i></div>
+          <div>
+            <div class="stat-value stat-red">{{data.staff.summary.sosRaisedToday}}</div>
+            <div class="stat-note note-red">
+              <i class="material-icons trend-icon">arrow_upward</i>{{data.staff.summary.sosChange}}% vs yesterday
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Staff Mustering</div>
+        <div class="donut-flex">
+          <div class="donut-chart">
+            <div echarts [options]="musteringOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-row" *ngFor="let l of musteringLegend">
+              <span class="legend-dot" [style.background]="l.color"></span>
+              <span class="legend-label">{{l.label}}</span>
+              <span class="legend-value">{{l.value | number}}</span>
+              <span class="legend-pct">({{l.pct}}%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Staff on Floor <span class="muted">(Live)</span></div>
+        <div class="bar-chart">
+          <div echarts [options]="floorOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+        <a class="cc-link link-blue">View Staff Dashboard <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════ ASSETS ═══════════════════════════ -->
+    <div class="cc-row cc-row-assets">
+
+      <div class="cc-section-card section-assets">
+        <div class="section-icon"><i class="material-icons">inventory_2</i></div>
+        <div class="section-title">ASSETS</div>
+        <div class="section-sub">Tracking &amp; Management</div>
+        <div class="section-desc">Real-time asset visibility and status</div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Asset Summary</div>
+        <div class="asset-summary-row">
+          <div class="asset-stat">
+            <div class="asset-stat-label">Total</div>
+            <div class="asset-stat-value">{{data.assets.summary.total | number}}</div>
+          </div>
+          <div class="asset-stat">
+            <div class="asset-stat-label">In Use</div>
+            <div class="asset-stat-value val-green">{{data.assets.summary.inUse | number}}</div>
+          </div>
+          <div class="asset-stat">
+            <div class="asset-stat-label">Available</div>
+            <div class="asset-stat-value val-blue">{{data.assets.summary.available | number}}</div>
+          </div>
+          <div class="asset-stat">
+            <div class="asset-stat-label">Maintenance</div>
+            <div class="asset-stat-value val-orange">{{data.assets.summary.maintenance | number}}</div>
+          </div>
+          <div class="asset-stat">
+            <div class="asset-stat-label">Missing</div>
+            <div class="asset-stat-value val-red">{{data.assets.summary.missing | number}}</div>
+          </div>
+        </div>
+        <div class="util-bar">
+          <div class="util-seg" *ngFor="let u of utilizationBar"
+               [style.width.%]="u.percentage" [style.background]="u.color"
+               [title]="u.status + ': ' + u.percentage + '%'"></div>
+        </div>
+        <div class="util-labels">
+          <span *ngFor="let u of utilizationBar" [style.width.%]="u.percentage">{{u.percentage}}%</span>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Assets by Category <span class="muted">(In Use)</span></div>
+        <div class="donut-flex">
+          <div class="donut-chart">
+            <div echarts [options]="categoryOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-row" *ngFor="let l of categoryLegend">
+              <span class="legend-dot" [style.background]="l.color"></span>
+              <span class="legend-label">{{l.label}}</span>
+              <span class="legend-value">{{l.value | number}}</span>
+              <span class="legend-pct">({{l.pct}}%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Environment Monitoring</div>
+        <div class="env-flex">
+          <div class="env-card">
+            <div class="env-label">Room Temp</div>
+            <div class="env-value-row">
+              <span class="env-value">{{data.environment.roomTemperature.current}}°C</span>
+              <span class="env-change change-red">
+                <i class="material-icons trend-icon">arrow_upward</i>{{data.environment.roomTemperature.change}}°C
+              </span>
+            </div>
+            <div class="env-spark">
+              <div echarts [options]="roomTempOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+            </div>
+          </div>
+          <div class="env-card">
+            <div class="env-label">Freezer Temp</div>
+            <div class="env-value-row">
+              <span class="env-value">{{data.environment.freezerTemperature.current}}°C</span>
+              <span class="env-change change-red">
+                <i class="material-icons trend-icon">arrow_upward</i>{{data.environment.freezerTemperature.change}}°C
+              </span>
+            </div>
+            <div class="env-spark">
+              <div echarts [options]="freezerTempOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+            </div>
+          </div>
+        </div>
+        <a class="cc-link link-green">View Environment Dashboard <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════ PATIENTS ═══════════════════════════ -->
+    <div class="cc-row cc-row-patients">
+
+      <div class="cc-section-card section-patients">
+        <div class="section-icon"><i class="material-icons">personal_injury</i></div>
+        <div class="section-title">PATIENTS</div>
+        <div class="section-sub">Tracking &amp; Flow</div>
+        <div class="section-desc">Patient movement, capacity and queue overview</div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Patient Movement <span class="muted">(Today)</span></div>
+        <div class="sankey-chart">
+          <div echarts [options]="movementOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Bed Occupancy</div>
+        <div class="occupancy-head">
+          <span class="stat-value">{{data.patients.bedOccupancy.overall}}%</span>
+          <span class="stat-note note-green">
+            <i class="material-icons trend-icon">arrow_upward</i>{{data.patients.bedOccupancy.change}}% vs yesterday
+          </span>
+        </div>
+        <div class="occupancy-counts">
+          <span><b>{{data.patients.bedOccupancy.occupied | number}}</b> Occupied</span>
+          <span><b>{{data.patients.bedOccupancy.available | number}}</b> Available</span>
+        </div>
+        <div class="bar-chart bar-chart-sm">
+          <div echarts [options]="bedOccupancyOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+        <a class="cc-link link-purple">View Patient Dashboard <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Digital Queue <span class="muted">- HealthCheck</span></div>
+        <div class="donut-flex donut-flex-col">
+          <div class="donut-chart donut-chart-lg">
+            <div echarts [options]="queueOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="donut-legend">
+            <div class="legend-row" *ngFor="let l of queueLegend">
+              <span class="legend-dot" [style.background]="l.color"></span>
+              <span class="legend-label">{{l.label}}</span>
+              <span class="legend-value">{{l.value}}</span>
+              <span class="legend-pct">({{l.pct}}%)</span>
+            </div>
+          </div>
+        </div>
+        <a class="cc-link link-purple">View Queue Dashboard <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">OT - Surgery Status</div>
+        <div class="stat-row">
+          <div class="stat-icon stat-icon-blue"><i class="material-icons">medical_services</i></div>
+          <div>
+            <div class="stat-value">{{data.operationTheatre.inSurgery}}</div>
+            <div class="stat-note muted">In Surgery</div>
+          </div>
+        </div>
+        <div class="ot-list">
+          <div class="ot-list-row" *ngFor="let s of otStatusList">
+            <span>{{s.label}}</span>
+            <b>{{s.value}}</b>
+          </div>
+        </div>
+        <a class="cc-link link-purple">View OT Dashboard <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════════════════ ALERTS ═══════════════════════════ -->
+    <div class="cc-row cc-row-alerts">
+
+      <div class="cc-section-card section-alerts">
+        <div class="section-icon"><i class="material-icons">report</i></div>
+        <div class="section-title">ALERTS</div>
+        <div class="section-sub">Management</div>
+        <div class="section-desc">Alerts overview and real-time response</div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Active Alerts <span class="muted">(Total)</span></div>
+        <div class="stat-value">{{data.alerts.summary.total}}</div>
+        <div class="alert-breakdown">
+          <div class="alert-count">
+            <span class="ac-value val-red">{{data.alerts.summary.critical}}</span>
+            <span class="ac-label">Critical</span>
+          </div>
+          <div class="alert-count">
+            <span class="ac-value val-orange">{{data.alerts.summary.high}}</span>
+            <span class="ac-label">High</span>
+          </div>
+          <div class="alert-count">
+            <span class="ac-value val-yellow">{{data.alerts.summary.medium}}</span>
+            <span class="ac-label">Medium</span>
+          </div>
+          <div class="alert-count">
+            <span class="ac-value val-blue">{{data.alerts.summary.low}}</span>
+            <span class="ac-label">Low</span>
+          </div>
+        </div>
+        <a class="cc-link link-red">View All Alerts <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Alerts Trend <span class="muted">(Last 24 Hours)</span></div>
+        <div class="trend-chart">
+          <div echarts [options]="alertTrendOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Top Alert Types</div>
+        <div class="type-list">
+          <div class="type-row" *ngFor="let t of data.alerts.topTypes; let i = index">
+            <span class="type-icon type-icon-{{i}}"><i class="material-icons">
+              {{ t.name === 'Infant Safety' ? 'child_care' :
+                 t.name === 'Environment' ? 'thermostat' :
+                 t.name === 'Nurse Call' ? 'campaign' :
+                 t.name === 'Patient Tracking' ? 'person_pin_circle' : 'inventory_2' }}
+            </i></span>
+            <span class="type-label">{{t.name}}</span>
+            <b class="type-count">{{t.count}}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-widget">
+        <div class="cc-widget-title">Open Alerts by Location</div>
+        <div class="bar-chart">
+          <div echarts [options]="alertLocOpt" [autoResize]="true" style="width:100%;height:100%;"></div>
+        </div>
+        <a class="cc-link link-red">View Alert Dashboard <i class="material-icons">arrow_forward</i></a>
+      </div>
+
+    </div>
+
+  </ng-container>
+</div>

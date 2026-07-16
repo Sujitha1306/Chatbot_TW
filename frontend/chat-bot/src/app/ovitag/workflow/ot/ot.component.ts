@@ -519,7 +519,7 @@ export class OTComponent implements OnInit, OnDestroy {
       };
       const dialogRef = this.dialog.open(CommonDialogComponent, {
         data: data,
-        panelClass: 'custom-dialog-leaflet-container',
+        panelClass: ['large-popup'],
         disableClose: true,
       });
       dialogRef.afterClosed().subscribe((result) => {

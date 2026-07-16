@@ -13,7 +13,7 @@
  * www.trackerwave.com, Traceability and Change log maintained in Source Code Control System}
  * ======================================================================================================
  ******************************************************************************/
- import { Component, OnInit,  } from "@angular/core";
+ import { Component, OnInit, OnDestroy } from "@angular/core";
  import { MatDialog } from "@angular/material/dialog";
  import {
    FormGroup,
@@ -33,6 +33,7 @@ import { ErrorStateMatcherService } from "../../../shared/services/error-state-m
 import { CreateUserComponent } from "../../../shared/modules/entry-component/create-user/create-user.component";
 import { StatusEventComponent } from "../../../shared/modules/entry-component/status-event/status-event.component";
 import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-component/notification-alert-popup/notification-alert-popup.component";
+import { Subscription } from "rxjs";
  
  @Component({
    selector: "app-staff-routine",
@@ -40,8 +41,9 @@ import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-c
    styleUrls: ["./staff-routine.component.scss"],
    animations: [routerTransition()],
  })
- export class StaffRoutineComponent implements OnInit {
+ export class StaffRoutineComponent implements OnInit, OnDestroy {
    public matcher = new ErrorStateMatcherService();
+   subscription: Subscription;
    displayedColumns: string[] = [
      "ID",
      'Device',
@@ -130,8 +132,13 @@ import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-c
    ngOnInit() {
      this.height = window.innerHeight - 170;
      this.searchDepartment('depart');
+     this.subscription = this.commonService.notifyMsg.subscribe((msg) => {
+         if (msg?.length) {
+           msg = msg[0];
+           this.alertBinding(msg);
+         }
+     });
    }
- 
 
  
    applyFilter(filterValue: string) {
@@ -316,7 +323,7 @@ import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-c
            identifyingType: 'Patient',
            identifyingId: patientDetails?.patientId || event.patientId,
            alertDetails: [
-             { identifyingType: 'Location', identifyingValue: patientDetails?.locationId || patientDetails?.wardId },
+             { identifyingType: event.data.alertCode === 'RU-GO' ? 'Location' : null, identifyingValue: event.data.alertCode === 'RU-GO' ? 426 : null },
              { identifyingType: 'Tag', identifyingValue: patientDetails?.tagId },
              { identifyingType: 'Patient', identifyingValue: patientDetails?.patientId, identifyingValueName: patientDetails?.patientName }
            ]
@@ -326,7 +333,7 @@ import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-c
              selectedAlert: alertObj,
              allAlerts: [],
              ruleFilterList: [],
-             hideCamera: true,
+             hideCamera: false,
              hideSidebar: true,
              patientDetails: patientDetails
            },
@@ -541,6 +548,18 @@ import { NotificationAlertPopupComponent } from "../../../shared/modules/entry-c
       this.getStaffRoutineList(null, true);
     });
   }
+ 
+   ngOnDestroy(): void {
+     if (this.subscription) {
+       this.subscription.unsubscribe();
+     }
+   }
+ 
+   alertBinding(msg) {
+    if (['RU-NC', 'RU-GO'].includes(msg?.data?.[0]?.ruleTypeId) && msg.data?.[0]?.identifyingType === 'User') {
+      this.refreshPage();
+    }
+   }
  }
  
  export interface PatientData {

@@ -171,6 +171,7 @@ export class InfantComponent implements OnInit,AfterViewInit,OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.subscription.unsubscribe();
     this.lookupTermService.clearCache('Gender,CountryCode');
   }
 
@@ -236,6 +237,7 @@ export class InfantComponent implements OnInit,AfterViewInit,OnDestroy {
     }
   }
   alertBinding(msg) {
+    console.log(msg)
     if(msg['ctx'] != 'Alert'){
       if(msg['ctx'] == 'Tag' && msg['data'][0].hasOwnProperty('additionalInfo')) {
         let info = msg['data'][0]['additionalInfo']
@@ -251,6 +253,8 @@ export class InfantComponent implements OnInit,AfterViewInit,OnDestroy {
         this.refreshPage()
       }
     } else if(msg['data'][0]['ruleTypeId'] == 'RU-IN') {
+      this.refreshPage();
+    } else if(msg['data'][0]['ruleTypeId'] == 'RU-NC') {
       this.refreshPage();
     }
   }

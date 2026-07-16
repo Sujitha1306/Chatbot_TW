@@ -463,6 +463,7 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
   }
 
   private clearAllCachesAfterSettingsSave(): void {
+    this.threeMapCache.clearAll();
     this.commonService.clearcache({}).subscribe({
       error: err => console.warn('[IndoorPath] Failed to clear cache after settings save', err)
     });
@@ -697,7 +698,14 @@ export class IndoorPathComponent extends ThreeMapBase implements OnInit, OnDestr
         this.doorMeshes.push(d);
       });
       result.roomMeshes.forEach((room: any) => {
-        room.walls.forEach((wall: any) => { wall.visible = this.showRoomWalls; });
+        room.walls.forEach((wall: any) => {
+          wall.visible = this.showRoomWalls;
+          if (this.wallColor && wall.material instanceof THREE.MeshStandardMaterial) {
+            const color = new THREE.Color(this.wallColor);
+            wall.material.color.copy(color);
+            wall.material.emissive.copy(color);
+          }
+        });
       });
 
       if (result.hasGeoAlign) {

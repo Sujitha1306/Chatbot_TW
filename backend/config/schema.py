@@ -209,6 +209,14 @@ Columns:
 - vendor_contact (String, nullable)
 - vendor_email (String, nullable)
 - service_provider_name (String, nullable)
+
+### TABLE: tw_demo.mysql_location
+Purpose: Location mapping (ICU, Wards, etc). You MUST use the full tw_demo.mysql_location table name.
+Columns:
+- id (Int64): location ID (matches location_id in asset table or source_id/destination_id in porter table)
+- name (String): Human-readable location name (e.g. 'icu', 'ward 1')
+- facility_id (String): facility identifier
+- status (Int64): 1 = active, 0 = inactive
 ## COLUMN-TO-TABLE OWNERSHIP — COMMON MISTAKES TO AVOID
 Each column belongs to EXACTLY ONE of the two tables. Do NOT use a column in a query against the wrong table:
 
@@ -233,7 +241,7 @@ If a question asks about "department" in the context of PORTER requests, and no 
 10. NO CORRELATED SUBQUERIES: ClickHouse does not support correlated subqueries referencing the outer query. To compare periods (e.g., YoY comparison per facility), use conditional aggregation: `countIf(toYear(scheduled_time) = toYear(today()))` vs `countIf(toYear(scheduled_time) = toYear(today()) - 1)`, OR use a standard `GROUP BY facility_id, toYear(scheduled_time)`.
 11. AGGREGATIONS OVER TIME: When asked for "requests per day/month/year", always use appropriate GROUP BY along with the date function.
 12. CONDITIONAL AGGREGATES: Use `countIf(condition)` for conditional counts, `avgIf(expr, condition)` for conditional averages, and `sumIf(expr, condition)` for conditional sums. Make sure conditions use `IS NOT NULL` instead of `isNotNull()` to avoid type Nothing errors. These compute the aggregate ONLY over rows matching `condition`.
-13. NO DIMENSION TABLE JOINS: Do NOT attempt to join dimension tables (like dim_app_terms, dim_user, dim_location) to get human-readable names. Simply SELECT the raw ID columns (e.g. facility_id, pool_name_id, requester_user_id, source_id, status, request_category). The UI presentation layer will automatically translate these raw IDs into human-readable names for the user. If the user asks for a NAME (like "pool name", "facility name", "porter name"), do NOT respond with a limitation — just select the ID column!
+13. NO DIMENSION TABLE JOINS IN SELECT: Do NOT attempt to join dimension tables (like dim_app_terms, dim_user, dim_location) to get human-readable names in the SELECT clause. Simply SELECT the raw ID columns (e.g. facility_id, pool_name_id, requester_user_id, source_id, status, request_category). The UI presentation layer will automatically translate these raw IDs into human-readable names for the user. However, you MAY use subqueries against tw_demo.mysql_location in the WHERE clause to resolve location names (e.g., `WHERE location_id IN (SELECT id FROM tw_demo.mysql_location WHERE name ILIKE '%icu%')`).
 23. SANITY BOUND ON DATES: This database may contain a small number of corrupted rows with scheduled_time/completed_time values far in the future (e.g. year 2084) due to a known data ingestion issue. For ANY query involving date ranges, MAX(), MIN(), or "most recent data" questions, ALWAYS add: AND scheduled_time <= now() + INTERVAL 1 DAY (and the same for completed_time where relevant). This excludes corrupted future-dated rows from results without needing to identify them individually.
 14. STABLE ORDERING WITH LIMIT: Whenever a query includes both ORDER BY and LIMIT, the ORDER BY must be fully deterministic — add a tie-breaking secondary sort column. If it is an aggregate query (GROUP BY), use one of the GROUP BY columns as the tie-breaker. Do NOT use 'id' as a tie-breaker in aggregate queries unless 'id' is in the GROUP BY clause. IF the query uses LIMIT but does NOT have an ORDER BY, you MUST add an ORDER BY (unless it is a global aggregate with no GROUP BY, in which case omit ORDER BY).
 24. CONSTRUCTING A DATE FROM YEAR/MONTH/DAY PARTS: Do NOT use makeDate (it does not exist in this version). Instead, construct dates using string literals like toDate('2025-02-01'). If it must be dynamic relative to the current year, use concat: toDate(concat(toString(toYear(today())), '-02-01')). For end-of-month calculations, prefer: (toStartOfMonth(date_expr) + INTERVAL 1 MONTH - INTERVAL 1 DAY). Do NOT use toLastDayOfMonth or toEndOfMonth as they do not exist in this version.

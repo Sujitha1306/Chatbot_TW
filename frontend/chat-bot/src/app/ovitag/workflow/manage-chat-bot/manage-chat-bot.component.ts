@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ViewEncapsulation, ViewChild, ElementRef 
 import { DatePipe } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { CommonService, ConfigurationService, SseService } from '../../../shared';
+import { CommonService, ConfigurationService } from '../../../shared';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AppToastService } from '../../../shared/services/toaster.service';
@@ -10,6 +10,7 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { connect, MqttClient } from 'mqtt';
 
 @Component({
   selector: 'app-manage-chat-bot',
@@ -66,8 +67,7 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
   public showUnsupportedPreview: boolean = false;
   public zoomLevel = 1;
   public pollingSub!: Subscription;
-  public sseSub!: Subscription;
-  private sseUrl = '';
+  public mqttClient!: MqttClient;
 
   constructor(
     public datepipe: DatePipe,
@@ -79,8 +79,7 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
     public sanitizer: DomSanitizer,
     public toastr: AppToastService,
     public configurationService: ConfigurationService,
-    public fb: FormBuilder,
-    private readonly sseService: SseService
+    public fb: FormBuilder
   ) { }
 
   ngOnInit() {
@@ -132,43 +131,72 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
     }
   }
 
-  connectToSse(): void {
+  connectMqtt(): void {
     const conversationId = this.activeConvId;
     if (!conversationId) return;
 
-    if (typeof EventSource === 'undefined') {
-      this.startPolling();
-      return;
+    if (this.mqttClient) {
+      this.mqttClient.end(true);
     }
 
-    const userId = localStorage.getItem(btoa('userId'));
-    const base = `${environment.api_base_url_new}${environment.base_value.sse_chat}`;
-    this.sseUrl = userId && false ? `${base}?userId=${userId}` : base;
+    this.commonService.getmqttBroker().subscribe({
+      next: (res) => {
+        if (res.results != null && res.results.length) {
+          const brokerInfo = res.results.find((val: any) => val.brokerTypeId === 'BT-CL');
+          if (brokerInfo) {
+            const cloudConnect = {
+              protocol: brokerInfo.wprotocol || 'wss',
+              host: brokerInfo.host,
+              password: brokerInfo.password,
+              username: brokerInfo.username,
+              port: Number(brokerInfo.wport),
+              connectTimeout: 30000,
+              keepalive: 60,
+              clientId: 'client_chat_manage_' + Math.random().toString(16).substr(2, 8)
+            };
 
-    if (this.sseSub) {
-      this.sseSub.unsubscribe();
-    }
-    const userIdParam = localStorage.getItem(btoa('userId'));
-    const sseUrlWithUser = userIdParam ? `${this.sseUrl}?userId=${userIdParam}` : this.sseUrl;
-    if (this.sseUrl) {
-      this.sseService.disconnect(sseUrlWithUser);
-    }
+            this.mqttClient = connect(cloudConnect);
 
-    this.sseSub = this.sseService.connect(this.sseUrl).subscribe({
-      next: (event: MessageEvent) => this.handleSseMessage(event),
-      error: () => this.startPolling()
+            this.mqttClient.on('connect', () => {
+              console.log('✅ ManageChatBot MQTT Connected');
+              if (this.currentUserId) {
+                this.mqttClient?.subscribe(`tw/chat/user/${this.currentUserId}`);
+              } else {
+                this.mqttClient?.subscribe('tw/chat/user/#');
+              }
+            });
+
+            this.mqttClient.on('message', (topic: string, message: Buffer) => {
+              try {
+                const msgStr = message.toString();
+                const payload = JSON.parse(msgStr);
+                const data = payload?.data;
+                this.handleMqttMessage(data);
+              } catch (e) {
+                console.error('ManageChatBot MQTT message parse error', e);
+              }
+            });
+
+            this.mqttClient.on('error', (err) => {
+              console.error('ManageChatBot MQTT error', err);
+              this.startPolling();
+            });
+          }
+        } else {
+          this.startPolling();
+        }
+      },
+      error: (err) => {
+        console.error('ManageChatBot failed to get MQTT broker details', err);
+        this.startPolling();
+      }
     });
   }
 
-  handleSseMessage(event: MessageEvent): void {
-    let item: any;
-    try {
-      item = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-    } catch {
-      return;
-    }
+  handleMqttMessage(item: any): void {
+    if (!item) return;
     const conversationId = this.activeConvId;
-    if (item?.conversationId == conversationId && (item.eventType === 'NEW_MESSAGE' || item.eventType === 'MESSAGE_SENT')) {
+    if (item.conversationId == conversationId && (item.eventType === 'NEW_MESSAGE' || item.eventType === 'MESSAGE_SENT')) {
       this.messagesPage = 0;
       this.hasMoreMessages = true;
       this.loadMessages(conversationId);
@@ -257,7 +285,7 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
       });
     }
     this.loadMessages(conv?.id);
-    this.connectToSse();
+    this.connectMqtt();
   }
 
   loadMessages(convId: number) {
@@ -320,7 +348,7 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
 
         this.messageInput = '';
         this.scrollToBottom();
-        this.connectToSse();
+        this.connectMqtt();
       },
       error: () => {
         console.error('Failed to send message');
@@ -395,7 +423,7 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
               isRead: false
             });
             this.scrollToBottom();
-            this.connectToSse();
+            this.connectMqtt();
           },
           error: () => {
             this.toastr.error('Audio send failed', 'Error');
@@ -487,7 +515,7 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
           isRead: false
         });
         this.scrollToBottom();
-        this.connectToSse();
+        this.connectMqtt();
       },
       error: () => {
         this.toastr.error('Error', 'Failed to send file');
@@ -885,13 +913,8 @@ export class ManageChatBotComponent implements OnInit, OnDestroy {
     if (this.pollingSub) {
       this.pollingSub.unsubscribe();
     }
-    if (this.sseSub) {
-      this.sseSub.unsubscribe();
-    }
-    const userIdParam = localStorage.getItem(btoa('userId'));
-    const sseUrlWithUser = userIdParam ? `${this.sseUrl}?userId=${userIdParam}` : this.sseUrl;
-    if (this.sseUrl) {
-      this.sseService.disconnect(sseUrlWithUser);
+    if (this.mqttClient) {
+      this.mqttClient.end(true);
     }
   }
 }

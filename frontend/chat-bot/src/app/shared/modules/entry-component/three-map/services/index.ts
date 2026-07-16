@@ -14,3 +14,4 @@ export * from './person-movement.service';
 export * from './label-visibility.service';
 export * from './reader.service';
 export * from './regional-location-name.service';
+export * from './three-map-cache.service';

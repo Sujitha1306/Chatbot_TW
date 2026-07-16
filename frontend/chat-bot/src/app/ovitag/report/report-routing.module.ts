@@ -44,6 +44,7 @@ import { ambulanceReportComponent } from './ambulance/ambulance-report.component
 import { KynReviewpostManagementComponent } from './kyn-reviewpost-management/kyn-reviewpost-management.component';
 import { PorterV2ReportComponent } from './porter-v2-report/porter-v2-report.component';
 import { AiStMustComponent } from './staffMustering-Report/ai-stmust.component';
+import { CommandCenterComponent } from './command-center/command-center.component';
 
 export const routes: Routes = [{
     path: '', component: ReportComponent, children: [
@@ -69,6 +70,7 @@ export const routes: Routes = [{
        { path: 'porter', component: PorterReportComponent, canActivate: [AuthGuard] },
        { path: 'ai-porter', component: PorterV2ReportComponent, canActivate: [AuthGuard] },
        { path: 'ai-stmust', component: AiStMustComponent, canActivate: [AuthGuard] },
+       { path: 'command-center', component: CommandCenterComponent, canActivate: [AuthGuard] },
        { path: 'reports/:id', component: ReportsComponent, canActivate: [AuthGuard] },
        { path: 'schedule-report',component: ScheduleReportComponent,canActivate: [AuthGuard] },
        { path: 'resident', component: ResidentReportComponent, canActivate: [AuthGuard] },

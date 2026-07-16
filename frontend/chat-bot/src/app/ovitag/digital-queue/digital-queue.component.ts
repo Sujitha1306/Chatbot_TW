@@ -515,7 +515,7 @@ export class DigitalQueueComponent implements OnInit, OnDestroy {
       // }
       this.completedDetailList = [];
       this.spinLoader = true;
-      this.dashboardService.getHpLocationDetailbyId(id, null, null, this.floorId, this.visitTypeIds?.value).subscribe(res => {
+      this.dashboardService.getHpLocationDetailbyId(id, null, null, null, this.visitTypeIds?.value).subscribe(res => {
         if(res.statusCode === 1) {
           // console.log('location level.......',res.results);
           this.locationDetails = res.results;
@@ -907,7 +907,7 @@ export class DigitalQueueComponent implements OnInit, OnDestroy {
     value = value.trim();
     if(value !== null && value !== '' && value.length > 2) {
       this.completedDetailList = [];
-      this.dashboardService.getHpLocationDetailbyId(this.locationId, value, null, this.floorId, this.visitTypeIds?.value).subscribe(res => {
+      this.dashboardService.getHpLocationDetailbyId(this.locationId, value, null, null, this.visitTypeIds?.value).subscribe(res => {
         if (this.updateTestId == 0) {
           this.completedDetailList = res.results.Pending;
         } else {

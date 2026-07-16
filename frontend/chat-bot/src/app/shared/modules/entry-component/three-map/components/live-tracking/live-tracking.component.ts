@@ -8,7 +8,9 @@ import {
   ViewChild,
   Injector,
   Input,
-  HostListener
+  HostListener,
+  Output,
+  EventEmitter
 } from '@angular/core';
 import { Router } from '@angular/router';
 import * as THREE from 'three';
@@ -29,6 +31,7 @@ import {
 } from '../../services';
 import { MqttService, IMqttMessage } from '../../services/mqtt.service';
 import { ROUTE_RIBBON_WIDTH } from '../../constants/map.constants';
+import { applyRoomHighlight } from '../../helpers';
 
 
 
@@ -74,9 +77,14 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
   @Input() requestType: string = '';
   @Input() reqTagDetail: any;
 
+  @Output() floorChanged = new EventEmitter<number>();
+  @Output() blockChanged = new EventEmitter<number>();
+
   private routeVisualizationService: RouteVisualizationService;
   private porterTrackedTags = new Set<string>();
   private porterRouteGroup: THREE.Group | null = null;
+  private highlightedStartRoom: RoomMesh | null = null;
+  private highlightedDestRoom: RoomMesh | null = null;
 
   protected override showSurroundings = false;
 
@@ -102,6 +110,7 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
   private tagIndex = new Map<string, TrackedTag>();          // tid → TrackedTag
   private textureCache = new Map<string, THREE.Texture>();   // ttp → texture
   private mqttSubscription: any;
+  private mqttConnectionSubscription: any;
 
   // --- Adaptive clustering ---
   // Threshold: world-space radius equivalent to this many pixels at the current zoom.
@@ -123,7 +132,7 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
   isConnected = false;
 
   get allowFullHeight(): boolean {
-    return this.type === 'popup' || (this.requestId && this.requestType === 'mustering');
+    return this.type === 'popup' || this.type === 'container' || (this.requestId && this.requestType === 'mustering');
   }
 
   // --- Mustering: emergency location highlighting ---
@@ -233,6 +242,11 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
   }
 
   protected override async onFloorLoaded(): Promise<void> {
+    // Purge all tag/marker state from the previous floor. Floor changes driven
+    // by the parent's floorId input skip onFloorSelect (and its clear), leaving
+    // old-floor tags in tagIndex that reclusterAll() would otherwise resurrect
+    // on the new floor. The broker flush below repopulates the current floor.
+    this.clearAllMarkers();
     this.applyViewModeConstraints();
     this.applyFloorDefaultCamera();
     this.connectMqtt();
@@ -1467,7 +1481,8 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
     if (this.mqttConnected || this.mqttConnecting) return;
     this.mqttConnecting = true;
 
-    this.commonService.getmqttBroker().subscribe((res: any) => {
+    // Broker record is cached for the session — repeat opens skip this API call
+    this.threeMapCache.getMqttBroker().subscribe((res: any) => {
       if (!res?.results?.length) {
         this.mqttConnecting = false;
         return;
@@ -1493,7 +1508,7 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
         }
       });
 
-      this.mqttService.isConnected$.subscribe(connected => {
+      this.mqttConnectionSubscription = this.mqttService.isConnected$.subscribe(connected => {
         this.isConnected = connected;
         if (connected) {
           const facilityId = localStorage.getItem(btoa('facilityId'));
@@ -1540,6 +1555,10 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
   }
 
   private handleMqttTag(data: any): void {
+    // Ignore messages while a floor is (re)building: geo-align offsets and the
+    // building group still belong to the previous floor, so positions computed
+    // now would be wrong. The post-load broker flush re-delivers current tags.
+    if (this.isLoading) return;
     if (!data?.tid || !data?.cxy) return;
     let { tid, cxy, flr, ttp, tvl, tan } = data;
     if (!ttp) return;
@@ -2007,6 +2026,7 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
     this.selectedFloor = floor;
     this.selectedFloorId = floor.id;
     this.fetchFloorDetails(floor);
+    this.floorChanged.emit(floor.id);
   }
 
   onBlockSelect(block: any): void {
@@ -2019,6 +2039,8 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
       this.selectedFloor = this.filteredFloors[0];
       this.selectedFloorId = this.filteredFloors[0].id;
       this.fetchFloorDetails(this.filteredFloors[0]);
+      this.blockChanged.emit(block.id);
+      this.floorChanged.emit(this.selectedFloorId);
     }
   }
 
@@ -2046,6 +2068,9 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
     this.activeTags = [];
     this.activeClusterKey = null;
     this.lastClusterCamDist = -1;
+    // Markers are gone — the next requestCurrentTags() must not be deduped,
+    // otherwise the map stays empty until tags happen to move.
+    this.lastCurrentTagsRequestKey = '';
   }
 
   public override resetCamera(): void {
@@ -2111,6 +2136,15 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
       this.porterRouteGroup = null;
     }
 
+    if (this.highlightedStartRoom) {
+      applyRoomHighlight(this.highlightedStartRoom, false, false, false, false);
+      this.highlightedStartRoom = null;
+    }
+    if (this.highlightedDestRoom) {
+      applyRoomHighlight(this.highlightedDestRoom, false, false, false, false);
+      this.highlightedDestRoom = null;
+    }
+
     if (this.requestType !== 'porter') return;
 
     if (!this.reqTagDetail || !this.navNodes || this.navNodes.length === 0) return;
@@ -2162,6 +2196,10 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
             box.applyMatrix4(new THREE.Matrix4().copy(this.buildingGroup.matrixWorld).invert());
           }
           startY = box.max.y + 0.05;
+
+          // Highlight Start Room in Green
+          applyRoomHighlight(startRoom, false, false, true, false);
+          this.highlightedStartRoom = startRoom;
         }
 
         let endY = 0.05;
@@ -2174,6 +2212,10 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
             box.applyMatrix4(new THREE.Matrix4().copy(this.buildingGroup.matrixWorld).invert());
           }
           endY = box.max.y + 0.05;
+
+          // Highlight Destination Room in Red
+          applyRoomHighlight(endRoom, false, false, false, true);
+          this.highlightedDestRoom = endRoom;
         }
 
         const startPoint = points[0].clone();
@@ -2267,6 +2309,7 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
   override ngOnDestroy(): void {
     this.clearEmergencyHighlight();
     if (this.mqttSubscription) this.mqttSubscription.unsubscribe();
+    if (this.mqttConnectionSubscription) this.mqttConnectionSubscription.unsubscribe();
     this.mqttService.disconnect();
     this.textureCache.forEach(t => t.dispose());
     this.textureCache.clear();
@@ -2284,6 +2327,14 @@ export class LiveTrackingComponent extends ThreeMapBase implements OnInit, OnDes
       });
       this.scene.remove(this.porterRouteGroup);
       this.porterRouteGroup = null;
+    }
+    if (this.highlightedStartRoom) {
+      applyRoomHighlight(this.highlightedStartRoom, false, false, false, false);
+      this.highlightedStartRoom = null;
+    }
+    if (this.highlightedDestRoom) {
+      applyRoomHighlight(this.highlightedDestRoom, false, false, false, false);
+      this.highlightedDestRoom = null;
     }
     super.ngOnDestroy();
   }

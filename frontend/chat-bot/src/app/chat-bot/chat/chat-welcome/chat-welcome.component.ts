@@ -27,6 +27,7 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
   inputValue = '';
   showThread = false;
   activeConversationId?: string;
+  sidebarCollapsed = false;
   private sub?: Subscription;
 
   constructor(
@@ -62,6 +63,11 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
   }
   closePopup() {
     this.dialogRef?.close();
+  }
+
+  toggleSidebar() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.cdr.markForCheck();
   }
 
   onSidebarSelectConversation(convId: string) {

@@ -37,7 +37,8 @@ import {
   LabelVisibilityService,
   PersonMovementService,
   ReaderService,
-  RegionalLocationNameService
+  RegionalLocationNameService,
+  ThreeMapCacheService
 } from '../../services';
 
 // Helpers
@@ -284,7 +285,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
   private foundationMeshes: THREE.Mesh[] = [];
   private doorMeshes: THREE.Group[] = [];
   private blockLabelSprite: any = null;
-  private mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], threeDHeight?: Record<string, number>, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string }, floorDefaults?: { [floorId: string]: { distance: number, theta: number, phi: number } }, mapTileType?: string, categoryQuickAccess?: { [catId: string]: boolean } } = { skipLocByCat: [], skipLocCatByCat: [] };
+  private mapConfig: { skipLocByCat: string[], skipLocCatByCat: string[], skipLocNameByCat?: string[], threeDFloorByCat?: string[], threeDHeight?: Record<string, number>, categoryColors?: { [catId: string]: string }, categoryIcons?: { [catId: string]: string }, floorDefaults?: { [floorId: string]: { distance: number, theta: number, phi: number } }, mapTileType?: string, categoryQuickAccess?: { [catId: string]: boolean }, showWall?: boolean } = { skipLocByCat: [], skipLocCatByCat: [] };
   private mapConfigRecord: any = null;
   private mapConfigId: number | null = null;
   public isFloorDefaultSaving = false;
@@ -400,7 +401,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
     private regionalLocationNameService: RegionalLocationNameService,
     private mqttService: MqttService,
     private hospitalService: HospitalService,
-    private commonService: CommonService
+    private commonService: CommonService,
+    private threeMapCache: ThreeMapCacheService
   ) {
     this.animate = this.animate.bind(this);
   }
@@ -557,7 +559,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
           categoryColors: Object.keys(catColors).length > 0 ? catColors : undefined,
           categoryIcons: Object.keys(catIcons).length > 0 ? catIcons : undefined,
           floorDefaults: cfg.floorDefaults && typeof cfg.floorDefaults === 'object' && !Array.isArray(cfg.floorDefaults) ? cfg.floorDefaults : {},
-          mapTileType: typeof cfg.mapTileType === 'string' ? cfg.mapTileType : 'osm'
+          mapTileType: typeof cfg.mapTileType === 'string' ? cfg.mapTileType : 'osm',
+          showWall: typeof cfg.showWall === 'boolean' ? cfg.showWall : undefined
         };
       }
     });
@@ -1629,8 +1632,8 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
     this.showLevels = false;
     this.showFloorImage = true;
     this.showFoundation = true;
-    this.showCorridorWalls = false;
-    this.showRoomWalls = false;
+    this.showCorridorWalls = !!this.mapConfig?.showWall;
+    this.showRoomWalls = !!this.mapConfig?.showWall;
     this.showDoors = false;
     this.showGeoPolygon = true;
     this.isPerspectiveLock = true;
@@ -1672,8 +1675,13 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
       if (s.showLevels !== undefined) this.showLevels = s.showLevels;
       if (s.showFloorImage !== undefined) this.showFloorImage = s.showFloorImage;
       if (s.showFoundation !== undefined) this.showFoundation = s.showFoundation;
-      if (s.showCorridorWalls !== undefined) this.showCorridorWalls = s.showCorridorWalls;
-      if (s.showRoomWalls !== undefined) this.showRoomWalls = s.showRoomWalls;
+      if (this.mapConfig?.showWall === true) {
+        if (s.showCorridorWalls !== undefined) this.showCorridorWalls = s.showCorridorWalls;
+        if (s.showRoomWalls !== undefined) this.showRoomWalls = s.showRoomWalls;
+      } else {
+        this.showCorridorWalls = false;
+        this.showRoomWalls = false;
+      }
       if (s.showDoors !== undefined) this.showDoors = s.showDoors;
       if (s.showGeoPolygon !== undefined) this.showGeoPolygon = s.showGeoPolygon;
       if (s.isPerspectiveLock !== undefined) this.isPerspectiveLock = s.isPerspectiveLock;
@@ -1806,6 +1814,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
     
   }
   private clearAllCachesAfterSettingsSave(): void {
+    this.threeMapCache.clearAll();
     this.commonService.clearcache({}).subscribe({
       error: err => console.warn('[IndoorPath] Failed to clear cache after settings save', err)
     });
@@ -1834,6 +1843,7 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
         this.floorDefaultSaveStatus = 'success';
         this.isFloorDefaultSaving = false;
         setTimeout(() => { this.floorDefaultSaveStatus = ''; }, 3000);
+        this.threeMapCache.clearAll();
       },
       error: () => {
         this.floorDefaultSaveStatus = 'error';
@@ -1878,6 +1888,9 @@ export class MapViewerComponent implements OnInit, AfterViewInit, OnDestroy, OnC
       isQuickAccessConfigOn: this.isQuickAccessConfigOn
     };
     this.commonService.validateUserPreference('tm_map_viewer_state', JSON.stringify(state));
+    // Saved state changed — drop the cached preference response so the next
+    // three-map open (live-tracking / indoor-path) reloads the fresh state.
+    this.threeMapCache.clearPreferences();
   }
 
   private showActionLoader(): void {

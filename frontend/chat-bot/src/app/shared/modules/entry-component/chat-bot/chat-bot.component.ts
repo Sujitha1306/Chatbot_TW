@@ -1,11 +1,12 @@
 import { Component, ElementRef, Inject, ViewChild, ViewEncapsulation } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { DomSanitizer } from '@angular/platform-browser';
-import { CommonService, SseService } from '../../../services';
+import { CommonService } from '../../../services';
 import { HttpClient } from '@angular/common/http';
 import { AppToastService } from '../../../services/toaster.service';
 import { interval, Subscription } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { connect, MqttClient } from 'mqtt';
 
 @Component({
   selector: 'app-chat-bot',
@@ -23,8 +24,7 @@ export class ChatBotComponent {
   public mediaRecorder!: MediaRecorder;
   public streamRef!: MediaStream;
   public pollingSub!: Subscription;
-  public sseSub!: Subscription;
-  private sseUrl = '';
+  public mqttClient!: MqttClient;
   public isUpdated = false;
 
 
@@ -52,7 +52,7 @@ export class ChatBotComponent {
   public isFirstLoad: boolean = true;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any, public sanitizer: DomSanitizer, public commonService: CommonService, private http: HttpClient,
-              public toastr: AppToastService, private sseService: SseService) { }
+              public toastr: AppToastService) { }
 
   async ngOnInit() {
     this.getUserData();
@@ -60,7 +60,7 @@ export class ChatBotComponent {
        this.saveConversation();
     } else {
       this.getChatHistory();
-      this.connectToSse();
+      this.connectMqtt();
     }
   }
 
@@ -98,7 +98,7 @@ export class ChatBotComponent {
 
     this.commonService.saveChatConversation(createpost).subscribe(res => {
       this.data.conversationId = res.results?.id;
-      this.connectToSse();
+      this.connectMqtt();
     });
   }
 
@@ -109,39 +109,73 @@ export class ChatBotComponent {
     this.getChatHistory();
   }
 
-  connectToSse(): void {
+  connectMqtt(): void {
     const conversationId = this.data?.conversationId;
     if (!conversationId) return;
 
-    if (typeof EventSource === 'undefined') {
-      this.startPolling();
-      return;
-    }
+    this.commonService.getmqttBroker().subscribe({
+      next: (res) => {
+        if (res.results != null && res.results.length) {
+          const brokerInfo = res.results.find((val: any) => val.brokerTypeId === 'BT-CL');
+          if (brokerInfo) {
+            const cloudConnect = {
+              protocol: brokerInfo.wprotocol || 'wss',
+              host: brokerInfo.host,
+              password: brokerInfo.password,
+              username: brokerInfo.username,
+              port: Number(brokerInfo.wport),
+              connectTimeout: 30000,
+              keepalive: 60,
+              clientId: 'client_chat_' + Math.random().toString(16).substr(2, 8)
+            };
 
-    const userId = localStorage.getItem(btoa('userId'));
-    const base = `${environment.api_base_url_new}${environment.base_value.sse_chat}`;
-    this.sseUrl = userId && false ? `${base}?userId=${userId}` : base;
+            this.mqttClient = connect(cloudConnect);
 
-    this.sseSub = this.sseService.connect(this.sseUrl).subscribe({
-      next: (event: MessageEvent) => this.handleSseMessage(event),
-      error: () => this.startPolling()
+            this.mqttClient.on('connect', () => {
+              console.log('✅ ChatBot MQTT Connected');
+              if (this.userId) {
+                this.mqttClient?.subscribe(`tw/chat/user/${this.userId}`);
+              } else {
+                this.mqttClient?.subscribe('tw/chat/user/#');
+              }
+            });
+
+            this.mqttClient.on('message', (topic: string, message: Buffer) => {
+              try {
+                const msgStr = message.toString();
+                const payload = JSON.parse(msgStr);
+                const data = payload?.data;
+                this.handleMqttMessage(data);
+              } catch (e) {
+                console.error('ChatBot MQTT message parse error', e);
+              }
+            });
+
+            this.mqttClient.on('error', (err) => {
+              console.error('ChatBot MQTT error', err);
+              this.startPolling();
+            });
+          }
+        } else {
+          this.startPolling();
+        }
+      },
+      error: (err) => {
+        console.error('ChatBot failed to get MQTT broker details', err);
+        this.startPolling();
+      }
     });
   }
 
-  handleSseMessage(event: MessageEvent): void {
-    let item: any;
-    try {
-      item = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-    } catch {
-      return;
-    }
+  handleMqttMessage(item: any): void {
+    if (!item) return;
     const conversationId = this.data?.conversationId;
-    if (item?.conversationId == conversationId && item.eventType === 'NEW_MESSAGE' || item.eventType === 'MESSAGE_SENT') {
-      console.log(item);
+    if (item.conversationId == conversationId && (item.eventType === 'NEW_MESSAGE' || item.eventType === 'MESSAGE_SENT')) {
+      console.log('ChatBot MQTT message received:', item);
       this.page = 0;
       this.messages = [];
       this.getChatHistory();
-    };
+    }
   }
 
   getChatHistory() {
@@ -554,11 +588,8 @@ export class ChatBotComponent {
     if (this.pollingSub) {
       this.pollingSub.unsubscribe();
     }
-    if (this.sseSub) {
-      this.sseSub.unsubscribe();
-    }
-    if (this.sseUrl) {
-      this.sseService.disconnect(this.sseUrl);
+    if (this.mqttClient) {
+      this.mqttClient.end(true);
     }
   }
 

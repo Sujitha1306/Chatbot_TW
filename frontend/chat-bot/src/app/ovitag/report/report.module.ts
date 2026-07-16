@@ -61,6 +61,7 @@ import { PorterDateSelectorComponent } from '../../shared/modules/entry-componen
 import { PorterV2ReportComponent } from './porter-v2-report/porter-v2-report.component';
 import { AiStMustComponent } from './staffMustering-Report/ai-stmust.component';
 import { MusteringDateSelectorComponent } from './staffMustering-Report/mustering-dateselector.component';
+import { CommandCenterComponent } from './command-center/command-center.component';
 
 
 @NgModule({
@@ -122,7 +123,8 @@ import { MusteringDateSelectorComponent } from './staffMustering-Report/musterin
      InfantsecurityReportComponent,
      ScheduleReportComponent, CreateScheduleComponent, KynReviewpostManagementComponent,
      PorterDateSelectorComponent,PorterV2ReportComponent,
-     AiStMustComponent, MusteringDateSelectorComponent
+     AiStMustComponent, MusteringDateSelectorComponent,
+     CommandCenterComponent
 
      ],
      exports: [PorterV2ReportComponent],

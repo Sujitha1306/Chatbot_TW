@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { ChatMessage, Conversation } from '../models/chat.model';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
@@ -32,6 +32,11 @@ export class ChatService {
 
   private fillInputSubject = new BehaviorSubject<string>('');
   fillInput$ = this.fillInputSubject.asObservable();
+
+  // Fires after a previous conversation's full history has finished loading,
+  // so the view can jump straight to the latest message instead of the start.
+  private conversationLoadedSubject = new Subject<void>();
+  conversationLoaded$ = this.conversationLoadedSubject.asObservable();
 
   activeConvId: string | null = null;
   private currentAbortController: AbortController | null = null;
@@ -148,6 +153,7 @@ export class ChatService {
       }));
       this.messagesSubject.next(loadedMessages);
       this.activeConvId = convId;
+      this.conversationLoadedSubject.next();
     } catch (e) {
       if (requestId === this.currentLoadRequestId) {
         console.error('Failed to load messages', e);

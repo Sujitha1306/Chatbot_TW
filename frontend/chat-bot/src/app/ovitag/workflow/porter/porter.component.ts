@@ -1686,7 +1686,7 @@ export class PorterNewComponent implements OnInit, OnDestroy {
     clearInterval(this.porterInterval);
     const dialogRef = this.dialog.open(CommonDialogComponent, {
     data: details,
-    panelClass: ['medium-popup'],
+    panelClass: ['large-popup'],
     disableClose: true,
     });
     dialogRef.afterClosed().subscribe((result) => {
@@ -1828,10 +1828,10 @@ export class PorterNewComponent implements OnInit, OnDestroy {
     headerIcon: string[] = [],
     timeCols: string[] = ['Time', 'Drop Time', 'Order Time', 'Delivered Time'],
     dateTimeCols: string[]= ['Assigned Time'], 
-    width: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
-    minWidth: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
-    maxWidth: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
-    truncate: string[] =  ['Drop', 'Requester', 'Description', 'Pickup', 'Assigned Time', 'Location', 'Group', 'Needed', 'Current Location', 'Name', 'Schedule', 'Porter Pool / Location', 'Patient Name', 'Porter', 'Remarks'],
+    width: string[] =  [...this.displayedColumns1],
+    minWidth: string[] =  [...this.displayedColumns1],
+    maxWidth: string[] =  [...this.displayedColumns1],
+    truncate: string[] =  [...this.displayedColumns1],
     align: string[] = ['Location'],
     cellColorCols: Record<string, Record<string, string>> = this.selectedTabIndex === 3 ? null : this.PRGridConfig?.color
   ): TwColumnDef[] {
@@ -1840,10 +1840,13 @@ export class PorterNewComponent implements OnInit, OnDestroy {
       if (sortCols.includes(key)) def.sortable  = true;
       if (eventCols.includes(key)) def.clickable = true;
       if (timeCols.includes(key)) def.type = 'time';
-      if (width.includes(key)) def.width = key == 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || key === 'Group' || key === 'Porter' || key === 'Remarks' ? '85px' : '100px';
-      if (minWidth.includes(key)) def.minWidth = key == 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || key === 'Group' || key === 'Porter' || key === 'Remarks' ? '85px' : '100px';
-      if (maxWidth.includes(key)) def.maxWidth = key == 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || key === 'Group' || key === 'Porter' || key === 'Remarks' ? '85px' : '100px';
-      if (truncate.includes(key)) def.truncate = key === 'Porter Pool / Location'? false : true;
+      if (width.includes(key)) def.width = key === 'Count' ? '10px' : key == 'Message' || key === 'Priority' ? '5px' : key === 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || 
+      key === 'Group' || key === 'Porter' || key === 'Remarks' || key === 'Needed' ? '85px' : key === 'Pool Location' || key === 'Type' || key === 'Time' || key === 'Drop Time' || key === 'Total Tat' ? '50px' : '100px';
+      if (minWidth.includes(key)) def.minWidth = key === 'Count' ? '10px' : key === 'Message' || key === 'Priority' ? '5px' : key === 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || 
+      key === 'Group' || key === 'Porter' || key === 'Remarks' || key === 'Needed' ? '85px' : key === 'Pool Location' || key === 'Type' || key === 'Time' || key === 'Drop Time' || key === 'Total Tat' ? '50px' : '100px';
+      if (maxWidth.includes(key)) def.maxWidth = key === 'Count' ? '10px' : key === 'Message' || key === 'Priority' ? '5px' : key === 'Porter Pool / Location' ? '150px' : key === 'Requester' || key === 'Description' || key === 'Location' || 
+      key === 'Group' || key === 'Porter' || key === 'Remarks' || key === 'Needed' ? '85px' : key === 'Pool Location' || key === 'Type' || key === 'Time' || key === 'Drop Time' || key === 'Total Tat' ? '50px' : '100px';
+      if (truncate.includes(key)) def.truncate = key === 'Porter Pool / Location' || key === 'Status' || key === 'Message' || key === 'Priority' ? false : true;
       if (headerIcon.includes(key)) def.headerIcon = { src: key === 'Priority' ? '/assets/Alert/common_icons/priority_high.svg' : key === 'Device' ? '/assets/Alert/common_icons/mob_coaster.svg' : '', matIcon: key === 'Message' ? 'chat' : ''};
       if (align.includes(key)) def.align = 'left';
       if ( this.selectedTabIndex !== 3) {

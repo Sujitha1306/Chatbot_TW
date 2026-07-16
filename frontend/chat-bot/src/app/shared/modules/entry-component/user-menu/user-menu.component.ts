@@ -555,6 +555,40 @@ export class ViewProfileComponent implements OnInit {
     return this.sanitizer.bypassSecurityTrustResourceUrl(value);
   }
 
+  handleAvatarImgError(): void {
+    this.profileImage = null;
+  }
+
+  get initials(): string {
+    if (!this.username || this.username === 'null' || this.username === 'undefined') {
+      return 'U';
+    }
+    const nameStr = String(this.username).trim();
+    if (!nameStr) {
+      return 'U';
+    }
+    const parts = nameStr.split(/\s+/)
+      .filter(p => p && p !== 'null' && p !== 'undefined');
+    if (parts.length === 0) {
+      return 'U';
+    }
+    if (parts.length >= 2) {
+      const firstInitial = parts[0][0] || '';
+      const middleWord = parts[Math.floor(parts.length / 2)];
+      const middleInitial = middleWord ? (middleWord[0] || '') : '';
+      return (firstInitial + middleInitial).toUpperCase();
+    } else {
+      const singleWord = parts[0];
+      if (singleWord.length >= 2) {
+        const firstLetter = singleWord[0];
+        const middleLetter = singleWord[Math.floor(singleWord.length / 2)];
+        return (firstLetter + middleLetter).toUpperCase();
+      } else {
+        return singleWord.toUpperCase();
+      }
+    }
+  }
+
   handleDocumentEvent() {
     this.attachFiles = [];
     this.attachFiles.push({

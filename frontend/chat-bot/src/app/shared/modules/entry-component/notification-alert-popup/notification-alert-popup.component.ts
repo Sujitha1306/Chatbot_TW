@@ -121,11 +121,11 @@ export class NotificationAlertPopupComponent implements OnInit, OnDestroy {
     if (this.data?.hideCamera) {
       return false;
     }
-    if (this.selectedAlert) {
-      if (this.isTempAlert(this.selectedAlert) || this.isStaffGeoAlert(this.selectedAlert)) {
-        return false;
-      }
-    }
+    // if (this.selectedAlert) {
+    //   if (this.isTempAlert(this.selectedAlert) || this.isStaffGeoAlert(this.selectedAlert)) {
+    //     return false;
+    //   }
+    // }
     return true;
   }
 

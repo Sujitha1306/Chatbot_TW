@@ -380,13 +380,9 @@ import { ChatWelcomeComponent } from '../../chat-bot/chat/chat-welcome/chat-welc
         this.commonService.setLayout(value);
     }
 
-      openedChange(isOpended)
+      openedChange()
       {
-        if(!isOpended)
-        {
-            this.islayout = false;
-        }
-    } 
+    }
     openQRCodeDialog(data){
         let selectdata = {'type' : 'qrcode'}
         const dialog = this.dialog.open(LightboxOnlineMenuComponent, {

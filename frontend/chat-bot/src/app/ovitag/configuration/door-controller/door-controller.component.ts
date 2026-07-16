@@ -32,7 +32,7 @@ export class DoorControllerComponent implements OnDestroy {
   enableCloseButton = false;
   private client: MqttClient;
   facilityId = localStorage.getItem(btoa('facilityId'));
-  selectedTabIndex;
+  selectedTabIndex:any=0;
   geofenceColumns =['Serial Number', 'Location Name', 'SD Time', 'Last BLE Time', 'Last UWB Time', 'BLE Device', 'UWB Device', 'BLE RSSI', 'UWB Distance', 'Last Buzzer Time', 'Last Bulb Time', 'Alerts']
   geofenceeventColumn = ['View Alarm Log', 'View Raw Data'];
   dateTimeColumns = ['Event Time', 'SD Time', 'Last BLE Time', 'Last UWB Time', 'Last Buzzer Time', 'Last Bulb Time',]

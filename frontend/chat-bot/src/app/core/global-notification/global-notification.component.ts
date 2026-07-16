@@ -788,7 +788,7 @@ export class GlobalNotificationComponent implements OnInit, OnDestroy {
   }
 
   hasEvent(alertDetails: any[]): boolean {
-    return alertDetails?.some(item => ((item.identifyingType === 'Event'|| item.identifyingType === 'SensorType') && (item.identifyingValue === 'CE-TAM' || item.identifyingValue === 'CE-WRP'|| item.identifyingValue === 'DVIT-TEMP')));
+    return alertDetails?.some(item => ((item.identifyingType === 'Event'|| item.identifyingType === 'SensorType') && (item.identifyingValue === 'CE-TAM' || item.identifyingValue === 'CE-WRP'|| item.identifyingValue === 'DVIT-TEMP' || item.identifyingValue === 'DVIT-HUM')));
   }
 
   openCameraView(notification: any) {

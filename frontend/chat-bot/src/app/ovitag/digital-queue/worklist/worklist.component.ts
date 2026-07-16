@@ -317,7 +317,7 @@ export class WorklistComponent implements OnInit, OnDestroy {
         if (this.floorId?.length === 0 && this.commonService.userPreference?.hasOwnProperty('DQWorklistFloor')) {
           this.floorId = JSON.parse(this.commonService.userPreference.DQWorklistFloor.value);
         }
-        this.dashboardService.getHpLocationDetailbyIds(locationIds, this.floorId, this.visitTypeIds?.value).subscribe(res => {
+        this.dashboardService.getHpLocationDetailbyIds(locationIds, null, this.visitTypeIds?.value).subscribe(res => {
           if(res.statusCode === 1) {
             this.spinLoader = true;
             this.refreshDetail.lastUpdate = Math.floor((new Date().getTime())/1000);

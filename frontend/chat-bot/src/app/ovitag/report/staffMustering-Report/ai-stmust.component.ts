@@ -77,6 +77,8 @@ export class AiStMustComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedLayout = key;
     if (key === 'mustering-summary') {
       this.fetchOverallSummary();
+    } else if (key === 'mustering-events') {
+      this.fetchMusteringEvents();
     }
     this.cdr.detectChanges();
     Promise.resolve().then(() => {
