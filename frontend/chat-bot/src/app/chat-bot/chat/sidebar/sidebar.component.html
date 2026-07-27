@@ -33,7 +33,7 @@
             <mat-icon style="color: #6b7280; font-size: 1.25rem; width: 1.25rem; height: 1.25rem;">{{ showRecommendations ? 'expand_more' : 'chevron_right' }}</mat-icon>
           </div>
           <mat-nav-list *ngIf="showRecommendations" dense>
-            <a mat-list-item *ngFor="let rec of recommendations | slice:0:5" (click)="fillRecommendation(rec)">
+            <a mat-list-item *ngFor="let rec of recommendations | slice:0:5" (click)="handleRecommendationClick(rec)">
               <div class="custom-list-content">
                 <span class="rec-text" [title]="rec">{{ rec }}</span>
               </div>
@@ -99,12 +99,15 @@
 
       <ng-container *ngIf="filteredConvs$ | async as filteredConvs">
         <div class="recents-header" (click)="toggleRecents()">
-          <p class="section-title">Recents</p>
+          <div style="display: flex; align-items: center;">
+            <p class="section-title" style="margin: 0; padding-right: 8px;">Recents</p>
+            <mat-spinner *ngIf="initialLoading$ | async" diameter="16"></mat-spinner>
+          </div>
           <mat-icon>{{ showRecents ? 'expand_more' : 'chevron_right' }}</mat-icon>
         </div>
         
         <mat-nav-list *ngIf="showRecents" dense>
-          <mat-list-item *ngFor="let c of filteredConvs; trackBy: trackByConvId" 
+          <mat-list-item *ngFor="let c of filteredConvs | slice:0:visibleRecentsCount; trackBy: trackByConvId" 
                          [class.active]="chat.activeConvId === c.id"
                          (click)="selectConv(c.id)">
             <div class="custom-list-content">
@@ -140,11 +143,19 @@
                 </button>
                 <button mat-menu-item (click)="deleteConv($event, c.id)">
                   <mat-icon color="warn">delete</mat-icon>
-                  <span class="warn-text">Delete</span>
+                  <span class="text-red-500">Delete</span>
                 </button>
               </mat-menu>
             </div>
           </mat-list-item>
+
+          <div class="load-more-container" *ngIf="filteredConvs.length > visibleRecentsCount || chat.hasMoreConversations">
+            <button mat-button class="load-more-btn" (click)="loadMoreRecents($event)" [disabled]="isLoadingMore">
+              <mat-spinner diameter="20" *ngIf="isLoadingMore" style="display: inline-block; vertical-align: middle;"></mat-spinner>
+              <span *ngIf="!isLoadingMore" style="vertical-align: middle;">See More</span>
+              <mat-icon *ngIf="!isLoadingMore" style="vertical-align: middle;">expand_more</mat-icon>
+            </button>
+          </div>
         </mat-nav-list>
       </ng-container>
     </div>

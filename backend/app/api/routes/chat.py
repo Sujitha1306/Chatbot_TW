@@ -67,7 +67,7 @@ def query(req: QueryRequest, _=Depends(require_api_key)):
 
 
 @router.post("/stream")
-async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
+async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_key)):
     """
     SSE streaming endpoint. Sends JSON events as they complete.
     Consumed via fetch + ReadableStream on the frontend.
@@ -78,9 +78,10 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
         "customer_id": settings.target_customer_id,
     }
     pipeline = get_pipeline()
+    pipeline.turn_tokens = 0
     
-    # Optional auth user info from deps (if Phase 3 JWT used, req.session_id isn't strictly secure, but okay for MVP)
-    user_id = getattr(req, "user_id", "default")
+    # Use auth_data for user_id to match history routes, fallback to req.user_id if needed
+    user_id = auth_data.get("sub", "demo-user-001") if auth_data else getattr(req, "user_id", "default")
     
     # Use a local variable - don't mutate req
     session_id = req.session_id
@@ -99,6 +100,10 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             has_history = len(prior_messages) > 0
             
             current_history = _store.get_recent_context(user_id, session_id)
+            
+            # ── Event 0: session id and initial metrics ──
+            yield _sse({"event": "session", "id": session_id})
+            yield _sse({"event": "metrics", "tokens": 0})
 
             # ── NEW: Resolve memory scope ──
             # Pass only the prior history to the memory resolver, otherwise it thinks the current question is prior context
@@ -110,6 +115,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             except Exception as e:
                 logging.warning(f"resolve_memory_scope failed, defaulting to current_conversation: {e}")
                 memory_scope = {"scope": "current_conversation", "reasoning": "exception_fallback"}
+            
+            yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
 
             if memory_scope.get("scope") == "other_conversation":
                 search_terms = memory_scope.get("search_terms", [])
@@ -118,8 +125,6 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     search_terms=search_terms,
                     exclude_conv_id=session_id,
                 )
-
-                yield _sse({"event": "session", "id": session_id})
 
                 if not past_matches:
                     response_text = "I checked your past conversations but didn't find anything matching that — could you tell me more about what you're looking for?"
@@ -146,7 +151,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     domain="cross_conversation",
                     crossConversationRefs=[
                         {"conversation_id": m["conversation_id"], "title": m["title"]} for m in past_matches
-                    ]
+                    ],
+                    tokens_used=pipeline.turn_tokens
                 ))
                 return  # ← stop here, do not proceed to plan_analysis/SQL
 
@@ -158,10 +164,11 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
             except Exception as e:
                 logging.warning(f"route_message failed, defaulting to data_question: {e}")
                 routing = {"needs_data": True, "response": None, "reason": "router_exception_fallback"}
+            
+            yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
 
             if not routing["needs_data"]:
                 # Short-circuit — respond directly, skip the entire SQL pipeline
-                yield _sse({"event": "session", "id": session_id})
                 yield _sse({"event": "conversational"})  # NEW event type — frontend shows this differently (no chart/table panels)
                 yield _sse({"event": "summary_start"})
 
@@ -174,16 +181,15 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     role="assistant",
                     content=routing["response"],
                     sql="", row_count=0, domain="conversational",
+                    tokens_used=pipeline.turn_tokens
                 ))
                 return  # ← STOP HERE, do not proceed to intent/SQL/etc.
-
-            # ── Event 0: session id (for new conversations) ──
-            yield _sse({"event": "session", "id": session_id})
 
             # ── Event 1: plan analysis (fast, ~0.5s) ──
             plan = await asyncio.to_thread(
                 pipeline.plan_analysis, req.question, history=current_history, filters=req.filters
             )
+            yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
             yield _sse({"event": "intent", "domain": plan.get("data_domain", "porter"), "chart_type": plan.get("chart_type_hint", "auto")})
 
             # ── Event 1.5: Limitation Detection ──
@@ -205,6 +211,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 _store.add_message(user_id, session_id, Message(
                     role="assistant", content=limitation_response,
                     domain="conversational", sql="", row_count=0,
+                    tokens_used=pipeline.turn_tokens
                 ))
                 return
 
@@ -262,7 +269,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     row_count=sum(len(s["data"]) for s in packaged["sub_results"]),
                     domain="both",
                     filters=req.filters,
-                    displaySections=packaged["display_sections"]
+                    displaySections=packaged["display_sections"],
+                    tokens_used=pipeline.turn_tokens
                 ))
                 return
 
@@ -309,6 +317,7 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                     sql=sql, 
                     row_count=0, 
                     domain=plan.get("data_domain", "porter"),
+                    tokens_used=pipeline.turn_tokens
                 ))
                 yield _sse({"event": "error", "message": f"Query failed: {error_msg}", "sql": sql})
                 return
@@ -342,52 +351,91 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
 
             # ── Event 5: Summary streamed token by token ──
             yield _sse({"event": "summary_start"})
-            coverage = await asyncio.to_thread(pipeline.check_data_coverage, df, plan)
             
-            from backend.config.settings import settings
-            facility_name = settings.target_facility_name
-
-            summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
-            prompt_logger = logging.getLogger("prompt_debugger")
-            # prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
-            # prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
-
-            stream = pipeline.client.chat.completions.create(
-                model=pipeline.model,
-                messages=[
-                    {"role": "system", "content": pipeline.SUMMARY_SYSTEM},
-                    {"role": "user",   "content": summary_prompt},
-                ],
-                stream=True,
-                temperature=0.0,
-                max_tokens=300,
-            )
+            is_viz_followup = req.question.strip().lower() == "can you visualize this data as a chart?"
+            
             full_summary = ""
-            for chunk in stream:
-                if len(chunk.choices) > 0:
-                    token = chunk.choices[0].delta.content or ""
-                    if token:
-                        full_summary += token
-                        yield _sse({"event": "token", "text": token})
-                        await asyncio.sleep(0)   # yield control to event loop
+            if is_viz_followup:
+                full_summary = "Here is the visualization based on the previous data."
+                for word in full_summary.split(" "):
+                    yield _sse({"event": "token", "text": word + " "})
+                    await asyncio.sleep(0.01)
+            else:
+                coverage = await asyncio.to_thread(pipeline.check_data_coverage, df, plan)
+                
+                from backend.config.settings import settings
+                facility_name = settings.target_facility_name
+
+                summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
+                prompt_logger = logging.getLogger("prompt_debugger")
+                # prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
+                # prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
+
+                estimated_input = int(len(summary_prompt.split(" ")) * 1.3)
+                pipeline.turn_tokens += estimated_input
+                yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
+                
+                estimated_output = 0
+
+                stream = pipeline.client.chat.completions.create(
+                    model=pipeline.model,
+                    messages=[
+                        {"role": "system", "content": pipeline.SUMMARY_SYSTEM},
+                        {"role": "user",   "content": summary_prompt},
+                    ],
+                    stream=True,
+                    stream_options={"include_usage": True},
+                    temperature=0.0,
+                    max_tokens=300,
+                )
+                for chunk in stream:
+                    if len(chunk.choices) > 0:
+                        token = chunk.choices[0].delta.content or ""
+                        if token:
+                            full_summary += token
+                            yield _sse({"event": "token", "text": token})
+                            
+                            estimated_output += 1
+                            if estimated_output % 3 == 0:
+                                pipeline.turn_tokens += 3
+                                yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
+                                
+                            await asyncio.sleep(0)   # yield control to event loop
+                    if hasattr(chunk, "usage") and chunk.usage:
+                        # Reconcile estimates with true usage
+                        pipeline.turn_tokens -= (estimated_input + estimated_output)
+                        pipeline.turn_tokens += chunk.usage.total_tokens
+                        yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
 
             # ── Event 6: Chart spec ──
-            yield _sse({"event": "chart", "spec": chart_spec})
+            chart_keywords = ["chart", "visualize", "graph", "plot", "pie", "bar", "line", "trend"]
+            wants_chart = any(word in effective_question.lower() for word in chart_keywords)
+
+            if wants_chart and chart_spec:
+                yield _sse({"event": "chart", "spec": chart_spec})
 
             # ── Event 7: Follow-up suggestions ──
             followups = await asyncio.to_thread(pipeline.generate_followups, effective_question, plan)
+            yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
+            
+            if not wants_chart and len(df) > 0 and chart_spec:
+                followups.insert(0, "Can you visualize this data as a chart?")
+                
             yield _sse({"event": "followups", "suggestions": followups})
 
             # ── Event 7.5: Suggestions ──
-            suggestions = await asyncio.to_thread(pipeline.generate_suggestions, effective_question, full_summary, plan)
-            if suggestions:
-                suggestion_text = "\n\n💡 Suggestions:\n" + "\n".join(f"• {s}" for s in suggestions)
+            if not is_viz_followup:
+                suggestions = await asyncio.to_thread(pipeline.generate_suggestions, effective_question, full_summary, plan)
+                yield _sse({"event": "metrics", "tokens": pipeline.turn_tokens})
                 
-                full_summary += suggestion_text
-                
-                for word in suggestion_text.split(" "):
-                    yield _sse({"event": "token", "text": word + " "})
-                    await asyncio.sleep(0.01)
+                if suggestions:
+                    suggestion_text = "\n\n💡 Suggestions:\n" + "\n".join(f"• {s}" for s in suggestions)
+                    
+                    full_summary += suggestion_text
+                    
+                    for word in suggestion_text.split(" "):
+                        yield _sse({"event": "token", "text": word + " "})
+                        await asyncio.sleep(0.01)
 
             # ── Event 8: Done ──
             yield _sse({"event": "done"})
@@ -401,7 +449,8 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
                 domain=plan.get("data_domain", "porter"),
                 filters=req.filters,
                 data=data_payload,
-                chartSpec=chart_spec
+                chartSpec=chart_spec if wants_chart else None,
+                tokens_used=pipeline.turn_tokens
             ))
 
         except Exception as e:
@@ -412,7 +461,11 @@ async def stream_query(req: QueryRequest, _=Depends(require_api_key)):
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            "Cache-Control": "no-cache", 
+            "X-Accel-Buffering": "no",
+            "Content-Encoding": "identity"  # Bypass FastAPI GZipMiddleware buffering
+        },
     )
 
 

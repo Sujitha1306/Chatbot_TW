@@ -20,6 +20,7 @@ class Message:
     chartSpec: dict = field(default_factory=dict)
     displaySections: list = field(default_factory=list)
     crossConversationRefs: list = field(default_factory=list)
+    tokens_used: int = 0
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
     def to_dict(self):
@@ -36,6 +37,7 @@ class Message:
             "chartSpec": self.chartSpec,
             "displaySections": self.displaySections,
             "crossConversationRefs": self.crossConversationRefs,
+            "tokens_used": self.tokens_used,
             "timestamp": self.timestamp.isoformat()
         }
 
@@ -54,6 +56,7 @@ class Message:
             chartSpec=d.get("chartSpec", {}),
             displaySections=d.get("displaySections", []),
             crossConversationRefs=d.get("crossConversationRefs", []),
+            tokens_used=d.get("tokens_used", 0),
         )
         if "timestamp" in d:
             try:
@@ -68,6 +71,7 @@ class Conversation:
     user_id: str = "default"
     title: str = "New Conversation"
     is_favorite: bool = False
+    total_tokens_used: int = 0
     messages: List[Message] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -77,6 +81,7 @@ class Conversation:
             "user_id": self.user_id,
             "title": self.title,
             "is_favorite": self.is_favorite,
+            "total_tokens_used": self.total_tokens_used,
             "messages": [m.to_dict() for m in self.messages],
             "created_at": self.created_at.isoformat()
         }
@@ -88,6 +93,7 @@ class Conversation:
             user_id=d.get("user_id", "default"),
             title=d.get("title", "New Conversation"),
             is_favorite=d.get("is_favorite", False),
+            total_tokens_used=d.get("total_tokens_used", 0),
             messages=[Message.from_dict(m) for m in d.get("messages", [])],
         )
         if "created_at" in d:
@@ -141,9 +147,16 @@ class ConversationStore:
             self._store[user_id][conv_id].messages.append(msg)
             self._save()
 
-    def get_messages(self, user_id: str, conv_id: str) -> List[Message]:
+    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0) -> List[Message]:
         conv = self._store[user_id].get(conv_id)
-        return conv.messages if conv else []
+        if not conv:
+            return []
+        msgs = conv.messages
+        if limit is not None:
+            end_idx = max(0, len(msgs) - offset)
+            start_idx = max(0, end_idx - limit)
+            return msgs[start_idx:end_idx]
+        return msgs
 
     def session_exists(self, user_id: str, conv_id: str) -> bool:
         return conv_id in self._store[user_id]

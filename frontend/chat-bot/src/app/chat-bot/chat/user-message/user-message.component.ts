@@ -20,6 +20,10 @@ import { ChatMessage } from '../../models/chat.model';
       
       <!-- Action Buttons -->
       <div class="message-actions" *ngIf="!isEditing()">
+        <span class="message-timestamp" *ngIf="message.timestamp" [title]="message.timestamp | date:'d MMM yyyy, HH:mm'">
+          {{ message.timestamp | date:'d MMM' }}
+        </span>
+        
         <!-- Copy Button -->
         <div class="action-btn-container">
           <button (click)="copyText()" class="action-btn">

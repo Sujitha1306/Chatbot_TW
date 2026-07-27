@@ -57,10 +57,19 @@
     <div *ngIf="message.followups?.length" class="followups-container">
       <div class="followups-label"><mat-icon>lightbulb</mat-icon> Try:</div>
       <div class="followups-list">
-        <button *ngFor="let f of message.followups" (click)="followupClick.emit(f)" class="followup-chip">
+        <button *ngFor="let f of message.followups" (click)="handleFollowupClick(f)" class="followup-chip">
           {{ f }}
         </button>
       </div>
+    </div>
+
+    <!-- Live metrics (time and tokens) -->
+    <div *ngIf="(message.status === 'pending' || message.status === 'streaming') && (message.tokensUsed !== undefined || timeElapsed > 0)" class="metrics-row">
+      <span class="metrics-text">
+        ( <ng-container *ngIf="timeElapsed > 0">{{ timeElapsed }}s </ng-container>
+        <ng-container *ngIf="message.tokensUsed !== undefined && timeElapsed > 0">|</ng-container>
+        <ng-container *ngIf="message.tokensUsed !== undefined"> {{ message.tokensUsed }} tokens </ng-container>)
+      </span>
     </div>
 
     <!-- Error state -->

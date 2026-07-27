@@ -8,7 +8,7 @@ const BRAND_COLORS = ['#28A5A0', '#2C3687', '#61DAD3', '#4A5FAF', '#8BC4C1', '#6
 const BASE_LAYOUT: any = {
   paper_bgcolor: 'rgba(0,0,0,0)',
   plot_bgcolor:  'rgba(0,0,0,0)',
-  font: { family: 'Inter, sans-serif', color: '#1A1A2E', size: 12 },
+  font: { family: "'Open Sans', sans-serif", color: '#1A1A2E', size: 12 },
   margin: { t: 60, r: 20, b: 60, l: 60 },
   height: 380,
   showlegend: true,
@@ -160,8 +160,13 @@ export class ChartRendererComponent implements OnChanges, AfterViewInit {
     if (col === 'porter_user_id') return 'Porter';
     
     return col
+      .replace(/tw_demo\./gi, '')
+      .replace(/mysql_/gi, '')
+      .replace(/mysql/gi, '')
+      .replace(/\./g, '_')
       .replace(/_id$/i, '')
       .split('_')
+      .filter(w => w.trim().length > 0)
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ')
       .trim();

@@ -54,34 +54,55 @@ class MySQLConversationStore:
             cursor.execute(
                 """
                 INSERT INTO messages 
-                (id, conversation_id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (id, conversation_id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     msg.id, conv_id, msg.role, msg.content, msg.sql, msg.row_count, msg.domain,
                     _sanitize_for_storage(packed_data),
                     _sanitize_for_storage(msg.chartSpec),
+                    msg.tokens_used,
                     msg.timestamp
                 )
             )
+            
+            if msg.tokens_used > 0:
+                cursor.execute(
+                    "UPDATE conversations SET total_tokens_used = total_tokens_used + %s WHERE id = %s",
+                    (msg.tokens_used, conv_id)
+                )
             conn.commit()
         finally:
             conn.close()
 
-    def get_messages(self, user_id: str, conv_id: str) -> List[Message]:
+    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0) -> List[Message]:
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor(dictionary=True)
-            cursor.execute(
-                """
-                SELECT id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, created_at
-                FROM messages
-                WHERE conversation_id = %s
-                ORDER BY created_at ASC
-                """,
-                (conv_id,)
-            )
-            rows = cursor.fetchall()
+            if limit is not None:
+                cursor.execute(
+                    """
+                    SELECT id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at
+                    FROM messages
+                    WHERE conversation_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s OFFSET %s
+                    """,
+                    (conv_id, limit, offset)
+                )
+                rows = cursor.fetchall()
+                rows.reverse()
+            else:
+                cursor.execute(
+                    """
+                    SELECT id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at
+                    FROM messages
+                    WHERE conversation_id = %s
+                    ORDER BY created_at ASC
+                    """,
+                    (conv_id,)
+                )
+                rows = cursor.fetchall()
             
             messages = []
             for row in rows:
@@ -112,6 +133,7 @@ class MySQLConversationStore:
                     displaySections=packed_data.get('displaySections', []),
                     crossConversationRefs=packed_data.get('crossConversationRefs', []),
                     chartSpec=chart_spec,
+                    tokens_used=row.get('tokens_used', 0),
                     timestamp=row['created_at']
                 )
                 messages.append(m)
@@ -119,18 +141,19 @@ class MySQLConversationStore:
         finally:
             conn.close()
 
-    def list_conversations(self, user_id: str) -> List[Conversation]:
+    def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0) -> List[Conversation]:
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor(dictionary=True)
             cursor.execute(
                 """
-                SELECT id, user_id, title, is_favorite, created_at
+                SELECT id, user_id, title, is_favorite, total_tokens_used, created_at
                 FROM conversations
                 WHERE user_id = %s
                 ORDER BY created_at DESC
+                LIMIT %s OFFSET %s
                 """,
-                (user_id,)
+                (user_id, limit, offset)
             )
             rows = cursor.fetchall()
             
@@ -141,6 +164,7 @@ class MySQLConversationStore:
                     user_id=row['user_id'],
                     title=row['title'],
                     is_favorite=bool(row.get('is_favorite', False)),
+                    total_tokens_used=row.get('total_tokens_used', 0),
                     created_at=row['created_at']
                 )
                 convs.append(c)

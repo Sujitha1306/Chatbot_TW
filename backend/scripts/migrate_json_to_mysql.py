@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     user_id     VARCHAR(64)  NOT NULL,
     title       VARCHAR(255) NOT NULL,
     created_at  DATETIME(6)  NOT NULL,
+    total_tokens_used INT    NOT NULL DEFAULT 0,
     INDEX idx_user_created (user_id, created_at DESC)
 ) ENGINE=InnoDB;
 
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS messages (
     domain          VARCHAR(32)  NOT NULL DEFAULT 'porter',
     data_json       JSON         NULL,
     chart_spec_json JSON         NULL,
+    tokens_used     INT          NOT NULL DEFAULT 0,
     created_at      DATETIME(6)  NOT NULL,
     INDEX idx_conv_created (conversation_id, created_at),
     FULLTEXT INDEX idx_content_fulltext (content),

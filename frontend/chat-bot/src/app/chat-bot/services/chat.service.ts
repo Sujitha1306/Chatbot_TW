@@ -16,6 +16,12 @@ function safeRandomUUID(): string {
   });
 }
 
+interface ActiveStream {
+  messages: ChatMessage[];
+  abortController: AbortController;
+  isStreaming: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ChatService {
   private messagesSubject = new BehaviorSubject<ChatMessage[]>([]);
@@ -24,8 +30,15 @@ export class ChatService {
   private streamingSubject = new BehaviorSubject<boolean>(false);
   isStreaming$ = this.streamingSubject.asObservable();
 
+  private isFetchingChatSubject = new BehaviorSubject<boolean>(false);
+  isFetchingChat$ = this.isFetchingChatSubject.asObservable();
+
   private conversationsSubject = new BehaviorSubject<Conversation[]>([]);
   conversations$ = this.conversationsSubject.asObservable();
+  
+  get currentConversations(): Conversation[] {
+    return this.conversationsSubject.value;
+  }
 
   private recommendationsSubject = new BehaviorSubject<string[]>([]);
   recommendations$ = this.recommendationsSubject.asObservable();
@@ -38,8 +51,19 @@ export class ChatService {
   private conversationLoadedSubject = new Subject<void>();
   conversationLoaded$ = this.conversationLoadedSubject.asObservable();
 
+  private initialLoadingSubject = new BehaviorSubject<boolean>(true);
+  initialLoading$ = this.initialLoadingSubject.asObservable();
+
   activeConvId: string | null = null;
-  private currentAbortController: AbortController | null = null;
+  private activeStreams = new Map<string, ActiveStream>();
+
+  private updateStreamingState(): void {
+    if (this.activeConvId && this.activeStreams.has(this.activeConvId)) {
+      this.streamingSubject.next(this.activeStreams.get(this.activeConvId)!.isStreaming);
+    } else {
+      this.streamingSubject.next(false);
+    }
+  }
 
   // Removed shared tokenBuffer state
 
@@ -51,6 +75,7 @@ export class ChatService {
         this.newConversation();
         this.conversationsSubject.next([]);
         this.recommendationsSubject.next([]);
+        this.initialLoadingSubject.next(true);
       }
       lastUserId = currentId;
     });
@@ -60,8 +85,13 @@ export class ChatService {
     return this.messagesSubject.value;
   }
 
+  hasMoreMessages = true;
+  messageOffset = 0;
+
   newConversation(): void {
     this.activeConvId = null;
+    this.hasMoreMessages = true;
+    this.messageOffset = 0;
     this.messagesSubject.next([]);
   }
 
@@ -78,7 +108,23 @@ export class ChatService {
       this.messagesSubject.next([]); // Clear messages immediately for instant visual feedback
     }
     this.activeConvId = id;
-    this.loadConversationMessages(id);
+    
+    if (this.activeStreams.has(id)) {
+      const state = this.activeStreams.get(id)!;
+      this.messagesSubject.next(state.messages);
+      this.messageOffset = state.messages.length;
+      this.hasMoreMessages = true;
+      this.updateStreamingState();
+      this.conversationLoadedSubject.next();
+      return;
+    }
+
+    this.messagesSubject.next([]); // Clear before loading new
+    this.messageOffset = 0;
+    this.hasMoreMessages = true;
+    this.isFetchingChatSubject.next(true);
+    this.updateStreamingState();
+    this.loadConversationMessages(id, 50, 0); // Initially load last 50 messages
   }
 
   private currentLoadRequestId = 0;
@@ -88,7 +134,8 @@ export class ChatService {
     const user = this.auth.getUser();
     let url = `${environment.base_value.chatbotApiUrl}${path}`;
     if (user && user.id) {
-      url += `?userId=${encodeURIComponent(user.id)}`;
+      const separator = path.includes('?') ? '&' : '?';
+      url += `${separator}userId=${encodeURIComponent(user.id)}`;
     }
     return url;
   }
@@ -102,23 +149,41 @@ export class ChatService {
     return headers;
   }
 
-  async loadConversations(): Promise<void> {
+  hasMoreConversations = true;
+
+  async loadConversations(limit: number = 10, offset: number = 0, append: boolean = false): Promise<void> {
     const requestId = ++this.currentConvListRequestId;
     try {
-      const res = await fetch(this.buildApiUrl('chat/conversations'), {
+      const res = await fetch(this.buildApiUrl(`chat/conversations?limit=${limit}&offset=${offset}`), {
         headers: this.getHeaders(),
       });
       if (requestId !== this.currentConvListRequestId) return;
       if (!res.ok) return;
       const data = await res.json();
       if (requestId !== this.currentConvListRequestId) return;
-      this.conversationsSubject.next(data.conversations || []);
       
-      // Also load recommendations whenever conversations load
-      this.loadRecommendations();
+      const newConvs = data.conversations || [];
+      this.hasMoreConversations = newConvs.length === limit;
+
+      if (append) {
+        const existing = this.conversationsSubject.value;
+        // avoid duplicates if they were pushed manually before reload
+        const existingIds = new Set(existing.map(c => c.id));
+        const filteredNew = newConvs.filter((c: any) => !existingIds.has(c.id));
+        this.conversationsSubject.next([...existing, ...filteredNew]);
+      } else {
+        this.conversationsSubject.next(newConvs);
+      }
+      
+      // Also load recommendations whenever conversations load initially
+      if (!append) {
+        this.loadRecommendations();
+        this.initialLoadingSubject.next(false);
+      }
     } catch (e) {
       if (requestId === this.currentConvListRequestId) {
         console.error('Failed to load conversations', e);
+        if (!append) this.initialLoadingSubject.next(false);
       }
     }
   }
@@ -136,48 +201,92 @@ export class ChatService {
     }
   }
 
-  async loadConversationMessages(convId: string): Promise<void> {
+  async loadConversationMessages(convId: string, limit?: number, offset: number = 0, prepend: boolean = false): Promise<number> {
     const requestId = ++this.currentLoadRequestId;
     try {
-      const res = await fetch(this.buildApiUrl(`chat/conversations/${convId}`), {
+      const path = limit ? `chat/conversations/${convId}?limit=${limit}&offset=${offset}` : `chat/conversations/${convId}`;
+      const res = await fetch(this.buildApiUrl(path), {
         headers: this.getHeaders(),
       });
-      if (requestId !== this.currentLoadRequestId) return;
-      if (!res.ok) return;
+      if (requestId !== this.currentLoadRequestId) return 0;
+      if (!res.ok) {
+        if (!prepend) this.isFetchingChatSubject.next(false);
+        return 0;
+      }
       const data = await res.json();
-      if (requestId !== this.currentLoadRequestId) return;
+      if (requestId !== this.currentLoadRequestId) return 0;
+      
       const loadedMessages = (data.messages || []).map((m: any) => ({
         ...m,
         status: 'complete',
         rowCount: m.row_count || m.rowCount
       }));
-      this.messagesSubject.next(loadedMessages);
+      
+      if (prepend) {
+        const current = this.messagesSubject.value;
+        this.messagesSubject.next([...loadedMessages, ...current]);
+      } else {
+        this.messagesSubject.next(loadedMessages);
+      }
+      
       this.activeConvId = convId;
-      this.conversationLoadedSubject.next();
+      if (!prepend) {
+        this.conversationLoadedSubject.next();
+      }
+      
+      if (limit) {
+        this.messageOffset += loadedMessages.length;
+        this.hasMoreMessages = loadedMessages.length === limit;
+      }
+      
+      if (!prepend) {
+        this.isFetchingChatSubject.next(false);
+      }
+      
+      return loadedMessages.length;
     } catch (e) {
       if (requestId === this.currentLoadRequestId) {
         console.error('Failed to load messages', e);
+        if (!prepend) this.isFetchingChatSubject.next(false);
       }
+      return 0;
     }
   }
 
   async deleteConversation(convId: string): Promise<void> {
+    const current = this.conversationsSubject.value;
+    const remaining = current.filter(c => c.id !== convId);
+    this.conversationsSubject.next(remaining);
+    
+    if (this.activeConvId === convId) {
+      this.newConversation();
+    }
+
     try {
       await fetch(this.buildApiUrl(`chat/conversations/${convId}`), {
         method: 'DELETE',
         headers: this.getHeaders(),
       });
-      const remaining = this.conversationsSubject.value.filter(c => c.id !== convId);
-      this.conversationsSubject.next(remaining);
-      if (this.activeConvId === convId) {
-        this.newConversation();
+      this.loadRecommendations();
+      
+      // If there are more on the server, automatically fetch 1 to replace the deleted one
+      if (this.hasMoreConversations) {
+        this.loadConversations(1, remaining.length, true);
       }
     } catch (e) {
       console.error('Failed to delete conversation', e);
+      // Rollback on failure
+      this.conversationsSubject.next(current);
     }
   }
 
   async renameConversation(convId: string, newTitle: string): Promise<void> {
+    const current = this.conversationsSubject.value;
+    const updated = current.map(c => 
+      c.id === convId ? { ...c, title: newTitle } : c
+    );
+    this.conversationsSubject.next(updated);
+
     try {
       const headers = this.getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -187,17 +296,19 @@ export class ChatService {
         headers,
         body: JSON.stringify({ title: newTitle })
       });
-      // Optimistically update the list
-      const updated = this.conversationsSubject.value.map(c => 
-        c.id === convId ? { ...c, title: newTitle } : c
-      );
-      this.conversationsSubject.next(updated);
     } catch (e) {
       console.error('Failed to rename conversation', e);
+      this.conversationsSubject.next(current); // Rollback
     }
   }
 
   async toggleFavorite(convId: string, isFavorite: boolean): Promise<void> {
+    const current = this.conversationsSubject.value;
+    const updated = current.map(c => 
+      c.id === convId ? { ...c, is_favorite: isFavorite } : c
+    );
+    this.conversationsSubject.next(updated);
+
     try {
       const headers = this.getHeaders();
       headers['Content-Type'] = 'application/json';
@@ -207,14 +318,13 @@ export class ChatService {
         headers,
         body: JSON.stringify({ is_favorite: isFavorite })
       });
-      if (!res.ok) throw new Error('Failed to toggle favorite');
-      // Optimistically update the list
-      const updated = this.conversationsSubject.value.map(c => 
-        c.id === convId ? { ...c, is_favorite: isFavorite } : c
-      );
-      this.conversationsSubject.next(updated);
+      
+      if (!res.ok) {
+        throw new Error('Failed to toggle favorite on backend');
+      }
     } catch (e) {
       console.error('Failed to toggle favorite', e);
+      this.conversationsSubject.next(current); // Rollback
     }
   }
 
@@ -225,7 +335,7 @@ export class ChatService {
   async editMessage(messageId: string, newText: string): Promise<void> {
     if (!this.activeConvId) return;
     
-    // Stop any ongoing generation
+    // Stop any ongoing generation for this conversation
     this.stopStream();
     
     // Truncate on backend
@@ -243,7 +353,9 @@ export class ChatService {
     const current = this.messagesSubject.value;
     const msgIndex = current.findIndex(m => m.id === messageId);
     if (msgIndex !== -1) {
+      const removedCount = current.length - msgIndex;
       this.messagesSubject.next(current.slice(0, msgIndex));
+      this.messageOffset = Math.max(0, this.messageOffset - removedCount);
     }
 
     // Send the new text as if it was a new question
@@ -251,13 +363,22 @@ export class ChatService {
   }
 
   stopStream(): void {
-    if (this.currentAbortController) {
-      this.currentAbortController.abort();
-      this.currentAbortController = null;
+    if (this.activeConvId && this.activeStreams.has(this.activeConvId)) {
+      const state = this.activeStreams.get(this.activeConvId)!;
+      state.abortController.abort();
+      state.isStreaming = false;
+      this.updateStreamingState();
     }
   }
 
   async sendMessage(question: string): Promise<void> {
+    let targetConvId = this.activeConvId;
+    if (!targetConvId) return;
+
+    if (this.activeStreams.has(targetConvId)) {
+      this.activeStreams.get(targetConvId)!.abortController.abort();
+    }
+
     const current = this.messagesSubject.value;
 
     const userMsg: ChatMessage = {
@@ -272,31 +393,43 @@ export class ChatService {
       data: undefined,
     };
 
-    this.messagesSubject.next([...current, userMsg, assistantMsg]);
-    this.streamingSubject.next(true);
+    const newMessages = [...current, userMsg, assistantMsg];
+    
+    const abortController = new AbortController();
+    this.activeStreams.set(targetConvId, {
+      messages: newMessages,
+      abortController,
+      isStreaming: true
+    });
 
-    // Optimistically add to sidebar if it doesn't exist
-    if (this.activeConvId) {
-      const currentConvs = this.conversationsSubject.value;
-      if (!currentConvs.find(c => c.id === this.activeConvId)) {
-        this.conversationsSubject.next([
-          { id: this.activeConvId, title: question, created_at: new Date() },
-          ...currentConvs
-        ]);
-      }
+    if (this.activeConvId === targetConvId) {
+      this.messagesSubject.next(newMessages);
+      this.messageOffset += 2; // Sync offset with DB insertions
+      this.updateStreamingState();
     }
 
-    const update = (patch: Partial<ChatMessage>) => {
+    // Optimistically add to sidebar if it doesn't exist
+    const currentConvs = this.conversationsSubject.value;
+    if (!currentConvs.find(c => c.id === targetConvId)) {
+      this.conversationsSubject.next([
+        { id: targetConvId, title: question, created_at: new Date() },
+        ...currentConvs
+      ]);
+    }
+
+    const updateTarget = (patch: Partial<ChatMessage>) => {
       this.zone.run(() => {
-        const msgs = this.messagesSubject.value.map(m =>
-          m.id === assistantId ? { ...m, ...patch } : m
-        );
-        this.messagesSubject.next(msgs);
+        const state = this.activeStreams.get(targetConvId);
+        if (state) {
+          state.messages = state.messages.map(m =>
+            m.id === assistantId ? { ...m, ...patch } : m
+          );
+          if (this.activeConvId === targetConvId) {
+            this.messagesSubject.next(state.messages);
+          }
+        }
       });
     };
-
-    this.stopStream();
-    this.currentAbortController = new AbortController();
 
     try {
       const user = this.auth.getUser();
@@ -306,11 +439,11 @@ export class ChatService {
       const response = await fetch(this.buildApiUrl('chat/stream'), {
         method: 'POST',
         headers,
-        signal: this.currentAbortController.signal,
+        signal: abortController.signal,
         body: JSON.stringify({
           question,
           user_id: user?.id || 'TW', 
-          session_id: this.activeConvId || 'default',
+          session_id: targetConvId,
           filters: this.facilitySvc.getActiveFilters(),
         }),
       });
@@ -318,8 +451,12 @@ export class ChatService {
       if (!response.ok) {
         let errBody = 'Unknown error';
         try { errBody = await response.text(); } catch(e) {}
-        update({ content: `Error: ${response.status} - ${errBody.slice(0,200)}`, status: 'error' });
-        this.zone.run(() => this.streamingSubject.next(false));
+        updateTarget({ content: `Error: ${response.status} - ${errBody.slice(0,200)}`, status: 'error' });
+        this.zone.run(() => {
+          const state = this.activeStreams.get(targetConvId);
+          if (state) state.isStreaming = false;
+          this.updateStreamingState();
+        });
         return;
       }
 
@@ -328,14 +465,22 @@ export class ChatService {
         let errBody = 'Invalid content type';
         try { errBody = await response.text(); } catch(e) {}
         console.error('Stream endpoint returned non-SSE response:', response.status, errBody);
-        update({ content: `Error: Non-SSE response - ${errBody.slice(0,200)}`, status: 'error' });
-        this.zone.run(() => this.streamingSubject.next(false));
+        updateTarget({ content: `Error: Non-SSE response - ${errBody.slice(0,200)}`, status: 'error' });
+        this.zone.run(() => {
+          const state = this.activeStreams.get(targetConvId);
+          if (state) state.isStreaming = false;
+          this.updateStreamingState();
+        });
         return;
       }
       
       if (!response.body) {
-        update({ content: 'Response body is empty', status: 'error' });
-        this.zone.run(() => this.streamingSubject.next(false));
+        updateTarget({ content: 'Response body is empty', status: 'error' });
+        this.zone.run(() => {
+          const state = this.activeStreams.get(targetConvId);
+          if (state) state.isStreaming = false;
+          this.updateStreamingState();
+        });
         return;
       }
 
@@ -361,27 +506,41 @@ export class ChatService {
 
           switch (ev.event) {
             case 'session':
-              this.activeConvId = ev.id;
+              if (ev.id !== targetConvId) {
+                // If backend changed the session ID, update our maps
+                const state = this.activeStreams.get(targetConvId);
+                if (state) {
+                  this.activeStreams.set(ev.id, state);
+                  this.activeStreams.delete(targetConvId);
+                }
+                if (this.activeConvId === targetConvId) {
+                  this.activeConvId = ev.id;
+                }
+                targetConvId = ev.id;
+              }
               this.loadConversations();
               break;
             case 'intent':
-              update({ domain: ev.domain, status: 'streaming' });
+              updateTarget({ domain: ev.domain, status: 'streaming' });
               break;
             case 'conversational':
-              update({ domain: undefined, status: 'streaming' });
+              updateTarget({ domain: undefined, status: 'streaming' });
+              break;
+            case 'metrics':
+              updateTarget({ tokensUsed: ev.tokens });
               break;
             case 'sql':
             case 'sql_corrected':
-              update({ sql: ev.sql });
+              updateTarget({ sql: ev.sql });
               break;
             case 'data':
-              update({ data: ev.rows, rowCount: ev.row_count });
+              updateTarget({ data: ev.rows, rowCount: ev.row_count });
               break;
             case 'multi_data':
-              update({ displaySections: ev.sections, rowCount: ev.row_count });
+              updateTarget({ displaySections: ev.sections, rowCount: ev.row_count });
               break;
             case 'cross_conversation_results':
-              update({ crossConversationRefs: ev.matches });
+              updateTarget({ crossConversationRefs: ev.matches });
               break;
             case 'token':
               localTokenBuffer += ev.text;
@@ -390,21 +549,26 @@ export class ChatService {
                 const batch = localTokenBuffer;
                 localTokenBuffer = '';
                 this.zone.run(() => {
-                  const msgs = this.messagesSubject.value.map(m =>
-                    m.id === assistantId ? { ...m, content: m.content + batch } : m
-                  );
-                  this.messagesSubject.next(msgs);
+                  const state = this.activeStreams.get(targetConvId);
+                  if (state) {
+                    state.messages = state.messages.map(m =>
+                      m.id === assistantId ? { ...m, content: m.content + batch } : m
+                    );
+                    if (this.activeConvId === targetConvId) {
+                      this.messagesSubject.next(state.messages);
+                    }
+                  }
                 });
               }, 30);
               break;
             case 'chart':
-              update({ chartSpec: ev.spec });
+              updateTarget({ chartSpec: ev.spec });
               break;
             case 'followups':
-              update({ followups: ev.suggestions });
+              updateTarget({ followups: ev.suggestions });
               break;
             case 'suggestions':
-              update({ suggestions: ev.items });
+              updateTarget({ suggestions: ev.items });
               break;
             case 'done':
               // Flush remaining tokens
@@ -412,23 +576,32 @@ export class ChatService {
                 const batch = localTokenBuffer;
                 localTokenBuffer = '';
                 this.zone.run(() => {
-                  const msgs = this.messagesSubject.value.map(m =>
-                    m.id === assistantId ? { ...m, content: m.content + batch, status: 'complete' as const } : m
-                  );
-                  this.messagesSubject.next(msgs);
+                  const state = this.activeStreams.get(targetConvId);
+                  if (state) {
+                    state.messages = state.messages.map(m =>
+                      m.id === assistantId ? { ...m, content: m.content + batch, status: 'complete' as const } : m
+                    );
+                    if (this.activeConvId === targetConvId) {
+                      this.messagesSubject.next(state.messages);
+                    }
+                  }
                 });
               } else {
-                update({ status: 'complete' });
+                updateTarget({ status: 'complete' });
               }
               this.zone.run(() => {
-                this.streamingSubject.next(false);
+                const state = this.activeStreams.get(targetConvId);
+                if (state) state.isStreaming = false;
+                this.updateStreamingState();
                 this.loadConversations();
               });
               break;
             case 'error':
-              update({ content: ev.message, status: 'error' });
+              updateTarget({ content: ev.message, status: 'error' });
               this.zone.run(() => {
-                this.streamingSubject.next(false);
+                const state = this.activeStreams.get(targetConvId);
+                if (state) state.isStreaming = false;
+                this.updateStreamingState();
                 this.loadConversations();
               });
               break;
@@ -438,14 +611,20 @@ export class ChatService {
     } catch (e: any) {
       if (e.name === 'AbortError') {
         // Stream was stopped by user
-        update({ status: 'complete' });
-        this.zone.run(() => this.streamingSubject.next(false));
+        updateTarget({ status: 'complete' });
+        this.zone.run(() => {
+          const state = this.activeStreams.get(targetConvId);
+          if (state) state.isStreaming = false;
+          this.updateStreamingState();
+        });
       } else {
-        update({ content: 'Network error. Please try again.', status: 'error' });
-        this.zone.run(() => this.streamingSubject.next(false));
+        updateTarget({ content: 'Network error. Please try again.', status: 'error' });
+        this.zone.run(() => {
+          const state = this.activeStreams.get(targetConvId);
+          if (state) state.isStreaming = false;
+          this.updateStreamingState();
+        });
       }
-    } finally {
-      this.currentAbortController = null;
     }
   }
 }

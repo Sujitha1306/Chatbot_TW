@@ -27,6 +27,7 @@ export interface ChatMessage {
   suggestions?: string[];
   status: MessageStatus;
   timestamp: Date;
+  tokensUsed?: number;
 }
 
 export interface Conversation {

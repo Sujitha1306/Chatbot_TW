@@ -14,12 +14,15 @@ import { Subscription } from 'rxjs';
 export class ChatThreadComponent implements OnInit, OnDestroy {
   @Input() conversationId?: string;
   @ViewChild('scrollAnchor') scrollAnchor!: ElementRef;
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef;
   private scrollScheduled = false;
 
   messages$: any;
   isStreaming$: any;
+  isFetchingChat$: any;
   inputValue = '';
   isStreaming = false;
+  isLoadingOlder = false;
   private sub?: Subscription;
 
   constructor(
@@ -31,6 +34,7 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
   ) {
     this.messages$ = this.chat.messages$;
     this.isStreaming$ = this.chat.isStreaming$;
+    this.isFetchingChat$ = this.chat.isFetchingChat$;
   }
 
   ngOnInit() {
@@ -73,10 +77,10 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
   private scheduleScroll(instant = false): void {
     if (this.scrollScheduled) return;
     this.scrollScheduled = true;
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       this.scrollAnchor?.nativeElement?.scrollIntoView({ behavior: instant ? 'auto' : 'smooth' });
       this.scrollScheduled = false;
-    });
+    }, 100);
   }
 
   onKeydown(e: KeyboardEvent) {
@@ -88,11 +92,11 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
     }
   }
 
-  async send() {
+  send() {
     const q = this.inputValue.trim();
     if (!q || this.isStreaming) return;
     this.inputValue = '';
-    await this.chat.sendMessage(q);
+    this.chat.sendMessage(q);
     this.scheduleScroll();
   }
 
@@ -108,6 +112,32 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
   onFollowupClick(text: string) {
     this.chat.sendMessage(text);
     this.scheduleScroll();
+  }
+
+  onScroll(event: Event) {
+    const target = event.target as HTMLElement;
+    if (target.scrollTop === 0 && this.chat.hasMoreMessages && !this.isLoadingOlder) {
+      this.loadOlderMessages();
+    }
+  }
+
+  async loadOlderMessages() {
+    if (this.isLoadingOlder || !this.chat.hasMoreMessages) return;
+    
+    this.isLoadingOlder = true;
+    this.cdr.markForCheck(); // Keep spinner updated
+
+    const currentScrollHeight = this.scrollContainer.nativeElement.scrollHeight;
+    
+    // Attempt to fetch older messages (e.g., 20 at a time)
+    await this.chat.loadConversationMessages(this.chat.activeConvId, 20, this.chat.messageOffset, true);
+    
+    this.isLoadingOlder = false;
+    this.cdr.detectChanges(); // Force immediate DOM update so new messages are in the DOM
+    
+    // Restore scroll position gracefully, accounting for any scrolling done while loading
+    const newScrollHeight = this.scrollContainer.nativeElement.scrollHeight;
+    this.scrollContainer.nativeElement.scrollTop = newScrollHeight - currentScrollHeight;
   }
 
   trackById(index: number, msg: ChatMessage): string {

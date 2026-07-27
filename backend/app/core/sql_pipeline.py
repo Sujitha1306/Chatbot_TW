@@ -144,7 +144,8 @@ CRITICAL RULES:
 2. Keep each suggestion to 1 sentence. Use plain language. Do NOT use database column names with underscores (e.g., use "pool names" instead of "pool_name_id"). Do NOT mention table names like "fact_porter_request".
 3. Do NOT repeat what the data already showed — add something
    the data SUGGESTS but doesn't prove.
-4. If the data is too limited to support even speculative suggestions,
+4. ABSOLUTE PROHIBITION ON CROSS-FACILITY COMPARISONS: You MUST NEVER suggest comparing data to "other facilities", "other hospitals", or "other locations". You are in a strictly isolated single-facility environment. EVERY suggestion must focus EXCLUSIVELY on internal comparisons (e.g., comparing departments, wards, shifts, or time periods within the same facility). VIOLATING THIS RULE WILL BREAK THE SYSTEM.
+5. If the data is too limited to support even speculative suggestions,
    return an empty list: []"""
 
     def __init__(self):
@@ -155,7 +156,9 @@ CRITICAL RULES:
         )
         self.model = settings.azure_openai_deployment
         self.schema = DatabaseSchema.get_llm_schema_prompt()
+        self.mini_schema = DatabaseSchema.get_mini_schema_prompt()
         self.db = ClickHouseConnection()
+        self.turn_tokens = 0
 
     # ── Call 0: Route Message ─────────────────────────────────────────────
     def route_message(self, message: str, history: str = "") -> dict:
@@ -185,8 +188,10 @@ that can be fully answered using ONLY the RECENT CONTEXT provided above:
 - Statements sharing personal information ("my name is tw") — just acknowledge them.
 - Questions about the user ("what is my name?", "do you remember what I just said?")
 - Generic capability questions ("what can you do").
+- Contextless follow-ups: If the user asks to "visualize", "show more details", or refers to "this data" (e.g. "Can you visualize this data as a chart?") BUT the RECENT CONTEXT is empty or "none", classify as conversational and politely ask them what data they would like to see.
 
 CATEGORY "facility_rejection": IMPORTANT! The user's currently mapped facility is ONLY "Teynampet" (or facility 0459). If the user explicitly asks about a SPECIFIC hospital or facility by name (e.g. "Gurugram", "BLK Max Hospital", "Apollo", "0039", etc.) that is NOT "Teynampet" or "0459", you MUST classify it as "facility_rejection" and reply that you are restricted to answering questions ONLY about their currently mapped facility (Teynampet).
+Additionally, if the user asks to COMPARE this facility to other facilities, or asks about performance across multiple facilities, classify as "facility_rejection" and reply that you only have access to data for their current facility and cannot perform cross-facility comparisons.
 
 CRITICAL DISTINCTION for Memory Questions:
 - If user asks "what is my name" and the RECENT CONTEXT shows they just told you,
@@ -211,6 +216,8 @@ Return JSON:
             temperature=0.0,
             max_tokens=150,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
         raw = resp.choices[0].message.content.strip()
         raw = re.sub(r"^```json\s*", "", raw, flags=re.IGNORECASE)
         raw = re.sub(r"\s*```$", "", raw)
@@ -241,7 +248,7 @@ Return JSON:
         facility_note = self._build_facility_context(filters)
 
         prompt = f"""SCHEMA:
-{self.schema}
+{self.mini_schema}
 
 CONVERSATION HISTORY (most recent turns):
 {history or "none — this is the first message in the conversation"}
@@ -378,7 +385,7 @@ RESPONSE FORMAT DETECTION:
 - "overview": broad summary question with no specific ranking/comparison intent ("show porter performance", "give me an overview", "how are we doing")
 - "single_stat": question asks for exactly one number ("what is the TAT", "how many requests today", "total assets")
 - "limitation": question requires data not available in the schema (cost optimization, root cause, benchmark, external factors). NOTE: Asking for a "name" (e.g. pool name, facility name) when the schema only has the "ID" (e.g. pool_name_id, facility_id) is NOT a limitation. The UI handles ID-to-name translations.
-  CRITICAL: If the user asks for a "description", "details", or qualitative information about a facility, porter, or asset, set response_format to "limitation" because we do not have textual descriptions in the database schema!
+  CRITICAL: Do NOT set response_format to "limitation" if the user asks for "details", "summary", or "breakdown" of a porter, facility, or asset. They are asking for a statistical/metrics table (e.g., total requests, average TAT for that entity), which IS available. ONLY set it to limitation if they explicitly ask for qualitative text like "reviews", "patient feedback", or "root causes".
 
 MULTI-QUERY DETECTION:
 Set "requires_multiple_queries": true when the question asks about
@@ -486,8 +493,11 @@ find a RELEVANT past conversation (e.g. "warranty", "facility 1027",
             messages=[{"role": "system", "content": "You route conversational memory requests precisely."},
                        {"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=150,
+            max_tokens=3000,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+            
         raw = resp.choices[0].message.content.strip()
         raw = re.sub(r"^```json\s*", "", raw, flags=re.IGNORECASE)
         raw = re.sub(r"\s*```$", "", raw)
@@ -561,9 +571,12 @@ what was discussed."""
                 {"role": "system", "content": "You answer naturally using remembered context, never citing sources by name in your own prose."},
                 {"role": "user",   "content": prompt},
             ],
-            temperature=0.3,
+            temperature=0.0,
             max_tokens=300,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+            
         return resp.choices[0].message.content.strip()
 
     # ── Call 2: SQL generation ────────────────────────────────────────────
@@ -620,6 +633,9 @@ Requirements:
             seed=42,
             max_tokens=2000,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+
         sql = resp.choices[0].message.content.strip()
         sql = re.sub(r"^```sql\s*", "", sql, flags=re.IGNORECASE)
         sql = re.sub(r"\s*```$", "", sql)
@@ -682,6 +698,9 @@ result, not just one that merely avoids the error."""
             seed=42,
             max_tokens=2000,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+
         fixed = resp.choices[0].message.content.strip()
         fixed = re.sub(r"^```sql\s*", "", fixed, flags=re.IGNORECASE)
         fixed = re.sub(r"\s*```$", "", fixed)
@@ -756,6 +775,9 @@ Write a 2–3 sentence plain-language summary of these results for a hospital ma
             seed=42,
             max_tokens=400,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+
         return resp.choices[0].message.content.strip()
 
     # ── Suggestions generation ─────────────────────────────────────────────
@@ -783,9 +805,12 @@ this data. Return ONLY a JSON array of strings, no other text:
                 {"role": "system", "content": self.SUGGESTIONS_SYSTEM},
                 {"role": "user",   "content": prompt},
             ],
-            temperature=0.3,
-            max_tokens=200,
+            temperature=0.2,
+            max_tokens=500,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+            
         raw = resp.choices[0].message.content.strip()
         import re
         import json
@@ -828,6 +853,9 @@ Suggest a specific follow-up question the user could ask that WOULD be answerabl
             temperature=0.1,
             max_tokens=200,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
+
         return resp.choices[0].message.content.strip()
 
     # ── Follow-up suggestions ─────────────────────────────────────────────
@@ -839,6 +867,9 @@ Suggest 3 natural follow-up questions a hospital administrator would
 ask next, in their own words (not technical/SQL phrasing).
 Good: "How does this compare to last month?"
 Bad: "Show GROUP BY facility_id with date filter"
+
+CRITICAL RULE: You are in a STRICT single-facility environment. You MUST NOT suggest ANY follow-up questions that compare this facility to other facilities or ask about other locations. Focus EXCLUSIVELY on internal factors (e.g., comparing departments, shifts, or time periods within the same facility).
+
 Return ONLY a JSON array of 3 strings."""
         try:
             resp = self.client.chat.completions.create(
@@ -847,9 +878,12 @@ Return ONLY a JSON array of 3 strings."""
                     {"role": "system", "content": "Return only a JSON array of 3 strings."},
                     {"role": "user",   "content": prompt},
                 ],
-                temperature=0.5,
-                max_tokens=150,
+                temperature=0.0,
+                max_tokens=2500,
             )
+            if resp.usage:
+                self.turn_tokens += resp.usage.total_tokens
+                
             raw = resp.choices[0].message.content.strip()
             raw = re.sub(r"^```json?\s*", "", raw, flags=re.IGNORECASE)
             raw = re.sub(r"\s*```$", "", raw)
@@ -960,6 +994,8 @@ correlation."""
             temperature=0.2,
             max_tokens=350,
         )
+        if resp.usage:
+            self.turn_tokens += resp.usage.total_tokens
         return resp.choices[0].message.content.strip()
 
     # ── Orchestration ─────────────────────────────────────────────────────

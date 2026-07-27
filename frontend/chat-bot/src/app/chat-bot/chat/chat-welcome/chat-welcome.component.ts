@@ -19,7 +19,7 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
   ];
 
   suggestions = [
-    { icon: 'bar_chart', title: 'Porter Performance',  subtitle: 'Show porter performance by facility',          query: 'Show porter performance by facility' },
+    { icon: 'bar_chart', title: 'Porter Performance',  subtitle: 'Show porter performance by department',          query: 'Show porter performance by department' },
     { icon: 'show_chart',  title: 'Assets Dashboard',    subtitle: 'Display active assets by department',         query: 'Display active assets by department' },
     { icon: 'schedule',       title: 'TAT Analysis',        subtitle: 'Which porter had the minimum TAT last month?',query: 'Which porter had the minimum TAT last month?' },
     { icon: 'security',      title: 'Warranty Status',     subtitle: 'Which assets have warranty expiring next 30 days?', query: 'Which assets have warranty expiring in next 30 days?' },
@@ -51,8 +51,21 @@ export class ChatWelcomeComponent implements OnInit, OnDestroy {
     this.sub?.unsubscribe();
   }
 
-  selectSuggestion(query: string) { 
-    this.inputValue = query; 
+  private lastClickTime = 0;
+
+  handleSuggestionClick(query: string) {
+    const now = Date.now();
+    if (now - this.lastClickTime < 400) {
+      // Double tap/click
+      this.lastClickTime = 0;
+      this.inputValue = query;
+      this.send();
+    } else {
+      // Single tap/click
+      this.lastClickTime = now;
+      this.inputValue = query;
+      this.cdr.markForCheck();
+    }
   }
 
   onKeydown(e: KeyboardEvent) {

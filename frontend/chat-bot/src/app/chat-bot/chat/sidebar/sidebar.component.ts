@@ -58,6 +58,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   filteredConvs$: Observable<Conversation[]>;
   pinned$: Observable<Conversation[]>;
   recommendations$: Observable<string[]>;
+  initialLoading$: Observable<boolean>;
 
   user$: Observable<User | null>;
   searchQuery$ = new BehaviorSubject<string>('');
@@ -92,6 +93,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
   editConvName = '';
   showMenuConvId: string | null = null;
 
+  visibleRecentsCount = 10;
+  isLoadingMore = false;
+  
+  async loadMoreRecents(event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    if (this.isLoadingMore) return;
+    this.isLoadingMore = true;
+    
+    const currentLength = this.chat.currentConversations.length;
+    await this.chat.loadConversations(10, currentLength, true);
+    
+    this.visibleRecentsCount += 10;
+    this.isLoadingMore = false;
+    this.cdr.markForCheck();
+  }
+
   constructor(
     public chat: ChatService,
     private auth: AuthService,
@@ -101,6 +121,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ) {
     this.conversations$ = this.chat.conversations$;
     this.recommendations$ = this.chat.recommendations$;
+    this.initialLoading$ = this.chat.initialLoading$;
     
     this.filteredConvs$ = combineLatest([this.conversations$, this.searchQuery$]).pipe(
       map(([convs, query]) => {
@@ -174,8 +195,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  fillRecommendation(rec: string) {
-    this.chat.fillInput(rec);
+  private lastRecClickTime = 0;
+
+  handleRecommendationClick(rec: string) {
+    const now = Date.now();
+    if (now - this.lastRecClickTime < 400) {
+      this.lastRecClickTime = 0;
+      if (this.chat.activeConvId) {
+        this.chat.sendMessage(rec);
+      } else {
+        const convId = this.chat.startConversation(rec);
+        if (this.embedded) {
+          this.conversationSelect.emit(convId);
+        } else {
+          this.router.navigate([convId], { relativeTo: this.route });
+        }
+      }
+    } else {
+      this.lastRecClickTime = now;
+      this.chat.fillInput(rec);
+    }
   }
 
   selectConv(id: string) {

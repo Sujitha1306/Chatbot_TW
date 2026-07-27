@@ -40,8 +40,13 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
     if (col === 'porter_user_id') return 'Porter';
     
     return col
+      .replace(/tw_demo\./gi, '')
+      .replace(/mysql_/gi, '')
+      .replace(/mysql/gi, '')
+      .replace(/\./g, '_')
       .replace(/_id$/i, '')
       .split('_')
+      .filter(w => w.trim().length > 0)
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ')
       .trim();
@@ -60,18 +65,22 @@ export class ChartSelectorComponent implements OnInit, OnChanges {
 
   getMaterialIcon(iconName: string): string {
     if (!iconName) return 'bar_chart';
-    // Map common backend-generated Lucide names to Material Design icons
+    // Map common backend-generated names to Material Design icons
     const map: Record<string, string> = {
       'bar-chart': 'bar_chart',
       'bar-chart-2': 'bar_chart',
+      'BarChart2': 'bar_chart',
       'pie-chart': 'pie_chart',
+      'PieChart': 'pie_chart',
       'line-chart': 'show_chart',
+      'LineChart': 'show_chart',
       'scatter-chart': 'scatter_plot',
+      'ScatterChart': 'scatter_plot',
       'table': 'table_chart',
       'activity': 'show_chart',
       'trending-up': 'trending_up',
     };
-    return map[iconName] || iconName.replace(/-/g, '_');
+    return map[iconName] || iconName.replace(/-/g, '_').toLowerCase();
   }
 
   get xAxisOptions(): string[] {

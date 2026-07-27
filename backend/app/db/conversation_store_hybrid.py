@@ -77,19 +77,24 @@ class HybridConversationStore:
 
     # ---- READ PATH: Redis first (fast path), MySQL fallback (always correct) ----
 
-    def get_messages(self, user_id: str, conv_id: str) -> List[Message]:
+    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0) -> List[Message]:
         if self._redis is not None:
             try:
                 key = f"conv:{conv_id}:messages"
                 if self._redis.exists(key):
                     raw = self._redis.lrange(key, 0, -1)
-                    return [self._json_to_message(r) for r in raw]
+                    msgs = [self._json_to_message(r) for r in raw]
+                    if limit is not None:
+                        end_idx = max(0, len(msgs) - offset)
+                        start_idx = max(0, end_idx - limit)
+                        return msgs[start_idx:end_idx]
+                    return msgs
             except Exception as e:
                 logger.warning(f"Redis read failed, falling back to MySQL: {e}")
 
         # Cache miss
         try:
-            messages = self._mysql.get_messages(user_id, conv_id)
+            messages = self._mysql.get_messages(user_id, conv_id, limit, offset)
         except Exception as e:
             logger.warning(f"Failed to get messages from MySQL (VPN lag?): {e}")
             return []
@@ -98,11 +103,14 @@ class HybridConversationStore:
         if self._redis is not None and messages:
             try:
                 key = f"conv:{conv_id}:messages"
-                pipe = self._redis.pipeline()
-                for m in messages:
-                    pipe.rpush(key, self._message_to_json(m))
-                pipe.expire(key, CACHE_TTL_SECONDS)
-                pipe.execute()
+                # If we are paginating, we shouldn't warm the cache with partial data!
+                # We can only warm if we fetched all messages (limit=None)
+                if limit is None:
+                    pipe = self._redis.pipeline()
+                    for m in messages:
+                        pipe.rpush(key, self._message_to_json(m))
+                    pipe.expire(key, CACHE_TTL_SECONDS)
+                    pipe.execute()
             except Exception as e:
                 logger.warning(f"Redis cache warm failed (non-fatal): {e}")
 
@@ -123,16 +131,16 @@ class HybridConversationStore:
             logger.warning(f"Failed to get recommendations from MySQL (VPN lag?): {e}")
             return []
 
-    def list_conversations(self, user_id: str) -> List[Conversation]:
+    def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0) -> List[Conversation]:
         try:
-            return self._mysql.list_conversations(user_id)
+            return self._mysql.list_conversations(user_id, limit, offset)
         except Exception as e:
-            logger.warning(f"Failed to list conversations from MySQL (VPN lag?), falling back to Redis: {e}")
+            logger.warning(f"Failed to list conversations from MySQL (VPN lag?), attempting fallback to Redis (if enabled): {e}")
             if self._redis is None:
                 return []
             try:
-                # Fetch recent conversation IDs from Redis
-                conv_ids = self._redis.zrevrange(f"user:{user_id}:recent", 0, -1)
+                # Fetch recent conversation IDs from Redis with pagination
+                conv_ids = self._redis.zrevrange(f"user:{user_id}:recent", offset, offset + limit - 1)
                 conversations = []
                 for cid in conv_ids:
                     cid_str = cid.decode('utf-8') if isinstance(cid, bytes) else cid

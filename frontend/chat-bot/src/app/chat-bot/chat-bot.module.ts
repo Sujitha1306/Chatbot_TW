@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -43,6 +44,7 @@ import { FacilityFilterComponent } from './chat/facility-filter/facility-filter.
     MatSidenavModule,
     MatIconModule,
     MatButtonModule,
+    MatProgressSpinnerModule,
     MatToolbarModule,
     MatListModule,
     MatFormFieldModule,

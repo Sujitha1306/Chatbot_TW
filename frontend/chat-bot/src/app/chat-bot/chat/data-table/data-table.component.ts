@@ -51,8 +51,13 @@ export class DataTableComponent implements OnInit {
     if (col === 'porter_user_id') return 'Porter';
     
     return col
+      .replace(/tw_demo\./gi, '')
+      .replace(/mysql_/gi, '')
+      .replace(/mysql/gi, '')
+      .replace(/\./g, '_')
       .replace(/_id$/i, '')
       .split('_')
+      .filter(w => w.trim().length > 0)
       .map(w => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ')
       .trim();

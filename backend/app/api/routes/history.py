@@ -28,9 +28,13 @@ def clean_for_json(obj):
     return obj
 
 @router.get("/conversations")
-def list_conversations(auth_data: dict = Depends(require_api_key)):
+def list_conversations(
+    limit: int = 10,
+    offset: int = 0,
+    auth_data: dict = Depends(require_api_key)
+):
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
-    convs = _store.list_conversations(user_id)
+    convs = _store.list_conversations(user_id, limit, offset)
     return {"conversations": clean_for_json(convs)}
 
 @router.get("/recommendations")
@@ -41,9 +45,9 @@ def list_recommendations(auth_data: dict = Depends(require_api_key)):
     return {"recommendations": recs}
 
 @router.get("/conversations/{conv_id}")
-def get_conversation(conv_id: str, auth_data: dict = Depends(require_api_key)):
+def get_conversation(conv_id: str, limit: int = None, offset: int = 0, auth_data: dict = Depends(require_api_key)):
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
-    msgs = _store.get_messages(user_id, conv_id)
+    msgs = _store.get_messages(user_id, conv_id, limit, offset)
     return {"messages": clean_for_json(msgs)}
 
 from pydantic import BaseModel

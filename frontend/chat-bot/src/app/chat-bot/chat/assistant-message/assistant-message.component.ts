@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, OnChanges, SimpleChanges, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ChatMessage } from '../../models/chat.model';
 import { ExportService } from '../../services/export.service';
 import { ChatService } from '../../services/chat.service';
@@ -9,7 +9,7 @@ import { ChatService } from '../../services/chat.service';
   templateUrl: './assistant-message.component.html',
   styleUrls: ['./assistant-message.component.scss']
 })
-export class AssistantMessageComponent implements OnChanges {
+export class AssistantMessageComponent implements OnChanges, OnInit, OnDestroy {
   @Input() message!: ChatMessage;
   @Input() originalQuestion: string = '';
   @Output() followupClick = new EventEmitter<string>();
@@ -19,8 +19,46 @@ export class AssistantMessageComponent implements OnChanges {
   showSql = false;
   showExportMenu = false;
   showMenu = false;
+  
+  timeElapsed: number = 0;
+  private timer: any;
+  private startTime: number = 0;
 
-  constructor(private exportSvc: ExportService, public chat: ChatService) {}
+  constructor(private exportSvc: ExportService, public chat: ChatService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    if (this.message?.timestamp) {
+      this.startTime = new Date(this.message.timestamp).getTime();
+    } else {
+      this.startTime = Date.now();
+    }
+    if (this.message?.status === 'pending' || this.message?.status === 'streaming') {
+      this.startTimer();
+    }
+  }
+
+  ngOnDestroy() {
+    this.stopTimer();
+  }
+
+  private startTimer() {
+    if (this.timer) return;
+    this.timer = setInterval(() => {
+      this.timeElapsed = Math.floor((Date.now() - this.startTime) / 1000);
+      this.cdr.markForCheck();
+    }, 1000);
+  }
+
+  private stopTimer() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+      if (this.startTime) {
+        this.timeElapsed = Math.floor((Date.now() - this.startTime) / 1000);
+      }
+      this.cdr.markForCheck();
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['message']) {
@@ -32,6 +70,12 @@ export class AssistantMessageComponent implements OnChanges {
         } else if (msg.chartSpec && !this.hasChart) {
           this.showChart = false;
         }
+      }
+      
+      if (this.message?.status === 'complete' || this.message?.status === 'error') {
+        this.stopTimer();
+      } else if (!this.timer && (this.message?.status === 'pending' || this.message?.status === 'streaming')) {
+        this.startTimer();
       }
     }
   }
@@ -46,5 +90,20 @@ export class AssistantMessageComponent implements OnChanges {
       this.exportSvc.export(this.originalQuestion, format);
     }
     this.showExportMenu = false;
+  }
+
+  private lastClickTime = 0;
+
+  handleFollowupClick(text: string) {
+    const now = Date.now();
+    if (now - this.lastClickTime < 400) {
+      // Double tap/click
+      this.lastClickTime = 0;
+      this.followupClick.emit(text);
+    } else {
+      // Single tap/click
+      this.lastClickTime = now;
+      this.chat.fillInput(text);
+    }
   }
 }

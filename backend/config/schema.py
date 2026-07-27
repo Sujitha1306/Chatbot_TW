@@ -157,6 +157,28 @@ BUSINESS LOGIC:
         return context
 
     @classmethod
+    def get_mini_schema_prompt(cls) -> str:
+        return """## DATABASE: ClickHouse
+
+### TABLE: fact_porter_request
+Purpose: Hospital porter transport requests
+Columns:
+- id, request_detail_id, facility_id, porter_user_id, status, request_category, pool_name_id, pool_location_id, requester_user_id, source_id, destination_id, scheduled_time, start_time, end_time, assigned_time, accepted_time, arrived_time, cancelled_time, onhold_time, inprogress_time, rejected_time, completed_time, request_type_id, is_auto_assigned, comp_manually, asset_category, service_group_id, asset_count, priority, is_round_trip, patient_id
+
+### TABLE: tw_demo.mysql_asset
+Purpose: Hospital assets inventory
+Columns:
+- id, name, is_active, location_id, facility_id, asset_serial_number, home_location_id, transfer_status_id, asset_type_id, status, warranty_due, asset_cost, current_book_value, vendor_name, next_cali_date, commissioned_on, is_radiology, depreciation_percent, asset_admin_department, owner_id, vendor_contact, vendor_email, service_provider_name
+
+### TABLE: tw_demo.mysql_location
+Purpose: Location mapping (ICU, Wards, etc).
+Columns:
+- id, name, facility_id, status
+
+NOTE: No complex SQL rules needed here. Just select the required tables and columns for your analytical plan.
+"""
+
+    @classmethod
     def get_llm_schema_prompt(cls) -> str:
         return """## DATABASE: ClickHouse
 
@@ -172,11 +194,11 @@ Columns:
     RQ-AS = Assigned   |  RQ-AC = Accepted   |  RQ-AR = Arrived
     RQ-OH = On Hold    |  RQ-RJ = Rejected
 - request_category (String): PR-PA = Patient transport, PR-SE = Service
-- pool_name_id (String): Pool name identifier
-- pool_location_id (String): Pool location identifier
-- requester_user_id (String): Requesting user identifier
-- source_id (String): Source location identifier
-- destination_id (String): Destination location identifier
+- pool_name_id (Int64, nullable): Pool name identifier
+- pool_location_id (Int64, nullable): Pool location identifier
+- requester_user_id (Int64, nullable): Requesting user identifier
+- source_id (Int64, nullable): Source location identifier
+- destination_id (Int64, nullable): Destination location identifier
 - scheduled_time (DateTime UTC): request creation time
 - completed_time (DateTime UTC, nullable): completion time
 - TAT formula: round(dateDiff('second', scheduled_time, completed_time)/60.0, 2) AS tat_minutes
