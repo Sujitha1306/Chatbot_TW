@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, signal } from '@angular/core';
 import { ChatMessage } from '../../models/chat.model';
+import { ChatService } from '../../services/chat.service';
 
 @Component({
   selector: 'app-user-message',
@@ -18,6 +19,11 @@ import { ChatMessage } from '../../models/chat.model';
         </div>
       </div>
       
+      <!-- Input tokens: the prompt that carried THIS question -->
+      <div *ngIf="showInput && message.inputTokens !== undefined" class="user-metrics-row">
+        <span class="user-metrics-text">{{ message.inputTokens }} input</span>
+      </div>
+
       <!-- Action Buttons -->
       <div class="message-actions" *ngIf="!isEditing()">
         <span class="message-timestamp" *ngIf="message.timestamp" [title]="message.timestamp | date:'d MMM yyyy, HH:mm'">
@@ -55,6 +61,13 @@ import { ChatMessage } from '../../models/chat.model';
 export class UserMessageComponent {
   @Input() message!: ChatMessage;
   @Output() editSubmit = new EventEmitter<{id: string, text: string}>();
+
+  /* The server decides whether input tokens are shown
+     (GET /chat/metrics-config), so this comes from ChatService rather than the
+     Angular build — changeable with an API restart, not a rebuild. */
+  get showInput(): boolean { return this.chat.metricsConfig.showInput; }
+
+  constructor(public chat: ChatService) {}
 
   isEditing = signal(false);
   copied = signal(false);

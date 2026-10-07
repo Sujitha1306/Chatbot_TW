@@ -32,7 +32,17 @@ class ClickHouseConnection:
                 password=self.password,
                 database=self.database,
                 connect_timeout=Config.MAX_QUERY_TIMEOUT,
-                send_receive_timeout=Config.MAX_QUERY_TIMEOUT
+                send_receive_timeout=Config.MAX_QUERY_TIMEOUT,
+                settings={
+                    # A derived table used in a JOIN must otherwise carry an
+                    # explicit alias, or the server rejects the whole query with
+                    # "Code: 206 ... ALIAS_REQUIRED". Generated SQL omits that
+                    # alias regularly, and the restriction buys us nothing — the
+                    # error message itself recommends turning it off. Disabling
+                    # it removes an entire class of failure deterministically,
+                    # rather than relying on the model to remember the alias.
+                    "joined_subquery_requires_alias": 0,
+                },
             )
             logger.info("Successfully connected to ClickHouse database")
         except Exception as e:
@@ -87,21 +97,17 @@ class ClickHouseConnection:
         query = re.sub(r'INTERVAL (\d+) DAY', r'INTERVAL \1 day', query)
         query = re.sub(r'INTERVAL (\d+) MONTH', r'INTERVAL \1 month', query)
         
-        if 'GROUP BY' in query.upper():
-            # ClickHouse prefers column numbers in GROUP BY
-            lines = query.split('\n')
-            select_line = None
-            for line in lines:
-                if 'SELECT' in line.upper():
-                    select_line = line
-                    break
-            
-            if select_line and 'AS ' in select_line:
-                # Extract aliases and replace in GROUP BY
-                aliases = re.findall(r'AS (\w+)', select_line, re.IGNORECASE)
-                for i, alias in enumerate(aliases, 1):
-                    query = re.sub(f'GROUP BY {alias}', f'GROUP BY {i}', query, flags=re.IGNORECASE)
-                    
+        # NOTE: a rewrite that replaced `GROUP BY <alias>` with a positional
+        # `GROUP BY <n>` used to live here. It was actively harmful:
+        #   * this server (22.2.2.1) does NOT enable positional arguments, so
+        #     `GROUP BY 1` fails with "Column X is not under aggregate function
+        #     and not in GROUP BY", while `GROUP BY <alias>` works fine;
+        #   * it numbered aliases from the FIRST line containing "SELECT", so on
+        #     a multi-line query the position it substituted was arbitrary;
+        #   * it fired only when "GROUP BY <alias>" happened to sit on one line,
+        #     so identical queries broke or worked purely on formatting.
+        # Verified against the live server before removing — do not reinstate.
+
         # Remove trailing semicolons as clickhouse_connect appends ' FORMAT Native'
         query = query.strip()
         if query.endswith(';'):

@@ -38,12 +38,6 @@ class Settings(BaseSettings):
     environment: str = "development"
     app_port: int = 8000
     max_query_timeout: int = 30
-    
-    # Target Facility Config
-    target_facility_id: str = "0459"
-    target_facility_name: str = "Teynampet"
-    target_region_id: str = "Chennai"
-    target_customer_id: str = "Honeywell"
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

@@ -7,6 +7,16 @@ from backend.app.core.entity_lookups import get_user_lookup, get_location_lookup
 def _clean_column_name(col: str) -> str:
     col = str(col)
     mapping = {
+        # Identifier columns KEEP the "ID" suffix on purpose. Stripping it left
+        # "Request", which downstream logic then read as a numeric measure and
+        # ran outlier detection over — producing nonsense like "the highest
+        # request IDs are statistical outliers". "ID" in the name marks it as a
+        # dimension, so it is excluded from statistics.
+        "request_id": "Request ID",
+        "request_detail_id": "Request Detail ID",
+        "patient_id": "Patient ID",
+        "asset_id": "Asset ID",
+        "id": "ID",
         "count()": "Total Count",
         "avg(tat_minutes)": "Average TAT (Minutes)",
         "sum(tat_minutes)": "Total TAT (Minutes)",
@@ -79,31 +89,56 @@ def _resolve_display_names(df: pd.DataFrame) -> pd.DataFrame:
         if user_col in df.columns:
             df[user_col] = df[user_col].apply(user_lookup.resolve)
             
-    for loc_col in ["source_id", "destination_id", "pool_location_id", "location_id", "home_location_id"]:
+    # NUMERIC location ids resolve against dim_location. pool_location_id is
+    # deliberately NOT in this list: it holds codes like 'PL-BW', which live in
+    # dim_app_terms, not dim_location. Routing it here left every pool value
+    # unresolved (and, with the old drop-filter below, deleted the whole row).
+    for loc_col in ["source_id", "destination_id", "location_id", "home_location_id"]:
         if loc_col in df.columns:
             df[loc_col] = df[loc_col].apply(location_lookup.resolve)
 
+    # Pool columns are dim_app_terms codes: PN-* (PoolName), PL-* (PoolLocation).
+    for pool_col in ["pool_name_id", "pool_location_id"]:
+        if pool_col in df.columns:
+            df[pool_col] = df[pool_col].apply(
+                lambda x: term_lookup.resolve(x) if isinstance(x, str) else x
+            )
+
     # Resolve any remaining string column using dim_app_terms, excluding the major IDs
     EXCLUDED_COLS = {
-        "facility_id", "id", "customer_id", "region_id", 
-        "request_id", "asset_id", "request_detail_id", 
+        "facility_id", "id", "customer_id", "region_id",
+        "request_id", "asset_id", "request_detail_id",
         "porter_user_id", "requester_user_id", "request_user_id", "user_id",
-        "source_id", "destination_id", "pool_location_id", "location_id", "home_location_id"
+        "source_id", "destination_id", "pool_location_id", "pool_name_id",
+        "location_id", "home_location_id"
     }
     for col in df.select_dtypes(include=["object", "string", "category"]).columns:
         if col not in EXCLUDED_COLS:
             df[col] = df[col].apply(lambda x: term_lookup.resolve(x) if isinstance(x, str) else x)
 
-    # Filter out unresolved IDs/codes based on user feedback
-    for col in df.columns:
-        if col in ["requester_user_id", "porter_user_id", "request_user_id", "user_id"]:
-            # If the resolved value is just a number, it wasn't resolved
-            mask = df[col].astype(str).str.match(r'^\d+$')
-            df = df[~mask]
-        elif col in ["pool_name_id", "pool_location_id", "source_id", "destination_id", "request_type_id", "service_group_id"]:
-            # If it still matches PN-, PL-, PR-, etc. after resolution
-            mask = df[col].astype(str).str.match(r'^(PN|PL|PR|ATS|RQ)-[A-Z0-9]+$')
-            df = df[~mask]
+    # NOTE: this used to DROP every row whose id/code failed to resolve, which
+    # silently deleted real results — a waitlisted request with an unmapped pool
+    # simply vanished from the table while still being counted in the summary.
+    # Unresolved values are now left as the raw code so the row survives and the
+    # table always agrees with the stated totals.
 
     df = df.rename(columns=lambda c: _clean_column_name(c))
+
+    # porter_user_id is resolved to a person's name above, so a query that ALSO
+    # selected concat(first_name, last_name) yields two columns holding the same
+    # text ("Porter" and "Porter Name"). Drop the redundant one — it clutters the
+    # table and made summaries read "Porter = reetu, Porter Name = reetu".
+    # Compared with whitespace stripped: concat(first_name,' ',last_name) leaves
+    # a trailing space when last_name is NULL, so "reetu " and "reetu" are the
+    # same person but not equal strings.
+    def _normalised(series):
+        return series.astype(str).str.strip()
+
+    for col in list(df.columns):
+        for twin in list(df.columns):
+            if (col != twin and col in df.columns and twin in df.columns
+                    and twin.startswith(col)
+                    and _normalised(df[col]).equals(_normalised(df[twin]))):
+                df = df.drop(columns=[twin])
+
     return df

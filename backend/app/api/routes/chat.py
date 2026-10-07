@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 import asyncio
 import json
 import logging
+import re
 from backend.app.core.chatbot import TrackerWaveChatbot
 from backend.app.api.deps import require_api_key
 from backend.app.db.conversation_store import _store, Message
@@ -42,11 +43,15 @@ def get_chatbot() -> TrackerWaveChatbot:
 
 
 @router.post("/query", response_model=QueryResponse)
-def query(req: QueryRequest, _=Depends(require_api_key)):
+def query(req: QueryRequest, auth_data: dict = Depends(require_api_key)):
+    req_fac = req.filters.get("facility_id") if req.filters and isinstance(req.filters, dict) else None
+    eff_fac = str(req_fac).strip() if (req_fac and str(req_fac).strip() != "") else ((str(auth_data.get("facility_id")).strip() if auth_data and auth_data.get("facility_id") and str(auth_data.get("facility_id")).strip() != "" else None) or "0459")
+    eff_reg = (auth_data.get("region_id") if auth_data else None) or "54"
+    eff_cust = (auth_data.get("customer_id") if auth_data else None) or "1133"
     req.filters = {
-        "facility_id": settings.target_facility_id,
-        "region_id": settings.target_region_id,
-        "customer_id": settings.target_customer_id,
+        "facility_id": eff_fac,
+        "region_id": eff_reg,
+        "customer_id": eff_cust,
     }
     bot = get_chatbot()
     result = bot.process_query(
@@ -72,10 +77,14 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
     SSE streaming endpoint. Sends JSON events as they complete.
     Consumed via fetch + ReadableStream on the frontend.
     """
+    req_fac = req.filters.get("facility_id") if req.filters and isinstance(req.filters, dict) else None
+    eff_fac = str(req_fac).strip() if (req_fac and str(req_fac).strip() != "") else ((str(auth_data.get("facility_id")).strip() if auth_data and auth_data.get("facility_id") and str(auth_data.get("facility_id")).strip() != "" else None) or "0459")
+    eff_reg = (auth_data.get("region_id") if auth_data else None) or "54"
+    eff_cust = (auth_data.get("customer_id") if auth_data else None) or "1133"
     req.filters = {
-        "facility_id": settings.target_facility_id,
-        "region_id": settings.target_region_id,
-        "customer_id": settings.target_customer_id,
+        "facility_id": eff_fac,
+        "region_id": eff_reg,
+        "customer_id": eff_cust,
     }
     pipeline = get_pipeline()
     pipeline.turn_tokens = 0
@@ -85,21 +94,26 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
     
     # Use a local variable - don't mutate req
     session_id = req.session_id
-    if session_id in ("default", None) or not _store.session_exists(user_id, session_id):
+    if session_id in ("default", None) or not _store.session_exists(user_id, session_id, facility_id=eff_fac):
         passed_id = session_id if session_id not in ("default", None) else None
-        conv = _store.create(user_id, req.question, passed_id)
+        conv = _store.create(user_id, req.question, passed_id, facility_id=eff_fac)
         session_id = conv.id
         
-    _store.add_message(user_id, session_id, Message(role="user", content=req.question))
+    _store.add_message(user_id, session_id, Message(role="user", content=req.question, facility_id=eff_fac))
 
     async def event_generator():
         try:
-            messages = _store.get_messages(user_id, session_id)
+            messages = _store.get_messages(user_id, session_id, facility_id=eff_fac)
             # Exclude the message we just added to get the true prior history
             prior_messages = messages[:-1] if messages else []
             has_history = len(prior_messages) > 0
-            
-            current_history = _store.get_recent_context(user_id, session_id)
+            recent_turns = messages[-(3 * 2):] if messages else []
+            history_lines = []
+            for m in recent_turns:
+                history_lines.append(f"{m.role.upper()}: {m.content[:200]}")
+                if m.role == "assistant" and getattr(m, "domain", None):
+                    history_lines.append(f"  [scope: domain={m.domain}, facility={getattr(m, 'facility_id', 'not specified')}]")
+            current_history = "\n".join(history_lines)
             
             # ── Event 0: session id and initial metrics ──
             yield _sse({"event": "session", "id": session_id})
@@ -124,6 +138,7 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                     user_id=user_id,
                     search_terms=search_terms,
                     exclude_conv_id=session_id,
+                    facility_id=eff_fac,
                 )
 
                 if not past_matches:
@@ -152,14 +167,15 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                     crossConversationRefs=[
                         {"conversation_id": m["conversation_id"], "title": m["title"]} for m in past_matches
                     ],
-                    tokens_used=pipeline.turn_tokens
+                    tokens_used=pipeline.turn_tokens,
+                    facility_id=eff_fac
                 ))
                 return  # ← stop here, do not proceed to plan_analysis/SQL
 
             # ── Stage 0: Routing — does this need data? ──
             try:
                 routing = await asyncio.to_thread(
-                    pipeline.route_message, req.question, history=current_history
+                    pipeline.route_message, req.question, history=current_history, filters=req.filters
                 )
             except Exception as e:
                 logging.warning(f"route_message failed, defaulting to data_question: {e}")
@@ -181,7 +197,8 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                     role="assistant",
                     content=routing["response"],
                     sql="", row_count=0, domain="conversational",
-                    tokens_used=pipeline.turn_tokens
+                    tokens_used=pipeline.turn_tokens,
+                    facility_id=eff_fac
                 ))
                 return  # ← STOP HERE, do not proceed to intent/SQL/etc.
 
@@ -211,7 +228,8 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                 _store.add_message(user_id, session_id, Message(
                     role="assistant", content=limitation_response,
                     domain="conversational", sql="", row_count=0,
-                    tokens_used=pipeline.turn_tokens
+                    tokens_used=pipeline.turn_tokens,
+                    facility_id=eff_fac
                 ))
                 return
 
@@ -270,13 +288,14 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                     domain="both",
                     filters=req.filters,
                     displaySections=packaged["display_sections"],
-                    tokens_used=pipeline.turn_tokens
+                    tokens_used=pipeline.turn_tokens,
+                    facility_id=eff_fac
                 ))
                 return
 
             # ── Event 2: SQL generated (~2–4s) ──
             sql = await asyncio.to_thread(
-                pipeline.generate_sql, effective_question, plan, filters=req.filters, history=_store.get_recent_context(user_id, session_id)
+                pipeline.generate_sql, effective_question, plan, filters=req.filters, history=_store.get_recent_context(user_id, session_id, facility_id=eff_fac)
             )
             print("\n=== LLM SQL ===")
             print(sql)
@@ -305,21 +324,32 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                 yield _sse({"event": "sql_corrected", "sql": sql})
 
             if not success:
+                # Full technical detail to the console; the user sees none of it.
+                from backend.app.core.sql_pipeline import log_sql_failure
+                log_sql_failure(effective_question, sql, error_msg, stage="initial execution")
                 # Self-correct once
                 sql = await asyncio.to_thread(pipeline.fix_sql, sql, error_msg)
                 df, success, error_msg = await asyncio.to_thread(pipeline.db.execute_query_with_error, sql)
                 yield _sse({"event": "sql_corrected", "sql": sql})
 
             if not success:
+                from backend.app.core.sql_pipeline import log_sql_failure
+                log_sql_failure(effective_question, sql, error_msg, stage="after self-correction")
+                friendly_err = "I'm sorry, but I wasn't able to gather the right data to answer that. Could you try asking in a different way or for something else?"
                 _store.add_message(user_id, session_id, Message(
                     role="assistant", 
-                    content=f"Query failed: {error_msg}", 
+                    content=friendly_err, 
                     sql=sql, 
                     row_count=0, 
                     domain=plan.get("data_domain", "porter"),
-                    tokens_used=pipeline.turn_tokens
+                    tokens_used=pipeline.turn_tokens,
+                    facility_id=eff_fac
                 ))
-                yield _sse({"event": "error", "message": f"Query failed: {error_msg}", "sql": sql})
+                yield _sse({"event": "summary_start"})
+                for word in friendly_err.split(" "):
+                    yield _sse({"event": "token", "text": word + " "})
+                    await asyncio.sleep(0.01)
+                yield _sse({"event": "done"})
                 return
 
             # ── Clean up data before charting ──
@@ -342,10 +372,17 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
             display_payload_df = await asyncio.to_thread(_resolve_display_names, df.head(500))
             
             data_payload = display_payload_df.replace({np.nan: None, pd.NaT: None}).to_dict("records")
+
+            # Was the result clipped by a LIMIT? The table needs to say
+            # "showing 500 of 129,411" rather than implying 500 is everything.
+            scope = await asyncio.to_thread(pipeline.measure_result_scope, sql, df)
+
             yield _sse({
                 "event": "data",
                 "rows": data_payload,
                 "row_count": len(df),
+                "total_row_count": scope.get("total") or len(df),
+                "truncated": bool(scope.get("truncated")),
                 "columns": list(display_payload_df.columns),
             })
 
@@ -361,12 +398,32 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                     yield _sse({"event": "token", "text": word + " "})
                     await asyncio.sleep(0.01)
             else:
-                coverage = await asyncio.to_thread(pipeline.check_data_coverage, df, plan)
+                coverage = await asyncio.to_thread(
+                    pipeline.check_data_coverage, df, plan, sql, req.filters
+                )
                 
                 from backend.config.settings import settings
-                facility_name = settings.target_facility_name
+                from backend.app.core.facility_lookup import get_facility_lookup
+                fac_info = get_facility_lookup().get(eff_fac)
+                facility_name = fac_info.get("facility_name") if fac_info and fac_info.get("facility_name") else ""
 
-                summary_prompt = _build_summary_prompt(effective_question, df, plan, coverage, facility_name)
+                # The period the result covers, so the summary can never imply
+                # "recent" for a query that spans all history.
+                from backend.app.core.data_freshness import describe_time_scope
+                time_scope = await asyncio.to_thread(describe_time_scope, sql, eff_fac, pipeline.db)
+                if scope.get("truncated"):
+                    logging.info("Result truncated: showing %s of %s rows",
+                                 scope["shown"], scope.get("total"))
+                    # Real per-category totals, since the visible rows can't be
+                    # counted once a LIMIT has clipped them.
+                    scope["true_breakdown"] = await asyncio.to_thread(
+                        pipeline.true_category_breakdown, sql, df
+                    )
+
+                summary_prompt = _build_summary_prompt(
+                    effective_question, display_payload_df, plan, coverage,
+                    facility_name, scope, time_scope,
+                )
                 prompt_logger = logging.getLogger("prompt_debugger")
                 # prompt_logger.error("=== SUMMARY SYSTEM PROMPT ===\n%s", pipeline.SUMMARY_SYSTEM)
                 # prompt_logger.error("=== SUMMARY USER PROMPT ===\n%s", summary_prompt)
@@ -450,7 +507,8 @@ async def stream_query(req: QueryRequest, auth_data: dict = Depends(require_api_
                 filters=req.filters,
                 data=data_payload,
                 chartSpec=chart_spec if wants_chart else None,
-                tokens_used=pipeline.turn_tokens
+                tokens_used=pipeline.turn_tokens,
+                facility_id=eff_fac
             ))
 
         except Exception as e:
@@ -562,7 +620,28 @@ def _detect_outliers(df, measure_cols: list) -> str:
     period_col = "_period" if "_period" in df.columns else None
     lines = []
 
-    id_cols = [c for c in df.columns if c.endswith("_id") or c in ("name", "category", "porter_name", "facility_name")]
+    # Every non-measure column identifies the outlier row. Labelling with only
+    # one of them (or worse, "row 3") let the model fill in the blanks: a
+    # Morning-shift porter and a Night-shift porter were both reported as
+    # Afternoon, because Afternoon was simply the most common shift on screen.
+    context_cols = [c for c in df.columns
+                    if c not in measure_cols and c != period_col
+                    and df[c].notna().any()]
+
+    def _describe_row(idx) -> str:
+        if period_col:
+            return f"period {df.loc[idx, period_col]}"
+        # Phrased as natural prose ("Morning shift, porter reetu") because the
+        # model quotes this text almost verbatim; a "col = value" form leaked
+        # into user-facing answers as "the row where Shift = Morning, ...".
+        seen, parts = set(), []
+        for c in context_cols[:4]:
+            value = str(df.loc[idx, c]).strip()
+            if not value or value.lower() in ("nan", "none", "<na>") or value in seen:
+                continue  # skip blanks and columns repeating an earlier value
+            seen.add(value)
+            parts.append(f"{value} ({str(c).lower()})")
+        return ", ".join(parts) if parts else f"row {idx}"
 
     for col in measure_cols[:3]:
         values = df[col]
@@ -576,24 +655,28 @@ def _detect_outliers(df, measure_cols: list) -> str:
         outlier_mask = (values < lower_bound) | (values > upper_bound)
         if outlier_mask.any():
             for idx in df[outlier_mask].index:
-                if period_col:
-                    label = f"period {df.loc[idx, period_col]}"
-                elif id_cols:
-                    label = f"entity ({id_cols[0]} = {df.loc[idx, id_cols[0]]})"
-                else:
-                    label = f"row {idx}"
-                    
                 direction = "lower" if values[idx] < lower_bound else "higher"
                 lines.append(
-                    f"  {label}: {col} = {values[idx]:,.1f} is notably {direction} "
-                    f"than the typical range ({lower_bound:,.1f} to {upper_bound:,.1f})"
+                    f"  {_describe_row(idx)}: {col} = {values[idx]:,.1f} is notably "
+                    f"{direction} than the typical range "
+                    f"({lower_bound:,.1f} to {upper_bound:,.1f})"
                 )
 
     if not lines:
         return ""
-    return ("POTENTIAL ANOMALIES (statistical outliers detected):\n" + "\n".join(lines) +
-            "\n\nNote: an unusually low value in the MOST RECENT period may indicate "
-            "incomplete/partial data for that period rather than an operational issue.")
+
+    out = "POTENTIAL ANOMALIES (statistical outliers detected):\n" + "\n".join(lines)
+    out += ("\n\nWhen you mention any of these, keep the identifying values EXACTLY as "
+            "given — but rewrite them as natural prose. Say \"reetu, on the Morning "
+            "shift, handled 68 requests\", never \"the row where Shift = Morning...\"; "
+            "this block is internal notation, not text to quote. Do NOT attribute a "
+            "value to a category that is not stated on its own line: if a figure "
+            "belongs to the Morning shift, never call it Afternoon just because "
+            "Afternoon is more common elsewhere in the data.")
+    if period_col:
+        out += ("\n\nNote: an unusually low value in the MOST RECENT period may indicate "
+                "incomplete/partial data for that period rather than an operational issue.")
+    return out
 
 
 def _detect_tie_and_secondary_signal(df, plan: dict) -> str:
@@ -688,6 +771,16 @@ FORMAT — SINGLE STAT: Lead with the number itself, prominently.
 Then one sentence of context (e.g. what time period, what scope).
 Total response: 2-3 sentences maximum. No bullet points needed.""",
 
+    "detail": """
+FORMAT — DETAIL: The user asked about the underlying records. They will read
+ONLY your sentences — there is no table, list or panel visible to them, so your
+answer must stand completely on its own.
+Open with the total count, then the split across the main categories (e.g. how
+many completed vs waitlisted, or which pools dominate).
+Never enumerate individual records, and never refer to a table, a list, rows,
+"the first N", "shown", "displayed" or "below" — none of that exists for the
+reader. Maximum 4 sentences.""",
+
     "limitation": """
 FORMAT — LIMITATION: Be direct and brief.
 First sentence: state clearly what data is NOT available for this question.
@@ -696,7 +789,60 @@ Then proceed with whatever data IS available using the OVERVIEW format.""",
 }
 
 
-def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, facility_name: str | None = None) -> str:
+def _is_identifier_column(col: str) -> bool:
+    """
+    Identifiers are numeric but carry no magnitude — averaging request IDs or
+    calling the largest one an "outlier" is meaningless. Keep them out of every
+    statistic, trend and anomaly calculation.
+    """
+    c = str(col).strip().lower()
+    return c == "id" or c.endswith(" id") or c.endswith("_id")
+
+
+def _category_counts(df, categorical_cols: list, max_categories: int = 12,
+                     examples_per_group: int = 5) -> str:
+    """
+    Exact counts per category for results that carry no numeric measure, plus a
+    few members of each group.
+
+    A shift/porter listing has nothing to sum, which left the model inferring
+    group sizes from whichever rows it happened to read — and reporting that
+    shifts further down the list "are not listed in the available data". Naming
+    every group explicitly makes that impossible.
+    """
+    group_col = next(
+        (c for c in categorical_cols if 1 < df[c].nunique(dropna=True) <= max_categories),
+        None,
+    )
+    if group_col is None:
+        return ""
+
+    # A different column to draw example values from (e.g. the porter name).
+    detail_col = next(
+        (c for c in categorical_cols
+         if c != group_col and df[c].nunique(dropna=True) > df[group_col].nunique(dropna=True)),
+        None,
+    )
+
+    total = len(df)
+    lines = []
+    for value, count in df[group_col].value_counts().head(max_categories).items():
+        line = f"  {value}: {count:,} ({count / total * 100:.1f}%)"
+        if detail_col is not None:
+            members = (df.loc[df[group_col] == value, detail_col]
+                         .dropna().astype(str).unique()[:examples_per_group])
+            if len(members):
+                line += f" — e.g. {', '.join(members)}"
+        lines.append(line)
+
+    return (f"EXACT COUNT PER {group_col} (every group present is listed here; "
+            f"none are missing — do NOT claim any group has no data):\n"
+            + "\n".join(lines))
+
+
+def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None,
+                          facility_name: str | None = None, scope: dict | None = None,
+                          time_scope: str = "") -> str:
     import pandas as pd
     from backend.app.core.display_resolution import _resolve_display_names
     
@@ -710,37 +856,47 @@ def _build_summary_prompt(question: str, df, plan: dict, coverage: dict = None, 
     facility_context = ""
     if facility_name:
         facility_context = f"\nNOTE: This data is filtered to {facility_name} only. Frame your summary around this specific hospital, not hospitals in general.\n"
+    else:
+        facility_context = f"\nNOTE: Do NOT mention any facility ID, code, or name in your summary. The data is pre-filtered.\n"
 
     if df.empty or (len(df) == 1 and not df.select_dtypes(include="number").empty and df.select_dtypes(include="number").fillna(0).sum(axis=1).iloc[0] == 0):
         if coverage.get("has_data_gap"):
             return f"""QUESTION: {question}
 {facility_context}
 
-The query returned no results. IMPORTANT CONTEXT: {coverage['note']}
+The query returned no rows, and the reason is KNOWN: it is a data-coverage
+gap, NOT a genuine zero.
+
+FACTS YOU MUST CONVEY (use these dates exactly as written):
+{coverage['note']}
 
 Write a 2-3 sentence response that:
-1. Explains that no data is currently available for the requested time period.
-2. Mentions the data gap explained above. Frame this objectively: the lack of data means the status is unknown, rather than assuming the system is problem-free.
-3. Suggests the user try a different time range or consult their data team.
+1. States plainly that no records exist for the period asked about, and gives
+   the actual date range that IS available (quote the dates above verbatim).
+2. Makes clear this is missing data rather than a true count of zero — the
+   real figure is unknown, not nil.
+3. Invites the user to ask about a date inside the available range.
 
-Please maintain a neutral, analytical tone. Since data is missing, we cannot confirm whether the underlying count is actually zero or just unrecorded."""
+Do NOT say "the query returned no results" or mention queries, databases or
+tables. Do NOT speculate about why the data is missing."""
         else:
             return f"""QUESTION: {question}
 {facility_context}
 
-The query returned a genuine zero/empty result — there IS data for this
-period, but the specific thing asked about (e.g. assets under
-maintenance, cancelled requests) has a count of zero.
+The query returned a genuine zero/empty result. The specific things asked about 
+(e.g. assets under maintenance, cancelled requests) have a count of zero.
 
 Write a 2-3 sentence response confirming this is a real zero (e.g.
 "Currently, zero assets are under maintenance — all equipment is
-available."). This IS good news and can be stated positively, since
-we've confirmed data exists for this period and the count is genuinely 0."""
+available."). Do NOT mention any specific "time period" or say "during this period" 
+unless the user explicitly asked for one in their question. Frame this neutrally or positively, 
+confirming that the count is genuinely 0 for their request."""
 
     stats_lines = []
     
     from backend.app.core.formatter import _is_dimension_column
-    numeric_cols = [c for c in df.select_dtypes(include="number").columns if not _is_dimension_column(c, df[c])]
+    numeric_cols = [c for c in df.select_dtypes(include="number").columns
+                    if not _is_dimension_column(c, df[c]) and not _is_identifier_column(c)]
 
     # Pre-compute aggregates so the LLM doesn't do unreliable math
     for col in numeric_cols[:5]:  # cap to avoid prompt bloat
@@ -752,7 +908,29 @@ we've confirmed data exists for this period and the count is genuinely 0."""
     # percentage breakdowns — this is what lets the LLM say "97%"
     categorical_cols = df.select_dtypes(include="object").columns.tolist()
     pct_breakdown = ""
-    if categorical_cols and numeric_cols:
+    # Percentages over a clipped result are meaningless — a "100% waitlisted"
+    # claim came from exactly this, computed across a LIMIT 500 slice of 129,411
+    # matching rows. Suppress the block entirely rather than caveat it.
+    if (scope or {}).get("truncated"):
+        pct_breakdown = (scope.get("true_breakdown")
+                         or "PERCENTAGE BREAKDOWN: deliberately omitted — the result is "
+                            "truncated, so any share computed from it would be wrong.")
+    elif len(df) < 4:
+        # Percentages across a handful of specifically-requested rows are
+        # meaningless: asked "who had 68 and 49?", two rows come back and a
+        # share of 58%/42% describes only those two, not the day. Suppress it.
+        pct_breakdown = ("PERCENTAGE BREAKDOWN: omitted — too few rows, and they were "
+                         "selected by the question itself. Any share computed across "
+                         "them would describe only this selection, not the wider data. "
+                         "Report the values as they are; do NOT express them as "
+                         "percentages or as a proportion of a total.")
+    elif categorical_cols and not numeric_cols:
+        # A pure listing (e.g. shift + porter name) has nothing to sum, so the
+        # model was left counting rows by eye — and concluded that shifts it
+        # hadn't reached "were not listed". Give it exact counts per category
+        # plus a few members of each, so every group is visibly represented.
+        pct_breakdown = _category_counts(df, categorical_cols)
+    elif categorical_cols and numeric_cols:
         cat_col, num_col = categorical_cols[0], numeric_cols[0]
         if df[num_col].sum() > 0:
             grouped = df.groupby(cat_col)[num_col].sum().sort_values(ascending=False)
@@ -776,18 +954,79 @@ identifying peak values or top/bottom performers, please highlight which values 
 rather than just providing a general description of the data."""
 
     measure_cols = [c for c in df.select_dtypes(include="number").columns
-                     if c not in ("year", "month", "_period_sort")]
+                     if c not in ("year", "month", "_period_sort")
+                     and not _is_identifier_column(c)]
 
     actual_range = _describe_actual_range(df, plan)
     trends       = _compute_period_trends(df, measure_cols)
     anomalies    = _detect_outliers(df, measure_cols)
     tie_signal   = _detect_tie_and_secondary_signal(df, plan)
 
-    extra_context = "\n\n".join(filter(None, [actual_range, trends, anomalies, tie_signal]))
+    # A clipped result must never be described as if it were the whole set.
+    truncation_note = ""
+    scope = scope or {}
+    if scope.get("truncated"):
+        total = scope.get("total")
+        # Say what ONE ROW actually represents. Without this the model reads a
+        # row count of 876 as "876 unique porters", when the rows are really
+        # 876 shift-and-porter combinations covering far fewer people.
+        dim_cols = [c for c in df.columns
+                    if c not in numeric_cols and not _is_identifier_column(c)]
+        # An identifier that is unique on every row means the result is already
+        # one-row-per-entity, so the total IS a straight count of that entity.
+        entity_col = next(
+            (c for c in df.columns
+             if _is_identifier_column(c) and df[c].nunique(dropna=False) == len(df)),
+            None,
+        )
+        if entity_col:
+            entity = re.sub(r"\s*id$", "", str(entity_col), flags=re.IGNORECASE).strip().lower()
+            row_meaning = (f"\n- One row = one {entity}, so {total:,} is a genuine count "
+                           f"of {entity}s. State it plainly as that — do NOT call them "
+                           f"'combinations' or 'records'.")
+        elif len(dim_cols) > 1:
+            row_meaning = (
+                f"\n- One row = one combination of ({', '.join(dim_cols)}). "
+                f"So {total:,} is the number of such combinations, NOT a count of "
+                f"any single one of those things. If an entity repeats across "
+                f"combinations, {total:,} OVERSTATES how many distinct entities there "
+                f"are — never call it 'unique X'. Describe it as combinations, or "
+                f"quote only the per-category figures from the TRUE BREAKDOWN."
+            )
+        elif dim_cols:
+            row_meaning = f"\n- One row = one {dim_cols[0]}."
+        else:
+            row_meaning = ""
+        if total:
+            truncation_note = (
+                f"⚠ INTERNAL NOTE — the query was capped at {scope['shown']:,} rows, but the "
+                f"REAL total is {total:,}. The pre-computed stats below cover only the capped "
+                f"rows and are therefore NOT representative.\n"
+                f"YOU MUST:\n"
+                f"- Report {total:,} as the answer. That is the true figure.{row_meaning}\n"
+                f"- NEVER say 'all', '100%' or 'every' about this result.\n"
+                f"- NEVER quote a percentage computed from the capped rows. Use the TRUE "
+                f"BREAKDOWN block if one is present — those figures are correct.\n"
+                f"- This row cap is an internal implementation detail. Do NOT mention it. "
+                f"Never write 'the first {scope['shown']:,}', 'shown', 'displayed', "
+                f"'in the table', 'sample', 'listed below' or anything similar. The reader "
+                f"sees only your sentences, so a reference to a table is meaningless to them."
+            )
+        else:
+            truncation_note = (
+                f"⚠ INTERNAL NOTE: the query was capped at {scope['shown']:,} rows and more "
+                f"exist. Do NOT say 'all' or '100%', and do NOT quote percentages computed "
+                f"over these rows. Never mention the cap, a table, or a sample — that is an "
+                f"internal detail the reader cannot see."
+            )
+
+    extra_context = "\n\n".join(filter(None, [
+        time_scope, truncation_note, actual_range, trends, anomalies, tie_signal
+    ]))
 
     return f"""QUESTION: {question}
 DOMAIN: {plan.get('data_domain', 'porter')}
-TOTAL ROWS: {len(df)}
+ROWS IN THIS TABLE: {len(df)}{f" (of {scope['total']:,} total)" if scope.get('total') else ""}
 {facility_context}
 
 {extra_context}
@@ -806,7 +1045,24 @@ Please review the context above and write your response.
 
 {format_instruction}
 
-REMINDER: Only mention numbers from the PRE-COMPUTED STATS block above. Do not invent metrics, causes, or comparisons not present in that data. Use flowing sentences as requested."""
+REMINDER: Only mention numbers from the PRE-COMPUTED STATS block above. Do not invent metrics, causes, or comparisons not present in that data. Use flowing sentences as requested.
+
+BEFORE YOU WRITE, CHECK ALL FOUR:
+1. PERIOD — does your answer state which dates it covers? If no date filter was
+   applied, say it covers the full recorded history; never let the reader assume
+   "recent". If the period is a single day, name that day.
+2. TRUNCATION — if the result is marked capped, quote the TRUE total and never
+   write "all", "every" or "100%". Never reveal that a cap existed: no "first
+   500", no "shown", no "table", no "sample". Those are internal mechanics.
+3. NO ROW-COUNT LEAKAGE — the number of rows in the table is NOT a business
+   metric. Never write "500 requests" when 500 is just the page size, and never
+   describe request IDs as "outliers" or "high values" — IDs are identifiers,
+   not measurements, and their size means nothing.
+4. LENGTH — lead with the number that answers the question. No preamble, no
+   restating the question, no filler such as "this result shows".
+
+The reader is a hospital manager who wants the answer, not a description of the
+data structure."""
 
 
 _pipeline = None

@@ -42,6 +42,24 @@
       </button>
     </div>
 
+    <!-- Data table panel is hidden for now. To re-enable, restore the toggle
+         button and panel below; the supporting code (hasTable, tableRowLabel,
+         DataTableComponent, and the truncated/totalRowCount fields) is all
+         still in place, so this is the only block that needs to come back.
+
+    <button *ngIf="hasTable" (click)="showData = !showData" class="chart-toggle-btn">
+      <mat-icon>table_chart</mat-icon> Table ({{ tableRowLabel }}) {{ showData ? '▴' : '▾' }}
+    </button>
+
+    <div *ngIf="showData && hasTable" class="data-table-panel">
+      <p *ngIf="message.truncated" class="table-truncation-note">
+        Showing the first {{ message.rowCount | number }} of
+        {{ message.totalRowCount | number }} matching records.
+      </p>
+      <app-data-table [data]="message.data!"></app-data-table>
+    </div>
+    -->
+
     <!-- Visualization panels -->
     <ng-container *ngIf="message.chartSpec as spec">
       <div *ngIf="spec.single_value" class="single-value-card">
@@ -64,11 +82,17 @@
     </div>
 
     <!-- Live metrics (time and tokens) -->
-    <div *ngIf="(message.status === 'pending' || message.status === 'streaming') && (message.tokensUsed !== undefined || timeElapsed > 0)" class="metrics-row">
+    <div *ngIf="(alwaysShowMetrics || message.status === 'pending' || message.status === 'streaming') && hasMetrics" class="metrics-row">
       <span class="metrics-text">
-        ( <ng-container *ngIf="timeElapsed > 0">{{ timeElapsed }}s </ng-container>
-        <ng-container *ngIf="message.tokensUsed !== undefined && timeElapsed > 0">|</ng-container>
-        <ng-container *ngIf="message.tokensUsed !== undefined"> {{ message.tokensUsed }} tokens </ng-container>)
+        <ng-container *ngIf="showTime && timeElapsed > 0">{{ timeElapsed }}s</ng-container>
+        <ng-container *ngIf="showOutput && message.outputTokens !== undefined">
+          <ng-container *ngIf="showTime && timeElapsed > 0"> &middot; </ng-container>
+          {{ message.outputTokens }} output
+        </ng-container>
+      </span>
+      <span class="metrics-text metrics-total"
+            *ngIf="showTotal && message.tokensUsed !== undefined">
+        {{ message.tokensUsed }} total
       </span>
     </div>
 

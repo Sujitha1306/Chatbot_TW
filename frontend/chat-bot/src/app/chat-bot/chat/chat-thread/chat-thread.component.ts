@@ -116,7 +116,7 @@ export class ChatThreadComponent implements OnInit, OnDestroy {
 
   onScroll(event: Event) {
     const target = event.target as HTMLElement;
-    if (target.scrollTop === 0 && this.chat.hasMoreMessages && !this.isLoadingOlder) {
+    if (target.scrollTop === 0 && this.chat.hasMoreMessages && !this.isLoadingOlder && this.chat.getCurrentMessages().length > 0) {
       this.loadOlderMessages();
     }
   }

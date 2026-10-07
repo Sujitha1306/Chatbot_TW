@@ -22,12 +22,19 @@ export class AuthService {
           this.refreshUser();
         }
       });
+      setInterval(() => {
+        this.refreshUser();
+      }, 1000);
     }
   }
 
   refreshUser(): void {
     const user = this.getStoredUser();
-    this.userSubject.next(user);
+    const prev = this.userSubject.value;
+    if (user?.id !== prev?.id || user?.name !== prev?.name) {
+      console.log("Chatbot Auth: Detected user change from parent:", user);
+      this.userSubject.next(user);
+    }
   }
 
   private getStoredUser(): User | null {

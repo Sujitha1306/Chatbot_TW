@@ -9,11 +9,15 @@ from backend.app.db.clickhouse import ClickHouseConnection
 
 logger = logging.getLogger(__name__)
 
+# Codes verified against ovitag_live_dw.dim_app_terms. Note RQ-CR is
+# "Assigned" and RQ-AS is "Accepted" — they are easy to get backwards.
 STATIC_FALLBACK_TERMS = {
-    "RQ-CO": "Completed", "RQ-CA": "Cancelled", "RQ-IP": "In Progress",
-    "RQ-AS": "Accepted", "RQ-AC": "Accepted", "RQ-AR": "Arrived",
-    "RQ-OH": "On Hold", "RQ-RJ": "Rejected",
-    "PR-PA": "Patient Transport", "PR-SE": "Service Request",
+    "RQ-CO": "Completed", "RQ-WT": "Waitlisted", "RQ-CA": "Cancelled",
+    "RQ-CR": "Assigned", "RQ-AS": "Accepted", "RQ-AR": "Arrived",
+    "RQ-IP": "InProgress", "RQ-HLD": "On Hold", "RQ-RJ": "Rejected",
+    "RQ-NR": "No Response", "RQ-PLN": "Planned", "RQ-SH": "Scheduled",
+    "RQ-RAS": "Reassigned", "RQ-PEN": "Pending", "RQ-DISP": "Dispatched",
+    "PR-PA": "Patient Transport", "PR-SE": "Services", "PR-AT": "Asset",
     "ATS-MAIN": "Under Maintenance", "ATS-INU": "In Use",
     "ATS-ONB": "Onboarded", "CRT-CT": "Critical", "CRT-NCT": "Non-Critical",
 }

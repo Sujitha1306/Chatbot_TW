@@ -1,6 +1,7 @@
 import json
 import logging
 import uuid
+import threading
 from typing import List, Optional
 from datetime import datetime
 
@@ -19,25 +20,76 @@ def _sanitize_for_storage(obj):
         return "{}"
 
 class MySQLConversationStore:
-    def create(self, user_id: str, first_question: str, conv_id: Optional[str] = None) -> Conversation:
+    _schema_checked = False
+    _recs_cache = {}  # (user_id, facility_id) -> (timestamp, recs_list)
+    _schema_lock = threading.Lock()
+
+    def __init__(self):
+        if not MySQLConversationStore._schema_checked:
+            threading.Thread(target=self._ensure_schema, daemon=True).start()
+
+    def _ensure_schema(self):
+        if MySQLConversationStore._schema_checked:
+            return
+        with MySQLConversationStore._schema_lock:
+            if MySQLConversationStore._schema_checked:
+                return
+            try:
+                conn = get_mysql_connection()
+                cursor = conn.cursor(buffered=True)
+                try:
+                    cursor.execute("SHOW COLUMNS FROM conversations LIKE 'facility_id'")
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE conversations ADD COLUMN facility_id VARCHAR(32) NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("SHOW COLUMNS FROM messages LIKE 'facility_id'")
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE messages ADD COLUMN facility_id VARCHAR(32) NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("SHOW INDEX FROM conversations WHERE Key_name = 'idx_user_fac_created'")
+                    if not cursor.fetchone():
+                        cursor.execute("CREATE INDEX idx_user_fac_created ON conversations (user_id, facility_id, created_at)")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("SHOW INDEX FROM messages WHERE Key_name = 'idx_user_fac_created'")
+                    if not cursor.fetchone():
+                        cursor.execute("CREATE INDEX idx_user_fac_created ON messages (user_id, facility_id, created_at)")
+                except Exception:
+                    pass
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                logger.warning(f"Could not check/alter schema for facility_id: {e}")
+            finally:
+                MySQLConversationStore._schema_checked = True
+
+    def create(self, user_id: str, first_question: str, conv_id: Optional[str] = None, facility_id: Optional[str] = None) -> Conversation:
+        self._ensure_schema()
         conv_id = conv_id or str(uuid.uuid4())
         title = first_question[:60] + ("..." if len(first_question) > 60 else "")
         created_at = datetime.utcnow()
+        fac_id = facility_id or "0459"
         
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO conversations (id, user_id, title, created_at) VALUES (%s, %s, %s, %s)",
-                (conv_id, user_id, title, created_at)
+                "INSERT INTO conversations (id, user_id, title, created_at, facility_id) VALUES (%s, %s, %s, %s, %s)",
+                (conv_id, user_id, title, created_at, fac_id)
             )
             conn.commit()
         finally:
             conn.close()
             
-        return Conversation(id=conv_id, user_id=user_id, title=title, created_at=created_at)
+        return Conversation(id=conv_id, user_id=user_id, title=title, created_at=created_at, facility_id=fac_id)
 
     def add_message(self, user_id: str, conv_id: str, msg: Message) -> None:
+        self._ensure_schema()
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor()
@@ -54,15 +106,16 @@ class MySQLConversationStore:
             cursor.execute(
                 """
                 INSERT INTO messages 
-                (id, conversation_id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (id, conversation_id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at, facility_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     msg.id, conv_id, msg.role, msg.content, msg.sql, msg.row_count, msg.domain,
                     _sanitize_for_storage(packed_data),
                     _sanitize_for_storage(msg.chartSpec),
                     msg.tokens_used,
-                    msg.timestamp
+                    msg.timestamp,
+                    msg.facility_id or "0459"
                 )
             )
             
@@ -75,32 +128,42 @@ class MySQLConversationStore:
         finally:
             conn.close()
 
-    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0) -> List[Message]:
+    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0, facility_id: Optional[str] = None) -> List[Message]:
+        self._ensure_schema()
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor(dictionary=True)
+            fac_clause = ""
+            params = [conv_id, user_id]
+            if facility_id and str(facility_id).strip() != "":
+                fac_clause = " AND c.facility_id = %s"
+                params.append(str(facility_id).strip())
+
             if limit is not None:
+                params.extend([limit, offset])
                 cursor.execute(
-                    """
-                    SELECT id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at
-                    FROM messages
-                    WHERE conversation_id = %s
-                    ORDER BY created_at DESC
+                    f"""
+                    SELECT m.id, m.role, m.content, m.sql_text, m.row_count, m.domain, m.data_json, m.chart_spec_json, m.tokens_used, m.created_at
+                    FROM messages m
+                    JOIN conversations c ON m.conversation_id = c.id
+                    WHERE m.conversation_id = %s AND c.user_id = %s{fac_clause}
+                    ORDER BY m.created_at DESC
                     LIMIT %s OFFSET %s
                     """,
-                    (conv_id, limit, offset)
+                    tuple(params)
                 )
                 rows = cursor.fetchall()
                 rows.reverse()
             else:
                 cursor.execute(
-                    """
-                    SELECT id, role, content, sql_text, row_count, domain, data_json, chart_spec_json, tokens_used, created_at
-                    FROM messages
-                    WHERE conversation_id = %s
-                    ORDER BY created_at ASC
+                    f"""
+                    SELECT m.id, m.role, m.content, m.sql_text, m.row_count, m.domain, m.data_json, m.chart_spec_json, m.tokens_used, m.created_at
+                    FROM messages m
+                    JOIN conversations c ON m.conversation_id = c.id
+                    WHERE m.conversation_id = %s AND c.user_id = %s{fac_clause}
+                    ORDER BY m.created_at ASC
                     """,
-                    (conv_id,)
+                    tuple(params)
                 )
                 rows = cursor.fetchall()
             
@@ -141,19 +204,27 @@ class MySQLConversationStore:
         finally:
             conn.close()
 
-    def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0) -> List[Conversation]:
+    def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0, facility_id: Optional[str] = None) -> List[Conversation]:
+        self._ensure_schema()
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor(dictionary=True)
+            fac_clause = ""
+            params = [user_id]
+            eff_fac = facility_id if (facility_id and str(facility_id).strip() != "") else "0459"
+            fac_clause = " AND facility_id = %s"
+            params.append(eff_fac)
+            
+            params.extend([limit, offset])
             cursor.execute(
-                """
-                SELECT id, user_id, title, is_favorite, total_tokens_used, created_at
+                f"""
+                SELECT id, user_id, title, is_favorite, total_tokens_used, created_at, facility_id
                 FROM conversations
-                WHERE user_id = %s
+                WHERE user_id = %s{fac_clause}
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
                 """,
-                (user_id, limit, offset)
+                tuple(params)
             )
             rows = cursor.fetchall()
             
@@ -165,7 +236,8 @@ class MySQLConversationStore:
                     title=row['title'],
                     is_favorite=bool(row.get('is_favorite', False)),
                     total_tokens_used=row.get('total_tokens_used', 0),
-                    created_at=row['created_at']
+                    created_at=row['created_at'],
+                    facility_id=row.get('facility_id')
                 )
                 convs.append(c)
             return convs
@@ -231,31 +303,43 @@ class MySQLConversationStore:
         finally:
             conn.close()
 
-    def get_user_recommendations(self, user_id: str) -> List[str]:
+    def get_user_recommendations(self, user_id: str, facility_id: Optional[str] = None) -> List[str]:
+        self._ensure_schema()
+        eff_fac = facility_id if (facility_id and str(facility_id).strip() != "") else "0459"
+        cache_key = (user_id, eff_fac)
+        now_ts = datetime.utcnow().timestamp()
+        if cache_key in MySQLConversationStore._recs_cache:
+            cached_ts, cached_list = MySQLConversationStore._recs_cache[cache_key]
+            if now_ts - cached_ts < 300:  # 5-minute TTL
+                return cached_list
+
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor(dictionary=True)
-            # Group by lower-case, trimmed content to avoid minor variations
+            params = [user_id, eff_fac]
             cursor.execute(
                 """
                 SELECT MIN(m.content) as original_content, COUNT(*) as frequency
                 FROM messages m
                 JOIN conversations c ON m.conversation_id = c.id
-                WHERE c.user_id = %s AND m.role = 'user'
+                WHERE c.user_id = %s AND c.facility_id = %s AND m.role = 'user'
+                  AND c.created_at >= NOW() - INTERVAL 30 DAY
                 GROUP BY LOWER(TRIM(REPLACE(REPLACE(m.content, '?', ''), '.', '')))
-                HAVING COUNT(*) >= 3
+                HAVING COUNT(*) >= 2
                 ORDER BY frequency DESC
                 LIMIT 5
                 """,
-                (user_id,)
+                tuple(params)
             )
             rows = cursor.fetchall()
-            return [row['original_content'] for row in rows]
+            recs = [row['original_content'] for row in rows]
+            MySQLConversationStore._recs_cache[cache_key] = (now_ts, recs)
+            return recs
         finally:
             conn.close()
 
-    def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3) -> str:
-        messages = self.get_messages(user_id, conv_id)
+    def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3, facility_id: Optional[str] = None) -> str:
+        messages = self.get_messages(user_id, conv_id, facility_id=facility_id)
         recent = messages[-(max_turns * 2):]
 
         lines = []
@@ -266,16 +350,23 @@ class MySQLConversationStore:
 
         return "\n".join(lines)
 
-    def session_exists(self, user_id: str, conv_id: str) -> bool:
+    def session_exists(self, user_id: str, conv_id: str, facility_id: Optional[str] = None) -> bool:
+        self._ensure_schema()
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT 1 FROM conversations WHERE id = %s AND user_id = %s LIMIT 1", (conv_id, user_id))
+            fac_clause = ""
+            params = [conv_id, user_id]
+            eff_fac = facility_id if (facility_id and str(facility_id).strip() != "") else "0459"
+            fac_clause = " AND facility_id = %s"
+            params.append(eff_fac)
+            cursor.execute(f"SELECT 1 FROM conversations WHERE id = %s AND user_id = %s{fac_clause} LIMIT 1", tuple(params))
             return cursor.fetchone() is not None
         finally:
             conn.close()
 
-    def search_past_conversations(self, user_id: str, search_terms: list[str], exclude_conv_id: str | None = None, max_results: int = 3) -> list[dict]:
+    def search_past_conversations(self, user_id: str, search_terms: list[str], exclude_conv_id: str | None = None, max_results: int = 3, facility_id: Optional[str] = None) -> list[dict]:
+        self._ensure_schema()
         conn = get_mysql_connection()
         try:
             cursor = conn.cursor(dictionary=True)
@@ -286,6 +377,11 @@ class MySQLConversationStore:
             params = [user_id]
             if exclude_conv_id:
                 params.append(exclude_conv_id)
+                
+            fac_clause = ""
+            eff_fac = facility_id if (facility_id and str(facility_id).strip() != "") else "0459"
+            fac_clause = " AND c.facility_id = %s"
+            params.append(eff_fac)
                 
             # Note: This is a basic mapping of the search logic using the FULLTEXT index. 
             # In a real scenario, we might want to group by conversation to match the JSON search logic more closely,
@@ -298,8 +394,9 @@ class MySQLConversationStore:
                 SELECT c.id, c.title, c.created_at, m.role, m.content, m.id as msg_id
                 FROM conversations c
                 LEFT JOIN messages m ON c.id = m.conversation_id
-                WHERE c.user_id = %s {exclude_clause}
+                WHERE c.user_id = %s {exclude_clause}{fac_clause}
                 ORDER BY c.created_at DESC
+                LIMIT 200
                 """,
                 tuple(params)
             )

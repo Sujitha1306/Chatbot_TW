@@ -34,20 +34,23 @@ def list_conversations(
     auth_data: dict = Depends(require_api_key)
 ):
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
-    convs = _store.list_conversations(user_id, limit, offset)
+    facility_id = auth_data.get("facility_id") if auth_data else None
+    convs = _store.list_conversations(user_id, limit, offset, facility_id=facility_id)
     return {"conversations": clean_for_json(convs)}
 
 @router.get("/recommendations")
 def list_recommendations(auth_data: dict = Depends(require_api_key)):
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
+    facility_id = auth_data.get("facility_id") if auth_data else None
     # Fallback to empty list if _store doesn't support it yet
-    recs = getattr(_store, "get_user_recommendations", lambda uid: [])(user_id)
+    recs = getattr(_store, "get_user_recommendations", lambda uid, **kw: [])(user_id, facility_id=facility_id)
     return {"recommendations": recs}
 
 @router.get("/conversations/{conv_id}")
 def get_conversation(conv_id: str, limit: int = None, offset: int = 0, auth_data: dict = Depends(require_api_key)):
     user_id = auth_data.get("sub", "demo-user-001") if auth_data else "demo-user-001"
-    msgs = _store.get_messages(user_id, conv_id, limit, offset)
+    facility_id = auth_data.get("facility_id") if auth_data else None
+    msgs = _store.get_messages(user_id, conv_id, limit, offset, facility_id=facility_id)
     return {"messages": clean_for_json(msgs)}
 
 from pydantic import BaseModel

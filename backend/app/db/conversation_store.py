@@ -72,6 +72,7 @@ class Conversation:
     title: str = "New Conversation"
     is_favorite: bool = False
     total_tokens_used: int = 0
+    facility_id: str | None = None
     messages: List[Message] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -82,6 +83,7 @@ class Conversation:
             "title": self.title,
             "is_favorite": self.is_favorite,
             "total_tokens_used": self.total_tokens_used,
+            "facility_id": self.facility_id,
             "messages": [m.to_dict() for m in self.messages],
             "created_at": self.created_at.isoformat()
         }
@@ -94,6 +96,7 @@ class Conversation:
             title=d.get("title", "New Conversation"),
             is_favorite=d.get("is_favorite", False),
             total_tokens_used=d.get("total_tokens_used", 0),
+            facility_id=d.get("facility_id"),
             messages=[Message.from_dict(m) for m in d.get("messages", [])],
         )
         if "created_at" in d:
@@ -102,6 +105,11 @@ class Conversation:
             except:
                 pass
         return c
+
+def _matches_facility(conv_facility_id: str | None, target_facility_id: str | None) -> bool:
+    if not target_facility_id or target_facility_id == "0459":
+        return conv_facility_id in (None, "", "0459")
+    return conv_facility_id == target_facility_id
 
 class ConversationStore:
     """Persistent file store to survive reloads."""
@@ -132,11 +140,12 @@ class ConversationStore:
         with open(self.file_path, 'w') as f:
             json.dump(data, f, default=str)
 
-    def create(self, user_id: str, first_question: str, conv_id: str = None) -> Conversation:
+    def create(self, user_id: str, first_question: str, conv_id: str = None, facility_id: str | None = None) -> Conversation:
         conv = Conversation(
             id=conv_id or str(uuid.uuid4()),
             user_id=user_id,
             title=first_question[:60] + ("..." if len(first_question) > 60 else ""),
+            facility_id=facility_id or "0459",
         )
         self._store[user_id][conv.id] = conv
         self._save()
@@ -147,9 +156,9 @@ class ConversationStore:
             self._store[user_id][conv_id].messages.append(msg)
             self._save()
 
-    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0) -> List[Message]:
+    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0, facility_id: str | None = None) -> List[Message]:
         conv = self._store[user_id].get(conv_id)
-        if not conv:
+        if not conv or not _matches_facility(conv.facility_id, facility_id):
             return []
         msgs = conv.messages
         if limit is not None:
@@ -158,12 +167,16 @@ class ConversationStore:
             return msgs[start_idx:end_idx]
         return msgs
 
-    def session_exists(self, user_id: str, conv_id: str) -> bool:
-        return conv_id in self._store[user_id]
+    def session_exists(self, user_id: str, conv_id: str, facility_id: str | None = None) -> bool:
+        conv = self._store[user_id].get(conv_id)
+        return conv is not None and _matches_facility(conv.facility_id, facility_id)
 
-    def list_conversations(self, user_id: str) -> List[Conversation]:
-        convs = list(self._store[user_id].values())
-        return sorted(convs, key=lambda c: c.created_at, reverse=True)
+    def list_conversations(self, user_id: str, limit: int = None, offset: int = 0, facility_id: str | None = None) -> List[Conversation]:
+        convs = [c for c in self._store[user_id].values() if _matches_facility(c.facility_id, facility_id)]
+        sorted_convs = sorted(convs, key=lambda c: c.created_at, reverse=True)
+        if limit is not None:
+            return sorted_convs[offset:offset+limit]
+        return sorted_convs
 
     def delete(self, user_id: str, conv_id: str) -> bool:
         if conv_id in self._store[user_id]:
@@ -203,8 +216,9 @@ class ConversationStore:
         search_terms: list[str],
         exclude_conv_id: str | None = None,
         max_results: int = 3,
+        facility_id: str | None = None,
     ) -> list[dict]:
-        all_convs = self.list_conversations(user_id)
+        all_convs = self.list_conversations(user_id, facility_id=facility_id)
         matches = []
 
         for conv in all_convs:
@@ -246,8 +260,8 @@ class ConversationStore:
         matches.sort(key=lambda m: m["match_count"], reverse=True)
         return matches[:max_results]
 
-    def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3) -> str:
-        messages = self.get_messages(user_id, conv_id)
+    def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3, facility_id: str | None = None) -> str:
+        messages = self.get_messages(user_id, conv_id, facility_id=facility_id)
         recent = messages[-(max_turns * 2):]
 
         lines = []

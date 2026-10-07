@@ -12,7 +12,29 @@ export class FacilityService {
   private activeFiltersSubject = new BehaviorSubject<FacilityFilters>({ customer_id: null, region_id: null, facility_id: null });
   activeFilters$ = this.activeFiltersSubject.asObservable();
 
-  constructor(private auth: AuthService) {}
+  constructor(private auth: AuthService) {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        const facKeys = ['facilityId', btoa('facilityId'), 'customerId', btoa('customerId'), 'regionId', btoa('regionId')];
+        if (event.key && facKeys.includes(event.key)) {
+          this.refreshFilters();
+        }
+      });
+      setInterval(() => {
+        this.refreshFilters();
+      }, 1000);
+      this.refreshFilters();
+    }
+  }
+
+  refreshFilters(): void {
+    const current = this.getActiveFilters();
+    const prev = this.activeFiltersSubject.value;
+    if (current.facility_id !== prev.facility_id || current.customer_id !== prev.customer_id || current.region_id !== prev.region_id) {
+      console.log("Chatbot Facility: Detected facility/filter change from parent:", current);
+      this.activeFiltersSubject.next(current);
+    }
+  }
 
   async loadFacilities(): Promise<void> {
     try {
@@ -37,14 +59,17 @@ export class FacilityService {
         const val = localStorage.getItem(key);
         return val === 'null' ? null : val;
       };
-      if (!filters.customer_id) {
-        filters.customer_id = getVal('customerId');
+      const storedCustomer = getVal('customerId') || getVal(btoa('customerId'));
+      if (storedCustomer) {
+        filters.customer_id = storedCustomer;
       }
-      if (!filters.region_id) {
-        filters.region_id = getVal('regionId');
+      const storedRegion = getVal('regionId') || getVal(btoa('regionId'));
+      if (storedRegion) {
+        filters.region_id = storedRegion;
       }
-      if (!filters.facility_id) {
-        filters.facility_id = getVal(btoa('facilityId')) || getVal('facilityId');
+      const storedFacility = getVal(btoa('facilityId')) || getVal('facilityId');
+      if (storedFacility) {
+        filters.facility_id = storedFacility;
       }
     }
     return filters;

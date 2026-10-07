@@ -25,9 +25,9 @@ class HybridConversationStore:
 
     # ---- WRITE PATH: MySQL always, Redis best-effort ----
 
-    def create(self, user_id: str, first_question: str, conv_id: Optional[str] = None) -> Conversation:
+    def create(self, user_id: str, first_question: str, conv_id: Optional[str] = None, facility_id: Optional[str] = None) -> Conversation:
         try:
-            conv = self._mysql.create(user_id, first_question, conv_id)  # MySQL FIRST, always
+            conv = self._mysql.create(user_id, first_question, conv_id, facility_id=facility_id)  # MySQL FIRST, always
         except Exception as e:
             logger.warning(f"Failed to create conversation in MySQL (VPN lag?), relying on Redis: {e}")
             # Create a fake conversation object to store in Redis
@@ -37,7 +37,8 @@ class HybridConversationStore:
                 id=conv_id or str(uuid.uuid4()),
                 user_id=user_id,
                 title=first_question[:50],
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(timezone.utc),
+                facility_id=facility_id or "0459"
             )
         self._cache_write_meta(conv)                                   # Redis best-effort
         return conv
@@ -57,7 +58,8 @@ class HybridConversationStore:
             self._redis.hset(meta_key, mapping={
                 "user_id": conv.user_id, "title": conv.title,
                 "created_at": conv.created_at.isoformat(),
-                "is_favorite": str(conv.is_favorite)
+                "is_favorite": str(conv.is_favorite),
+                "facility_id": conv.facility_id or "0459"
             })
             self._redis.expire(meta_key, CACHE_TTL_SECONDS)
             self._redis.zadd(f"user:{conv.user_id}:recent", {conv.id: conv.created_at.timestamp()})
@@ -77,7 +79,9 @@ class HybridConversationStore:
 
     # ---- READ PATH: Redis first (fast path), MySQL fallback (always correct) ----
 
-    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0) -> List[Message]:
+    def get_messages(self, user_id: str, conv_id: str, limit: int = None, offset: int = 0, facility_id: Optional[str] = None) -> List[Message]:
+        if facility_id and not self.session_exists(user_id, conv_id, facility_id=facility_id):
+            return []
         if self._redis is not None:
             try:
                 key = f"conv:{conv_id}:messages"
@@ -94,7 +98,7 @@ class HybridConversationStore:
 
         # Cache miss
         try:
-            messages = self._mysql.get_messages(user_id, conv_id, limit, offset)
+            messages = self._mysql.get_messages(user_id, conv_id, limit, offset, facility_id=facility_id)
         except Exception as e:
             logger.warning(f"Failed to get messages from MySQL (VPN lag?): {e}")
             return []
@@ -123,17 +127,17 @@ class HybridConversationStore:
         except Exception as e:
             logger.warning(f"Failed to cleanup conversations in MySQL (VPN lag?): {e}")
 
-    def get_user_recommendations(self, user_id: str) -> list[str]:
+    def get_user_recommendations(self, user_id: str, facility_id: Optional[str] = None) -> list[str]:
         # Pass-through to MySQL store where the complex SQL grouping lives
         try:
-            return self._mysql.get_user_recommendations(user_id)
+            return self._mysql.get_user_recommendations(user_id, facility_id=facility_id)
         except Exception as e:
             logger.warning(f"Failed to get recommendations from MySQL (VPN lag?): {e}")
             return []
 
-    def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0) -> List[Conversation]:
+    def list_conversations(self, user_id: str, limit: int = 10, offset: int = 0, facility_id: Optional[str] = None) -> List[Conversation]:
         try:
-            return self._mysql.list_conversations(user_id, limit, offset)
+            return self._mysql.list_conversations(user_id, limit, offset, facility_id=facility_id)
         except Exception as e:
             logger.warning(f"Failed to list conversations from MySQL (VPN lag?), attempting fallback to Redis (if enabled): {e}")
             if self._redis is None:
@@ -156,7 +160,11 @@ class HybridConversationStore:
                         is_fav_raw = meta.get(b'is_favorite') or meta.get('is_favorite', 'False')
                         if isinstance(is_fav_raw, bytes): is_fav_raw = is_fav_raw.decode('utf-8')
                         is_favorite = is_fav_raw.lower() == 'true'
-                        conversations.append(Conversation(id=cid_str, user_id=user_id, title=title, created_at=created_at, is_favorite=is_favorite))
+                        fac_raw = meta.get(b'facility_id') or meta.get('facility_id', '0459')
+                        if isinstance(fac_raw, bytes): fac_raw = fac_raw.decode('utf-8')
+                        if facility_id and facility_id != "0459" and fac_raw != facility_id:
+                            continue
+                        conversations.append(Conversation(id=cid_str, user_id=user_id, title=title, created_at=created_at, is_favorite=is_favorite, facility_id=fac_raw))
                 return conversations
             except Exception as redis_e:
                 logger.warning(f"Redis list_conversations fallback failed: {redis_e}")
@@ -218,7 +226,9 @@ class HybridConversationStore:
                 logger.warning(f"Redis cache update on toggle_favorite failed (non-fatal): {e}")
         return result
 
-    def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3) -> str:
+    def get_recent_context(self, user_id: str, conv_id: str, max_turns: int = 3, facility_id: Optional[str] = None) -> str:
+        if facility_id and not self.session_exists(user_id, conv_id, facility_id=facility_id):
+            return ""
         if self._redis is not None:
             try:
                 key = f"conv:{conv_id}:messages"
@@ -234,27 +244,27 @@ class HybridConversationStore:
             except Exception as e:
                 logger.warning(f"Redis recent-context read failed, falling back to MySQL: {e}")
         try:
-            return self._mysql.get_recent_context(user_id, conv_id, max_turns)
+            return self._mysql.get_recent_context(user_id, conv_id, max_turns, facility_id=facility_id)
         except Exception as e:
             logger.warning(f"Failed to get recent context from MySQL (VPN lag?): {e}")
             return ""
 
-    def session_exists(self, user_id: str, conv_id: str) -> bool:
-        if self._redis is not None:
-            try:
-                if self._redis.exists(f"conv:{conv_id}:meta"):
-                    return True
-            except Exception as e:
-                logger.warning(f"Redis exists-check failed, falling back to MySQL: {e}")
+    def session_exists(self, user_id: str, conv_id: str, facility_id: Optional[str] = None) -> bool:
         try:
-            return self._mysql.session_exists(user_id, conv_id)
+            return self._mysql.session_exists(user_id, conv_id, facility_id=facility_id)
         except Exception as e:
             logger.warning(f"Failed to check session existence in MySQL (VPN lag?): {e}")
+            if self._redis is not None:
+                try:
+                    if self._redis.exists(f"conv:{conv_id}:meta"):
+                        return True
+                except Exception:
+                    pass
             return False
 
-    def search_past_conversations(self, user_id: str, search_terms: list[str], exclude_conv_id: str | None = None, max_results: int = 3) -> list[dict]:
+    def search_past_conversations(self, user_id: str, search_terms: list[str], exclude_conv_id: str | None = None, max_results: int = 3, facility_id: Optional[str] = None) -> list[dict]:
         try:
-            return self._mysql.search_past_conversations(user_id, search_terms, exclude_conv_id, max_results)
+            return self._mysql.search_past_conversations(user_id, search_terms, exclude_conv_id, max_results, facility_id=facility_id)
         except Exception as e:
             logger.warning(f"Failed to search past conversations in MySQL (VPN lag?): {e}")
             return []

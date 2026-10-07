@@ -27,6 +27,38 @@ export class ChatService {
   private messagesSubject = new BehaviorSubject<ChatMessage[]>([]);
   messages$ = this.messagesSubject.asObservable();
 
+  /* Which chat metrics may be displayed. The server decides — see
+     GET /chat/metrics-config — so these can be switched on or off by changing
+     the API's .env and restarting it, with no Angular rebuild. Everything is
+     off until the server answers, so a figure is never shown that the server
+     meant to hide; loadMetricsConfig() fills this in on startup. */
+  private metricsConfigSubject = new BehaviorSubject<{
+    alwaysVisible: boolean; showTime: boolean; showInput: boolean;
+    showOutput: boolean; showTotal: boolean;
+  }>({ alwaysVisible: false, showTime: false, showInput: false,
+       showOutput: false, showTotal: false });
+  metricsConfig$ = this.metricsConfigSubject.asObservable();
+  get metricsConfig() { return this.metricsConfigSubject.value; }
+
+  async loadMetricsConfig(): Promise<void> {
+    try {
+      const res = await fetch(this.buildApiUrl('chat/metrics-config'), {
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) return;
+      const cfg = await res.json();
+      this.metricsConfigSubject.next({
+        alwaysVisible: !!cfg.alwaysVisible,
+        showTime: !!cfg.showTime,
+        showInput: !!cfg.showInput,
+        showOutput: !!cfg.showOutput,
+        showTotal: !!cfg.showTotal,
+      });
+    } catch {
+      /* Server unreachable: leave everything hidden rather than guessing. */
+    }
+  }
+
   private streamingSubject = new BehaviorSubject<boolean>(false);
   isStreaming$ = this.streamingSubject.asObservable();
 
@@ -68,6 +100,11 @@ export class ChatService {
   // Removed shared tokenBuffer state
 
   constructor(private auth: AuthService, private zone: NgZone, private facilitySvc: FacilityService) {
+    // Ask the server which metrics it wants displayed. Fire-and-forget: the
+    // subject starts with everything hidden, so nothing flashes on screen
+    // before the answer arrives.
+    this.loadMetricsConfig();
+
     let lastUserId: string | null = null;
     this.auth.user$.subscribe(user => {
       const currentId = user?.id || null;
@@ -78,6 +115,20 @@ export class ChatService {
         this.initialLoadingSubject.next(true);
       }
       lastUserId = currentId;
+    });
+
+    let lastFacilityId: string | null = undefined as any;
+    this.facilitySvc.activeFilters$.subscribe(filters => {
+      const currentFacId = filters?.facility_id || null;
+      if (lastFacilityId !== undefined && currentFacId !== lastFacilityId) {
+        this.newConversation();
+        this.conversationsSubject.next([]);
+        this.recommendationsSubject.next([]);
+        this.initialLoadingSubject.next(true);
+        this.loadConversations();
+        this.loadRecommendations();
+      }
+      lastFacilityId = currentFacId;
     });
   }
 
@@ -137,6 +188,11 @@ export class ChatService {
       const separator = path.includes('?') ? '&' : '?';
       url += `${separator}userId=${encodeURIComponent(user.id)}`;
     }
+    const filters = this.facilitySvc.getActiveFilters();
+    if (filters && filters.facility_id) {
+      const separator = url.includes('?') ? '&' : '?';
+      url += `${separator}facilityId=${encodeURIComponent(filters.facility_id)}`;
+    }
     return url;
   }
 
@@ -145,14 +201,20 @@ export class ChatService {
     const user = this.auth.getUser();
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (user && user.id) headers['X-User-Id'] = user.id;
+    const filters = this.facilitySvc.getActiveFilters();
+    if (filters && filters.facility_id) {
+      headers['facilityId'] = filters.facility_id;
+    }
     return headers;
   }
 
-  hasMoreConversations = true;
+  hasMoreConversations = false;
 
   async loadConversations(limit: number = 10, offset: number = 0, append: boolean = false): Promise<void> {
     const requestId = ++this.currentConvListRequestId;
+    if (!append) {
+      this.hasMoreConversations = false;
+    }
     try {
       const res = await fetch(this.buildApiUrl(`chat/conversations?limit=${limit}&offset=${offset}`), {
         headers: this.getHeaders(),
@@ -163,7 +225,7 @@ export class ChatService {
       if (requestId !== this.currentConvListRequestId) return;
       
       const newConvs = data.conversations || [];
-      this.hasMoreConversations = newConvs.length === limit;
+      this.hasMoreConversations = newConvs.length > 0 && newConvs.length === limit;
 
       if (append) {
         const existing = this.conversationsSubject.value;
@@ -219,9 +281,24 @@ export class ChatService {
       const loadedMessages = (data.messages || []).map((m: any) => ({
         ...m,
         status: 'complete',
-        rowCount: m.row_count || m.rowCount
+        rowCount: m.row_count || m.rowCount,
+        // The API returns snake_case; the message model reads tokensUsed. Without
+        // this, a conversation loaded from history has no token count at all and
+        // the metrics line stays hidden even when it is switched on.
+        tokensUsed: m.tokens_used ?? m.tokensUsed,
+        inputTokens: m.input_tokens ?? m.inputTokens,
+        outputTokens: m.output_tokens ?? m.outputTokens
       }));
       
+      // A stored user row has no tokens of its own; the input tokens live on
+      // the assistant reply that followed it. Copy them back so a reloaded
+      // conversation shows the same split as a live one.
+      for (let i = 0; i < loadedMessages.length - 1; i++) {
+        if (loadedMessages[i].role === 'user' && loadedMessages[i + 1]?.role === 'assistant') {
+          loadedMessages[i].inputTokens = loadedMessages[i + 1].inputTokens;
+        }
+      }
+
       if (prepend) {
         const current = this.messagesSubject.value;
         this.messagesSubject.next([...loadedMessages, ...current]);
@@ -527,14 +604,36 @@ export class ChatService {
               updateTarget({ domain: undefined, status: 'streaming' });
               break;
             case 'metrics':
-              updateTarget({ tokensUsed: ev.tokens });
+              updateTarget({
+                tokensUsed: ev.tokens,
+                inputTokens: ev.input_tokens,
+                outputTokens: ev.output_tokens
+              });
+              // Input tokens describe the prompt that carried the USER's
+              // question, so they belong beside that message rather than the
+              // answer. Stamp the most recent user message with them.
+              if (ev.input_tokens !== undefined) {
+                const all = this.messagesSubject.value;
+                for (let i = all.length - 1; i >= 0; i--) {
+                  if (all[i].role === 'user') {
+                    all[i] = { ...all[i], inputTokens: ev.input_tokens };
+                    this.messagesSubject.next([...all]);
+                    break;
+                  }
+                }
+              }
               break;
             case 'sql':
             case 'sql_corrected':
               updateTarget({ sql: ev.sql });
               break;
             case 'data':
-              updateTarget({ data: ev.rows, rowCount: ev.row_count });
+              updateTarget({
+                data: ev.rows,
+                rowCount: ev.row_count,
+                totalRowCount: ev.total_row_count ?? ev.row_count,
+                truncated: !!ev.truncated,
+              });
               break;
             case 'multi_data':
               updateTarget({ displaySections: ev.sections, rowCount: ev.row_count });

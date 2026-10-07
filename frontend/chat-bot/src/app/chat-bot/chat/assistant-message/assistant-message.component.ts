@@ -21,6 +21,24 @@ export class AssistantMessageComponent implements OnChanges, OnInit, OnDestroy {
   showMenu = false;
   
   timeElapsed: number = 0;
+  /* When true the time/token line stays on screen after the answer finishes.
+     When false it behaves as before and is shown only while streaming. */
+  /* The server decides which metrics may be shown (GET /chat/metrics-config),
+     so these are read from ChatService rather than the Angular build. That
+     makes them changeable with an API restart instead of a rebuild. */
+  get alwaysShowMetrics(): boolean { return this.chat.metricsConfig.alwaysVisible; }
+  get showTime(): boolean { return this.chat.metricsConfig.showTime; }
+  get showOutput(): boolean { return this.chat.metricsConfig.showOutput; }
+  get showTotal(): boolean { return this.chat.metricsConfig.showTotal; }
+
+  /* True when at least one enabled figure actually has a value to print, so an
+     empty bracket never renders. */
+  get hasMetrics(): boolean {
+    return (this.showTime && this.timeElapsed > 0)
+        || (this.showOutput && this.message?.outputTokens !== undefined)
+        || (this.showTotal && this.message?.tokensUsed !== undefined);
+  }
+
   private timer: any;
   private startTime: number = 0;
 
@@ -70,6 +88,12 @@ export class AssistantMessageComponent implements OnChanges, OnInit, OnDestroy {
         } else if (msg.chartSpec && !this.hasChart) {
           this.showChart = false;
         }
+
+        // The data table is hidden for now, so nothing auto-opens it. When the
+        // panel is restored in the template, re-add:
+        //   if (this.hasTable && msg.status === 'complete') {
+        //     this.showData = !canShowChart;   // collapsed if a chart is shown
+        //   }
       }
       
       if (this.message?.status === 'complete' || this.message?.status === 'error') {
@@ -83,6 +107,22 @@ export class AssistantMessageComponent implements OnChanges, OnInit, OnDestroy {
   get hasChart(): boolean {
     if (!this.message?.chartSpec?.recommendations) return false;
     return this.message.chartSpec.recommendations.some((r: any) => r.type !== 'table');
+  }
+
+  /**
+   * A result is worth tabulating when it has more than one row — a breakdown
+   * such as shift-by-porter reads far better as a table than as prose.
+   * Single-row results are already fully stated in the summary sentence.
+   */
+  get hasTable(): boolean {
+    const rows = this.message?.data;
+    return Array.isArray(rows) && rows.length > 1 && Object.keys(rows[0] || {}).length > 1;
+  }
+
+  get tableRowLabel(): string {
+    const shown = this.message?.data?.length ?? 0;
+    const total = this.message?.totalRowCount;
+    return total && total > shown ? `${shown} of ${total.toLocaleString()}` : `${shown}`;
   }
 
   doExport(format: 'csv' | 'excel' | 'pdf') {

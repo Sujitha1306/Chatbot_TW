@@ -83,6 +83,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   set searchQuery(val: string) {
     this._searchQuery = val;
     this.searchQuery$.next(val);
+    if (val && !this.showRecents) {
+      this.showRecents = true;
+    }
   }
 
   editingName = false;
@@ -106,8 +109,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     
     const currentLength = this.chat.currentConversations.length;
     await this.chat.loadConversations(10, currentLength, true);
-    
-    this.visibleRecentsCount += 10;
+    const newLength = this.chat.currentConversations.length;
+    if (newLength > currentLength) {
+      this.visibleRecentsCount += (newLength - currentLength);
+    }
     this.isLoadingMore = false;
     this.cdr.markForCheck();
   }

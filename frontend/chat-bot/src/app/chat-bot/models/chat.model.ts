@@ -19,6 +19,10 @@ export interface ChatMessage {
   sql?: string;
   data?: Record<string, unknown>[];
   rowCount?: number;
+  /** Total matching records before any LIMIT clipped the result. */
+  totalRowCount?: number;
+  /** True when rowCount is only the first page of totalRowCount. */
+  truncated?: boolean;
   domain?: Domain;
   chartSpec?: ChartSpec;
   displaySections?: { label: string; data: Record<string, unknown>[] }[];
@@ -28,6 +32,8 @@ export interface ChatMessage {
   status: MessageStatus;
   timestamp: Date;
   tokensUsed?: number;
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 export interface Conversation {
